@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+6.1
+---
+
+ * Add the ability to create contexts using context builders.
+
 6.0
 ---
 
