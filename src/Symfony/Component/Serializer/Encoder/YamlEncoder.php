@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Encoder\YamlEncoderOptions;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Parser;
@@ -26,21 +28,27 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
     public const FORMAT = 'yaml';
     private const ALTERNATIVE_FORMAT = 'yml';
 
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const PRESERVE_EMPTY_OBJECTS = 'preserve_empty_objects';
 
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const YAML_INLINE = 'yaml_inline';
+
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const YAML_INDENT = 'yaml_indent';
+
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const YAML_FLAGS = 'yaml_flags';
 
     private $dumper;
     private $parser;
-    private $defaultContext = [
-        self::YAML_INLINE => 0,
-        self::YAML_INDENT => 0,
-        self::YAML_FLAGS => 0,
-    ];
 
-    public function __construct(Dumper $dumper = null, Parser $parser = null, array $defaultContext = [])
+    private YamlEncoderOptions $defaultOptions;
+
+    /**
+     * @param Context|null $defaultContext
+     */
+    public function __construct(Dumper $dumper = null, Parser $parser = null /*, Context $defaultContext = null */)
     {
         if (!class_exists(Dumper::class)) {
             throw new RuntimeException('The YamlEncoder class requires the "Yaml" component. Install "symfony/yaml" to use it.');
@@ -48,21 +56,41 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
 
         $this->dumper = $dumper ?? new Dumper();
         $this->parser = $parser ?? new Parser();
-        $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
+
+        /** @var Context|array|null $defaultContext */
+        $defaultContext = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($defaultContext)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+
+            $defaultContext = new Context(YamlEncoderOptions::fromLegacyContext($defaultContext));
+        }
+
+        $this->defaultOptions = $defaultContext?->getOptions(YamlEncoderOptions::class) ?? new YamlEncoderOptions();
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function encode(mixed $data, string $format, array $context = []): string
+    public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        $context = array_merge($this->defaultContext, $context);
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
 
-        if (isset($context[self::PRESERVE_EMPTY_OBJECTS])) {
-            $context[self::YAML_FLAGS] |= Yaml::DUMP_OBJECT_AS_MAP;
+            $context = new Context(YamlEncoderOptions::fromLegacyContext($context));
         }
 
-        return $this->dumper->dump($data, $context[self::YAML_INLINE], $context[self::YAML_INDENT], $context[self::YAML_FLAGS]);
+        $options = $this->getOptions($context);
+
+        $flags = $options->getFlags();
+        if ($options->getPreserveEmptyObjects()) {
+            $flags |= Yaml::DUMP_OBJECT_AS_MAP;
+        }
+
+        return $this->dumper->dump($data, $options->getInlineThreshold(), $options->getIndentLevel(), $flags);
     }
 
     /**
@@ -75,12 +103,22 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function decode(string $data, string $format, array $context = []): mixed
+    public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
-        $context = array_merge($this->defaultContext, $context);
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
 
-        return $this->parser->parse($data, $context[self::YAML_FLAGS]);
+            $context = new Context(YamlEncoderOptions::fromLegacyContext($context));
+        }
+
+        $options = $this->getOptions($context);
+
+        return $this->parser->parse($data, $options->getFlags());
     }
 
     /**
@@ -89,5 +127,12 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
     public function supportsDecoding(string $format): bool
     {
         return self::FORMAT === $format || self::ALTERNATIVE_FORMAT === $format;
+    }
+
+    private function getOptions(?Context $context): YamlEncoderOptions
+    {
+        $options = $context?->getOptions(YamlEncoderOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
     }
 }

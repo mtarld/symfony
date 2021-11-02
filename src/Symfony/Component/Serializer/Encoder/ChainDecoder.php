@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 
 /**
@@ -34,20 +35,36 @@ class ChainDecoder implements ContextAwareDecoderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    final public function decode(string $data, string $format, array $context = []): mixed
+    final public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->getDecoder($format, $context)->decode($data, $format, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function supportsDecoding(string $format, array $context = []): bool
+    public function supportsDecoding(string $format /*, Context $context = null */): bool
     {
+        /** @var Context|array|null $context */
+        $context = 1 < \func_num_args() ? \func_get_arg(1) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         try {
             $this->getDecoder($format, $context);
-        } catch (RuntimeException $e) {
+        } catch (RuntimeException) {
             return false;
         }
 
@@ -59,7 +76,7 @@ class ChainDecoder implements ContextAwareDecoderInterface
      *
      * @throws RuntimeException if no decoder is found
      */
-    private function getDecoder(string $format, array $context): DecoderInterface
+    private function getDecoder(string $format, Context|array|null $context): DecoderInterface
     {
         if (isset($this->decoderByFormat[$format])
             && isset($this->decoders[$this->decoderByFormat[$format]])

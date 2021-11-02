@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Encoder\JsonEncoderOptions;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 
 /**
@@ -20,35 +22,55 @@ use Symfony\Component\Serializer\Exception\NotEncodableValueException;
  */
 class JsonEncode implements EncoderInterface
 {
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const OPTIONS = 'json_encode_options';
 
-    private $defaultContext = [
-        self::OPTIONS => 0,
-    ];
+    private JsonEncoderOptions $defaultOptions;
 
-    public function __construct(array $defaultContext = [])
+    /**
+     * @param Context|null $defaultContext
+     */
+    public function __construct(/* Context $defaultContext = null */)
     {
-        $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
+        /** @var Context|array|null $defaultContext */
+        $defaultContext = 1 < \func_num_args() ? \func_get_arg(1) : null;
+        if (\is_array($defaultContext)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+
+            $defaultContext = new Context(JsonEncoderOptions::fromLegacyContext($defaultContext));
+        }
+
+        $this->defaultOptions = $defaultContext?->getOptions(JsonEncoderOptions::class) ?? new JsonEncoderOptions();
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function encode(mixed $data, string $format, array $context = []): string
+    public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        $options = $context[self::OPTIONS] ?? $this->defaultContext[self::OPTIONS];
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            $context = new Context(JsonEncoderOptions::fromLegacyContext($context));
+        }
+
+        $options = $this->getOptions($context);
 
         try {
-            $encodedJson = json_encode($data, $options);
+            $encodedJson = json_encode($data, $options->getEncodeOptions());
         } catch (\JsonException $e) {
             throw new NotEncodableValueException($e->getMessage(), 0, $e);
         }
 
-        if (\JSON_THROW_ON_ERROR & $options) {
+        if (\JSON_THROW_ON_ERROR & $options->getEncodeOptions()) {
             return $encodedJson;
         }
 
-        if (\JSON_ERROR_NONE !== json_last_error() && (false === $encodedJson || !($options & \JSON_PARTIAL_OUTPUT_ON_ERROR))) {
+        if (\JSON_ERROR_NONE !== json_last_error() && (false === $encodedJson || !($options->getEncodeOptions() & \JSON_PARTIAL_OUTPUT_ON_ERROR))) {
             throw new NotEncodableValueException(json_last_error_msg());
         }
 
@@ -61,5 +83,12 @@ class JsonEncode implements EncoderInterface
     public function supportsEncoding(string $format): bool
     {
         return JsonEncoder::FORMAT === $format;
+    }
+
+    private function getOptions(?Context $context): JsonEncoderOptions
+    {
+        $options = $context?->getOptions(JsonEncoderOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
     }
 }

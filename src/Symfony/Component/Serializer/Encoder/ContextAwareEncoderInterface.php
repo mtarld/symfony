@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
+
 /**
  * Adds the support of an extra $context parameter for the supportsEncoding method.
  *
@@ -21,7 +23,7 @@ interface ContextAwareEncoderInterface extends EncoderInterface
     /**
      * {@inheritdoc}
      *
-     * @param array $context options that encoders have access to
+     * @param Context|null $context Options that encoders have access to
      */
-    public function supportsEncoding(string $format, array $context = []): bool;
+    public function supportsEncoding(string $format /*, Context $context = null */): bool;
 }
