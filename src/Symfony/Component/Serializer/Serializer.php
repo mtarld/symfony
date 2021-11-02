@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer;
 
+use Symfony\Component\Serializer\Context\Context;
 use Symfony\Component\Serializer\Encoder\ChainDecoder;
 use Symfony\Component\Serializer\Encoder\ChainEncoder;
 use Symfony\Component\Serializer\Encoder\ContextAwareDecoderInterface;
@@ -331,33 +332,65 @@ class Serializer implements SerializerInterface, ContextAwareNormalizerInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    final public function encode(mixed $data, string $format, array $context = []): string
+    final public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->encoder->encode($data, $format, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    final public function decode(string $data, string $format, array $context = []): mixed
+    final public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->decoder->decode($data, $format, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function supportsEncoding(string $format, array $context = []): bool
+    public function supportsEncoding(string $format /*, Context $context = null */): bool
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->encoder->supportsEncoding($format, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function supportsDecoding(string $format, array $context = []): bool
+    public function supportsDecoding(string $format /*, Context $context = null */): bool
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->decoder->supportsDecoding($format, $context);
     }
 }

@@ -37,11 +37,15 @@ abstract class AbstractObjectNormalizer extends AbstractNormalizer
 {
     /**
      * Set to true to respect the max depth metadata on fields.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const ENABLE_MAX_DEPTH = 'enable_max_depth';
 
     /**
      * How to track the current depth in the context.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const DEPTH_KEY_PATTERN = 'depth_%s::%s';
 
@@ -49,18 +53,24 @@ abstract class AbstractObjectNormalizer extends AbstractNormalizer
      * While denormalizing, we can verify that types match.
      *
      * You can disable this by setting this flag to true.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const DISABLE_TYPE_ENFORCEMENT = 'disable_type_enforcement';
 
     /**
      * Flag to control whether fields with the value `null` should be output
      * when normalizing or omitted.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const SKIP_NULL_VALUES = 'skip_null_values';
 
     /**
      * Flag to control whether uninitialized PHP>=7.4 typed class properties
      * should be excluded when normalizing.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const SKIP_UNINITIALIZED_VALUES = 'skip_uninitialized_values';
 
@@ -78,12 +88,16 @@ abstract class AbstractObjectNormalizer extends AbstractNormalizer
      * - string $attributeName  name of the attribute being normalized
      * - string $format         the requested format
      * - array  $context        the serialization context
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const MAX_DEPTH_HANDLER = 'max_depth_handler';
 
     /**
      * Specify which context key are not relevant to determine which attributes
      * of an object to (de)normalize.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const EXCLUDE_FROM_CACHE_KEY = 'exclude_from_cache_key';
 
@@ -93,12 +107,16 @@ abstract class AbstractObjectNormalizer extends AbstractNormalizer
      *
      * Setting this to true is only useful if you also specify the root object
      * in OBJECT_TO_POPULATE.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const DEEP_OBJECT_TO_POPULATE = 'deep_object_to_populate';
 
     /**
      * Flag to control whether an empty object should be kept as an object (in
      * JSON: {}) or converted to a list (in JSON: []).
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const PRESERVE_EMPTY_OBJECTS = 'preserve_empty_objects';
 

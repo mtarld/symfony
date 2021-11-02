@@ -869,7 +869,7 @@ XML;
         $mock
             ->expects($this->once())
             ->method('normalize')
-            ->with(new \DateTime($this->exampleDateTimeString), 'xml', [])
+            ->with(new \DateTime($this->exampleDateTimeString), 'xml')
             ->willReturn($this->exampleDateTimeString);
 
         $mock

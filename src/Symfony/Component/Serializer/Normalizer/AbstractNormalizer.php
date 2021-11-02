@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Normalizer;
 
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Normalizer\AbstractNormalizerOptions;
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\LogicException;
@@ -43,6 +45,8 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * You can raise this value for special cases, e.g. in combination with the
      * max depth setting of the object normalizer.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const CIRCULAR_REFERENCE_LIMIT = 'circular_reference_limit';
 
@@ -51,11 +55,15 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * If you have a nested structure, child objects will be overwritten with
      * new instances unless you set DEEP_OBJECT_TO_POPULATE to true.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const OBJECT_TO_POPULATE = 'object_to_populate';
 
     /**
      * Only (de)normalize attributes that are in the specified groups.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const GROUPS = 'groups';
 
@@ -63,12 +71,16 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      * Limit (de)normalize to the specified names.
      *
      * For nested structures, this list needs to reflect the object tree.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const ATTRIBUTES = 'attributes';
 
     /**
      * If ATTRIBUTES are specified, and the source has fields that are not part of that list,
      * either ignore those attributes (true) or throw an ExtraAttributesException (false).
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const ALLOW_EXTRA_ATTRIBUTES = 'allow_extra_attributes';
 
@@ -76,6 +88,8 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      * Hashmap of default values for constructor arguments.
      *
      * The names need to match the parameter names in the constructor arguments.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const DEFAULT_CONSTRUCTOR_ARGUMENTS = 'default_constructor_arguments';
 
@@ -89,6 +103,8 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      * - string $attributeName  name of the attribute being normalized
      * - string $format         the requested format
      * - array  $context        the serialization context
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const CALLBACKS = 'callbacks';
 
@@ -99,6 +115,8 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * The method will be called with ($object, $format, $context) and its
      * return value is returned as the result of the normalize call.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const CIRCULAR_REFERENCE_HANDLER = 'circular_reference_handler';
 
@@ -109,6 +127,8 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * Note: The behaviour for nested structures is different from ATTRIBUTES
      * for historical reason. Aligning the behaviour would be a BC break.
+     *
+     * @deprecated since symfony/serializer 6.1, use Context instead
      */
     public const IGNORED_ATTRIBUTES = 'ignored_attributes';
 
@@ -117,11 +137,14 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      */
     protected const CIRCULAR_REFERENCE_LIMIT_COUNTERS = 'circular_reference_limit_counters';
 
+    /**
+     * @deprecated since symfony/serializer 6.1, use defaultOptions instead
+     */
     protected $defaultContext = [
-        self::ALLOW_EXTRA_ATTRIBUTES => true,
-        self::CIRCULAR_REFERENCE_HANDLER => null,
-        self::CIRCULAR_REFERENCE_LIMIT => 1,
-        self::IGNORED_ATTRIBUTES => [],
+        'allow_extra_attributes' => true,
+        'circular_reference_handler' => null,
+        'circular_reference_limit' => 1,
+        'ignored_attributes' => [],
     ];
 
     /**
@@ -134,30 +157,50 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      */
     protected $nameConverter;
 
+    protected ?AbstractNormalizerOptions $defaultOptions = null;
+
+    private array $circularReferenceCounters = [];
+
     /**
      * Sets the {@link ClassMetadataFactoryInterface} to use.
+     *
+     * @param Context|null $defaultContext
      */
-    public function __construct(ClassMetadataFactoryInterface $classMetadataFactory = null, NameConverterInterface $nameConverter = null, array $defaultContext = [])
+    public function __construct(ClassMetadataFactoryInterface $classMetadataFactory = null, NameConverterInterface $nameConverter = null /*, Context $defaultContext = null */)
     {
+        /** @var Context|array|null $defaultContext */
+        $defaultContext = 2 < \func_num_args() ? \func_get_arg(2) : null;
+
         $this->classMetadataFactory = $classMetadataFactory;
         $this->nameConverter = $nameConverter;
-        $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
 
-        if (isset($this->defaultContext[self::CALLBACKS])) {
-            if (!\is_array($this->defaultContext[self::CALLBACKS])) {
-                throw new InvalidArgumentException(sprintf('The "%s" default context option must be an array of callables.', self::CALLBACKS));
-            }
+        if (\is_array($defaultContext)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
 
-            foreach ($this->defaultContext[self::CALLBACKS] as $attribute => $callback) {
-                if (!\is_callable($callback)) {
-                    throw new InvalidArgumentException(sprintf('Invalid callback found for attribute "%s" in the "%s" default context option.', $attribute, self::CALLBACKS));
+            $normalizerOptions = new class extends AbstractNormalizerOptions {};
+            $this->defaultContext = array_merge($normalizerOptions->toLegacyContext(), $defaultContext);
+
+            if (isset($this->defaultContext['callbacks'])) {
+                if (!\is_array($this->defaultContext['callbacks'])) {
+                    throw new InvalidArgumentException('The "callbacks" default context option must be an array of callables.');
+                }
+
+                foreach ($this->defaultContext['callback'] as $attribute => $callback) {
+                    if (!\is_callable($callback)) {
+                        throw new InvalidArgumentException(sprintf('Invalid callback found for attribute "%s" in the "callbacks" default context option.', $attribute));
+                    }
                 }
             }
+
+            if (isset($this->defaultContext['circular_reference_handler']) && !\is_callable($this->defaultContext['circular_reference_handler'])) {
+                throw new InvalidArgumentException('Invalid callback found in the "circular_reference_handler" default context option.');
+            }
+
+            return;
         }
 
-        if (isset($this->defaultContext[self::CIRCULAR_REFERENCE_HANDLER]) && !\is_callable($this->defaultContext[self::CIRCULAR_REFERENCE_HANDLER])) {
-            throw new InvalidArgumentException(sprintf('Invalid callback found in the "%s" default context option.', self::CIRCULAR_REFERENCE_HANDLER));
-        }
+
+        $this->defaultOptions = $defaultContext?->getOptions(static::getOptionsType()) ?? new class extends AbstractNormalizerOptions {};
     }
 
     /**
@@ -171,23 +214,25 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
     /**
      * Detects if the configured circular reference limit is reached.
      *
+     * @param Context $context
+     *
      * @throws CircularReferenceException
      */
-    protected function isCircularReference(object $object, array &$context): bool
+    protected function isCircularReference(object $object, /* Context $context */): bool
     {
+        $context = $this->getContext(1 < \func_num_args() ? \func_get_arg(1) : null);
         $objectHash = spl_object_hash($object);
 
-        $circularReferenceLimit = $context[self::CIRCULAR_REFERENCE_LIMIT] ?? $this->defaultContext[self::CIRCULAR_REFERENCE_LIMIT];
-        if (isset($context[self::CIRCULAR_REFERENCE_LIMIT_COUNTERS][$objectHash])) {
-            if ($context[self::CIRCULAR_REFERENCE_LIMIT_COUNTERS][$objectHash] >= $circularReferenceLimit) {
-                unset($context[self::CIRCULAR_REFERENCE_LIMIT_COUNTERS][$objectHash]);
+        if (isset($this->circularReferenceCounters[$objectHash])) {
+            if ($this->circularReferenceCounters[$objectHash] >= $context['circular_reference_limit']) {
+                unset($this->circularReferenceCounters[$objectHash]);
 
                 return true;
             }
 
-            ++$context[self::CIRCULAR_REFERENCE_LIMIT_COUNTERS][$objectHash];
+            ++$this->circularReferenceCounters[$objectHash];
         } else {
-            $context[self::CIRCULAR_REFERENCE_LIMIT_COUNTERS][$objectHash] = 1;
+            ++$this->circularReferenceCounters[$objectHash];
         }
 
         return false;
@@ -201,16 +246,33 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * @final
      *
+     * @param Context|null $context
+     *
      * @throws CircularReferenceException
      */
-    protected function handleCircularReference(object $object, string $format = null, array $context = []): mixed
+    protected function handleCircularReference(object $object, string $format = null /*, Context $context = null */): mixed
     {
-        $circularReferenceHandler = $context[self::CIRCULAR_REFERENCE_HANDLER] ?? $this->defaultContext[self::CIRCULAR_REFERENCE_HANDLER];
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null; // TODO check every numbers
+
+        $legacyContext = $this->getContext($context);
+
+        $circularReferenceHandler = $legacyContext['circular_reference_handler'];
+
         if ($circularReferenceHandler) {
+            $contextReflectionParameter = (new \ReflectionMethod($circularReferenceHandler))->getParameters()[2] ?? null;
+            $contextReflectionParameterType = $contextReflectionParameter?->getType()?->getName();
+            // TODO verify it
+            if (null !== $contextReflectionParameterType && Context::class !== $contextReflectionParameterType) {
+                trigger_deprecation('symfony/serializer', '6.1', 'Handling an array as the third argument of circule reference handler is deprecated.'); // TODO better deprecations
+
+                return $circularReferenceHandler($object, $format, $legacyContext);
+            }
+
             return $circularReferenceHandler($object, $format, $context);
         }
 
-        throw new CircularReferenceException(sprintf('A circular reference has been detected when serializing the object of class "%s" (configured limit: %d).', get_debug_type($object), $context[self::CIRCULAR_REFERENCE_LIMIT] ?? $this->defaultContext[self::CIRCULAR_REFERENCE_LIMIT]));
+        throw new CircularReferenceException(sprintf('A circular reference has been detected when serializing the object of class "%s" (configured limit: %d).', get_debug_type($object), $legacyContext['circular_reference_limit']));
     }
 
     /**
@@ -222,7 +284,7 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      *
      * @return string[]|AttributeMetadataInterface[]|bool
      */
-    protected function getAllowedAttributes(string|object $classOrObject, array $context, bool $attributesAsString = false): array|bool
+    protected function getAllowedAttributes(string|object $classOrObject, array $context, bool $attributesAsString = false): array|bool // TODO stuck in here....
     {
         $allowExtraAttributes = $context[self::ALLOW_EXTRA_ATTRIBUTES] ?? $this->defaultContext[self::ALLOW_EXTRA_ATTRIBUTES];
         if (!$this->classMetadataFactory) {
@@ -260,24 +322,32 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
         return $allowedAttributes;
     }
 
-    protected function getGroups(array $context): array
+    /**
+     * @param Context $context
+     */
+    protected function getGroups(/* Context $context */): array
     {
-        $groups = $context[self::GROUPS] ?? $this->defaultContext[self::GROUPS] ?? [];
+        $context = $this->getContext(0 < \func_num_args() ? \func_get_arg(0) : null);
+
+        $groups = $context['groups'];
 
         return is_scalar($groups) ? (array) $groups : $groups;
     }
 
     /**
      * Is this attribute allowed?
+     *
+     * @param Context|null $context
      */
-    protected function isAllowedAttribute(object|string $classOrObject, string $attribute, string $format = null, array $context = []): bool
+    protected function isAllowedAttribute(object|string $classOrObject, string $attribute, string $format = null, /* Context $context = null */): bool
     {
-        $ignoredAttributes = $context[self::IGNORED_ATTRIBUTES] ?? $this->defaultContext[self::IGNORED_ATTRIBUTES];
-        if (\in_array($attribute, $ignoredAttributes)) {
+        $context = $this->getContext(3 < \func_num_args() ? \func_get_arg(3) : null);
+
+        if (\in_array($attribute, $context['ignored_attributes'])) {
             return false;
         }
 
-        $attributes = $context[self::ATTRIBUTES] ?? $this->defaultContext[self::ATTRIBUTES] ?? null;
+        $attributes = $context['attributes'];
         if (isset($attributes[$attribute])) {
             // Nested attributes
             return true;
@@ -303,7 +373,7 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      * Returns the method to use to construct an object. This method must be either
      * the object constructor or static.
      */
-    protected function getConstructor(array &$data, string $class, array &$context, \ReflectionClass $reflectionClass, array|bool $allowedAttributes): ?\ReflectionMethod
+    protected function getConstructor(array &$data, string $class, array &$context, \ReflectionClass $reflectionClass, array|bool $allowedAttributes): ?\ReflectionMethod // TODO stuck
     {
         return $reflectionClass->getConstructor();
     }
@@ -319,7 +389,7 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      * @throws RuntimeException
      * @throws MissingConstructorArgumentsException
      */
-    protected function instantiateObject(array &$data, string $class, array &$context, \ReflectionClass $reflectionClass, array|bool $allowedAttributes, string $format = null): object
+    protected function instantiateObject(array &$data, string $class, array &$context, \ReflectionClass $reflectionClass, array|bool $allowedAttributes, string $format = null): object // TODO stuck
     {
         if (null !== $object = $this->extractObjectToPopulate($class, $context, self::OBJECT_TO_POPULATE)) {
             unset($context[self::OBJECT_TO_POPULATE]);
@@ -449,12 +519,69 @@ abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerIn
      */
     protected function createChildContext(array $parentContext, string $attribute, ?string $format): array
     {
-        if (isset($parentContext[self::ATTRIBUTES][$attribute])) {
-            $parentContext[self::ATTRIBUTES] = $parentContext[self::ATTRIBUTES][$attribute];
+        if (isset($parentContext['attributes'][$attribute])) {
+            $parentContext['attributes'] = $parentContext['attributes'][$attribute];
         } else {
-            unset($parentContext[self::ATTRIBUTES]);
+            unset($parentContext['attributes']);
         }
 
         return $parentContext;
+    }
+
+    protected function getOptions(?Context $context): AbstractNormalizerOptions
+    {
+        $options = $context?->getOptions(static::getOptionsType());
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * @return class-string<AbstractNormalizerOptions>
+     */
+    /* abstract */ protected static function getOptionsType(): string
+    {
+        // TODO
+        trigger_deprecation('symfony/serializer', '6.1', 'You must override getOptionsType which will become abstract');
+
+        return AbstractNormalizerOptions::class;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @internal
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    protected function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'circular_reference_limit' => $context['circular_reference_limit'] ?? $defaultLegacyContext['circular_reference_limit'],
+                'object_to_populate' => $context['object_to_populate'] ?? $defaultLegacyContext['object_to_populate'],
+                'groups' => $context['groups'] ?? $defaultLegacyContext['groups'],
+                'attributes' => $context['attributes'] ?? $defaultLegacyContext['attributes'],
+                'allow_extra_attributes' => $context['allow_extra_attributes'] ?? $defaultLegacyContext['allow_extra_attributes'],
+                'default_constructor_arguments' => $context['default_constructor_arguments'] ?? $defaultLegacyContext['default_constructor_arguments'],
+                'callbacks' => $context['callbacks'] ?? $defaultLegacyContext['callbacks'],
+                'circular_reference_handler' => $context['circular_reference_handler'] ?? $defaultLegacyContext['circular_reference_handler'],
+                'ignored_attributes' => $context['ignored_attributes'] ?? $defaultLegacyContext['ignored_attributes'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

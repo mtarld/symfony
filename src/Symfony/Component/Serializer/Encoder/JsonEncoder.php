@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Encoder\JsonEncoderOptions;
+
 /**
  * Encodes JSON data.
  *
@@ -25,23 +28,35 @@ class JsonEncoder implements EncoderInterface, DecoderInterface
 
     public function __construct(JsonEncode $encodingImpl = null, JsonDecode $decodingImpl = null)
     {
+        $decodingContext = new Context((new JsonEncoderOptions())->setAssociative(true));
+
         $this->encodingImpl = $encodingImpl ?? new JsonEncode();
-        $this->decodingImpl = $decodingImpl ?? new JsonDecode([JsonDecode::ASSOCIATIVE => true]);
+        $this->decodingImpl = $decodingImpl ?? new JsonDecode($decodingContext);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function encode(mixed $data, string $format, array $context = []): string
+    public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+
         return $this->encodingImpl->encode($data, self::FORMAT, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function decode(string $data, string $format, array $context = []): mixed
+    public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+
         return $this->decodingImpl->decode($data, self::FORMAT, $context);
     }
 

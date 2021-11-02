@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Normalizer;
 
 use Symfony\Component\PropertyInfo\Type;
+use Symfony\Component\Serializer\Context\Context;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
@@ -24,6 +25,8 @@ class DateTimeZoneNormalizer implements NormalizerInterface, DenormalizerInterfa
 {
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      *
      * @throws InvalidArgumentException
      */
@@ -49,7 +52,7 @@ class DateTimeZoneNormalizer implements NormalizerInterface, DenormalizerInterfa
      *
      * @throws NotNormalizableValueException
      */
-    public function denormalize(mixed $data, string $type, string $format = null, array $context = []): \DateTimeZone
+    public function denormalize(mixed $data, string $type, string $format = null /*, Context $context = null */): \DateTimeZone
     {
         if ('' === $data || null === $data) {
             throw NotNormalizableValueException::createForUnexpectedDataType('The data is either an empty string or null, you should pass a string that can be parsed as a DateTimeZone.', $data, [Type::BUILTIN_TYPE_STRING], $context['deserialization_path'] ?? null, true);

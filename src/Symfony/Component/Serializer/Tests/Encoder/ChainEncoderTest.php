@@ -32,21 +32,44 @@ class ChainEncoderTest extends TestCase
         $this->encoder1 = $this->createMock(EncoderInterface::class);
         $this->encoder1
             ->method('supportsEncoding')
-            ->willReturnMap([
-                [self::FORMAT_1, [], true],
-                [self::FORMAT_2, [], false],
-                [self::FORMAT_3, [], false],
-                [self::FORMAT_3, ['foo' => 'bar'], true],
-            ]);
+            ->will($this->returnCallback(static function (string $format, ?array $context = []): bool {
+                if (self::FORMAT_1 === $format && null === $context) {
+                    return true;
+                }
+
+                if (self::FORMAT_2 === $format && null === $context) {
+                    return false;
+                }
+
+                if (self::FORMAT_3 === $format && null === $context) {
+                    return false;
+                }
+
+                if (self::FORMAT_3 === $format && ['foo' => 'bar'] === $context) {
+                    return true;
+                }
+
+                throw new \InvalidArgumentException('Unexpected format and context combination');
+            }));
 
         $this->encoder2 = $this->createMock(EncoderInterface::class);
         $this->encoder2
             ->method('supportsEncoding')
-            ->willReturnMap([
-                [self::FORMAT_1, [], false],
-                [self::FORMAT_2, [], true],
-                [self::FORMAT_3, [], false],
-            ]);
+            ->will($this->returnCallback(static function (string $format, ?array $context = []): bool {
+                if (self::FORMAT_1 === $format && null === $context) {
+                    return false;
+                }
+
+                if (self::FORMAT_2 === $format && null === $context) {
+                    return true;
+                }
+
+                if (self::FORMAT_3 === $format && null === $context) {
+                    return false;
+                }
+
+                throw new \InvalidArgumentException('Unexpected format and context combination');
+            }));
 
         $this->chainEncoder = new ChainEncoder([$this->encoder1, $this->encoder2]);
     }

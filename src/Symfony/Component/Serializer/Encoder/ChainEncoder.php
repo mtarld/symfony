@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Encoder;
 
+use Symfony\Component\Serializer\Context\Context;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 
 /**
@@ -34,20 +35,36 @@ class ChainEncoder implements ContextAwareEncoderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    final public function encode(mixed $data, string $format, array $context = []): string
+    final public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
+        /** @var Context|array|null $context */
+        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         return $this->getEncoder($format, $context)->encode($data, $format, $context);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Context|null $context
      */
-    public function supportsEncoding(string $format, array $context = []): bool
+    public function supportsEncoding(string $format /*, Context $context = null */): bool
     {
+        /** @var Context|array|null $context */
+        $context = 1 < \func_num_args() ? \func_get_arg(1) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         try {
             $this->getEncoder($format, $context);
-        } catch (RuntimeException $e) {
+        } catch (RuntimeException) {
             return false;
         }
 
@@ -56,9 +73,17 @@ class ChainEncoder implements ContextAwareEncoderInterface
 
     /**
      * Checks whether the normalization is needed for the given format.
+     *
+     * @param Context|null $context
      */
-    public function needsNormalization(string $format, array $context = []): bool
+    public function needsNormalization(string $format /*, Context $context = null */): bool
     {
+        /** @var Context|array|null $context */
+        $context = 1 < \func_num_args() ? \func_get_arg(1) : null;
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        }
+
         $encoder = $this->getEncoder($format, $context);
 
         if (!$encoder instanceof NormalizationAwareInterface) {
@@ -77,7 +102,7 @@ class ChainEncoder implements ContextAwareEncoderInterface
      *
      * @throws RuntimeException if no encoder is found
      */
-    private function getEncoder(string $format, array $context): EncoderInterface
+    private function getEncoder(string $format, Context|array|null $context): EncoderInterface
     {
         if (isset($this->encoderByFormat[$format])
             && isset($this->encoders[$this->encoderByFormat[$format]])

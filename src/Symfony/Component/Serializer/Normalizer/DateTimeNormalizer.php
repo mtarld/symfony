@@ -12,6 +12,8 @@
 namespace Symfony\Component\Serializer\Normalizer;
 
 use Symfony\Component\PropertyInfo\Type;
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Normalizer\DateTimeNormalizerOptions;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
@@ -23,13 +25,11 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
  */
 class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, CacheableSupportsMethodInterface
 {
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const FORMAT_KEY = 'datetime_format';
-    public const TIMEZONE_KEY = 'datetime_timezone';
 
-    private $defaultContext = [
-        self::FORMAT_KEY => \DateTime::RFC3339,
-        self::TIMEZONE_KEY => null,
-    ];
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
+    public const TIMEZONE_KEY = 'datetime_timezone';
 
     private const SUPPORTED_TYPES = [
         \DateTimeInterface::class => true,
@@ -37,23 +37,46 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
         \DateTime::class => true,
     ];
 
-    public function __construct(array $defaultContext = [])
+    private ?array $defaultLegacyContext = null;
+
+    private ?DateTimeNormalizerOptions $defaultOptions = null;
+
+    /**
+     * @param Context|null $defaultContext
+     */
+    public function __construct(/* Context $defaultContext = null */)
     {
-        $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
+        /** @var Context|array|null $defaultContext */
+        $defaultContext = 0 < \func_num_args() ? \func_get_arg(0) : null;
+
+        if (\is_array($defaultContext)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new DateTimeNormalizerOptions())->toLegacyContext(), $defaultContext);
+
+            return;
+        }
+
+        $this->defaultOptions = $defaultContext?->getOptions(DateTimeNormalizerOptions::class) ?? new DateTimeNormalizerOptions();
     }
 
     /**
      * {@inheritdoc}
      *
+     * @param Context|null $context
+     *
      * @throws InvalidArgumentException
      */
-    public function normalize(mixed $object, string $format = null, array $context = []): string
+    public function normalize(mixed $object, string $format = null /*, Context $context = null */): string
     {
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
+
         if (!$object instanceof \DateTimeInterface) {
             throw new InvalidArgumentException('The object must implement the "\DateTimeInterface".');
         }
 
-        $dateTimeFormat = $context[self::FORMAT_KEY] ?? $this->defaultContext[self::FORMAT_KEY];
+        // TODO test it
+        $defaultContext = $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+        $dateTimeFormat = $context['datetime_format'] ?? $defaultContext['datetime_format'] ?? \DateTime::RFC3339;
         $timezone = $this->getTimezone($context);
 
         if (null !== $timezone) {
@@ -75,19 +98,21 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
     /**
      * {@inheritdoc}
      *
+     * @param Context|null $context
+     *
      * @throws NotNormalizableValueException
      */
-    public function denormalize(mixed $data, string $type, string $format = null, array $context = []): \DateTimeInterface
+    public function denormalize(mixed $data, string $type, string $format = null /*, Context $context = null */): \DateTimeInterface
     {
-        $dateTimeFormat = $context[self::FORMAT_KEY] ?? null;
+        $context = $this->getContext(3 < \func_num_args() ? \func_get_arg(3) : null);
         $timezone = $this->getTimezone($context);
 
         if (null === $data || (\is_string($data) && '' === trim($data))) {
             throw NotNormalizableValueException::createForUnexpectedDataType('The data is either an empty string or null, you should pass a string that can be parsed with the passed format or a valid DateTime string.', $data, [Type::BUILTIN_TYPE_STRING], $context['deserialization_path'] ?? null, true);
         }
 
-        if (null !== $dateTimeFormat) {
-            $object = \DateTime::class === $type ? \DateTime::createFromFormat($dateTimeFormat, $data, $timezone) : \DateTimeImmutable::createFromFormat($dateTimeFormat, $data, $timezone);
+        if (null !== $context['datetime_format']) {
+            $object = \DateTime::class === $type ? \DateTime::createFromFormat($context['datetime_format'], $data, $timezone) : \DateTimeImmutable::createFromFormat($context['datetime_format'], $data, $timezone);
 
             if (false !== $object) {
                 return $object;
@@ -95,7 +120,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
 
             $dateTimeErrors = \DateTime::class === $type ? \DateTime::getLastErrors() : \DateTimeImmutable::getLastErrors();
 
-            throw NotNormalizableValueException::createForUnexpectedDataType(sprintf('Parsing datetime string "%s" using format "%s" resulted in %d errors: ', $data, $dateTimeFormat, $dateTimeErrors['error_count'])."\n".implode("\n", $this->formatDateTimeErrors($dateTimeErrors['errors'])), $data, [Type::BUILTIN_TYPE_STRING], $context['deserialization_path'] ?? null, true);
+            throw NotNormalizableValueException::createForUnexpectedDataType(sprintf('Parsing datetime string "%s" using format "%s" resulted in %d errors: ', $data, $context['datetime_format'], $dateTimeErrors['error_count'])."\n".implode("\n", $this->formatDateTimeErrors($dateTimeErrors['errors'])), $data, [Type::BUILTIN_TYPE_STRING], $context['deserialization_path'] ?? null, true);
         }
 
         try {
@@ -139,12 +164,49 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
 
     private function getTimezone(array $context): ?\DateTimeZone
     {
-        $dateTimeZone = $context[self::TIMEZONE_KEY] ?? $this->defaultContext[self::TIMEZONE_KEY];
+        $dateTimeZone = $context['datetime_timezone'];
 
         if (null === $dateTimeZone) {
             return null;
         }
 
         return $dateTimeZone instanceof \DateTimeZone ? $dateTimeZone : new \DateTimeZone($dateTimeZone);
+    }
+
+    private function getOptions(?Context $context): DateTimeNormalizerOptions
+    {
+        $options = $context?->getOptions(DateTimeNormalizerOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'datetime_format' => $context['datetime_format'] ?? $defaultLegacyContext['datetime_format'],
+                'datetime_timezone' => $context['datetime_timezone'] ?? $defaultLegacyContext['datetime_timezone'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

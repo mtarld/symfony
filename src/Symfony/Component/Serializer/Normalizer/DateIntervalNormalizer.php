@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Normalizer;
 
+use Symfony\Component\Serializer\Context\Context;
+use Symfony\Component\Serializer\Context\Normalizer\DateIntervalNormalizerOptions;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 
@@ -22,29 +24,47 @@ use Symfony\Component\Serializer\Exception\UnexpectedValueException;
  */
 class DateIntervalNormalizer implements NormalizerInterface, DenormalizerInterface, CacheableSupportsMethodInterface
 {
+    /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const FORMAT_KEY = 'dateinterval_format';
 
-    private $defaultContext = [
-        self::FORMAT_KEY => '%rP%yY%mM%dDT%hH%iM%sS',
-    ];
+    private ?array $defaultLegacyContext = null;
 
-    public function __construct(array $defaultContext = [])
+    private ?DateIntervalNormalizerOptions $defaultOptions = null;
+
+    /**
+     * @param Context|null $defaultContext
+     */
+    public function __construct(/* Context $defaultContext = null */)
     {
-        $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
+        /** @var Context|array|null $defaultContext */
+        $defaultContext = 0 < \func_num_args() ? \func_get_arg(0) : null;
+
+        if (\is_array($defaultContext)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new DateIntervalNormalizerOptions())->toLegacyContext(), $defaultContext);
+
+            return;
+        }
+
+        $this->defaultOptions = $defaultContext?->getOptions(DateIntervalNormalizerOptions::class) ?? new DateIntervalNormalizerOptions();
     }
 
     /**
      * {@inheritdoc}
      *
+     * @param Context|null $context
+     *
      * @throws InvalidArgumentException
      */
-    public function normalize(mixed $object, string $format = null, array $context = []): string
+    public function normalize(mixed $object, string $format = null /*, Context $context = null */): string
     {
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
+
         if (!$object instanceof \DateInterval) {
             throw new InvalidArgumentException('The object must be an instance of "\DateInterval".');
         }
 
-        return $object->format($context[self::FORMAT_KEY] ?? $this->defaultContext[self::FORMAT_KEY]);
+        return $object->format($context['dateinterval_format']);
     }
 
     /**
@@ -66,11 +86,15 @@ class DateIntervalNormalizer implements NormalizerInterface, DenormalizerInterfa
     /**
      * {@inheritdoc}
      *
+     * @param Context|null $context
+     *
      * @throws InvalidArgumentException
      * @throws UnexpectedValueException
      */
-    public function denormalize(mixed $data, string $type, string $format = null, array $context = []): \DateInterval
+    public function denormalize(mixed $data, string $type, string $format = null /*, Context $context = null */): \DateInterval
     {
+        $context = $this->getContext(3 < \func_num_args() ? \func_get_arg(3) : null);
+
         if (!\is_string($data)) {
             throw new InvalidArgumentException(sprintf('Data expected to be a string, "%s" given.', get_debug_type($data)));
         }
@@ -79,7 +103,7 @@ class DateIntervalNormalizer implements NormalizerInterface, DenormalizerInterfa
             throw new UnexpectedValueException('Expected a valid ISO 8601 interval string.');
         }
 
-        $dateIntervalFormat = $context[self::FORMAT_KEY] ?? $this->defaultContext[self::FORMAT_KEY];
+        $dateIntervalFormat = $context['dateinterval_format'];
 
         $signPattern = '';
         switch (substr($dateIntervalFormat, 0, 2)) {
@@ -126,5 +150,41 @@ class DateIntervalNormalizer implements NormalizerInterface, DenormalizerInterfa
     private function isISO8601(string $string): bool
     {
         return preg_match('/^[\-+]?P(?=\w*(?:\d|%\w))(?:\d+Y|%[yY]Y)?(?:\d+M|%[mM]M)?(?:(?:\d+D|%[dD]D)|(?:\d+W|%[wW]W))?(?:T(?:\d+H|[hH]H)?(?:\d+M|[iI]M)?(?:\d+S|[sS]S)?)?$/', $string);
+    }
+
+    private function getOptions(?Context $context): DateIntervalNormalizerOptions
+    {
+        $options = $context?->getOptions(DateIntervalNormalizerOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'dateinterval_format' => $context['dateinterval_format'] ?? $defaultLegacyContext['dateinterval_format'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

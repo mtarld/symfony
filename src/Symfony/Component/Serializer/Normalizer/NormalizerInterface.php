@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Normalizer;
 
+use Symfony\Component\Serializer\Context\Context;
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
@@ -24,9 +25,9 @@ interface NormalizerInterface
     /**
      * Normalizes an object into a set of arrays/scalars.
      *
-     * @param mixed  $object  Object to normalize
-     * @param string $format  Format the normalization result will be encoded as
-     * @param array  $context Context options for the normalizer
+     * @param mixed        $object  Object to normalize
+     * @param string       $format  Format the normalization result will be encoded as
+     * @param Context|null $context Context options for the normalizer
      *
      * @return array|string|int|float|bool|\ArrayObject|null \ArrayObject is used to make sure an empty object is encoded as an object not an array
      *
@@ -36,7 +37,7 @@ interface NormalizerInterface
      * @throws LogicException             Occurs when the normalizer is not called in an expected context
      * @throws ExceptionInterface         Occurs for all the other cases of errors
      */
-    public function normalize(mixed $object, string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null;
+    public function normalize(mixed $object, string $format = null /*, Context $context = null */): array|string|int|float|bool|\ArrayObject|null;
 
     /**
      * Checks whether the given class is supported for normalization by this normalizer.
