@@ -49,7 +49,7 @@ class ChainEncoderTest extends TestCase
                     return true;
                 }
 
-                throw new \InvalidArgumentException('Unexpected TODO');
+                throw new \InvalidArgumentException('Unexpected format and context combination');
             }));
 
         $this->encoder2 = $this->createMock(EncoderInterface::class);
@@ -68,7 +68,7 @@ class ChainEncoderTest extends TestCase
                     return false;
                 }
 
-                throw new \InvalidArgumentException('Unexpected TODO');
+                throw new \InvalidArgumentException('Unexpected format and context combination');
             }));
 
         $this->chainEncoder = new ChainEncoder([$this->encoder1, $this->encoder2]);

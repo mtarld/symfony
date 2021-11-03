@@ -79,9 +79,11 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      */
     private $dom;
     private $format;
+    private array $context;
 
-    private XmlEncoderOptions $options;
-    private XmlEncoderOptions $defaultOptions;
+    private ?XmlEncoderOptions $defaultOptions = null;
+
+    private ?array $defaultLegacyContext = null;
 
     /**
      * @param Context|null $defaultContext
@@ -92,8 +94,9 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         $defaultContext = 0 < \func_num_args() ? \func_get_arg(0) : null;
         if (\is_array($defaultContext)) {
             trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new XmlEncoderOptions())->toLegacyContext(), $defaultContext);
 
-            $defaultContext = new Context(XmlEncoderOptions::fromLegacyContext($defaultContext));
+            return;
         }
 
         $this->defaultOptions = $defaultContext?->getOptions(XmlEncoderOptions::class) ?? new XmlEncoderOptions();
@@ -106,31 +109,23 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      */
     public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
-            $context = new Context(XmlEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
-
-        $ignorePiNode = \in_array(\XML_PI_NODE, $options->getEncoderIgnoredNodeTypes(), true);
+        $ignorePiNode = \in_array(\XML_PI_NODE, $context['encoder_ignored_node_types'], true);
         if ($data instanceof \DOMDocument) {
             return $data->saveXML($ignorePiNode ? $data->documentElement : null);
         }
 
-        $this->dom = $this->createDomDocument($options);
+        $this->dom = $this->createDomDocument($context);
         $this->format = $format;
-        $this->options = $options;
+        $this->context = $context;
 
         if (null !== $data && !is_scalar($data)) {
-            $root = $this->dom->createElement($options->getRootNodeName());
+            $root = $this->dom->createElement($context['xml_root_node_name']);
             $this->dom->appendChild($root);
-            $this->buildXml($root, $data, $options->getRootNodeName());
+            $this->buildXml($root, $data, $context['xml_root_node_name']);
         } else {
-            $this->appendNode($this->dom, $data, $options->getRootNodeName());
+            $this->appendNode($this->dom, $data, $context['xml_root_node_name']);
         }
 
         return $this->dom->saveXML($ignorePiNode ? $this->dom->documentElement : null);
@@ -143,25 +138,17 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      */
     public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(XmlEncoderOptions::fromLegacyContext($context));
-        }
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
         if ('' === trim($data)) {
             throw new NotEncodableValueException('Invalid XML data, it cannot be empty.');
         }
 
-        $options = $this->getOptions($context);
-
         $internalErrors = libxml_use_internal_errors(true);
         libxml_clear_errors();
 
         $dom = new \DOMDocument();
-        $dom->loadXML($data, $options->getLoadOptions());
+        $dom->loadXML($data, $context['load_options']);
 
         libxml_use_internal_errors($internalErrors);
 
@@ -176,7 +163,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
             if (\XML_DOCUMENT_TYPE_NODE === $child->nodeType) {
                 throw new NotEncodableValueException('Document types are not allowed.');
             }
-            if (!$rootNode && !\in_array($child->nodeType, $options->getDecoderIgnoredNodeTypes(), true)) {
+            if (!$rootNode && !\in_array($child->nodeType, $context['decoder_ignored_node_types'], true)) {
                 $rootNode = $child;
             }
         }
@@ -193,10 +180,10 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
             unset($data['@xmlns:xml']);
 
             if (empty($data)) {
-                return $this->parseXml($rootNode, $options);
+                return $this->parseXml($rootNode, $context);
             }
 
-            return array_merge($data, (array) $this->parseXml($rootNode, $options));
+            return array_merge($data, (array) $this->parseXml($rootNode, $context));
         }
 
         if (!$rootNode->hasAttributes()) {
@@ -287,21 +274,14 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
             preg_match('#^[\pL_][\pL0-9._:-]*$#ui', $name);
     }
 
-    private function getOptions(?Context $context): XmlEncoderOptions
-    {
-        $options = $context?->getOptions(XmlEncoderOptions::class);
-
-        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
-    }
-
     /**
      * Parse the input DOMNode into an array or a string.
      */
-    private function parseXml(\DOMNode $node, XmlEncoderOptions $options): array|string
+    private function parseXml(\DOMNode $node, array $context): array|string
     {
-        $data = $this->parseXmlAttributes($node, $options);
+        $data = $this->parseXmlAttributes($node, $context);
 
-        $value = $this->parseXmlValue($node, $options);
+        $value = $this->parseXmlValue($node, $context);
 
         if (!\count($data)) {
             return $value;
@@ -329,7 +309,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
     /**
      * Parse the input DOMNode attributes into an array.
      */
-    private function parseXmlAttributes(\DOMNode $node, XmlEncoderOptions $options): array
+    private function parseXmlAttributes(\DOMNode $node, array $context): array
     {
         if (!$node->hasAttributes()) {
             return [];
@@ -337,7 +317,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
         $data = [];
         foreach ($node->attributes as $attr) {
-            if (!is_numeric($attr->nodeValue) || !$options->isTypeCastAttributes() || (isset($attr->nodeValue[1]) && '0' === $attr->nodeValue[0] && '.' !== $attr->nodeValue[1])) {
+            if (!is_numeric($attr->nodeValue) || !$context['xml_type_cast_attributes'] || (isset($attr->nodeValue[1]) && '0' === $attr->nodeValue[0] && '.' !== $attr->nodeValue[1])) {
                 $data['@'.$attr->nodeName] = $attr->nodeValue;
 
                 continue;
@@ -358,7 +338,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
     /**
      * Parse the input DOMNode value (content and children) into an array or a string.
      */
-    private function parseXmlValue(\DOMNode $node, XmlEncoderOptions $options): array|string
+    private function parseXmlValue(\DOMNode $node, array $context): array|string
     {
         if (!$node->hasChildNodes()) {
             return $node->nodeValue;
@@ -370,11 +350,11 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
         $value = [];
         foreach ($node->childNodes as $subnode) {
-            if (\in_array($subnode->nodeType, $options->getDecoderIgnoredNodeTypes(), true)) {
+            if (\in_array($subnode->nodeType, $context['decoder_ignored_node_types'], true)) {
                 continue;
             }
 
-            $val = $this->parseXml($subnode, $options);
+            $val = $this->parseXml($subnode, $context);
 
             if ('item' === $subnode->nodeName && isset($val['@key'])) {
                 $value[$val['@key']] = $val['#'] ?? $val;
@@ -384,7 +364,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         }
 
         foreach ($value as $key => $val) {
-            if (!$options->isAsCollection() && \is_array($val) && 1 === \count($val)) {
+            if (!$context['as_collection'] && \is_array($val) && 1 === \count($val)) {
                 $value[$key] = current($val);
             }
         }
@@ -406,14 +386,13 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
                 //Ah this is the magic @ attribute types.
                 if (str_starts_with($key, '@') && $this->isElementNameValid($attributeName = substr($key, 1))) {
                     if (!is_scalar($data)) {
-                        // TODO
-                        $data = $this->serializer->normalize($data, $this->format, [] /* $this->context */);
+                        $data = $this->serializer->normalize($data, $this->format, $this->context);
                     }
                     $parentNode->setAttribute($attributeName, $data);
                 } elseif ('#' === $key) {
                     $append = $this->selectNodeType($parentNode, $data);
                 } elseif ('#comment' === $key) {
-                    if (!\in_array(\XML_COMMENT_NODE, $this->options->getEncoderIgnoredNodeTypes(), true)) {
+                    if (!\in_array(\XML_COMMENT_NODE, $this->context['encoder_ignored_node_types'], true)) {
                         $append = $this->appendComment($parentNode, $data);
                     }
                 } elseif (\is_array($data) && false === is_numeric($key)) {
@@ -432,7 +411,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
                     }
                 } elseif (is_numeric($key) || !$this->isElementNameValid($key)) {
                     $append = $this->appendNode($parentNode, $data, 'item', $key);
-                } elseif (null !== $data || !$this->options->isRemoveEmptyTags()) {
+                } elseif (null !== $data || !$this->context['remove_empty_tags']) {
                     $append = $this->appendNode($parentNode, $data, $key);
                 }
             }
@@ -445,8 +424,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
                 throw new BadMethodCallException(sprintf('The serializer needs to be set to allow "%s()" to be used with object data.', __METHOD__));
             }
 
-            // TODO
-            $data = $this->serializer->normalize($data, $this->format, []/* $this->context */);
+            $data = $this->serializer->normalize($data, $this->format, $this->context);
             if (null !== $data && !is_scalar($data)) {
                 return $this->buildXml($parentNode, $data, $xmlRootNodeName);
             }
@@ -513,8 +491,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
                 throw new BadMethodCallException(sprintf('The serializer needs to be set to allow "%s()" to be used with object data.', __METHOD__));
             }
 
-            // TODO
-            return $this->selectNodeType($node, $this->serializer->normalize($val, $this->format, [], /* $this->context */));
+            return $this->selectNodeType($node, $this->serializer->normalize($val, $this->format, $this->context));
         } elseif (is_numeric($val)) {
             return $this->appendText($node, (string) $val);
         } elseif (\is_string($val) && $this->needsCdataWrapping($val)) {
@@ -531,16 +508,16 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
     /**
      * Create a DOM document, taking serializer options into account.
      */
-    private function createDomDocument(XmlEncoderOptions $options): \DOMDocument
+    private function createDomDocument(array $context): \DOMDocument
     {
         $document = new \DOMDocument();
 
         // Set an attribute on the DOM document specifying, as part of the XML declaration,
         $xmlOptions = [
-            'formatOutput' => $options->isFormatOutput(),
-            'xmlVersion' => $options->getVersion(),
-            'encoding' => $options->getEncoding(),
-            'xmlStandalone' => $options->isStandalone(),
+            'formatOutput' => $context['xml_format_output'],
+            'xmlVersion' => $context['xml_version'],
+            'encoding' => $context['xml_encoding'],
+            'xmlStandalone' => $context['xml_standalone'],
         ];
 
         foreach ($xmlOptions as $documentProperty => $value) {
@@ -550,5 +527,51 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         }
 
         return $document;
+    }
+
+    private function getOptions(?Context $context): XmlEncoderOptions
+    {
+        $options = $context?->getOptions(XmlEncoderOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'as_collection' => $context['as_collection'] ?? $defaultLegacyContext['as_collection'],
+                'decoder_ignored_node_types' => $context['decoder_ignored_node_types'] ?? $defaultLegacyContext['decoder_ignored_node_types'],
+                'encoder_ignored_node_types' => $context['encoder_ignored_node_types'] ?? $defaultLegacyContext['encoder_ignored_node_types'],
+                'xml_encoding' => $context['xml_encoding'] ?? $defaultLegacyContext['xml_encoding'],
+                'xml_format_output' => $context['xml_format_output'] ?? $defaultLegacyContext['xml_format_output'],
+                'load_options' => $context['load_options'] ?? $defaultLegacyContext['load_options'],
+                'remove_empty_tags' => $context['remove_empty_tags'] ?? $defaultLegacyContext['remove_empty_tags'],
+                'xml_root_node_name' => $context['xml_root_node_name'] ?? $defaultLegacyContext['xml_root_node_name'],
+                'xml_standalone' => $context['xml_standalone'] ?? $defaultLegacyContext['xml_standalone'],
+                'xml_type_cast_attributes' => $context['xml_type_cast_attributes'] ?? $defaultLegacyContext['xml_type_cast_attributes'],
+                'xml_version' => $context['xml_version'] ?? $defaultLegacyContext['xml_version'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

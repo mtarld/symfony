@@ -43,7 +43,9 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
     private $dumper;
     private $parser;
 
-    private YamlEncoderOptions $defaultOptions;
+    private ?YamlEncoderOptions $defaultOptions = null;
+
+    private ?array $defaultLegacyContext = null;
 
     /**
      * @param Context|null $defaultContext
@@ -61,8 +63,9 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
         $defaultContext = 2 < \func_num_args() ? \func_get_arg(2) : null;
         if (\is_array($defaultContext)) {
             trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new YamlEncoderOptions())->toLegacyContext(), $defaultContext);
 
-            $defaultContext = new Context(YamlEncoderOptions::fromLegacyContext($defaultContext));
+            return;
         }
 
         $this->defaultOptions = $defaultContext?->getOptions(YamlEncoderOptions::class) ?? new YamlEncoderOptions();
@@ -75,22 +78,14 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
      */
     public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
-            $context = new Context(YamlEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
-
-        $flags = $options->getFlags();
-        if ($options->getPreserveEmptyObjects()) {
+        $flags = $context['yaml_flags'];
+        if ($context['preserve_empty_objects']) {
             $flags |= Yaml::DUMP_OBJECT_AS_MAP;
         }
 
-        return $this->dumper->dump($data, $options->getInlineThreshold(), $options->getIndentLevel(), $flags);
+        return $this->dumper->dump($data, $context['yaml_inline'], $context['yaml_indent'], $flags);
     }
 
     /**
@@ -108,17 +103,9 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
      */
     public function decode(string $data, string $format /*, Context $context = null */): mixed
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
-            $context = new Context(YamlEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
-
-        return $this->parser->parse($data, $options->getFlags());
+        return $this->parser->parse($data, $context['yaml_flags']);
     }
 
     /**
@@ -134,5 +121,37 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
         $options = $context?->getOptions(YamlEncoderOptions::class);
 
         return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'yaml_inline' => $context['yaml_inline'] ?? $defaultLegacyContext['yaml_inline'],
+                'yaml_indent' => $context['yaml_indent'] ?? $defaultLegacyContext['yaml_indent'],
+                'yaml_flags' => $context['yaml_flags'] ?? $defaultLegacyContext['yaml_flags'],
+                'preserve_empty_objects' => $context['preserve_empty_objects'] ?? $defaultLegacyContext['preserve_empty_objects'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

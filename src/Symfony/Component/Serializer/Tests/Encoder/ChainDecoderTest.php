@@ -48,7 +48,7 @@ class ChainDecoderTest extends TestCase
                     return true;
                 }
 
-                throw new \InvalidArgumentException('Unexpected TODO');
+                throw new \InvalidArgumentException('Unexpected format and context combination');
             }));
 
         $this->decoder2 = $this->createMock(DecoderInterface::class);
@@ -67,7 +67,7 @@ class ChainDecoderTest extends TestCase
                     return false;
                 }
 
-                throw new \InvalidArgumentException('Unexpected TODO');
+                throw new \InvalidArgumentException('Unexpected format and context combination');
             }));
 
         $this->chainDecoder = new ChainDecoder([$this->decoder1, $this->decoder2]);

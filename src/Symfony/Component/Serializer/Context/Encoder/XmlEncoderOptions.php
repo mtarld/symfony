@@ -240,22 +240,22 @@ final class XmlEncoderOptions
     /**
      * @internal
      *
-     * @param array<string, mixed> $legacyContext
+     * @return array<string, mixed>
      */
-    public static function fromLegacyContext(array $legacyContext = []): self
+    public function toLegacyContext(): array
     {
-        return (new self())
-            ->setAsCollection($legacyContext['as_collection'] ?? null)
-            ->setDecoderIgnoredNodeTypes($legacyContext['decoder_ignored_node_types'] ?? null)
-            ->setEncoderIgnoredNodeTypes($legacyContext['encoder_ignored_node_types'] ?? null)
-            ->setEncoding($legacyContext['xml_encoding'] ?? null)
-            ->setFormatOutput($legacyContext['xml_format_output'] ?? null)
-            ->setLoadOptions($legacyContext['load_options'] ?? null)
-            ->setRemoveEmptyTags($legacyContext['remove_empty_tags'] ?? null)
-            ->setRootNodeName($legacyContext['xml_root_node_name'] ?? null)
-            ->setStandalone($legacyContext['xml_standalone'] ?? null)
-            ->setTypeCastAttributes($legacyContext['xml_type_cast_attributes'] ?? null)
-            ->setVersion($legacyContext['xml_version'] ?? null)
-        ;
+        return [
+            'as_collection' => $this->isAsCollection(),
+            'decoder_ignored_node_types' => $this->getDecoderIgnoredNodeTypes(),
+            'encoder_ignored_node_types' => $this->getEncoderIgnoredNodeTypes(),
+            'xml_encoding' => $this->getEncoding(),
+            'xml_format_output' => $this->isFormatOutput(),
+            'load_options' => $this->getLoadOptions(),
+            'remove_empty_tags' => $this->isRemoveEmptyTags(),
+            'xml_root_node_name' => $this->getRootNodeName(),
+            'xml_standalone' => $this->isStandalone(),
+            'xml_type_cast_attributes' => $this->isTypeCastAttributes(),
+            'xml_version' => $this->getVersion(),
+        ];
     }
 }

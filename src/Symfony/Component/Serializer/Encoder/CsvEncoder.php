@@ -59,7 +59,9 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
 
     private array $formulasStartCharacters = ['=', '-', '+', '@'];
 
-    private CsvEncoderOptions $defaultOptions;
+    private ?CsvEncoderOptions $defaultOptions = null;
+
+    private ?array $defaultLegacyContext = null;
 
     /**
      * @param Context|null $defaultContext
@@ -68,10 +70,12 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
     {
         /** @var Context|array|null $defaultContext */
         $defaultContext = 0 < \func_num_args() ? \func_get_arg(0) : null;
+
         if (\is_array($defaultContext)) {
             trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new CsvEncoderOptions())->toLegacyContext(), $defaultContext);
 
-            $defaultContext = new Context(CsvEncoderOptions::fromLegacyContext($defaultContext));
+            return;
         }
 
         $this->defaultOptions = $defaultContext?->getOptions(CsvEncoderOptions::class) ?? new CsvEncoderOptions();
@@ -84,15 +88,7 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
      */
     public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(CsvEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
         $handle = fopen('php://temp,', 'w+');
 
@@ -115,25 +111,25 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
 
         foreach ($data as &$value) {
             $flattened = [];
-            $this->flatten($value, $flattened, $options->getKeySeparator(), '', $options->isEscapeFormulas());
+            $this->flatten($value, $flattened, $context['csv_key_separator'], '', $context['csv_escape_formulas']);
             $value = $flattened;
         }
         unset($value);
 
-        $headers = array_merge(array_values($options->getHeaders()), array_diff($this->extractHeaders($data), $options->getHeaders()));
+        $headers = array_merge(array_values($context['csv_headers']), array_diff($this->extractHeaders($data), $context['csv_headers']));
 
-        if (!$options->isWithoutHeaders()) {
-            fputcsv($handle, $headers, $options->getDelimiter(), $options->getEnclosure(), $options->getEscapeChar());
-            if ("\n" !== $options->getEndOfLine() && 0 === fseek($handle, -1, \SEEK_CUR)) {
-                fwrite($handle, $options->getEndOfLine());
+        if (!$context['no_headers']) {
+            fputcsv($handle, $headers, $context['csv_delimiter'], $context['csv_enclosure'], $context['csv_escape_char']);
+            if ("\n" !== $context['csv_end_of_line'] && 0 === fseek($handle, -1, \SEEK_CUR)) {
+                fwrite($handle, $context['csv_end_of_line']);
             }
         }
 
         $headers = array_fill_keys($headers, '');
         foreach ($data as $row) {
-            fputcsv($handle, array_replace($headers, $row), $options->getDelimiter(), $options->getEnclosure(), $options->getEscapeChar());
-            if ("\n" !== $options->getEndOfLine() && 0 === fseek($handle, -1, \SEEK_CUR)) {
-                fwrite($handle, $options->getEndOfLine());
+            fputcsv($handle, array_replace($headers, $row), $context['csv_delimiter'], $context['csv_enclosure'], $context['csv_escape_char']);
+            if ("\n" !== $context['csv_end_of_line'] && 0 === fseek($handle, -1, \SEEK_CUR)) {
+                fwrite($handle, $context['csv_end_of_line']);
             }
         }
 
@@ -141,7 +137,7 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
         $value = stream_get_contents($handle);
         fclose($handle);
 
-        if ($options->isOutputUtf8Bom()) {
+        if ($context['output_utf8_bom']) {
             if (!preg_match('//u', $value)) {
                 throw new UnexpectedValueException('You are trying to add a UTF-8 BOM to a non UTF-8 text.');
             }
@@ -169,15 +165,7 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
     {
         // TODO enforce deprecation in debugclassloader (L614)
 
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(CsvEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
         $handle = fopen('php://temp', 'r+');
         fwrite($handle, $data);
@@ -192,20 +180,20 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
         $headerCount = [];
         $result = [];
 
-        while (false !== ($cols = fgetcsv($handle, 0, $options->getDelimiter(), $options->getEnclosure(), $options->getEscapeChar()))) {
+        while (false !== ($cols = fgetcsv($handle, 0, $context['csv_delimiter'], $context['csv_enclosure'], $context['csv_escape_char']))) {
             $nbCols = \count($cols);
 
             if (null === $headers) {
                 $nbHeaders = $nbCols;
 
-                if ($options->isWithoutHeaders()) {
+                if ($context['no_headers']) {
                     for ($i = 0; $i < $nbCols; ++$i) {
                         $headers[] = [$i];
                     }
                     $headerCount = array_fill(0, $nbCols, 1);
                 } else {
                     foreach ($cols as $col) {
-                        $header = explode($options->getKeySeparator(), $col);
+                        $header = explode($context['csv_key_separator'], $col);
                         $headers[] = $header;
                         $headerCount[] = \count($header);
                     }
@@ -238,7 +226,7 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
         }
         fclose($handle);
 
-        if ($options->isAsCollection()) {
+        if ($context['as_collection']) {
             return $result;
         }
 
@@ -256,13 +244,6 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
     public function supportsDecoding(string $format): bool
     {
         return self::FORMAT === $format;
-    }
-
-    private function getOptions(?Context $context): CsvEncoderOptions
-    {
-        $options = $context?->getOptions(CsvEncoderOptions::class);
-
-        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
     }
 
     /**
@@ -318,5 +299,55 @@ class CsvEncoder implements EncoderInterface, DecoderInterface
         }
 
         return $headers;
+    }
+
+    private function getOptions(?Context $context): CsvEncoderOptions
+    {
+        $options = $context?->getOptions(CsvEncoderOptions::class);
+
+        return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'csv_delimiter' => $context['csv_delimiter'] ?? $defaultLegacyContext['csv_delimiter'],
+                'csv_enclosure' => $context['csv_enclosure'] ?? $defaultLegacyContext['csv_enclosure'],
+                'csv_escape_char' => $context['csv_escape_char'] ?? $defaultLegacyContext['csv_escape_char'],
+                'csv_key_separator' => $context['csv_key_separator'] ?? $defaultLegacyContext['csv_key_separator'],
+                'csv_headers' => $context['csv_headers'] ?? $defaultLegacyContext['csv_headers'],
+                'csv_escape_formulas' => $context['csv_escape_formulas'] ?? $defaultLegacyContext['csv_escape_formulas'],
+                'as_collection' => $context['as_collection'] ?? $defaultLegacyContext['as_collection'],
+                'no_headers' => $context['no_headers'] ?? $defaultLegacyContext['no_headers'],
+                'csv_end_of_line' => $context['csv_end_of_line'] ?? $defaultLegacyContext['csv_end_of_line'],
+                'output_utf8_bom' => $context['output_utf8_bom'] ?? $defaultLegacyContext['output_utf8_bom'],
+            ];
+        }
+
+        // TODO comment in PR with like that and not using a simple "new" (allow references in context)
+        // TODO test passing by reference
+        // TODO comment in PR: prevent collision
+        // TODO comment in PR: Allow early check
+        // TODO comment in PR: Show how to do in 7.0 (in that class for example)
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

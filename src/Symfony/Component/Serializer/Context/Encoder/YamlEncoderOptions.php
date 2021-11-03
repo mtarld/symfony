@@ -33,7 +33,7 @@ final class YamlEncoderOptions
     private ?int $flags = null;
 
     /**
-     * TODO
+     * Whether perserve empty objects "{}" or convert them to null
      */
     private ?bool $preserveEmptyObjects = null;
 
@@ -77,7 +77,7 @@ final class YamlEncoderOptions
         return $this;
     }
 
-    public function getPreserveEmptyObjects(): ?bool
+    public function isPreserveEmptyObjects(): ?bool
     {
         return $this->preserveEmptyObjects;
     }
@@ -102,15 +102,15 @@ final class YamlEncoderOptions
     /**
      * @internal
      *
-     * @param array<string, mixed> $legacyContext
+     * @return array<string, mixed>
      */
-    public static function fromLegacyContext(array $legacyContext = []): self
+    public function toLegacyContext(): array
     {
-        return (new self())
-            ->setInlineThreshold($legacyContext['yaml_inline'] ?? null)
-            ->setIndentLevel($legacyContext['yaml_indent'] ?? null)
-            ->setFlags($legacyContext['yaml_flags'] ?? null)
-            ->setPreserveEmptyObjects($legacyContext['preserve_empty_objects'] ?? null)
-        ;
+        return [
+            'yaml_inline' => $this->getInlineThreshold(),
+            'yaml_indent' => $this->getIndentLevel(),
+            'yaml_flags' => $this->getFlags(),
+            'preserve_empty_objects' => $this->isPreserveEmptyObjects(),
+        ];
     }
 }

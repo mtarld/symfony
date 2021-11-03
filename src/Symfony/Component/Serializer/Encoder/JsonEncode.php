@@ -25,7 +25,9 @@ class JsonEncode implements EncoderInterface
     /** @deprecated since symfony/serializer 6.1, use Context instead */
     public const OPTIONS = 'json_encode_options';
 
-    private JsonEncoderOptions $defaultOptions;
+    private ?JsonEncoderOptions $defaultOptions = null;
+
+    private ?array $defaultLegacyContext = null;
 
     /**
      * @param Context|null $defaultContext
@@ -33,11 +35,14 @@ class JsonEncode implements EncoderInterface
     public function __construct(/* Context $defaultContext = null */)
     {
         /** @var Context|array|null $defaultContext */
-        $defaultContext = 1 < \func_num_args() ? \func_get_arg(1) : null;
+        // TODO test it
+        $defaultContext = 0 < \func_num_args() ? \func_get_arg(0) : null;
+
         if (\is_array($defaultContext)) {
             trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $defaultContext is deprecated.');
+            $this->defaultLegacyContext = array_merge((new JsonEncoderOptions())->toLegacyContext(), $defaultContext);
 
-            $defaultContext = new Context(JsonEncoderOptions::fromLegacyContext($defaultContext));
+            return;
         }
 
         $this->defaultOptions = $defaultContext?->getOptions(JsonEncoderOptions::class) ?? new JsonEncoderOptions();
@@ -50,27 +55,19 @@ class JsonEncode implements EncoderInterface
      */
     public function encode(mixed $data, string $format /*, Context $context = null */): string
     {
-        /** @var Context|array|null $context */
-        $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(JsonEncoderOptions::fromLegacyContext($context));
-        }
-
-        $options = $this->getOptions($context);
+        $context = $this->getContext(2 < \func_num_args() ? \func_get_arg(2) : null);
 
         try {
-            $encodedJson = json_encode($data, $options->getEncodeOptions());
+            $encodedJson = json_encode($data, $context['json_encode_options']);
         } catch (\JsonException $e) {
             throw new NotEncodableValueException($e->getMessage(), 0, $e);
         }
 
-        if (\JSON_THROW_ON_ERROR & $options->getEncodeOptions()) {
+        if (\JSON_THROW_ON_ERROR & $context['json_encode_options']) {
             return $encodedJson;
         }
 
-        if (\JSON_ERROR_NONE !== json_last_error() && (false === $encodedJson || !($options->getEncodeOptions() & \JSON_PARTIAL_OUTPUT_ON_ERROR))) {
+        if (\JSON_ERROR_NONE !== json_last_error() && (false === $encodedJson || !($context['json_encode_options'] & \JSON_PARTIAL_OUTPUT_ON_ERROR))) {
             throw new NotEncodableValueException(json_last_error_msg());
         }
 
@@ -90,5 +87,37 @@ class JsonEncode implements EncoderInterface
         $options = $context?->getOptions(JsonEncoderOptions::class);
 
         return null !== $options ? $options->merge($this->defaultOptions) : $this->defaultOptions;
+    }
+
+    /**
+     * Prepare a context array filled with defaults based
+     * on either a Context object or the legacy context array.
+     *
+     * Used for BC layer.
+     *
+     * @param Context|array<string, mixed>|null $context
+     *
+     * @return array<string, mixed>
+     */
+    private function getContext(Context|array|null $context): array
+    {
+        $defaultLegacyContext = null !== $this->defaultOptions ? $this->defaultOptions->toLegacyContext() : $this->defaultLegacyContext;
+
+        if (null === $context) {
+            return $defaultLegacyContext;
+        }
+
+        if (\is_array($context)) {
+            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
+
+            return [
+                'json_encode_options' => $context['json_encode_options'] ?? $defaultLegacyContext['json_encode_options'],
+                'json_decode_options' => $context['json_decode_options'] ?? $defaultLegacyContext['json_decode_options'],
+                'json_decode_associative' => $context['json_decode_associative'] ?? $defaultLegacyContext['json_decode_associative'],
+                'json_decode_recursion_depth' => $context['json_decode_recursion_depth'] ?? $defaultLegacyContext['json_decode_recursion_depth'],
+            ];
+        }
+
+        return $this->getOptions($context)->toLegacyContext();
     }
 }

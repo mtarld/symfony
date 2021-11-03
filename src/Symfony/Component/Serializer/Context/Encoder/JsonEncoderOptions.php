@@ -106,15 +106,15 @@ final class JsonEncoderOptions
     /**
      * @internal
      *
-     * @param array<string, mixed> $legacyContext
+     * @return array<string, mixed>
      */
-    public static function fromLegacyContext(array $legacyContext = []): self
+    public function toLegacyContext(): array
     {
-        return (new self())
-            ->setEncodeOptions($legacyContext['json_encode_options'] ?? null)
-            ->setDecodeOptions($legacyContext['json_decode_options'] ?? null)
-            ->setAssociative($legacyContext['json_decode_associative'] ?? null)
-            ->setRecursionDepth($legacyContext['json_decode_recursion_depth'] ?? null)
-        ;
+        return [
+            'json_encode_options' => $this->getEncodeOptions(),
+            'json_decode_options' => $this->getDecodeOptions(),
+            'json_decode_associative' => $this->isAssociative(),
+            'json_decode_recursion_depth' => $this->getRecursionDepth(),
+        ];
     }
 }

@@ -9,39 +9,36 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Context\Encoder;
+namespace Symfony\Component\Serializer\Context\Normalizer;
 
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 
-final class CsvEncoderOptions
+final class AbstractObjectNormalizerOptions
 {
     /**
-     * Column delimiter character.
-     * Must be one character only.
+     * Whether to respect the max depth metadata on fields.
      */
-    private ?string $delimiter = null;
+    private ?bool $enableMaxDepth = null;
 
     /**
-     * Field enclosure character.
-     * This must be one character only.
+     * Pattern to track the current depth in the context.
      */
-    private ?string $enclosure = null;
+    private ?string $depthKeyPattern = null;
 
     /**
-     * Escape character.
-     * Must be one character only.
+     * Whether to verify that types match while denormalizing.
      */
-    private ?string $escapeChar = null;
+    private ?bool $disableTypeEnforcement = null;
 
     /**
-     * Whether formulas should be escaped.
+     * Whether fields with the value `null` should be skipped from output.
      */
-    private ?string $endOfLine = null;
+    private ?bool $skipNullValues = null;
 
     /**
-     * Key separator when (un)flattening arrays.
+     * Whether uninitialized typed class properties should be excluded when normalizing.
      */
-    private ?string $keySeparator = null;
+    private ?bool $skipUnitializedValues = null;
 
     /**
      * CSV table headers.
@@ -227,21 +224,21 @@ final class CsvEncoderOptions
     /**
      * @internal
      *
-     * @return array<string, mixed>
+     * @param array<string, mixed> $legacyContext
      */
-    public function toLegacyContext(): array
+    public static function fromLegacyContext(array $legacyContext = []): self
     {
-        return [
-            'csv_delimiter' => $this->getDelimiter(),
-            'csv_enclosure' => $this->getEnclosure(),
-            'csv_escape_char' => $this->getEscapeChar(),
-            'csv_key_separator' => $this->getKeySeparator(),
-            'csv_headers' => $this->getHeaders(),
-            'csv_escape_formulas' => $this->isEscapeFormulas(),
-            'as_collection' => $this->isAsCollection(),
-            'no_headers' => $this->isWithoutHeaders(),
-            'csv_end_of_line' => $this->getEndOfLine(),
-            'output_utf8_bom' => $this->isOutputUtf8Bom(),
-        ];
+        return (new self())
+            ->setDelimiter($legacyContext['csv_delimiter'] ?? null)
+            ->setEnclosure($legacyContext['csv_enclosure'] ?? null)
+            ->setEscapeChar($legacyContext['csv_escape_char'] ?? null)
+            ->setKeySeparator($legacyContext['csv_key_separator'] ?? null)
+            ->setHeaders($legacyContext['csv_headers'] ?? null)
+            ->setEscapeFormulas($legacyContext['csv_escape_formulas'] ?? null)
+            ->setAsCollection($legacyContext['as_collection'] ?? null)
+            ->setWithoutHeaders($legacyContext['no_headers'] ?? null)
+            ->setEndOfLine($legacyContext['csv_end_of_line'] ?? null)
+            ->setOutputUtf8Bom($legacyContext['output_utf8_bom'] ?? null)
+        ;
     }
 }

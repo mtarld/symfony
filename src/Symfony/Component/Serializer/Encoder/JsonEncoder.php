@@ -43,11 +43,6 @@ class JsonEncoder implements EncoderInterface, DecoderInterface
     {
         /** @var Context|array|null $context */
         $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(JsonEncoderOptions::fromLegacyContext($context));
-        }
 
         return $this->encodingImpl->encode($data, self::FORMAT, $context);
     }
@@ -61,11 +56,6 @@ class JsonEncoder implements EncoderInterface, DecoderInterface
     {
         /** @var Context|array|null $context */
         $context = 2 < \func_num_args() ? \func_get_arg(2) : null;
-        if (\is_array($context)) {
-            trigger_deprecation('symfony/serializer', '6.1', 'Passing an array for $context is deprecated.');
-
-            $context = new Context(JsonEncoderOptions::fromLegacyContext($context));
-        }
 
         return $this->decodingImpl->decode($data, self::FORMAT, $context);
     }
