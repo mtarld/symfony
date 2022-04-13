@@ -20,5 +20,17 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    _instanceof:
+        App\Serializer\Encoder\Encoder:
+            tags: ['app.encoder']
+        App\Serializer\Exporter\Exporter:
+            tags: ['app.exporter']
+
+    App\Serializer\Serde:
+        arguments:
+            $encoders: !tagged_iterator app.encoder
+            $exporters: !tagged_iterator app.exporter
+
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
