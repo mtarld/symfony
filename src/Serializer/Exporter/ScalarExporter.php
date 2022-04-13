@@ -2,20 +2,20 @@
 
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Encoder\Encoder;
 use App\Serializer\Output\Output;
-use App\Serializer\Serializer;
 
-final class ScalarExporter implements Exporter
+final class ScalarExporter implements Exporter, EncoderAwareInterface
 {
-    public function export(mixed $value, string $type, Serializer $serializer, Encoder $encoder): Output
+    use EncoderAwareTrait;
+
+    public function export(mixed $value, string $type): Output
     {
         match ($type) {
-            'int' => $encoder->encodeInt($value),
-            'string' => $encoder->encodeString($value),
+            'int' => $this->encoder->encodeInt($value),
+            'string' => $this->encoder->encodeString($value),
         };
 
-        return $encoder->getOutput();
+        return $this->encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool

@@ -14,11 +14,13 @@ interface Encoder
 
     public function encodeString(string $value): void;
 
-    public function encodeDict(\Closure $generator, Serializer $serializer): void;
+    public function encodeDict(\Closure $generator): void;
 
-    public function encodeList(\Closure $generator, Serializer $serializer): void;
+    public function encodeList(\Closure $generator): void;
 
-    public function forOutput(Output $output): static;
+    public function withOutput(Output $output): static;
 
     public function getOutput(): Output|null;
+
+    public function withSerializer(Serializer $serializer): static;
 }

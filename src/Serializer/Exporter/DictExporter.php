@@ -1,24 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Encoder\Encoder;
 use App\Serializer\Output\Output;
-use App\Serializer\Serializer;
 
-final class DictExporter implements Exporter
+final class DictExporter implements Exporter, EncoderAwareInterface
 {
-    public function export(mixed $value, string $type, Serializer $serializer, Encoder $encoder): Output
+    use EncoderAwareTrait;
+
+    public function export(mixed $value, string $type): Output
     {
         $generator = function () use ($value): \Generator {
-            foreach ($value as $k => $v) {
-                yield $k => $v;
-            }
+            yield from $value;
         };
 
-        $encoder->encodeDict($generator, $serializer);
+        $this->encoder->encodeDict($generator);
 
-        return $encoder->getOutput();
+        return $this->encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool

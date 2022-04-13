@@ -2,8 +2,8 @@
 
 namespace App\Command;
 
-use App\Serializer\Serde;
 use App\Dto\Foo;
+use App\Serializer\Serializer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,7 +15,7 @@ class TestCommand extends Command
 {
     public function __construct(
         private PropertyInfoExtractorInterface $extractor,
-        private Serde $serializer,
+        private Serializer $serializer,
     ) {
         parent::__construct();
     }
@@ -25,9 +25,9 @@ class TestCommand extends Command
         $a = new Foo();
         $a->name = 'name';
 
-        dump((string) $this->serializer->serialize($a, 'json', 'string'));
-        dump((string) $this->serializer->serialize(['a' => 'b'], 'json', 'string'));
-        dump((string) $this->serializer->serialize([1, 2], 'json', 'string'));
+        $serializer = $this->serializer->withEncoding('json', 'string');
+
+        dump($serializer->serialize($a));
 
         return Command::SUCCESS;
     }

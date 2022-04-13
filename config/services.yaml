@@ -26,7 +26,7 @@ services:
         App\Serializer\Exporter\Exporter:
             tags: ['app.exporter']
 
-    App\Serializer\Serde:
+    App\Serializer\Serializer:
         arguments:
             $encoders: !tagged_iterator app.encoder
             $exporters: !tagged_iterator app.exporter

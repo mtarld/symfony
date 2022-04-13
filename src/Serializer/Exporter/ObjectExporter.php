@@ -2,31 +2,34 @@
 
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Encoder\Encoder;
 use App\Serializer\Extractor\ObjectPropertyListExtractorInterface;
 use App\Serializer\Output\Output;
-use App\Serializer\Serializer;
+use App\Serializer\Serializable;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class ObjectExporter implements Exporter
+final class ObjectExporter implements Exporter, EncoderAwareInterface
 {
+    use EncoderAwareTrait;
+
     public function __construct(
         private ObjectPropertyListExtractorInterface $propertyListExtractor,
         private PropertyAccessorInterface $accessor,
     ) {
     }
 
-    public function export(mixed $value, string $type, Serializer $serializer, Encoder $encoder): Output
+    public function export(mixed $value, string $type): Output
     {
-        $generator = function () use ($value): \Generator {
-            foreach ($this->propertyListExtractor->getProperties($value) as $property) {
-                yield $property => $this->accessor->getValue($value, $property);
-            }
-        };
+        $generator = $value instanceof Serializable
+            ? fn () => $value->normalize()
+            : function () use ($value): \Generator {
+                foreach ($this->propertyListExtractor->getProperties($value) as $property) {
+                    yield $property => $this->accessor->getValue($value, $property);
+                }
+            };
 
-        $encoder->encodeDict($generator, $serializer);
+        $this->encoder->encodeDict($generator);
 
-        return $encoder->getOutput();
+        return $this->encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool

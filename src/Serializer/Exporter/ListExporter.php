@@ -1,24 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Encoder\Encoder;
 use App\Serializer\Output\Output;
-use App\Serializer\Serializer;
 
-final class ListExporter implements Exporter
+final class ListExporter implements Exporter, EncoderAwareInterface
 {
-    public function export(mixed $value, string $type, Serializer $serializer, Encoder $encoder): Output
+    use EncoderAwareTrait;
+
+    public function export(mixed $value, string $type): Output
     {
         $generator = function () use ($value): \Generator {
-            foreach ($value as $k => $v) {
-                yield $k => $v;
-            }
+            yield from $value;
         };
 
-        $encoder->encodeList($generator, $serializer);
+        $this->encoder->encodeList($generator);
 
-        return $encoder->getOutput();
+        return $this->encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool

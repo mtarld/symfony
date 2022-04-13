@@ -9,8 +9,8 @@ use App\Serializer\Serializer;
 
 final class JsonEncoder implements Encoder
 {
-    private Output|null $output = null;
     private Serializer|null $serializer = null;
+    private Output|null $output = null;
 
     public function encodeInt(int $value): void
     {
@@ -22,13 +22,13 @@ final class JsonEncoder implements Encoder
         $this->write(sprintf('"%s"', $value));
     }
 
-    public function encodeDict(\Closure $generator, Serializer $serializer): void
+    public function encodeDict(\Closure $generator): void
     {
         $this->write('{');
 
         foreach ($generator() as $key => $value) {
             $this->write(sprintf('"%s":', $key));
-            $serializer->serialize($value);
+            $this->serialize($value);
             $this->write(',');
         }
 
@@ -36,12 +36,12 @@ final class JsonEncoder implements Encoder
         $this->write('}');
     }
 
-    public function encodeList(\Closure $generator, Serializer $serializer): void
+    public function encodeList(\Closure $generator): void
     {
         $this->write('[');
 
         foreach ($generator() as $value) {
-            $serializer->serialize($value);
+            $this->serialize($value);
             $this->write(',');
         }
 
@@ -49,7 +49,15 @@ final class JsonEncoder implements Encoder
         $this->write(']');
     }
 
-    public function forOutput(Output $output): static
+    public function withSerializer(Serializer $serializer): static
+    {
+        $clone = clone $this;
+        $clone->serializer = $serializer;
+
+        return $clone;
+    }
+
+    public function withOutput(Output $output): static
     {
         $clone = clone $this;
         $clone->output = $output;
@@ -65,6 +73,15 @@ final class JsonEncoder implements Encoder
     public function supports(string $format): bool
     {
         return 'json' === $format;
+    }
+
+    private function serialize(mixed $value): void
+    {
+        if (!$this->serializer) {
+            throw new \RuntimeException('Missing serializer');
+        }
+
+        $this->serializer->serialize($value);
     }
 
     private function write(string $value): void
