@@ -1,21 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Output\Output;
+use App\Serializer\Encoder\EncoderInterface;
+use App\Serializer\Output\OutputInterface;
 
 final class ScalarExporter implements Exporter
 {
-    use EncoderAwareTrait;
-
-    public function export(mixed $value, string $type): Output
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
     {
         match ($type) {
-            'int' => $this->encoder->encodeInt($value),
-            'string' => $this->encoder->encodeString($value),
+            'int' => $encoder->encodeInt($value),
+            'string' => $encoder->encodeString($value),
         };
 
-        return $this->encoder->getOutput();
+        return $encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool

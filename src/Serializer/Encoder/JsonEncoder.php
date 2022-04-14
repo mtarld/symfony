@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Serializer\Encoder;
 
-use App\Serializer\Output\Output;
-use App\Serializer\Serializer;
+use App\Serializer\Exporter\ChainExporter;
+use App\Serializer\Output\OutputInterface;
 
-final class JsonEncoder implements Encoder
+final class JsonEncoder implements EncoderInterface
 {
-    private Serializer|null $serializer = null;
-    private Output|null $output = null;
+    private OutputInterface|null $output = null;
 
     public function encodeInt(int $value): void
     {
@@ -22,13 +21,13 @@ final class JsonEncoder implements Encoder
         $this->write(sprintf('"%s"', $value));
     }
 
-    public function encodeDict(\Closure $generator): void
+    public function encodeDict(\Closure $generator, ChainExporter $serializer): void
     {
         $this->write('{');
 
         foreach ($generator() as $key => $value) {
             $this->write(sprintf('"%s":', $key));
-            $this->serialize($value);
+            $serializer->serialize($value);
             $this->write(',');
         }
 
@@ -36,12 +35,12 @@ final class JsonEncoder implements Encoder
         $this->write('}');
     }
 
-    public function encodeList(\Closure $generator): void
+    public function encodeList(\Closure $generator, ChainExporter $serializer): void
     {
         $this->write('[');
 
         foreach ($generator() as $value) {
-            $this->serialize($value);
+            $serializer->serialize($value);
             $this->write(',');
         }
 
@@ -49,15 +48,7 @@ final class JsonEncoder implements Encoder
         $this->write(']');
     }
 
-    public function withSerializer(Serializer $serializer): static
-    {
-        $clone = clone $this;
-        $clone->serializer = $serializer;
-
-        return $clone;
-    }
-
-    public function withOutput(Output $output): static
+    public function withOutput(OutputInterface $output): static
     {
         $clone = clone $this;
         $clone->output = $output;
@@ -65,7 +56,7 @@ final class JsonEncoder implements Encoder
         return $clone;
     }
 
-    public function getOutput(): Output|null
+    public function getOutput(): OutputInterface|null
     {
         return $this->output;
     }
@@ -73,15 +64,6 @@ final class JsonEncoder implements Encoder
     public function supports(string $format): bool
     {
         return 'json' === $format;
-    }
-
-    private function serialize(mixed $value): void
-    {
-        if (!$this->serializer) {
-            throw new \RuntimeException('Missing serializer');
-        }
-
-        $this->serializer->serialize($value);
     }
 
     private function write(string $value): void

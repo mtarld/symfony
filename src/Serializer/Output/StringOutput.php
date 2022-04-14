@@ -2,7 +2,7 @@
 
 namespace App\Serializer\Output;
 
-final class StringOutput implements Output
+final class StringOutput implements OutputInterface
 {
     private string $data = '';
 

@@ -6,22 +6,20 @@ namespace App\Serializer\Exporter;
 
 use App\Serializer\Encoder\EncoderInterface;
 use App\Serializer\Output\OutputInterface;
+use App\Serializer\SerializableInterface;
 
-final class DictExporter implements Exporter
+final class SerializableExporter implements Exporter
 {
+    /**
+     * @param SerializableInterface $value
+     */
     public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
     {
-        $generator = function () use ($value): \Generator {
-            yield from $value;
-        };
-
-        $encoder->encodeDict($generator, $chainSerializer);
-
-        return $encoder->getOutput();
+        return $value->serialize($encoder, $chainSerializer);
     }
 
     public function supports(mixed $value, string $type): bool
     {
-        return 'dict' === $type;
+        return 'object' === $type && $value instanceof SerializableInterface;
     }
 }

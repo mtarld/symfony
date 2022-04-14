@@ -2,7 +2,7 @@
 
 namespace App\Serializer\Output;
 
-interface Output extends \Stringable
+interface OutputInterface extends \Stringable
 {
     public function write(string $data): void;
 

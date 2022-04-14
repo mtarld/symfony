@@ -2,7 +2,7 @@
 
 namespace App\Serializer\Output;
 
-final class TemporaryStreamOutput implements Output
+final class TemporaryStreamOutput implements OutputInterface
 {
     /**
      * @var resource

@@ -25,9 +25,7 @@ class TestCommand extends Command
         $a = new Foo();
         $a->name = 'name';
 
-        $serializer = $this->serializer->withEncoding('json', 'string');
-
-        dump($serializer->serialize($a));
+        dump($this->serializer->serialize($a, 'json', 'string'));
 
         return Command::SUCCESS;
     }

@@ -21,7 +21,7 @@ services:
             - '../src/Kernel.php'
 
     _instanceof:
-        App\Serializer\Encoder\Encoder:
+        App\Serializer\Encoder\EncoderInterface:
             tags: ['app.encoder']
 
     App\Serializer\Exporter\DictExporter:
@@ -30,11 +30,14 @@ services:
     App\Serializer\Exporter\ListExporter:
         tags: ['app.exporter']
 
+    App\Serializer\Exporter\ScalarExporter:
+        tags: ['app.exporter']
+
     App\Serializer\Exporter\ObjectExporter:
         tags: ['app.exporter']
 
-    App\Serializer\Exporter\ScalarExporter:
-        tags: ['app.exporter']
+    App\Serializer\Exporter\SerializableExporter:
+        tags: [{ name: 'app.exporter', priority: 1 }]
 
     App\Serializer\Serializer:
         arguments:

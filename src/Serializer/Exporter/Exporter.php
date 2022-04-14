@@ -1,17 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Serializer\Exporter;
 
-use App\Serializer\Encoder\Encoder;
-use App\Serializer\Output\Output;
+use App\Serializer\Encoder\EncoderInterface;
+use App\Serializer\Output\OutputInterface;
 
 // TODO this is a serializer
 interface Exporter
 {
-    public function export(mixed $value, string $type): Output;
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface;
 
     public function supports(mixed $value, string $type): bool;
-
-    public function withEncoder(Encoder $encoder): static;
 }
-
