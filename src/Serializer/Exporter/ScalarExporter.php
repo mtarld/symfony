@@ -4,7 +4,7 @@ namespace App\Serializer\Exporter;
 
 use App\Serializer\Output\Output;
 
-final class ScalarExporter implements Exporter, EncoderAwareInterface
+final class ScalarExporter implements Exporter
 {
     use EncoderAwareTrait;
 

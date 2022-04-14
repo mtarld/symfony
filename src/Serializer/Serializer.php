@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Serializer;
 
 use App\Serializer\Encoder\Encoder;
-use App\Serializer\Exporter\EncoderAwareInterface;
-use App\Serializer\Exporter\Exporter;
+use App\Serializer\Exporter\ChainExporter;
 use App\Serializer\Output\Output;
 use App\Serializer\Output\StringOutput;
 use App\Serializer\Output\TemporaryStreamOutput;
@@ -19,6 +18,7 @@ final class Serializer
     private array $outputs;
 
     private Encoder|null $encoder = null;
+    private ChainExporter|null $chainSerializer = null;
 
     public function __construct(
         /** @var iterable<Encoder> */
@@ -38,35 +38,25 @@ final class Serializer
             throw new \RuntimeException('Missing encoder');
         }
 
-        $type = $this->getType($value);
-
-        $exporter = $this->findSerializer($value, $type, $this->exporters);
-        if ($exporter instanceof EncoderAwareInterface) {
-            $exporter = $exporter->withEncoder($this->encoder);
+        if (!$this->chainSerializer) {
+            throw new \RuntimeException('Missing chainSerializer');
         }
 
-        return $exporter->export($value, $type);
+        return $this->chainSerializer->export($value, $this->getType($value));
     }
 
     public function withEncoding(string $format, string $output = 'temporary_stream'): static
     {
         $clone = clone $this;
-        $clone->encoder = $this->findEncoder($format)
+
+        $encoder = $this->findEncoder($format)
             ->withOutput($this->outputs[$output])
             ->withSerializer($clone);
 
+        $clone->encoder = $encoder;
+        $clone->chainSerializer = new ChainExporter($clone->exporters, $clone->encoder);
+
         return $clone;
-    }
-
-    private function findSerializer(mixed $value, string $type, iterable $serializers): Exporter
-    {
-        foreach ($serializers as $serializer) {
-            if ($serializer->supports($value, $type)) {
-                return $serializer;
-            }
-        }
-
-        throw new \RuntimeException('Cannot find serializer');
     }
 
     private function findEncoder(string $format): Encoder

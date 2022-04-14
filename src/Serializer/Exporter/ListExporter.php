@@ -6,7 +6,7 @@ namespace App\Serializer\Exporter;
 
 use App\Serializer\Output\Output;
 
-final class ListExporter implements Exporter, EncoderAwareInterface
+final class ListExporter implements Exporter
 {
     use EncoderAwareTrait;
 

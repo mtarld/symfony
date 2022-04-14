@@ -6,7 +6,7 @@ namespace App\Serializer\Exporter;
 
 use App\Serializer\Output\Output;
 
-final class DictExporter implements Exporter, EncoderAwareInterface
+final class DictExporter implements Exporter
 {
     use EncoderAwareTrait;
 

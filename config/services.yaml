@@ -23,13 +23,27 @@ services:
     _instanceof:
         App\Serializer\Encoder\Encoder:
             tags: ['app.encoder']
-        App\Serializer\Exporter\Exporter:
-            tags: ['app.exporter']
+
+    App\Serializer\Exporter\DictExporter:
+        tags: ['app.exporter']
+
+    App\Serializer\Exporter\ListExporter:
+        tags: ['app.exporter']
+
+    App\Serializer\Exporter\ObjectExporter:
+        tags: ['app.exporter']
+
+    App\Serializer\Exporter\ScalarExporter:
+        tags: ['app.exporter']
 
     App\Serializer\Serializer:
         arguments:
             $encoders: !tagged_iterator app.encoder
             $exporters: !tagged_iterator app.exporter
+
+    App\Serializer\Exporter\ChainExporter:
+        arguments:
+            $serializers: !tagged_iterator app.exporter
 
 
     # add more service definitions when explicit configuration is needed

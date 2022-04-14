@@ -7,7 +7,7 @@ use App\Serializer\Output\Output;
 use App\Serializer\Serializable;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class ObjectExporter implements Exporter, EncoderAwareInterface
+final class ObjectExporter implements Exporter
 {
     use EncoderAwareTrait;
 
