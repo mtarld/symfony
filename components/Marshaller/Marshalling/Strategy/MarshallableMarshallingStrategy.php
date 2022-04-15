@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Marshalling\Strategy;
+namespace Symfony\Component\Marshaller\Marshalling\Strategy;
 
-use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Marshalling\MarshallableInterface;
+use Symfony\Component\Marshaller\Encoder\EncoderInterface;
+use Symfony\Component\Marshaller\Marshalling\MarshallableInterface;
 
 final class MarshallableMarshallingStrategy implements MarshallingStrategyInterface
 {

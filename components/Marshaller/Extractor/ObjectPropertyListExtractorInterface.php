@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Extractor;
+namespace Symfony\Component\Marshaller\Extractor;
 
 interface ObjectPropertyListExtractorInterface
 {

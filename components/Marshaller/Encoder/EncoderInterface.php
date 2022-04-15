@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Encoder;
+namespace Symfony\Component\Marshaller\Encoder;
 
 interface EncoderInterface
 {

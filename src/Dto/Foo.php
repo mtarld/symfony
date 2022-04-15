@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Marshalling\MarshallableInterface;
+use Symfony\Component\Marshaller\Encoder\EncoderInterface;
+use Symfony\Component\Marshaller\Marshalling\MarshallableInterface;
 
 final class Foo implements MarshallableInterface
 {

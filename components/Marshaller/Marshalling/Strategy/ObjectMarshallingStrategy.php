@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Marshalling\Strategy;
+namespace Symfony\Component\Marshaller\Marshalling\Strategy;
 
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractorInterface;
+use Symfony\Component\Marshaller\Encoder\EncoderInterface;
+use Symfony\Component\Marshaller\Extractor\ObjectPropertyListExtractorInterface;
 
 final class ObjectMarshallingStrategy implements MarshallingStrategyInterface
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Encoder;
+namespace Symfony\Component\Marshaller\Encoder;
 
-use Symfony\Component\NewSerializer\Output\OutputInterface;
+use Symfony\Component\Marshaller\Output\OutputInterface;
 
 interface EncoderFactoryInterface
 {

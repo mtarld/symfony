@@ -2,26 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Bundle;
+namespace Symfony\Component\Marshaller\Bundle;
 
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
-use Symfony\Component\NewSerializer\Encoder\JsonEncoderFactory;
-use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractor;
-use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractorInterface;
-use Symfony\Component\NewSerializer\Marshaller;
-use Symfony\Component\NewSerializer\MarshallerInterface;
-use Symfony\Component\NewSerializer\Marshalling\MarshallerFactory;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\DictMarshallingStrategy;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\ListMarshallingStrategy;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\MarshallableMarshallingStrategy;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\MarshallingStrategyInterface;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\ObjectMarshallingStrategy;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\ScalarMarshallingStrategy;
+use Symfony\Component\Marshaller\Encoder\JsonEncoderFactory;
+use Symfony\Component\Marshaller\Extractor\ObjectPropertyListExtractor;
+use Symfony\Component\Marshaller\Extractor\ObjectPropertyListExtractorInterface;
+use Symfony\Component\Marshaller\Marshaller;
+use Symfony\Component\Marshaller\MarshallerInterface;
+use Symfony\Component\Marshaller\Marshalling\MarshallerFactory;
+use Symfony\Component\Marshaller\Marshalling\Strategy\DictMarshallingStrategy;
+use Symfony\Component\Marshaller\Marshalling\Strategy\ListMarshallingStrategy;
+use Symfony\Component\Marshaller\Marshalling\Strategy\MarshallableMarshallingStrategy;
+use Symfony\Component\Marshaller\Marshalling\Strategy\MarshallingStrategyInterface;
+use Symfony\Component\Marshaller\Marshalling\Strategy\ObjectMarshallingStrategy;
+use Symfony\Component\Marshaller\Marshalling\Strategy\ScalarMarshallingStrategy;
 
-// TODO name it marshaller instead
 final class SerializerBundle extends Bundle
 {
     // TODO see what should be internal
@@ -68,15 +67,10 @@ new Reference('property_accessor'),
         $container->setAlias(ObjectPropertyListExtractorInterface::class, 'serializer.extractor.object_property_list');
 
         // Marshaller
-        $container->register('marshaller.marshalling.factory.json', MarshallerFactory::class)
+        $container->register('marshaller.json', Marshaller::class)
             ->setArguments([
                 new TaggedIteratorArgument('marshaller.marshalling_strategy'),
                 new Reference('marshaller.encoder.factory.json'),
-            ]);
-
-        $container->register('marshaller.json', Marshaller::class)
-            ->setArguments([
-                new Reference('marshaller.marshalling.factory.json'),
             ]);
 
         $container->registerAliasForArgument('marshaller.json', MarshallerInterface::class, 'jsonMarshaller');

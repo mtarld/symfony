@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Marshalling;
+namespace Symfony\Component\Marshaller\Marshalling;
 
-use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Marshalling\Strategy\MarshallingStrategyInterface;
+use Symfony\Component\Marshaller\Encoder\EncoderInterface;
+use Symfony\Component\Marshaller\Marshalling\Strategy\MarshallingStrategyInterface;
 
 /**
  * @internal

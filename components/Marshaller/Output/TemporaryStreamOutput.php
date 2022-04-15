@@ -1,19 +1,21 @@
 <?php
 
-namespace Symfony\Component\NewSerializer\Output;
+declare(strict_types=1);
 
-final class MemoryStreamOutput implements OutputInterface
+namespace Symfony\Component\Marshaller\Output;
+
+final class TemporaryStreamOutput implements StreamOutputInterface
 {
     /**
-     * @var resource
+     * @var resource|null
      */
     private $stream;
 
     private readonly string $filename;
 
-    public function __construct()
+    public function __construct(int $fileWriteMemoryThreshold = 2048)
     {
-        $this->filename = 'php://memory';
+        $this->filename = sprintf('php://temp/maxmemory:%d', $fileWriteMemoryThreshold);
     }
 
     public function write(string $value): void
@@ -36,6 +38,14 @@ final class MemoryStreamOutput implements OutputInterface
     /**
      * @return stream
      */
+    public function getStream()
+    {
+        return $this->getOrCreateStream();
+    }
+
+    /**
+     * @return stream
+     */
     private function getOrCreateStream()
     {
         if (null === $this->stream) {
@@ -45,4 +55,3 @@ final class MemoryStreamOutput implements OutputInterface
         return $this->stream;
     }
 }
-
