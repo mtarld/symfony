@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Serializer\Output;
+namespace Symfony\Component\NewSerializer\Output;
 
-final class MemoryStreamOutput implements OutputInterface
+final class TemporaryStreamOutput implements OutputInterface
 {
     /**
-     * @var resource
+     * @var resource|null
      */
     private $stream;
 
     private readonly string $filename;
 
-    public function __construct()
+    public function __construct(int $fileWriteMemoryThreshold = 2048)
     {
-        $this->filename = 'php://memory';
+        $this->filename = sprintf('php://temp/maxmemory:%d', $fileWriteMemoryThreshold);
     }
 
     public function write(string $value): void

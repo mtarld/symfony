@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer;
+namespace Symfony\Component\NewSerializer;
 
-use App\Serializer\Encoder\EncoderFactory;
-use App\Serializer\Serializer\ChainSerializer;
-use App\Serializer\Output\OutputInterface;
-use App\Serializer\Output\StringOutput;
+use Symfony\Component\NewSerializer\Encoder\EncoderFactory;
+use Symfony\Component\NewSerializer\Serializer\ChainSerializer;
+use Symfony\Component\NewSerializer\Output\OutputInterface;
+use Symfony\Component\NewSerializer\Output\StringOutput;
 
 final class Serializer implements SerializerInterface
 {

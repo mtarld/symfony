@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Serializer\Output;
+namespace Symfony\Component\NewSerializer\Output;
 
 interface OutputInterface extends \Stringable
 {

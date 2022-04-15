@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer;
+namespace Symfony\Component\NewSerializer;
 
-use App\Serializer\Encoder\EncoderInterface;
-use App\Serializer\Output\OutputInterface;
+use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
+use Symfony\Component\NewSerializer\Output\OutputInterface;
 
 interface SerializableInterface
 {

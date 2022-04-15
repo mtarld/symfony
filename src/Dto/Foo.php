@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-use App\Serializer\Encoder\EncoderInterface;
-use App\Serializer\Output\OutputInterface;
-use App\Serializer\SerializableInterface;
+use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
+use Symfony\Component\NewSerializer\Output\OutputInterface;
+use Symfony\Component\NewSerializer\SerializableInterface;
 
 final class Foo implements SerializableInterface
 {

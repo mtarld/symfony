@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer;
+namespace Symfony\Component\NewSerializer;
 
-use App\Serializer\Output\OutputInterface;
+use Symfony\Component\NewSerializer\Output\OutputInterface;
 
 interface SerializerInterface
 {

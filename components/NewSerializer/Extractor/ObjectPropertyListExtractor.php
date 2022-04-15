@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer\Extractor;
+namespace Symfony\Component\NewSerializer\Extractor;
 
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 

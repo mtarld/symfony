@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Serializer\Encoder;
+declare(strict_types=1);
 
-use App\Serializer\Output\OutputInterface;
+namespace Symfony\Component\NewSerializer\Encoder;
+
+use Symfony\Component\NewSerializer\Output\OutputInterface;
 
 interface EncoderInterface
 {

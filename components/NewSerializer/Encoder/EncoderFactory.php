@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer\Encoder;
+namespace Symfony\Component\NewSerializer\Encoder;
 
-use App\Serializer\Output\OutputInterface;
+use Symfony\Component\NewSerializer\Output\OutputInterface;
 
 final class EncoderFactory
 {

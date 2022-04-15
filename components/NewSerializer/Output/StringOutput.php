@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Serializer\Output;
+namespace Symfony\Component\NewSerializer\Output;
 
 final class StringOutput implements OutputInterface
 {
