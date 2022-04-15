@@ -50,11 +50,6 @@ final class JsonEncoder implements EncoderInterface
         $this->output->write(']');
     }
 
-    public function getOutput(): OutputInterface|null
-    {
-        return $this->output;
-    }
-
     public function supports(string $format): bool
     {
         return 'json' === $format;

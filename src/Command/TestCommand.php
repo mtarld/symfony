@@ -9,14 +9,14 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\NewSerializer\MarshallerInterface;
 use Symfony\Component\NewSerializer\Output\MemoryStreamOutput;
-use Symfony\Component\NewSerializer\SerializerInterface;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
 {
     public function __construct(
-        private SerializerInterface $serializer,
+        private MarshallerInterface $jsonMarshaller,
     ) {
         parent::__construct();
     }
@@ -26,8 +26,11 @@ class TestCommand extends Command
         $a = new Foo();
         $a->name = 'name';
 
-        $serializer = $this->serializer->withOutput(new MemoryStreamOutput());
-        dump((string) $serializer->serialize($a, 'json'));
+        $this->jsonMarshaller->marshal($a, $output = new MemoryStreamOutput());
+        dump((string) $output);
+
+        // $serializer = $this->serializer->withOutput(new MemoryStreamOutput());
+        // dump((string) $serializer->serialize($a, 'json'));
 
         return Command::SUCCESS;
     }

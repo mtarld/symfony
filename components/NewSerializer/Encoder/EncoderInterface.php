@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Component\NewSerializer\Encoder;
 
-use Symfony\Component\NewSerializer\Output\OutputInterface;
-
 interface EncoderInterface
 {
     public function encodeInt(int $value): void;
@@ -15,6 +13,4 @@ interface EncoderInterface
     public function encodeDict(\Closure $generator, \Closure $serialize): void;
 
     public function encodeList(\Closure $generator, \Closure $serialize): void;
-
-    public function getOutput(): OutputInterface|null;
 }

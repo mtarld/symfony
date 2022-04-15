@@ -1,28 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Symfony\Component\NewSerializer\Bundle;
 
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
-use Symfony\Component\NewSerializer\Encoder\EncoderFactory;
-use Symfony\Component\NewSerializer\Encoder\EncoderFactoryInterface;
 use Symfony\Component\NewSerializer\Encoder\JsonEncoderFactory;
 use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractor;
 use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractorInterface;
-use Symfony\Component\NewSerializer\Serializer;
-use Symfony\Component\NewSerializer\Serializer\ChainSerializer;
-use Symfony\Component\NewSerializer\Serializer\DictSerializer;
-use Symfony\Component\NewSerializer\Serializer\ListSerializer;
-use Symfony\Component\NewSerializer\Serializer\ObjectSerializer;
-use Symfony\Component\NewSerializer\Serializer\ScalarSerializer;
-use Symfony\Component\NewSerializer\Serializer\SerializableSerializer;
-use Symfony\Component\NewSerializer\SerializerInterface;
-use Symfony\Component\NewSerializer\Serializer\SerializerInterface as SymfonySerializerInterface;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
+use Symfony\Component\NewSerializer\Marshaller;
+use Symfony\Component\NewSerializer\MarshallerInterface;
+use Symfony\Component\NewSerializer\Marshalling\MarshallerFactory;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\DictMarshallingStrategy;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\ListMarshallingStrategy;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\MarshallableMarshallingStrategy;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\MarshallingStrategyInterface;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\ObjectMarshallingStrategy;
+use Symfony\Component\NewSerializer\Marshalling\Strategy\ScalarMarshallingStrategy;
 
+// TODO name it marshaller instead
 final class SerializerBundle extends Bundle
 {
     // TODO see what should be internal
@@ -31,63 +30,57 @@ final class SerializerBundle extends Bundle
         parent::build($container);
 
         // Encoders
-        $container->registerForAutoconfiguration(EncoderFactoryInterface::class)
-            ->addTag('serializer.encoder.factory', ['priority' => -128]);
+        $container->register('marshaller.encoder.factory.json', JsonEncoderFactory::class);
 
-        $container->register('serializer.encoder.factory.json', JsonEncoderFactory::class)
+        // Mashaller strategies
+        $container->registerForAutoconfiguration(MarshallingStrategyInterface::class)
+            ->addTag('marshaller.marshalling_strategy');
+
+        $container->register('marshaller.marshalling_strategy.dict', DictMarshallingStrategy::class)
             ->setAutoconfigured(false)
-            ->addTag('serializer.encoder.factory');
+            ->addTag('marshaller.marshalling_strategy', ['priority' => -256]);
 
-        $container->register('serializer.encoder.factory', EncoderFactory::class)
+        $container->register('marshaller.marshalling_strategy.list', ListMarshallingStrategy::class)
+            ->setAutoconfigured(false)
+            ->addTag('marshaller.marshalling_strategy', ['priority' => -256]);
+
+        $container->register('marshaller.marshalling_strategy.mashallable', MarshallableMarshallingStrategy::class)
+            ->setAutoconfigured(false)
+            ->addTag('marshaller.marshalling_strategy', ['priority' => -128]);
+
+        $container->register('marshaller.marshalling_strategy.object', ObjectMarshallingStrategy::class)
             ->setArguments([
-                new TaggedIteratorArgument('serializer.encoder.factory'),
-            ]);
-
-        // Serializers
-        $container->registerForAutoconfiguration(SymfonySerializerInterface::class)
-            ->addTag('serializer.encoder.factory');
-
-        $container->register('serializer.serializer.chain', ChainSerializer::class);
-
-        $container->register('serializer.serializer.dict', DictSerializer::class)
-            ->setAutoconfigured(false)
-            ->addTag('serializer.serializer', ['priority' => -256]);
-
-        $container->register('serializer.serializer.list', ListSerializer::class)
-            ->setAutoconfigured(false)
-            ->addTag('serializer.serializer', ['priority' => -256]);
-
-        $container->register('serializer.serializer.object', ObjectSerializer::class)
-            ->setArguments([
-                new Reference('serializer.extractor.object_property_list'),
-                new Reference('property_accessor'),
+new Reference('serializer.extractor.object_property_list'),
+new Reference('property_accessor'),
             ])
             ->setAutoconfigured(false)
-            ->addTag('serializer.serializer', ['priority' => -256]);
+            ->addTag('marshaller.marshalling_strategy', ['priority' => -256]);
 
-        $container->register('serializer.serializer.scalar', ScalarSerializer::class)
+        $container->register('marshaller.marshalling_strategy.scalar', ScalarMarshallingStrategy::class)
             ->setAutoconfigured(false)
-            ->addTag('serializer.serializer', ['priority' => -256]);
+            ->addTag('marshaller.marshalling_strategy', ['priority' => -256]);
 
-        $container->register('serializer.serializer.serializable', SerializableSerializer::class)
-            ->setAutoconfigured(false)
-            ->addTag('serializer.serializer', ['priority' => -128]);
-
-        // Extractor
+        // Extractors
         $container->register('serializer.extractor.object_property_list', ObjectPropertyListExtractor::class)
         ->setArguments([
             new Reference('property_info'),
         ]);
         $container->setAlias(ObjectPropertyListExtractorInterface::class, 'serializer.extractor.object_property_list');
 
-        // Main serializer
-        $container->register('serializer', Serializer::class)
+        // Marshaller
+        $container->register('marshaller.marshalling.factory.json', MarshallerFactory::class)
             ->setArguments([
-                new TaggedIteratorArgument('serializer.serializer'),
-                new Reference('serializer.encoder.factory'),
+                new TaggedIteratorArgument('marshaller.marshalling_strategy'),
+                new Reference('marshaller.encoder.factory.json'),
             ]);
 
-        $container->setAlias(SerializerInterface::class, 'serializer');
+        $container->register('marshaller.json', Marshaller::class)
+            ->setArguments([
+                new Reference('marshaller.marshalling.factory.json'),
+            ]);
+
+        $container->registerAliasForArgument('marshaller.json', MarshallerInterface::class, 'jsonMarshaller');
+
+        $container->setAlias(MarshallerInterface::class, 'serializer');
     }
 }
-

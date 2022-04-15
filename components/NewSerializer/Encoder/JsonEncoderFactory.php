@@ -12,9 +12,4 @@ final class JsonEncoderFactory implements EncoderFactoryInterface
     {
         return new JsonEncoder($output);
     }
-
-    public function supports(string $format): bool
-    {
-        return 'json' === $format;
-    }
 }

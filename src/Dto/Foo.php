@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace App\Dto;
 
 use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Output\OutputInterface;
-use Symfony\Component\NewSerializer\SerializableInterface;
+use Symfony\Component\NewSerializer\Marshalling\MarshallableInterface;
 
-final class Foo implements SerializableInterface
+final class Foo implements MarshallableInterface
 {
     public string $name;
     public int $bar = 123;
     public array $baz;
 
-    public function serialize(EncoderInterface $encoder, \Closure $serialize): OutputInterface
+    public function marshal(EncoderInterface $encoder, \Closure $marchal): void
     {
         $generator = function (): iterable {
             yield 'name' => 'foo';
@@ -23,8 +22,6 @@ final class Foo implements SerializableInterface
             yield 'aze' => ['a' => 'b'];
         };
 
-        $encoder->encodeDict($generator, $serialize);
-
-        return $encoder->getOutput();
+        $encoder->encodeDict($generator, $marchal);
     }
 }

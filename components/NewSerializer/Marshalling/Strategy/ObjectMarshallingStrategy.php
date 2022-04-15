@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\NewSerializer\Serializer;
+namespace Symfony\Component\NewSerializer\Marshalling\Strategy;
 
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\NewSerializer\Encoder\EncoderInterface;
-use Symfony\Component\NewSerializer\Output\OutputInterface;
 use Symfony\Component\NewSerializer\Extractor\ObjectPropertyListExtractorInterface;
 
-final class ObjectSerializer implements SerializerInterface
+final class ObjectMarshallingStrategy implements MarshallingStrategyInterface
 {
     public function __construct(
         private ObjectPropertyListExtractorInterface $propertyListExtractor,
@@ -17,7 +16,7 @@ final class ObjectSerializer implements SerializerInterface
     ) {
     }
 
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
+    public function marshal(mixed $value, string $type, EncoderInterface $encoder, \Closure $marshal): void
     {
         $generator = function () use ($value): \Generator {
             foreach ($this->propertyListExtractor->getProperties($value) as $property) {
@@ -25,12 +24,10 @@ final class ObjectSerializer implements SerializerInterface
             }
         };
 
-        $encoder->encodeDict($generator, $serialize);
-
-        return $encoder->getOutput();
+        $encoder->encodeDict($generator, $marshal);
     }
 
-    public function supports(mixed $value, string $type): bool
+    public function canMarshal(mixed $value, string $type): bool
     {
         return 'object' === $type;
     }
