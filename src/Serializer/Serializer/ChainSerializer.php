@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer\Exporter;
+namespace App\Serializer\Serializer;
 
 use App\Serializer\Encoder\EncoderInterface;
 use App\Serializer\Output\OutputInterface;
 
-final class ChainExporter
+final class ChainSerializer
 {
     public function __construct(
         private iterable $serializers,
@@ -23,7 +23,7 @@ final class ChainExporter
         return $serializer->serialize($value, $type, $this->encoder, $this->serialize(...));
     }
 
-    private function findSerializer(mixed $value, string $type): Exporter
+    private function findSerializer(mixed $value, string $type): SerializerInterface
     {
         foreach ($this->serializers as $serializer) {
             if ($serializer->supports($value, $type)) {

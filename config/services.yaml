@@ -27,32 +27,32 @@ services:
     App\Serializer\Encoder\JsonEncoderFactory:
         tags: ['app.encoder_factory']
 
-    App\Serializer\Exporter\DictExporter:
-        tags: ['app.exporter']
+    App\Serializer\Serializer\DictSerializer:
+        tags: ['app.serializer']
 
-    App\Serializer\Exporter\ListExporter:
-        tags: ['app.exporter']
+    App\Serializer\Serializer\ListSerializer:
+        tags: ['app.serializer']
 
-    App\Serializer\Exporter\ScalarExporter:
-        tags: ['app.exporter']
+    App\Serializer\Serializer\ScalarSerializer:
+        tags: ['app.serializer']
 
-    App\Serializer\Exporter\ObjectExporter:
-        tags: ['app.exporter']
+    App\Serializer\Serializer\ObjectSerializer:
+        tags: ['app.serializer']
 
-    App\Serializer\Exporter\SerializableExporter:
-        tags: [{ name: 'app.exporter', priority: 1 }]
+    App\Serializer\Serializer\SerializableSerializer:
+        tags: [{ name: 'app.serializer', priority: 1 }]
 
     App\Serializer\Serializer:
         arguments:
-            $exporters: !tagged_iterator app.exporter
+            $serializers: !tagged_iterator app.serializer
 
     App\Serializer\Encoder\EncoderFactory:
         arguments:
             $encoderFactories: !tagged_iterator app.encoder_factory
 
-    App\Serializer\Exporter\ChainExporter:
+    App\Serializer\Serializer\ChainSerializer:
         arguments:
-            $serializers: !tagged_iterator app.exporter
+            $serializers: !tagged_iterator app.serializer
 
 
     # add more service definitions when explicit configuration is needed

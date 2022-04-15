@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer\Exporter;
+namespace App\Serializer\Serializer;
 
 use App\Serializer\Encoder\EncoderInterface;
 use App\Serializer\Extractor\ObjectPropertyListExtractorInterface;
 use App\Serializer\Output\OutputInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class ObjectExporter implements Exporter
+final class ObjectSerializer implements SerializerInterface
 {
     public function __construct(
         private ObjectPropertyListExtractorInterface $propertyListExtractor,

@@ -2,25 +2,26 @@
 
 declare(strict_types=1);
 
-namespace App\Serializer\Exporter;
+namespace App\Serializer\Serializer;
 
 use App\Serializer\Encoder\EncoderInterface;
 use App\Serializer\Output\OutputInterface;
 
-final class ScalarExporter implements Exporter
+final class ListSerializer implements SerializerInterface
 {
     public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
-        match ($type) {
-            'int' => $encoder->encodeInt($value),
-            'string' => $encoder->encodeString($value),
+        $generator = function () use ($value): \Generator {
+            yield from $value;
         };
+
+        $encoder->encodeList($generator, $serialize);
 
         return $encoder->getOutput();
     }
 
     public function supports(mixed $value, string $type): bool
     {
-        return \in_array($type, ['int', 'string']);
+        return 'list' === $type;
     }
 }

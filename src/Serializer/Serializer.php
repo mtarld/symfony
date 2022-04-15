@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Serializer;
 
 use App\Serializer\Encoder\EncoderFactory;
-use App\Serializer\Exporter\ChainExporter;
+use App\Serializer\Serializer\ChainSerializer;
 use App\Serializer\Output\OutputInterface;
 use App\Serializer\Output\StringOutput;
 
@@ -14,8 +14,7 @@ final class Serializer implements SerializerInterface
     private OutputInterface $output;
 
     public function __construct(
-        /** @var iterable<Exporter> */
-        private iterable $exporters,
+        private iterable $serializers,
         private EncoderFactory $encoderFactory,
     ) {
         // TODO should be configurable (in FrameworkExtension - CompilerPass)
@@ -27,7 +26,7 @@ final class Serializer implements SerializerInterface
     {
         $encoder = $this->encoderFactory->create($format, $this->output);
 
-        return (new ChainExporter($this->exporters, $encoder))->serialize($value);
+        return (new ChainSerializer($this->serializers, $encoder))->serialize($value);
     }
 
     public function withOutput(OutputInterface $output): static
