@@ -9,7 +9,7 @@ use App\Serializer\Output\OutputInterface;
 
 final class ScalarExporter implements Exporter
 {
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
         match ($type) {
             'int' => $encoder->encodeInt($value),

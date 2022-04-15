@@ -3,19 +3,18 @@
 namespace App\Command;
 
 use App\Dto\Foo;
-use App\Serializer\Serializer;
+use App\Serializer\Output\MemoryStreamOutput;
+use App\Serializer\SerializerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
 {
     public function __construct(
-        private PropertyInfoExtractorInterface $extractor,
-        private Serializer $serializer,
+        private SerializerInterface $serializer,
     ) {
         parent::__construct();
     }
@@ -25,7 +24,8 @@ class TestCommand extends Command
         $a = new Foo();
         $a->name = 'name';
 
-        dump($this->serializer->serialize($a, 'json', 'string'));
+        $serializer = $this->serializer->withOutput(new MemoryStreamOutput());
+        dump((string) $serializer->serialize($a, 'json'));
 
         return Command::SUCCESS;
     }

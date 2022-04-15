@@ -24,6 +24,9 @@ services:
         App\Serializer\Encoder\EncoderInterface:
             tags: ['app.encoder']
 
+    App\Serializer\Encoder\JsonEncoderFactory:
+        tags: ['app.encoder_factory']
+
     App\Serializer\Exporter\DictExporter:
         tags: ['app.exporter']
 
@@ -41,8 +44,11 @@ services:
 
     App\Serializer\Serializer:
         arguments:
-            $encoders: !tagged_iterator app.encoder
             $exporters: !tagged_iterator app.exporter
+
+    App\Serializer\Encoder\EncoderFactory:
+        arguments:
+            $encoderFactories: !tagged_iterator app.encoder_factory
 
     App\Serializer\Exporter\ChainExporter:
         arguments:

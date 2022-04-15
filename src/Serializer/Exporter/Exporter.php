@@ -10,7 +10,7 @@ use App\Serializer\Output\OutputInterface;
 // TODO this is a serializer
 interface Exporter
 {
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface;
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface;
 
     public function supports(mixed $value, string $type): bool;
 }

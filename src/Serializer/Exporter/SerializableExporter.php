@@ -13,9 +13,9 @@ final class SerializableExporter implements Exporter
     /**
      * @param SerializableInterface $value
      */
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
-        return $value->serialize($encoder, $chainSerializer);
+        return $value->serialize($encoder, $serialize);
     }
 
     public function supports(mixed $value, string $type): bool

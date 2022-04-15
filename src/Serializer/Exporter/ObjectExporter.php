@@ -17,7 +17,7 @@ final class ObjectExporter implements Exporter
     ) {
     }
 
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
         $generator = function () use ($value): \Generator {
             foreach ($this->propertyListExtractor->getProperties($value) as $property) {
@@ -25,7 +25,7 @@ final class ObjectExporter implements Exporter
             }
         };
 
-        $encoder->encodeDict($generator, $chainSerializer);
+        $encoder->encodeDict($generator, $serialize);
 
         return $encoder->getOutput();
     }

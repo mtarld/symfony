@@ -20,7 +20,7 @@ final class ChainExporter
         $type = $this->getType($value);
         $serializer = $this->findSerializer($value, $type);
 
-        return $serializer->serialize($value, $type, $this->encoder, $this);
+        return $serializer->serialize($value, $type, $this->encoder, $this->serialize(...));
     }
 
     private function findSerializer(mixed $value, string $type): Exporter

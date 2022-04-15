@@ -9,13 +9,13 @@ use App\Serializer\Output\OutputInterface;
 
 final class DictExporter implements Exporter
 {
-    public function serialize(mixed $value, string $type, EncoderInterface $encoder, ChainExporter $chainSerializer): OutputInterface
+    public function serialize(mixed $value, string $type, EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
         $generator = function () use ($value): \Generator {
             yield from $value;
         };
 
-        $encoder->encodeDict($generator, $chainSerializer);
+        $encoder->encodeDict($generator, $serialize);
 
         return $encoder->getOutput();
     }

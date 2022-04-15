@@ -2,18 +2,18 @@
 
 namespace App\Serializer\Output;
 
-final class TemporaryStreamOutput implements OutputInterface
+final class MemoryStreamOutput implements OutputInterface
 {
     /**
-     * @var resource|null
+     * @var resource
      */
     private $stream;
 
     private readonly string $filename;
 
-    public function __construct(int $fileWriteMemoryThreshold = 2048)
+    public function __construct()
     {
-        $this->filename = sprintf('php://temp/maxmemory:%d', $fileWriteMemoryThreshold);
+        $this->filename = 'php://memory';
     }
 
     public function write(string $value): void

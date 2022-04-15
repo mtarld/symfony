@@ -4,46 +4,37 @@ declare(strict_types=1);
 
 namespace App\Serializer;
 
-use App\Serializer\Encoder\EncoderInterface;
+use App\Serializer\Encoder\EncoderFactory;
 use App\Serializer\Exporter\ChainExporter;
 use App\Serializer\Output\OutputInterface;
 use App\Serializer\Output\StringOutput;
-use App\Serializer\Output\TemporaryStreamOutput;
 
-final class Serializer
+final class Serializer implements SerializerInterface
 {
-    /**
-     * @var array<string, OutputInterface>
-     */
-    private array $outputs;
+    private OutputInterface $output;
 
     public function __construct(
-        /** @var iterable<EncoderInterface> */
-        private iterable $encoders,
         /** @var iterable<Exporter> */
         private iterable $exporters,
+        private EncoderFactory $encoderFactory,
     ) {
-        $this->outputs = [
-            'temporary_stream' => new TemporaryStreamOutput(),
-            'string' => new StringOutput(),
-        ];
+        // TODO should be configurable (in FrameworkExtension - CompilerPass)
+        // TODO what should be the default?
+        $this->output = new StringOutput();
     }
 
-    public function serialize(mixed $value, string $format, string $output = 'temporary_stream'): OutputInterface
+    public function serialize(mixed $value, string $format): OutputInterface
     {
-        $encoder = $this->findEncoder($format)->withOutput($this->outputs[$output]);
+        $encoder = $this->encoderFactory->create($format, $this->output);
 
         return (new ChainExporter($this->exporters, $encoder))->serialize($value);
     }
 
-    private function findEncoder(string $format): EncoderInterface
+    public function withOutput(OutputInterface $output): static
     {
-        foreach ($this->encoders as $encoder) {
-            if ($encoder->supports($format)) {
-                return $encoder;
-            }
-        }
+        $clone = clone $this;
+        $clone->output = $output;
 
-        throw new \RuntimeException('Missing encoder');
+        return $clone;
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Dto;
 
 use App\Serializer\Encoder\EncoderInterface;
-use App\Serializer\Exporter\ChainExporter;
 use App\Serializer\Output\OutputInterface;
 use App\Serializer\SerializableInterface;
 
@@ -15,7 +14,7 @@ final class Foo implements SerializableInterface
     public int $bar = 123;
     public array $baz;
 
-    public function serialize(EncoderInterface $encoder, ChainExporter $serializer): OutputInterface
+    public function serialize(EncoderInterface $encoder, \Closure $serialize): OutputInterface
     {
         $generator = function (): iterable {
             yield 'name' => 'foo';
@@ -24,7 +23,7 @@ final class Foo implements SerializableInterface
             yield 'aze' => ['a' => 'b'];
         };
 
-        $encoder->encodeDict($generator, $serializer);
+        $encoder->encodeDict($generator, $serialize);
 
         return $encoder->getOutput();
     }
