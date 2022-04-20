@@ -24,7 +24,7 @@ final class ObjectMarshallingStrategy implements MarshallingStrategyInterface
             }
         };
 
-        $encoder->encodeDict($generator, $marshal);
+        $encoder->encodeDict($generator(), $marshal);
     }
 
     public function canMarshal(mixed $value, string $type): bool

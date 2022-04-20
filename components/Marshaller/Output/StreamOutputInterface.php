@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Output;
 
-interface StreamOutputInterface extends OutputInterface
+interface StreamOutputInterface
 {
     /**
      * @return resource

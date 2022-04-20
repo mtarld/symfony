@@ -14,7 +14,7 @@ final class DictMarshallingStrategy implements MarshallingStrategyInterface
             yield from $value;
         };
 
-        $encoder->encodeDict($generator, $marshal);
+        $encoder->encodeDict($generator(), $marshal);
     }
 
     public function canMarshal(mixed $value, string $type): bool

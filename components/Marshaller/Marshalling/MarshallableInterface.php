@@ -8,5 +8,5 @@ use Symfony\Component\Marshaller\Encoder\EncoderInterface;
 
 interface MarshallableInterface
 {
-    public function marshal(EncoderInterface $encoder, \Closure $serialize): void;
+    public function marshal(EncoderInterface $encoder, \Closure $marshal): void;
 }

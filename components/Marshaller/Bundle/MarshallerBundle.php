@@ -8,20 +8,22 @@ use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\Marshaller\Decoder\JsonDecoderFactory;
 use Symfony\Component\Marshaller\Encoder\JsonEncoderFactory;
 use Symfony\Component\Marshaller\Extractor\ObjectPropertyListExtractor;
 use Symfony\Component\Marshaller\Extractor\ObjectPropertyListExtractorInterface;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Marshalling\MarshallerFactory;
 use Symfony\Component\Marshaller\Marshalling\Strategy\DictMarshallingStrategy;
 use Symfony\Component\Marshaller\Marshalling\Strategy\ListMarshallingStrategy;
 use Symfony\Component\Marshaller\Marshalling\Strategy\MarshallableMarshallingStrategy;
 use Symfony\Component\Marshaller\Marshalling\Strategy\MarshallingStrategyInterface;
 use Symfony\Component\Marshaller\Marshalling\Strategy\ObjectMarshallingStrategy;
 use Symfony\Component\Marshaller\Marshalling\Strategy\ScalarMarshallingStrategy;
+use Symfony\Component\Marshaller\Unmarshaller;
+use Symfony\Component\Marshaller\UnmarshallerInterface;
 
-final class SerializerBundle extends Bundle
+final class MarshallerBundle extends Bundle
 {
     // TODO see what should be internal
     public function build(ContainerBuilder $container): void
@@ -30,6 +32,9 @@ final class SerializerBundle extends Bundle
 
         // Encoders
         $container->register('marshaller.encoder.factory.json', JsonEncoderFactory::class);
+
+        // Decoders
+        $container->register('marshaller.decoder.factory.json', JsonDecoderFactory::class);
 
         // Mashaller strategies
         $container->registerForAutoconfiguration(MarshallingStrategyInterface::class)
@@ -49,7 +54,7 @@ final class SerializerBundle extends Bundle
 
         $container->register('marshaller.marshalling_strategy.object', ObjectMarshallingStrategy::class)
             ->setArguments([
-new Reference('serializer.extractor.object_property_list'),
+new Reference('marshaller.extractor.object_property_list'),
 new Reference('property_accessor'),
             ])
             ->setAutoconfigured(false)
@@ -60,21 +65,30 @@ new Reference('property_accessor'),
             ->addTag('marshaller.marshalling_strategy', ['priority' => -256]);
 
         // Extractors
-        $container->register('serializer.extractor.object_property_list', ObjectPropertyListExtractor::class)
+        $container->register('marshaller.extractor.object_property_list', ObjectPropertyListExtractor::class)
         ->setArguments([
             new Reference('property_info'),
         ]);
-        $container->setAlias(ObjectPropertyListExtractorInterface::class, 'serializer.extractor.object_property_list');
+        $container->setAlias(ObjectPropertyListExtractorInterface::class, 'marshaller.extractor.object_property_list');
 
         // Marshaller
-        $container->register('marshaller.json', Marshaller::class)
+        $container->register('marshaller.marshaller.json', Marshaller::class)
             ->setArguments([
                 new TaggedIteratorArgument('marshaller.marshalling_strategy'),
                 new Reference('marshaller.encoder.factory.json'),
             ]);
 
-        $container->registerAliasForArgument('marshaller.json', MarshallerInterface::class, 'jsonMarshaller');
+        $container->registerAliasForArgument('marshaller.marshaller.json', MarshallerInterface::class, 'jsonMarshaller');
+        $container->setAlias(MarshallerInterface::class, 'marshaller.marshaller.json');
 
-        $container->setAlias(MarshallerInterface::class, 'serializer');
+        // Unmarshaller
+        $container->register('marshaller.unmarshaller.json', Unmarshaller::class)
+            ->setArguments([
+                new TaggedIteratorArgument('marshaller.unmarshalling_strategy'),
+                new Reference('marshaller.decoder.factory.json'),
+            ]);
+
+        $container->registerAliasForArgument('marshaller.unmarshaller.json', UnmarshallerInterface::class, 'jsonUnmarshaller');
+        $container->setAlias(UnmarshallerInterface::class, 'marshaller.unmarshaller.json');
     }
 }

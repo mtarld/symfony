@@ -15,13 +15,13 @@ final class Foo implements MarshallableInterface
 
     public function marshal(EncoderInterface $encoder, \Closure $marchal): void
     {
-        $generator = function (): iterable {
+        $generator = function (): \Generator {
             yield 'name' => 'foo';
             yield 'bar' => $this->bar;
             yield 'baz' => [1, '2', 3];
             yield 'aze' => ['a' => 'b'];
         };
 
-        $encoder->encodeDict($generator, $marchal);
+        $encoder->encodeDict($generator(), $marchal);
     }
 }

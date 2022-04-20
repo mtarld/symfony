@@ -2,28 +2,13 @@
 
 namespace Symfony\Component\Marshaller\Output;
 
-final class MemoryStreamOutput implements StreamOutputInterface
+final class MemoryStreamOutput implements OutputInterface, StreamOutputInterface, \Stringable
 {
-    /**
-     * @var resource
-     */
-    private $stream;
-
-    private readonly string $filename;
+    use StreamOutputTrait;
 
     public function __construct()
     {
         $this->filename = 'php://memory';
-    }
-
-    public function write(string $value): void
-    {
-        fwrite($this->getOrCreateStream(), $value);
-    }
-
-    public function erase(int $count): void
-    {
-        ftruncate($this->getOrCreateStream(), fstat($this->getOrCreateStream())['size'] - $count);
     }
 
     public function __toString(): string
@@ -31,26 +16,6 @@ final class MemoryStreamOutput implements StreamOutputInterface
         rewind($this->getOrCreateStream());
 
         return stream_get_contents($this->getOrCreateStream());
-    }
-
-    /**
-     * @return stream
-     */
-    public function getStream()
-    {
-        return $this->getOrCreateStream();
-    }
-
-    /**
-     * @return stream
-     */
-    private function getOrCreateStream()
-    {
-        if (null === $this->stream) {
-            $this->stream = fopen($this->filename, 'wb');
-        }
-
-        return $this->stream;
     }
 }
 

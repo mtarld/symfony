@@ -14,7 +14,7 @@ final class ListMarshallingStrategy implements MarshallingStrategyInterface
             yield from $value;
         };
 
-        $encoder->encodeList($generator, $marshal);
+        $encoder->encodeList($generator(), $marshal);
     }
 
     public function canMarshal(mixed $value, string $type): bool

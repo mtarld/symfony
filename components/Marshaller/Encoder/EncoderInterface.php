@@ -6,11 +6,11 @@ namespace Symfony\Component\Marshaller\Encoder;
 
 interface EncoderInterface
 {
-    public function encodeInt(int $value): void;
+    public function encodeInt(int $int): void;
 
-    public function encodeString(string $value): void;
+    public function encodeString(string $string): void;
 
-    public function encodeDict(\Closure $generator, \Closure $serialize): void;
+    public function encodeDict(\Generator $dict, \Closure $marshal): void;
 
-    public function encodeList(\Closure $generator, \Closure $serialize): void;
+    public function encodeList(\Generator $list, \Closure $marshal): void;
 }

@@ -13,45 +13,51 @@ final class JsonEncoder implements EncoderInterface
     ) {
     }
 
-    public function encodeInt(int $value): void
+    public function encodeInt(int $int): void
     {
-        $this->output->write((string) $value);
+        $this->output->write((string) $int);
     }
 
-    public function encodeString(string $value): void
+    public function encodeString(string $string): void
     {
-        $this->output->write(sprintf('"%s"', $value));
+        $this->output->write(sprintf('"%s"', $string));
     }
 
-    public function encodeDict(\Closure $generator, \Closure $serialize): void
+    public function encodeDict(\Generator $dict, \Closure $marshal): void
     {
         $this->output->write('{');
 
-        foreach ($generator() as $key => $value) {
-            $this->output->write(sprintf('"%s":', $key));
-            $serialize($value);
-            $this->output->write(',');
+        $valid = $dict->valid();
+
+        while ($valid) {
+            $this->output->write(sprintf('"%s":', $dict->key()));
+            $marshal($dict->current());
+
+            $dict->next();
+            if ($valid = $dict->valid()) {
+                $this->output->write(',');
+            }
         }
 
-        $this->output->erase(1);
         $this->output->write('}');
     }
 
-    public function encodeList(\Closure $generator, \Closure $serialize): void
+    public function encodeList(\Generator $list, \Closure $marshal): void
     {
         $this->output->write('[');
 
-        foreach ($generator() as $value) {
-            $serialize($value);
-            $this->output->write(',');
+        $valid = $list->valid();
+
+        while ($valid) {
+            $this->output->write(sprintf('"%s":', $list->key()));
+            $marshal($list->current());
+
+            $list->next();
+            if ($valid = $list->valid()) {
+                $this->output->write(',');
+            }
         }
 
-        $this->output->erase(1);
         $this->output->write(']');
-    }
-
-    public function supports(string $format): bool
-    {
-        return 'json' === $format;
     }
 }
