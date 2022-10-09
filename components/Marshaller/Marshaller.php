@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller;
 
-use Symfony\Component\Marshaller\Encoder\EncoderFactoryInterface;
-use Symfony\Component\Marshaller\Marshalling\Marshaller as MarshallingMarshaller;
+use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Output\OutputInterface;
+use Symfony\Component\Marshaller\Template\TemplateLoader;
 
 final class Marshaller implements MarshallerInterface
 {
     public function __construct(
-        private iterable $marshallingStrategies,
-        private EncoderFactoryInterface $encoderFactory,
+        private readonly TemplateLoader $templateLoader,
     ) {
     }
 
-    public function marshal(mixed $data, OutputInterface $output): void
+    public function marshal(object $object, OutputInterface $output, Context $context = null): void
     {
-        $marshaller = new MarshallingMarshaller($this->marshallingStrategies, $this->encoderFactory->create($output));
-        $marshaller->marshal($data);
+        $context = $context ?? new Context();
+
+        $marshal = $this->templateLoader->load(new \ReflectionClass($object), $context);
+        $marshal($object, $context, $output);
     }
 }

@@ -4,24 +4,48 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-use Symfony\Component\Marshaller\Encoder\EncoderInterface;
-use Symfony\Component\Marshaller\Marshalling\MarshallableInterface;
+use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Attribute\Groups;
+use Symfony\Component\Marshaller\Attribute\Name;
+use Symfony\Component\Marshaller\Attribute\Warmable;
+use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Option\DepthOption;
+use Symfony\Component\Marshaller\Context\Option\GroupsOption;
 
-final class Foo implements MarshallableInterface
+#[Warmable(
+    enforcedContexts: [
+        new Context(new DepthOption(1, true), new GroupsOption('fooGroup')),
+    ],
+)]
+final class Foo
 {
-    public string $name;
-    public int $bar = 123;
-    public array $baz;
+    #[Name('@id')]
+    #[Groups(['groupOne', 'groupTwo'])]
+    #[Formatter(self::class, 'iri')]
+    private string $iri = 'theIri';
 
-    public function marshal(EncoderInterface $encoder, \Closure $marchal): void
+    #[Groups('groupTwo')]
+    public ?int $price = 12;
+
+    /** @var array<string, string|null>|null */
+    public ?array $dict;
+
+    // /** @var list<string|null>|null */
+    // public ?array $list = null;
+
+    // #[Groups('groupOne')]
+    // public ?Bar $obj = null;
+
+    public function __construct()
     {
-        $generator = function (): \Generator {
-            yield 'name' => 'foo';
-            yield 'bar' => $this->bar;
-            yield 'baz' => [1, '2', 3];
-            yield 'aze' => ['a' => 'b'];
-        };
+        $this->dict = ['foo' => 'bar', 'baz' => null];
+        // $this->list = ['foo', null, 'baz'];
+        // $this->list = null;
+        // $this->obj = new Bar();
+    }
 
-        $encoder->encodeDict($generator(), $marchal);
+    public static function iri(string $value, Context $context): string
+    {
+        return strtoupper($value);
     }
 }

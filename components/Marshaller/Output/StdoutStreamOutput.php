@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Output;
 
-final class MemoryStreamOutput extends StreamOutput
+final class StdoutStreamOutput extends StreamOutput
 {
     public function __construct()
     {
-        parent::__construct('php://memory');
+        parent::__construct('php://stdout');
     }
 }
