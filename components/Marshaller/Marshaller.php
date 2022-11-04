@@ -7,18 +7,6 @@ namespace Symfony\Component\Marshaller;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Template\TemplateLoader;
 
-return function json_marshal() {
-
-};
-
-return function json_unmarshal() {
-
-};
-
-return function csv_marshal() {
-
-};
-
 final class Marshaller implements MarshallerInterface
 {
     public function __construct(
