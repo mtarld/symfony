@@ -16,7 +16,7 @@ use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Generator
 {
-    use OutputWriterTrait;
+    use YieldTrait;
 
     public function __construct(
         private readonly StructureGeneratorInterface $structureGenerator,
@@ -34,9 +34,8 @@ final class Generator
             'params' => [
                 new Param(new Expr\Variable('object'), type: new Identifier('object')),
                 new Param(new Expr\Variable('context'), type: new  Name\FullyQualified(Context::class)),
-                new Param(new Expr\Variable('output'), type: new Name\FullyQualified(OutputInterface::class)),
             ],
-            'returnType' => new Identifier('void'),
+            'returnType' => new Identifier('iterable'),
             'stmts' => [
                 ...$this->structureGenerator->generateBeginning(),
                 ...$this->valueGenerators->for($value)->generate($value, new Expr\Variable('object')),

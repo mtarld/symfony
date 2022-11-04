@@ -11,13 +11,13 @@ use PhpParser\Node\Stmt;
 use Symfony\Component\Marshaller\Metadata\Attribute\FormatterAttribute;
 use Symfony\Component\Marshaller\Metadata\PropertyMetadata;
 use Symfony\Component\Marshaller\Metadata\ValueMetadata;
-use Symfony\Component\Marshaller\Template\Generator\OutputWriterTrait;
+use Symfony\Component\Marshaller\Template\Generator\YieldTrait;
 use Symfony\Component\Marshaller\Template\Generator\ValueGeneratorInterface;
 use Symfony\Component\Marshaller\Template\Generator\ValueGenerators;
 
 final class JsonObjectValueGenerator implements ValueGeneratorInterface
 {
-    use OutputWriterTrait;
+    use YieldTrait;
 
     public function __construct(
         private readonly ValueGenerators $valueGenerators,
@@ -51,7 +51,7 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
         }
 
         $statements[] = new Stmt\Unset_($unsetVariables);
-        $statements[] = $this->write('}');
+        $statements[] = $this->yield('}');
 
         if (!$value->isNullable()) {
             return $statements;
@@ -60,7 +60,7 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
         return [
             new Stmt\If_(new Expr\BinaryOp\Identical(new Expr\ConstFetch(new Name('null')), $accessor), [
                 'stmts' => [
-                    $this->write('null'),
+                    $this->yield('null'),
                 ],
                 'else' => new Stmt\Else_($statements),
             ]),
@@ -95,7 +95,7 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
         }
 
         return [
-            $this->write(sprintf('%s%s:', $prefix, json_encode($property->convertedName))),
+            $this->yield(sprintf('%s%s:', $prefix, json_encode($property->convertedName))),
             ...$this->valueGenerators->for($property->value)->generate($property->value, $accessor),
         ];
     }

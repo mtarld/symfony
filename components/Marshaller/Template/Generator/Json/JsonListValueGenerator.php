@@ -9,13 +9,13 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Scalar;
 use PhpParser\Node\Stmt;
 use Symfony\Component\Marshaller\Metadata\ValueMetadata;
-use Symfony\Component\Marshaller\Template\Generator\OutputWriterTrait;
+use Symfony\Component\Marshaller\Template\Generator\YieldTrait;
 use Symfony\Component\Marshaller\Template\Generator\ValueGeneratorInterface;
 use Symfony\Component\Marshaller\Template\Generator\ValueGenerators;
 
 final class JsonListValueGenerator implements ValueGeneratorInterface
 {
-    use OutputWriterTrait;
+    use YieldTrait;
 
     public function __construct(
         private readonly ValueGenerators $valueGenerators,
@@ -30,14 +30,14 @@ final class JsonListValueGenerator implements ValueGeneratorInterface
 
         $statements[] = new Stmt\Foreach_($accessor, new Expr\Variable('item'), [
             'stmts' => [
-                $this->write(new Expr\Variable('prefix')),
+                $this->yield(new Expr\Variable('prefix')),
                 ...$this->valueGenerators->for($value->collectionValue())->generate($value->collectionValue(), new Expr\Variable('item')),
                 new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_(','))),
             ],
         ]);
 
         $statements[] = new Stmt\Unset_([new Expr\Variable('prefix')]);
-        $statements[] = $this->write(']');
+        $statements[] = $this->yield(']');
 
         if (!$value->isNullable()) {
             return $statements;
@@ -46,7 +46,7 @@ final class JsonListValueGenerator implements ValueGeneratorInterface
         return [
             new Stmt\If_(new Expr\BinaryOp\Identical(new Expr\ConstFetch(new Name('null')), $accessor), [
                 'stmts' => [
-                    $this->write('null'),
+                    $this->yield('null'),
                 ],
                 'else' => new Stmt\Else_($statements),
             ]),

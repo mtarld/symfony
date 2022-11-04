@@ -9,14 +9,18 @@ use PhpParser\Node\Expr;
 use PhpParser\Node\Scalar;
 use PhpParser\Node\Stmt;
 
-trait OutputWriterTrait
+trait YieldTrait
 {
-    public function write(string|Node $data): Stmt
+    public function yield(string|Node $data, string|Node $key = null): Stmt
     {
         if (is_string($data)) {
             $data = new Scalar\String_($data);
         }
 
-        return new Stmt\Expression(new Expr\MethodCall(new Expr\Variable('output'), 'write', [$data]));
+        if (is_string($key)) {
+            $key = new Scalar\String_($key);
+        }
+
+        return new Stmt\Expression(new Expr\Yield_($data, $key));
     }
 }

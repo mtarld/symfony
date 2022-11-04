@@ -12,10 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\DepthOption;
-use Symfony\Component\Marshaller\Context\Option\GroupsOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
-use Symfony\Component\Marshaller\Output\TempStreamOutput;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
@@ -37,12 +34,11 @@ class TestCommand extends Command
         $foo = new Foo();
         // $foo->obj = $bar;
 
-        $this->marshaller->marshal($foo, new StdoutStreamOutput());
+        $generator = $this->marshaller->marshal($foo);
+        foreach ($generator as $string) {
+            echo $string;
+        }
 
         return Command::SUCCESS;
-    }
-
-    private function testMarshal(): void
-    {
     }
 }

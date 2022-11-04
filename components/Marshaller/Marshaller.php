@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Output\OutputInterface;
 use Symfony\Component\Marshaller\Template\TemplateLoader;
 
 final class Marshaller implements MarshallerInterface
@@ -15,11 +14,11 @@ final class Marshaller implements MarshallerInterface
     ) {
     }
 
-    public function marshal(object $object, OutputInterface $output, Context $context = null): void
+    public function marshal(object $object, Context $context = null): iterable
     {
         $context = $context ?? new Context();
-
         $marshal = $this->templateLoader->load(new \ReflectionClass($object), $context);
-        $marshal($object, $context, $output);
+
+        yield from $marshal($object, $context);
     }
 }
