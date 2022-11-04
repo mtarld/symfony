@@ -28,15 +28,11 @@ class TestCommand extends Command
         // $context = new Context(new DepthOption(10, true));
         // $context = new Context();
 
-        $bar = new Bar();
-        $bar->foos[] = new Foo();
-
         $foo = new Foo();
-        // $foo->obj = $bar;
 
         $generator = $this->marshaller->marshal($foo);
-        foreach ($generator as $string) {
-            echo $string;
+        foreach ($generator as $k => $v) {
+            dump($k, $v);
         }
 
         return Command::SUCCESS;

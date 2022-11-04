@@ -35,6 +35,11 @@ use Symfony\Component\Marshaller\Template\Generator\Json\JsonListValueGenerator;
 use Symfony\Component\Marshaller\Template\Generator\Json\JsonObjectValueGenerator;
 use Symfony\Component\Marshaller\Template\Generator\Json\JsonScalarValueGenerator;
 use Symfony\Component\Marshaller\Template\Generator\Json\JsonStructureGenerator;
+use Symfony\Component\Marshaller\Template\Generator\Memory\MemoryDictValueGenerator;
+use Symfony\Component\Marshaller\Template\Generator\Memory\MemoryListValueGenerator;
+use Symfony\Component\Marshaller\Template\Generator\Memory\MemoryObjectValueGenerator;
+use Symfony\Component\Marshaller\Template\Generator\Memory\MemoryScalarValueGenerator;
+use Symfony\Component\Marshaller\Template\Generator\Memory\MemoryStructureGenerator;
 use Symfony\Component\Marshaller\Template\Generator\ValueGenerators;
 use Symfony\Component\Marshaller\Template\TemplateFilenameBuilder;
 use Symfony\Component\Marshaller\Template\TemplateLoader;
@@ -133,7 +138,7 @@ final class MarshallerBundle extends Bundle
                 new Reference('marshaller.metadata.type_factory'),
             ]);
 
-        // JSON generators
+        // Json generators
         $container->register('marshaller.template.structure_generator.json', JsonStructureGenerator::class);
 
         $container->register('marshaller.template.scalar_value_generator.json', JsonScalarValueGenerator::class)
@@ -166,6 +171,41 @@ final class MarshallerBundle extends Bundle
             ->setArguments([
                 new Reference('marshaller.template.structure_generator.json'),
                 new Reference('marshaller.template.value_generators.json'),
+            ]);
+
+        // Memory generators
+        $container->register('marshaller.template.structure_generator.memory', MemoryStructureGenerator::class);
+
+        $container->register('marshaller.template.scalar_value_generator.memory', MemoryScalarValueGenerator::class)
+            ->addTag('marshaller.template.value_generator.memory');
+
+        $container->register('marshaller.template.list_value_generator.memory', MemoryListValueGenerator::class)
+            ->setArguments([
+                new Reference('marshaller.template.value_generators.memory'),
+            ])
+            ->addTag('marshaller.template.value_generator.memory');
+
+        $container->register('marshaller.template.dict_value_generator.memory', MemoryDictValueGenerator::class)
+            ->setArguments([
+                new Reference('marshaller.template.value_generators.memory'),
+            ])
+            ->addTag('marshaller.template.value_generator.memory');
+
+        $container->register('marshaller.template.object_value_generator.memory', MemoryObjectValueGenerator::class)
+            ->setArguments([
+                new Reference('marshaller.template.value_generators.memory'),
+            ])
+            ->addTag('marshaller.template.value_generator.memory');
+
+        $container->register('marshaller.template.value_generators.memory', ValueGenerators::class)
+            ->setArguments([
+                new TaggedIteratorArgument('marshaller.template.value_generator.memory'),
+            ]);
+
+        $container->register('marshaller.template.generator.memory', Generator::class)
+            ->setArguments([
+                new Reference('marshaller.template.structure_generator.memory'),
+                new Reference('marshaller.template.value_generators.memory'),
             ]);
 
         $container->setAlias('marshaller.template.generator', 'marshaller.template.generator.json');
