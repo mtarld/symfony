@@ -29,31 +29,28 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
         $objectName = uniqid('o');
         $reflectionName = uniqid('r');
 
+        $shouldUseReflection = $this->shouldUseReflection($value);
+
         $statements = [
             new Stmt\Expression(new Expr\Assign(new Expr\Variable($objectName), $accessor)),
-            new Stmt\Expression(new Expr\Assign(new Expr\Variable($reflectionName), new Expr\New_(new Name\FullyQualified(\ReflectionClass::class), [new Expr\Variable($objectName)]))),
         ];
 
-        $statements[] = $this->write('{');
-
-        $properties = new \ArrayIterator($value->class()->properties);
-
-        $valid = $properties->valid();
-        while ($valid) {
-            array_push($statements, ...$this->generateProperty(
-                $properties->current(),
-                $objectName,
-                $reflectionName,
-            ));
-
-            $properties->next();
-            $valid = $properties->valid();
-            if ($valid) {
-                $statements[] = $this->write(',');
-            }
+        if ($shouldUseReflection) {
+            $statements[] = new Stmt\Expression(new Expr\Assign(new Expr\Variable($reflectionName), new Expr\New_(new Name\FullyQualified(\ReflectionClass::class), [new Expr\Variable($objectName)])));
         }
 
-        $statements[] = new Stmt\Unset_([new Expr\Variable($objectName), new Expr\Variable($reflectionName)]);
+        $prefix = '{';
+        foreach ($value->class()->properties as $i => $property) {
+            array_push($statements, ...$this->generateProperty($property, $objectName, $reflectionName, $prefix));
+            $prefix = ',';
+        }
+
+        $unsetVariables = [new Expr\Variable($objectName)];
+        if ($shouldUseReflection) {
+            $unsetVariables[] = new Expr\Variable($reflectionName);
+        }
+
+        $statements[] = new Stmt\Unset_($unsetVariables);
         $statements[] = $this->write('}');
 
         if (!$value->isNullable()) {
@@ -78,7 +75,7 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
     /**
      * @return array<Stmt>
      */
-    private function generateProperty(PropertyMetadata $property, string $objectName, string $reflectionName): array
+    private function generateProperty(PropertyMetadata $property, string $objectName, string $reflectionName, string $prefix): array
     {
         $publicAccessor = new Expr\PropertyFetch(new Expr\Variable($objectName), $property->name);
 
@@ -98,9 +95,19 @@ final class JsonObjectValueGenerator implements ValueGeneratorInterface
         }
 
         return [
-            $this->write(new Expr\FuncCall(new Name('json_encode'), [new Scalar\String_($property->convertedName)])),
-            $this->write(':'),
+            $this->write(sprintf('%s%s:', $prefix, json_encode($property->convertedName))),
             ...$this->valueGenerators->for($property->value)->generate($property->value, $accessor),
         ];
+    }
+
+    private function shouldUseReflection(ValueMetadata $value): bool
+    {
+        foreach ($value->class()->properties as $property) {
+            if (false === $property->isPublic) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

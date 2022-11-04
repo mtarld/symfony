@@ -25,17 +25,17 @@ final class JsonDictValueGenerator implements ValueGeneratorInterface
     public function generate(ValueMetadata $value, Expr $accessor): array
     {
         $statements = [
-            $this->write('{'),
+            new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_('{'))),
         ];
-
-        $statements[] = new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_('')));
 
         $statements[] = new Stmt\Foreach_($accessor, new Expr\Variable('item'), [
             'keyVar' => new Expr\Variable('key'),
             'stmts' => [
-                $this->write(new Expr\Variable('prefix')),
-                $this->write(new Expr\FuncCall(new Name('json_encode'), [new Expr\Variable('key')])),
-                $this->write(':'),
+                $this->write(new Expr\FuncCall(new Name('sprintf'), [
+                    new Scalar\String_('%s%s:'),
+                    new Expr\Variable('prefix'),
+                    new Expr\FuncCall(new Name('json_encode'), [new Expr\Variable('key')]),
+                ])),
                 ...$this->valueGenerators->for($value->collectionValue())->generate($value->collectionValue(), new Expr\Variable('item')),
                 new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_(','))),
             ],

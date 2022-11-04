@@ -22,24 +22,24 @@ final class Foo
     #[Name('@id')]
     #[Groups(['groupOne', 'groupTwo'])]
     #[Formatter(self::class, 'iri')]
-    private string $iri = 'theIri';
+    public string $iri = 'theIri';
 
     #[Groups('groupTwo')]
     public ?int $price = 12;
 
-    /** @var array<string, string|null>|null */
-    public ?array $dict;
+    // /** @var array<string, string|null>|null */
+    // public ?array $dict;
 
-    // /** @var list<string|null>|null */
-    // public ?array $list = null;
+    /** @var list<string|null>|null */
+    public ?array $list = null;
 
     // #[Groups('groupOne')]
     // public ?Bar $obj = null;
 
     public function __construct()
     {
-        $this->dict = ['foo' => 'bar', 'baz' => null];
-        // $this->list = ['foo', null, 'baz'];
+        // $this->dict = ['foo' => 'bar', 'baz' => null];
+        $this->list = ['foo', null, 'baz'];
         // $this->list = null;
         // $this->obj = new Bar();
     }

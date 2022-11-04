@@ -25,10 +25,8 @@ final class JsonListValueGenerator implements ValueGeneratorInterface
     public function generate(ValueMetadata $value, Expr $accessor): array
     {
         $statements = [
-            $this->write('['),
+            new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_('['))),
         ];
-
-        $statements[] = new Stmt\Expression(new Expr\Assign(new Expr\Variable('prefix'), new Scalar\String_('')));
 
         $statements[] = new Stmt\Foreach_($accessor, new Expr\Variable('item'), [
             'stmts' => [
