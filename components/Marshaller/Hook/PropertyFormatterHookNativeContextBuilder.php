@@ -43,35 +43,39 @@ final class PropertyFormatterHookNativeContextBuilder
         return $context;
     }
 
+    // TODO must have declination depending on format
     private function createHook(\Closure $closure, string $hookName): callable
     {
         return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName): string {
+            // TODO extract?
             $name = $context['propertyNameGenerator']($property, $context);
+            $closureReflection = new \ReflectionFunction($closure);
 
-            $kind = self::extractKind($closure);
+            $type = $closureReflection->getReturnType();
+            if ($type instanceof \ReflectionUnionType) {
+                $type = $type->getTypes()[0];
+            }
+
+            $kind = self::extractKind($type);
 
             $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
             $formattedValue = sprintf("\$context['closures']['$hookName']($propertyAccessor)");
 
             if ('scalar' === $kind) {
-                $value = $context['fwrite']("json_encode($formattedValue)", $context);
-            } else {
-                throw new \RuntimeException('Not implemented yet.');
+                return $name.$context['fwrite']("json_encode($formattedValue)", $context);
             }
 
-            return $name.$value;
+            if ('object' === $kind) {
+                $foo = marshal_generate(new \ReflectionClass($type->getName()), 'json', $context);
+                dd($foo);
+            }
+
+            throw new \RuntimeException('Not implemented yet.');
         };
     }
 
-    private static function extractKind(\Closure $closure): ?string
+    private static function extractKind(\ReflectionNamedType $type): ?string
     {
-        $reflection = new \ReflectionFunction($closure);
-
-        $type = $reflection->getReturnType();
-        if ($type instanceof \ReflectionUnionType) {
-            $type = $type->getTypes()[0];
-        }
-
         if (in_array($type->getName(), ['int', 'float', 'string', 'bool'], true)) {
             return 'scalar';
         }

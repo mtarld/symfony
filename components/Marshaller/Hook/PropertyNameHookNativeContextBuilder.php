@@ -26,7 +26,7 @@ final class PropertyNameHookNativeContextBuilder
                     continue;
                 }
 
-                $context['hooks'][sprintf('%s::$%s', $class->getName(), $property->getName())] = $this->createHook($attribute->getArguments()[0]);
+                $context['hooks'][sprintf('%s::$%s', $class->getName(), $property->getName())] = $this->createHook($attribute->newInstance()->name);
             }
         }
 

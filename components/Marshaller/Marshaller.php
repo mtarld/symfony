@@ -58,6 +58,10 @@ final class Marshaller implements MarshallerInterface
         $nativeContext = $this->propertyNameHookNativeContextBuilder->build($class, $nativeContext);
         $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $nativeContext);
 
+        // TODO handle arrays
+
+        // TODO handle nested objects, maybe require another file or add a closure into the context?
+
         return $nativeContext;
     }
 }

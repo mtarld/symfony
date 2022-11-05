@@ -15,6 +15,10 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
 {
     public static function generate(\ReflectionClass $class, string $accessor, array $context): string
     {
+        if ([] === $class->getProperties()) {
+            return self::fwrite("{}", $context);
+        }
+
         $template = '';
         $context['classes'][] = $class->getName();
         $context['prefix'] = '{';

@@ -23,7 +23,7 @@ final class Dto
         $this->object = new Dto2();
     }
 
-    public static function formatInt(string $value): int
+    public static function formatInt(string $value): Dto2
     {
         return 10;
     }
