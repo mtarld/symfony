@@ -6,5 +6,8 @@ namespace Symfony\Component\Marshaller\Context;
 
 interface OptionInterface
 {
-    public function signature(): string;
+    /**
+     * @return array<string, mixed>
+     */
+    public function toNativeContext(): array;
 }

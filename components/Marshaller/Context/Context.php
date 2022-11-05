@@ -64,13 +64,6 @@ final class Context implements \IteratorAggregate
         return $this->optionMap[$optionClass];
     }
 
-    public function signature(): string
-    {
-        $signatures = array_map(fn (OptionInterface $o): string => sprintf('%s[%s]', $o::class, $o->signature()), $this->optionMap);
-
-        return implode('|', $signatures);
-    }
-
     /**
      * @return list<OptionInterface>
      */

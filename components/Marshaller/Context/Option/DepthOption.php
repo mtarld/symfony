@@ -9,16 +9,19 @@ use Symfony\Component\Marshaller\Context\OptionInterface;
 final class DepthOption implements OptionInterface
 {
     public function __construct(
-        public readonly int $depth,
+        public readonly int $maxDepth,
         public readonly bool $rejectCircularReference,
     ) {
-        if ($depth < 0) {
+        if ($maxDepth < 0) {
             throw new \InvalidArgumentException('TODO');
         }
     }
 
-    public function signature(): string
+    public function toNativeContext(): array
     {
-        return sprintf('%s-%s', (string) $this->depth, $this->rejectCircularReference ? 'true' : 'false');
+        return [
+            'max_depth' => $this->maxDepth,
+            'reject_circular_reference' => $this->rejectCircularReference,
+        ];
     }
 }

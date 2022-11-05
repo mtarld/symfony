@@ -11,7 +11,7 @@ final class Name
         public readonly string $name,
     ) {
         if ('' === $name) {
-            throw new \InvalidArgumentException(sprintf('Parameter of attribute "%s" must be a non-empty string.', self::class));
+            throw new \InvalidArgumentException(sprintf('Parameter "name" of attribute "%s" must be a non-empty string.', self::class));
         }
     }
 }

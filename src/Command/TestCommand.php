@@ -9,6 +9,8 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Option\DepthOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -25,8 +27,8 @@ class TestCommand extends Command
     {
         $object = new Dto();
 
-        $this->polyfill($object);
-        // $this->component($object);
+        // $this->polyfill($object);
+        $this->component($object);
 
         return Command::SUCCESS;
     }

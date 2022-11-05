@@ -19,6 +19,10 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         $context['classes'][] = $class->getName();
         $context['prefix'] = '{';
 
+        $objectName = '$'.uniqid('o');
+
+        $template .= self::writeStatement("$objectName = $accessor", $context);
+
         foreach ($class->getProperties() as $property) {
             if (null !== $hook = PropertyHookExtractor::extract($property, $context)) {
                 $hookContext = $context + [
@@ -27,13 +31,13 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
                     'fwrite' => self::fwrite(...),
                 ];
 
-                $template .= $hook($property, $accessor, $hookContext);
+                $template .= $hook($property, $objectName, $hookContext);
+                $context['prefix'] = ',';
 
                 continue;
             }
 
-            $propertyValue = self::generatePropertyValue($property, $accessor, $context);
-
+            $propertyValue = self::generatePropertyValue($property, $objectName, $context);
             if (null !== $propertyValue) {
                 $template .= self::generatePropertyName($property, $context).$propertyValue;
             }
@@ -42,6 +46,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         }
 
         $template .= self::fwrite("'}'", $context);
+        $template .= self::writeStatement("unset($objectName)", $context);
 
         return $template;
     }
@@ -89,6 +94,14 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
      */
     private static function fwrite(string $content, array $context): string
     {
-        return sprintf("%sfwrite(\$resource, $content);%s", str_repeat(' ', 4 * $context['indentation_level']), PHP_EOL);
+        return self::writeStatement("fwrite(\$resource, $content)", $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function writeStatement(string $statement, array $context): string
+    {
+        return sprintf('%s%s;%s', str_repeat(' ', 4 * $context['indentation_level']), $statement, PHP_EOL);
     }
 }

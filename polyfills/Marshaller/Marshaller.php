@@ -39,6 +39,10 @@ final class Marshaller
         $cacheFilename = sprintf('%s%s%s.php', $context['cache_path'] ?? sys_get_temp_dir(), DIRECTORY_SEPARATOR, md5($object::class));
 
         if (!file_exists($cacheFilename)) {
+            if (!file_exists($context['cache_path'])) {
+                mkdir($context['cache_path'], recursive: true);
+            }
+
             $template = $templateGenerator(new \ReflectionClass($object), $context);
             file_put_contents($cacheFilename, $template);
         }
