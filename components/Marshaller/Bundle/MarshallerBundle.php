@@ -64,7 +64,7 @@ final class MarshallerBundle extends Bundle
         // Marshaller
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
-                new Reference('marshaller.template.loader'),
+                // new Reference('marshaller.template.loader'),
             ]);
 
         $container->setAlias(MarshallerInterface::class, 'marshaller');

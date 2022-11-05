@@ -8,52 +8,62 @@ use Symfony\Polyfill\Marshaller\Metadata\PropertyHookExtractor;
 use Symfony\Polyfill\Marshaller\Metadata\PropertyKindExtractor;
 use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGeneratorInterface;
 
+/**
+ * @internal
+ */
 final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterface
 {
-    private readonly PropertyKindExtractor $propertyKindExtractor;
-    private readonly PropertyHookExtractor $propertyHookExtractor;
-
-    public function __construct()
-    {
-        $this->propertyKindExtractor = new PropertyKindExtractor();
-        $this->propertyHookExtractor = new PropertyHookExtractor();
-    }
-
-    public function generate(\ReflectionClass $class, string $accessor, array $context): string
+    public static function generate(\ReflectionClass $class, string $accessor, array $context): string
     {
         $template = '';
         $context['classes'][] = $class->getName();
+        $context['prefix'] = '{';
 
-        $prefix = '{';
         foreach ($class->getProperties() as $property) {
-            if (null !== $hook = $this->propertyHookExtractor->extract($property, $context)) {
-                $template .= $hook($property, $accessor, $context);
+            if (null !== $hook = PropertyHookExtractor::extract($property, $context)) {
+                $hookContext = $context + [
+                    'propertyNameGenerator' => self::generatePropertyName(...),
+                    'propertyValueGenerator' => self::generatePropertyValue(...),
+                    'fwrite' => self::fwrite(...),
+                ];
+
+                $template .= $hook($property, $accessor, $hookContext);
 
                 continue;
             }
 
-            $propertyValue = $this->generatePropertyValue($property, $accessor, $context);
+            $propertyValue = self::generatePropertyValue($property, $accessor, $context);
 
             if (null !== $propertyValue) {
-                $propertyName = json_encode($property->getName());
-                $template .= $this->write("'$prefix$propertyName:'", $context['indentation_level']).$propertyValue;
+                $template .= self::generatePropertyName($property, $context).$propertyValue;
             }
 
-            $prefix = ',';
+            $context['prefix'] = ',';
         }
 
-        $template .= $this->write("'}'", $context['indentation_level']);
+        $template .= self::fwrite("'}'", $context);
 
         return $template;
     }
 
-    private function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): ?string
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function generatePropertyName(\ReflectionProperty $property, array $context): string
     {
-        $propertyKind = $this->propertyKindExtractor->extract($property);
+        return self::fwrite(sprintf("'%s%s:'", $context['prefix'], json_encode($property->getName())), $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): ?string
+    {
+        $propertyKind = PropertyKindExtractor::extract($property);
         $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
         if (PropertyKindExtractor::KIND_SCALAR === $propertyKind) {
-            return $this->write("json_encode($propertyAccessor)", $context['indentation_level']);
+            return self::fwrite("json_encode($propertyAccessor)", $context);
         }
 
         if (PropertyKindExtractor::KIND_OBJECT === $propertyKind) {
@@ -68,14 +78,17 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
                 throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
             }
 
-            return $this->generate(new \ReflectionClass($className), $propertyAccessor, $context);
+            return self::generate(new \ReflectionClass($className), $propertyAccessor, $context);
         }
 
         throw new \LogicException(sprintf('Unexpected "%s" property kind', $propertyKind));
     }
 
-    private function write(string $content, int $indentationLevel): string
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function fwrite(string $content, array $context): string
     {
-        return sprintf("%sfwrite(\$resource, $content);%s", str_repeat(' ', 4 * $indentationLevel), PHP_EOL);
+        return sprintf("%sfwrite(\$resource, $content);%s", str_repeat(' ', 4 * $context['indentation_level']), PHP_EOL);
     }
 }

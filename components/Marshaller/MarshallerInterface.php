@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Output\OutputInterface;
 
 interface MarshallerInterface
 {
-    /**
-     * @return iterable<string>
-     */
-    public function marshal(object $data, Context $context = null): iterable;
+    public function marshal(object $object, string $format, OutputInterface $output, Context $context = null): void;
 }

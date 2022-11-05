@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller\Metadata;
 
+/**
+ * @internal
+ */
 final class PropertyHookExtractor
 {
     /**
      * @param array<string, mixed> $context
      */
-    public function extract(\ReflectionProperty $property, array $context): ?callable
+    public static function extract(\ReflectionProperty $property, array $context): ?callable
     {
-        foreach ($this->findHookNames($property) as $hookName) {
+        foreach (self::findHookNames($property) as $hookName) {
             if (null !== ($hook = $context['hooks'][$hookName] ?? null)) {
                 return $hook;
             }
@@ -23,7 +26,7 @@ final class PropertyHookExtractor
     /**
      * @return list<string>
      */
-    private function findHookNames(\ReflectionProperty $property): array
+    private static function findHookNames(\ReflectionProperty $property): array
     {
         $hooks = [sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName())];
 

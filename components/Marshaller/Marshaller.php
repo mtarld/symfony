@@ -5,20 +5,19 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Template\TemplateLoader;
+use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Marshaller implements MarshallerInterface
 {
     public function __construct(
-        private readonly TemplateLoader $templateLoader,
+        // private readonly TemplateLoader $templateLoader,
     ) {
     }
 
-    public function marshal(object $object, Context $context = null): iterable
+    public function marshal(object $object, string $format, OutputInterface $output, Context $context = null): void
     {
         $context = $context ?? new Context();
-        $marshal = $this->templateLoader->load(new \ReflectionClass($object), $context);
 
-        yield from $marshal($object, $context);
+        marshal($object, $output->stream(), $format);
     }
 }

@@ -7,6 +7,9 @@ namespace Symfony\Polyfill\Marshaller;
 use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGenerator;
 use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGeneratorInterface;
 
+/**
+ * @internal
+ */
 final class TemplateGenerator
 {
     private const DEFAULT_CONTEXT = [
@@ -23,8 +26,8 @@ final class TemplateGenerator
      */
     public static function generate(\ReflectionClass $class, string $format, array $context): string
     {
-        match ($format) {
-            'json' => self::generateJson($object, $resource, $context),
+        return match ($format) {
+            'json' => self::generateJson($class, $context),
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format))
         };
     }
@@ -34,18 +37,19 @@ final class TemplateGenerator
      */
     public static function generateJson(\ReflectionClass $class, array $context): string
     {
-        return self::doGenerate(new ObjectTemplateGenerator\JsonObjectTemplateGenerator(), $class, $context);
+        return self::doGenerate(ObjectTemplateGenerator\JsonObjectTemplateGenerator::class, $class, $context);
     }
 
     /**
-     * @param array<string, mixed> $context
+     * @param class-string<ObjectTemplateGeneratorInterface> $objectTemplateGeneratorClass
+     * @param array<string, mixed>                           $context
      */
-    private static function doGenerate(ObjectTemplateGeneratorInterface $objectTemplateGenerator, \ReflectionClass $class, array $context): string
+    private static function doGenerate(string $objectTemplateGenerator, \ReflectionClass $class, array $context): string
     {
         $template = '<?php'.PHP_EOL.PHP_EOL;
         $template .= '/** @param resource $resource */'.PHP_EOL;
         $template .= 'return static function (object $object, $resource, array $context): void {'.PHP_EOL;
-        $template .= $objectTemplateGenerator->generate($class, '$object', $context + self::DEFAULT_CONTEXT);
+        $template .= $objectTemplateGenerator::generate($class, '$object', $context + self::DEFAULT_CONTEXT);
         $template .= '};'.PHP_EOL;
 
         return $template;

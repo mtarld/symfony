@@ -10,6 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\MarshallerInterface;
+use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
@@ -22,24 +23,40 @@ class TestCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $object = new Dto();
+
+        $this->polyfill($object);
+        // $this->component($object);
+
+        return Command::SUCCESS;
+    }
+
+    private function component(object $object): void
+    {
+        $output = new StdoutStreamOutput();
+
+        $this->marshaller->marshal($object, 'json', $output);
+    }
+
+    private function polyfill(object $object): void
+    {
         $resource = fopen('php://stdout', 'wb');
 
-        $object = new Dto();
         $context = [
             'cache_path' => '/tmp/marshaller',
             'max_depth' => 1,
             'hooks' => [
                 'App\\Dto\\Dto::$array' => static function (\ReflectionProperty $property, string $objectAccessor, array $context): string {
-                    return '    /** ok **/' . PHP_EOL;
+                    $name = $context['propertyNameGenerator']($property, $context);
+                    $value = $context['fwrite']("'[]'", $context);
+
+                    return $name.$value;
                 }
             ],
         ];
 
-        // marshal(new Dto(), $resource, 'json', $context);
+        dump(marshal_generate(new \ReflectionClass($object), 'json', $context));
 
-        dd(json_marshal_generate(new \ReflectionClass($object), $context));
-
-
-        return Command::SUCCESS;
+        marshal($object, $resource, 'json', $context);
     }
 }

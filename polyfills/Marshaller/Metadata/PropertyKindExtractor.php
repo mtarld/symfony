@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller\Metadata;
 
+/**
+ * @internal
+ */
 final class PropertyKindExtractor
 {
     public const KIND_SCALAR = 'scalar';
@@ -13,24 +16,14 @@ final class PropertyKindExtractor
     {
         $type = $property->getType();
         if (null === $type) {
-            throw new \RuntimeException(sprintf(
-                'Cannot retrieve type of "%1$s::$%2$s" property. Please use a "%1$s::$%2$s" hook.',
-                $property->getDeclaringClass()->getName(),
-                $property->getName(),
-            ));
+            throw new \RuntimeException(sprintf('Cannot retrieve type of "%1$s::$%2$s" property. Please use a "%1$s::$%2$s" hook.', $property->getDeclaringClass()->getName(), $property->getName()));
         }
 
         if ($type instanceof \ReflectionUnionType) {
             $kinds = array_map(self::extractFromType(...), $type->getTypes());
             if (\count(array_unique($kinds)) > 1) {
-                throw new \RuntimeException(sprintf(
-                    'Union type "%s" of "%s::$%s" property is not homogenous. Please use whether a "%1$s" or a "%2$s::$%3$s hook.',
-                    $type,
-                    $property->getDeclaringClass()->getName(),
-                    $property->getName(),
-                ));
+                throw new \RuntimeException(sprintf('Union type "%s" of "%s::$%s" property is not homogenous. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
             }
-            dd($kinds[0]);
 
             return $kinds[0];
         }
@@ -39,12 +32,7 @@ final class PropertyKindExtractor
             return $kind;
         }
 
-        throw new \RuntimeException(sprintf(
-            'Type "%s" of "%s::$%s" property is not handled. Please use whether a "%1$s" or a "%2$s::$%3$s hook.',
-            $type,
-            $property->getDeclaringClass()->getName(),
-            $property->getName(),
-        ));
+        throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property is not handled. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
     }
 
     private static function extractFromType(\ReflectionNamedType $type): ?string
@@ -60,4 +48,3 @@ final class PropertyKindExtractor
         return null;
     }
 }
-
