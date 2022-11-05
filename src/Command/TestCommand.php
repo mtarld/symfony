@@ -24,9 +24,21 @@ class TestCommand extends Command
     {
         $resource = fopen('php://stdout', 'wb');
 
-        json_marshal(new Dto(), $resource, [
+        $object = new Dto();
+        $context = [
             'cache_path' => '/tmp/marshaller',
-        ]);
+            'max_depth' => 1,
+            'hooks' => [
+                'App\\Dto\\Dto::$array' => static function (\ReflectionProperty $property, string $objectAccessor, array $context): string {
+                    return '    /** ok **/' . PHP_EOL;
+                }
+            ],
+        ];
+
+        // marshal(new Dto(), $resource, 'json', $context);
+
+        dd(json_marshal_generate(new \ReflectionClass($object), $context));
+
 
         return Command::SUCCESS;
     }

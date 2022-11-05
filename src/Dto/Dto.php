@@ -6,12 +6,13 @@ namespace App\Dto;
 
 final class Dto
 {
-    public int $int = 1;
+    public int|string $int = 1;
     public string $string = 'thestring';
     public Dto2 $object;
+    // public array $array = [];
 
-    public function __construct(
-    ) {
+    public function __construct()
+    {
         $this->object = new Dto2();
     }
 }

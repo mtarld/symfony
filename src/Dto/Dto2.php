@@ -7,5 +7,8 @@ namespace App\Dto;
 final class Dto2
 {
     public float $float = 1.23;
+    public bool $bool = false;
+    public ?string $null = null;
+    // public $what = null;
 }
 
