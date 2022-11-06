@@ -37,7 +37,9 @@ class TestCommand extends Command
     {
         $output = new StdoutStreamOutput();
 
-        $this->marshaller->marshal($object, 'json', $output);
+        $context = new Context(new DepthOption(1, true));
+
+        $this->marshaller->marshal($object, 'json', $output, $context);
     }
 
     private function polyfill(object $object): void

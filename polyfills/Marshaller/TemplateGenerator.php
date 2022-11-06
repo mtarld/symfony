@@ -19,6 +19,8 @@ final class TemplateGenerator
         'max_depth' => 512,
         'indentation_level' => 1,
         'hooks' => [],
+        'body_only' => false,
+        'main_accessor' => '$object',
     ];
 
     /**
@@ -46,10 +48,17 @@ final class TemplateGenerator
      */
     private static function doGenerate(string $objectTemplateGenerator, \ReflectionClass $class, array $context): string
     {
+        $context = $context + self::DEFAULT_CONTEXT;
+
+        $body = $objectTemplateGenerator::generate($class, $context['main_accessor'], $context);
+        if ($context['body_only']) {
+            return $body;
+        }
+
         $template = '<?php'.PHP_EOL.PHP_EOL;
         $template .= '/** @param resource $resource */'.PHP_EOL;
-        $template .= 'return static function (object $object, $resource, array $context): void {'.PHP_EOL;
-        $template .= $objectTemplateGenerator::generate($class, '$object', $context + self::DEFAULT_CONTEXT);
+        $template .= sprintf('return static function (object %s, $resource, array $context): void {%s', $context['main_accessor'], PHP_EOL);
+        $template .= $body;
         $template .= '};'.PHP_EOL;
 
         return $template;

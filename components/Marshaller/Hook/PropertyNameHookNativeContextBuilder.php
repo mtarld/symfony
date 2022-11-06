@@ -13,7 +13,7 @@ final class PropertyNameHookNativeContextBuilder
      *
      * @return array<string, mixed>
      */
-    public function build(\ReflectionClass $class, array $context): array
+    public function build(\ReflectionClass $class, string $format, array $context): array
     {
         if (!isset($context['hooks'])) {
             $context['hooks'] = [];
@@ -26,20 +26,24 @@ final class PropertyNameHookNativeContextBuilder
                     continue;
                 }
 
-                $context['hooks'][sprintf('%s::$%s', $class->getName(), $property->getName())] = $this->createHook($attribute->newInstance()->name);
+                $context['hooks'][sprintf('%s::$%s', $class->getName(), $property->getName())] = $this->createHook($attribute->newInstance()->name, $format);
             }
         }
 
         return $context;
     }
 
-    private function createHook(string $name): callable
+    private function createHook(string $name, string $format): callable
     {
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($name): string {
-            $name = $context['fwrite'](sprintf("'%s%s:'", $context['prefix'], json_encode($name)), $context);
-            $value = $context['propertyValueGenerator']($property, $objectAccessor, $context);
+        if ('json' === $format) {
+            return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($name): string {
+                $name = $context['fwrite'](sprintf("'%s%s:'", $context['prefix'], json_encode($name)), $context);
+                $value = $context['propertyValueGenerator']($property, $objectAccessor, $context);
 
-            return $name.$value;
-        };
+                return $name.$value;
+            };
+        }
+
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format));
     }
 }

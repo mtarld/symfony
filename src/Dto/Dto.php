@@ -15,7 +15,7 @@ final class Dto
     #[Formatter([self::class, 'formatInt'])]
     public string $string = 'thestring';
 
-    public Dto2 $object;
+    // public Dto2 $object;
     // public array $array = [1, 2];
 
     public function __construct()
@@ -25,6 +25,6 @@ final class Dto
 
     public static function formatInt(string $value): Dto2
     {
-        return 10;
+        return new Dto2();
     }
 }

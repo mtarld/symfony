@@ -13,7 +13,7 @@ final class PropertyFormatterHookNativeContextBuilder
      *
      * @return array<string, mixed>
      */
-    public function build(\ReflectionClass $class, array $context): array
+    public function build(\ReflectionClass $class, string $format, array $context): array
     {
         if (!isset($context['hooks'])) {
             $context['hooks'] = [];
@@ -36,55 +36,35 @@ final class PropertyFormatterHookNativeContextBuilder
                 $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
 
                 $context['closures'][$hookName] = $closure;
-                $context['hooks'][$hookName] = $this->createHook($closure, $hookName);
+                $context['hooks'][$hookName] = $this->createHook($closure, $hookName, $format);
             }
         }
 
         return $context;
     }
 
-    // TODO must have declination depending on format
-    private function createHook(\Closure $closure, string $hookName): callable
+    private function createHook(\Closure $closure, string $hookName, string $format): callable
     {
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName): string {
-            // TODO extract?
-            $name = $context['propertyNameGenerator']($property, $context);
-            $closureReflection = new \ReflectionFunction($closure);
+        $valueGenerator = match ($format) {
+            'json' => ValueTemplateGenerator::generateByType(...),
+            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
+        };
 
-            $type = $closureReflection->getReturnType();
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName, $valueGenerator, $format): string {
+            $type = (new \ReflectionFunction($closure))->getReturnType();
             if ($type instanceof \ReflectionUnionType) {
                 $type = $type->getTypes()[0];
             }
 
-            $kind = self::extractKind($type);
+            $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
 
-            $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
-            $formattedValue = sprintf("\$context['closures']['$hookName']($propertyAccessor)");
-
-            if ('scalar' === $kind) {
-                return $name.$context['fwrite']("json_encode($formattedValue)", $context);
+            $value = $valueGenerator($type, $formattedValueAccessor, $format, $context);
+            if ('' === $value) {
+                return $value;
             }
 
-            if ('object' === $kind) {
-                $foo = marshal_generate(new \ReflectionClass($type->getName()), 'json', $context);
-                dd($foo);
-            }
-
-            throw new \RuntimeException('Not implemented yet.');
+            return $context['propertyNameGenerator']($property, $context).$value;
         };
-    }
-
-    private static function extractKind(\ReflectionNamedType $type): ?string
-    {
-        if (in_array($type->getName(), ['int', 'float', 'string', 'bool'], true)) {
-            return 'scalar';
-        }
-
-        if (!$type->isBuiltin()) {
-            return 'object';
-        }
-
-        throw new \LogicException(sprintf('Cannot handle return type "%s" of "%s()" closure.', $type, $reflection->getName()));
     }
 
     private function validateClosure(\Closure $closure, \ReflectionProperty $property): void

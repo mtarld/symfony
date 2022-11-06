@@ -15,17 +15,24 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
 {
     public static function generate(\ReflectionClass $class, string $accessor, array $context): string
     {
-        if ([] === $class->getProperties()) {
-            return self::fwrite("{}", $context);
+        if (isset($context['classes'][$class->getName()]) && $context['reject_circular_reference']) {
+            throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $class->getName()));
+        }
+
+        $context['classes'][$class->getName()] = true;
+
+        if ($context['depth'] > $context['max_depth']) {
+            return '';
         }
 
         $template = '';
         $context['classes'][] = $class->getName();
-        $context['prefix'] = '{';
+        $context['prefix'] = '';
 
         $objectName = '$'.uniqid('o');
 
         $template .= self::writeStatement("$objectName = $accessor", $context);
+        $template .= self::fwrite("'{'", $context);
 
         foreach ($class->getProperties() as $property) {
             if (null !== $hook = PropertyHookExtractor::extract($property, $context)) {
@@ -77,15 +84,6 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
 
         if (PropertyKindExtractor::KIND_OBJECT === $propertyKind) {
             ++$context['depth'];
-
-            if ($context['depth'] > $context['max_depth']) {
-                return null;
-            }
-
-            $className = $property->getType()->getName();
-            if (isset($context['classes'][$className]) && $context['reject_circular_reference']) {
-                throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
-            }
 
             return self::generate(new \ReflectionClass($className), $propertyAccessor, $context);
         }

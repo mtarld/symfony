@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Symfony\Component\Marshaller\Hook;
+
+/**
+ * Mimic marshal_generate template generation behavior.
+ */
+final class ValueTemplateGenerator
+{
+    /**
+     * @param array<string, mixed> $context
+     */
+    public static function generateByType(\ReflectionNamedType $type, string $accessor, string $format, array $context): string
+    {
+        if (in_array($type->getName(), ['int', 'float', 'string', 'bool'], true)) {
+            return self::generateScalar($accessor, $format, $context);
+        }
+
+        if (!$type->isBuiltin()) {
+            return self::generateObject(new \ReflectionClass($type->getName()), $accessor, $format, $context);
+        }
+
+        throw new \LogicException(sprintf('Cannot handle "%s" type.', $type));
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function generateScalar(string $accessor, string $format, array $context): string
+    {
+        return match ($format) {
+            'json' => $context['fwrite']("json_encode($accessor)", $context),
+            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private static function generateObject(\ReflectionClass $class, string $accessor, string $format, array $context): string
+    {
+        ++$context['depth'];
+        $context['body_only'] = true;
+        $context['main_accessor'] = $accessor;
+
+        return marshal_generate($class, $format, $context);
+    }
+}

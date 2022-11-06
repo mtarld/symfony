@@ -28,7 +28,7 @@ final class Marshaller implements MarshallerInterface
 
         // compute the context only if the template has to be built
         if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)))) {
-            $nativeContext = $this->computeFullContext($context, $nativeContext, new \ReflectionClass($object));
+            $nativeContext = $this->computeFullContext($context, $nativeContext, $format, new \ReflectionClass($object));
         }
 
         marshal($object, $output->stream(), $format, $nativeContext);
@@ -39,7 +39,7 @@ final class Marshaller implements MarshallerInterface
      *
      * @return array<string, mixed>
      */
-    private function computeFullContext(?Context $context, array $nativeContext, \ReflectionClass $class): array
+    private function computeFullContext(?Context $context, array $nativeContext, string $format, \ReflectionClass $class): array
     {
         $defaultContext = $this->defaultContextFactory->create();
 
@@ -55,12 +55,10 @@ final class Marshaller implements MarshallerInterface
             $nativeContext += $option->toNativeContext();
         }
 
-        $nativeContext = $this->propertyNameHookNativeContextBuilder->build($class, $nativeContext);
-        $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $nativeContext);
+        $nativeContext = $this->propertyNameHookNativeContextBuilder->build($class, $format, $nativeContext);
+        $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $format, $nativeContext);
 
         // TODO handle arrays
-
-        // TODO handle nested objects, maybe require another file or add a closure into the context?
 
         return $nativeContext;
     }
