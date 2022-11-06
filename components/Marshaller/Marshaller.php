@@ -26,9 +26,10 @@ final class Marshaller implements MarshallerInterface
     {
         $nativeContext = ['cache_path' => $this->cacheDir];
 
-        // compute the context only if the template has to be built
         if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)))) {
             $nativeContext = $this->computeFullContext($context, $nativeContext, $format, new \ReflectionClass($object));
+        } else {
+            $nativeContext = $this->computeLightContext($nativeContext, $format, new \ReflectionClass($object));
         }
 
         marshal($object, $output->stream(), $format, $nativeContext);
@@ -59,6 +60,18 @@ final class Marshaller implements MarshallerInterface
         $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $format, $nativeContext);
         $nativeContext = $this->arrayHookNativeContextBuilder->build($format, $nativeContext);
         // TODO phpstan template hook
+
+        return $nativeContext;
+    }
+
+    /**
+     * @param array<string, mixed>
+     *
+     * @return array<string, mixed>
+     */
+    private function computeLightContext(array $nativeContext, string $format, \ReflectionClass $class): array
+    {
+        $nativeContext = $this->propertyFormatterHookNativeContextBuilder->buildLight($class, $nativeContext);
 
         return $nativeContext;
     }

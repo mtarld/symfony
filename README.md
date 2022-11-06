@@ -1,5 +1,4 @@
 TODO
 
-- Format context option
-- Skip too many declination configuration (as parameter and in attribute)
+- Hooks context options
 - Unmarshal (json stream parser with events, object instantiator component)

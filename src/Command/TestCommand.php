@@ -37,7 +37,8 @@ class TestCommand extends Command
     {
         $output = new StdoutStreamOutput();
 
-        $context = new Context(new DepthOption(1, true));
+        // $context = new Context(new DepthOption(1, true));
+        $context = new Context();
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }

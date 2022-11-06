@@ -12,8 +12,9 @@ final class Type
      */
     public function __construct(
         private readonly string $name,
-        private readonly bool $nullable,
+        private readonly bool $isNullable,
         private readonly ?string $className = null,
+        private readonly bool $isCollection = false,
         private readonly array $collectionKeyTypes = [],
         private readonly array $collectionValueTypes = [],
     ) {
@@ -23,6 +24,7 @@ final class Type
     {
         $name = $reflection->getName();
         $nullable = $reflection->allowsNull();
+        $isCollection = 'array' === $reflection->getName();
         $className = null;
 
         if (!$reflection->isBuiltin()) {
@@ -30,7 +32,26 @@ final class Type
             $className = $reflection->getName();
         }
 
-        return new self($name, $nullable, $className);
+        return new self($name, $nullable, $className, $isCollection);
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function isNullable(): bool
+    {
+        return $this->isNullable;
+    }
+
+    public function className(): string
+    {
+        if (!$this->isObject()) {
+            throw new \RuntimeException('Cannot get class on "%s" type as it\'s not an object', $this->name);
+        }
+
+        return $this->className;
     }
 
     public function isScalar(): bool
@@ -43,27 +64,34 @@ final class Type
         return 'object' === $this->name;
     }
 
-    public function isArray(): bool
+    public function isCollection(): bool
     {
-        return 'array' === $this->name;
+        return $this->isCollection;
     }
 
     public function isList(): bool
     {
-        return $this->isArray() && 1 === \count($this->collectionKeyTypes) && $this->collectionKeyTypes[0]->isInt();
+        return $this->isCollection() && 1 === \count($this->collectionKeyTypes) && 'int' === $this->collectionKeyTypes[0]->name();
     }
 
     public function isDict(): bool
     {
-        return $this->isArray() && !$this->isList();
+        return $this->isCollection() && !$this->isList();
     }
 
-    public function className(): string
+    /**
+     * @return list<self>
+     */
+    public function collectionKeyTypes(): array
     {
-        if (!$this->isObject()) {
-            throw new \RuntimeException('TODO');
-        }
+        return $this->collectionKeyTypes;
+    }
 
-        return $this->className;
+    /**
+     * @return list<self>
+     */
+    public function collectionValueTypes(): array
+    {
+        return $this->collectionValueTypes;
     }
 }

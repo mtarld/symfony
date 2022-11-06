@@ -32,8 +32,13 @@ final class TypeExtractor
             : $this->extractDocTypeFromFunction($reflection)
         ;
 
-        if (null === $docType) {
-            return [];
+        if (null === $docType || [] === ($types = $this->docTypeHelper->getTypes($docType))) {
+            $name = $reflection instanceof \ReflectionProperty
+                ? sprintf('%s::$%s', $reflection->getDeclaringClass()->getName(), $reflection->getName())
+                : sprintf('%s::%s()', $reflection->getDeclaringClass()->getName(), $reflection->getName())
+            ;
+
+            throw new \RuntimeException(sprintf('Cannot retrieve type from docblock of "%s"', $name));
         }
 
         $fromPropertyInfoType = static function (PropertyInfoType $propertyInfoType) use (&$fromPropertyInfoType): Type {
@@ -41,12 +46,13 @@ final class TypeExtractor
                 $propertyInfoType->getBuiltinType(),
                 $propertyInfoType->isNullable(),
                 $propertyInfoType->getClassName(),
+                $propertyInfoType->isCollection(),
                 array_map(fn ($t): Type => $fromPropertyInfoType($t), $propertyInfoType->getCollectionKeyTypes()),
                 array_map(fn ($t): Type => $fromPropertyInfoType($t), $propertyInfoType->getCollectionValueTypes()),
             );
         };
 
-        return array_map(fn (PropertyInfoType $t): Type => $fromPropertyInfoType($t), $this->docTypeHelper->getTypes($docType));
+        return array_map(fn (PropertyInfoType $t): Type => $fromPropertyInfoType($t), $types);
     }
 
     private function extractDocTypeFromProperty(\ReflectionProperty $property): ?DocType

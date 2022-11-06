@@ -23,10 +23,6 @@ final class Formatter
 
         $reflection = new \ReflectionFunction($this->closure);
 
-        if (!$reflection->isStatic()) {
-            throw new \InvalidArgumentException(sprintf('Method of attribute "%s" must be static.', self::class));
-        }
-
         if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType || 'never' === $returnType)) {
             throw new \InvalidArgumentException(sprintf('Method of attribute "%s" must be not be "void" neither "never".', self::class));
         }

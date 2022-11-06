@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Hook;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\Type;
 
 final class PropertyFormatterHookNativeContextBuilder
@@ -44,21 +45,47 @@ final class PropertyFormatterHookNativeContextBuilder
         return $context;
     }
 
+    /**
+     * @param array<string, mixed>
+     *
+     * @return array<string, mixed>
+     */
+    public function buildLight(\ReflectionClass $class, array $context): array
+    {
+        if (!isset($context['closures'])) {
+            $context['closures'] = [];
+        }
+
+        $properties = $class->getProperties();
+        foreach ($class->getProperties() as $property) {
+            foreach ($property->getAttributes() as $attribute) {
+                if (Formatter::class !== $attribute->getName()) {
+                    continue;
+                }
+
+                $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
+                $context['closures'][$hookName] = $attribute->newInstance()->closure;
+            }
+        }
+
+        return $context;
+    }
+
     private function createHook(\Closure $closure, string $hookName, string $format): callable
     {
-        $valueGenerator = match ($format) {
-            'json' => ValueTemplateGenerator::generateByType(...),
+        $valueTemplateGenerator = match ($format) {
+            'json' => JsonValueTemplateGenerator::generate(...),
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
         };
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName, $valueGenerator, $format): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName, $valueTemplateGenerator): string {
             $reflectionType = (new \ReflectionFunction($closure))->getReturnType();
             if ($reflectionType instanceof \ReflectionUnionType) {
                 $reflectionType = $reflectionType->getTypes()[0];
             }
 
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            $value = $valueGenerator(Type::createFromReflection($reflectionType), $formattedValueAccessor, $format, $context);
+            $value = $valueTemplateGenerator(Type::createFromReflection($reflectionType), $formattedValueAccessor, $context);
 
             if ('' === $value) {
                 return $value;

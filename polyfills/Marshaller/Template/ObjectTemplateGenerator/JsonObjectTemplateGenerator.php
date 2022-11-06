@@ -31,7 +31,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
 
         $objectName = '$'.uniqid('o');
 
-        $template .= self::writeStatement("$objectName = $accessor", $context);
+        $template .= self::writeLine("$objectName = $accessor;", $context);
         $template .= self::fwrite("'{'", $context);
 
         foreach ($class->getProperties() as $property) {
@@ -40,6 +40,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
                     'propertyNameGenerator' => self::generatePropertyName(...),
                     'propertyValueGenerator' => self::generatePropertyValue(...),
                     'fwrite' => self::fwrite(...),
+                    'writeLine' => self::writeLine(...),
                 ];
 
                 $template .= $hook($property, $objectName, $hookContext);
@@ -57,7 +58,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         }
 
         $template .= self::fwrite("'}'", $context);
-        $template .= self::writeStatement("unset($objectName)", $context);
+        $template .= self::writeLine("unset($objectName);", $context);
 
         return $template;
     }
@@ -78,19 +79,46 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         $propertyKind = PropertyKindExtractor::extract($property);
         $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
-        // TODO handle null here
+        $type = $property->getType();
+
+        if ($type instanceof \ReflectionUnionType) {
+            if (\count(array_unique(array_map(fn (\ReflectionNamedType $t): bool => $t->allowsNull(), $type->getTypes()))) > 1) {
+                throw new \RuntimeException(sprintf('Union type "%s" of "%s::$%s" property is not homogenous on nullablity. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
+            }
+
+            $type = $type->getTypes()[0];
+        }
+
+        $template = '';
+
+        if ($type->allowsNull()) {
+            $template .= self::writeLine("if (null === $propertyAccessor) {", $context);
+
+            ++$context['indentation_level'];
+            $template .= self::fwrite("'null'", $context);
+
+            --$context['indentation_level'];
+            $template .= self::writeLine('} else {', $context);
+
+            ++$context['indentation_level'];
+        }
 
         if (PropertyKindExtractor::KIND_SCALAR === $propertyKind) {
-            return self::fwrite("json_encode($propertyAccessor)", $context);
-        }
-
-        if (PropertyKindExtractor::KIND_OBJECT === $propertyKind) {
+             $template .= self::fwrite("json_encode($propertyAccessor)", $context);
+        } elseif (PropertyKindExtractor::KIND_OBJECT === $propertyKind) {
             ++$context['depth'];
 
-            return self::generate(new \ReflectionClass($className), $propertyAccessor, $context);
+            $template .= self::generate(new \ReflectionClass($className), $propertyAccessor, $context);
+        } else {
+            throw new \LogicException(sprintf('Unexpected "%s" property kind', $propertyKind));
         }
 
-        throw new \LogicException(sprintf('Unexpected "%s" property kind', $propertyKind));
+        if ($type->allowsNull()) {
+            --$context['indentation_level'];
+            $template .= self::writeLine('}', $context);
+        }
+
+        return $template;
     }
 
     /**
@@ -98,14 +126,14 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
      */
     private static function fwrite(string $content, array $context): string
     {
-        return self::writeStatement("fwrite(\$resource, $content)", $context);
+        return self::writeLine("fwrite(\$resource, $content);", $context);
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private static function writeStatement(string $statement, array $context): string
+    private static function writeLine(string $line, array $context): string
     {
-        return sprintf('%s%s;%s', str_repeat(' ', 4 * $context['indentation_level']), $statement, PHP_EOL);
+        return str_repeat(' ', 4 * $context['indentation_level']).$line.PHP_EOL;
     }
 }
