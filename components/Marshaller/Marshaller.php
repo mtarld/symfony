@@ -6,10 +6,9 @@ namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\DefaultContextFactory;
+use Symfony\Component\Marshaller\Hook\ArrayHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Hook\PropertyFormatterHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\PropertyFormatterHookResolver;
 use Symfony\Component\Marshaller\Hook\PropertyNameHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\PropertyNameHookResolver;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Marshaller implements MarshallerInterface
@@ -19,6 +18,7 @@ final class Marshaller implements MarshallerInterface
         private readonly DefaultContextFactory $defaultContextFactory,
         private readonly PropertyNameHookNativeContextBuilder $propertyNameHookNativeContextBuilder,
         private readonly PropertyFormatterHookNativeContextBuilder $propertyFormatterHookNativeContextBuilder,
+        private readonly ArrayHookNativeContextBuilder $arrayHookNativeContextBuilder,
     ) {
     }
 
@@ -57,8 +57,8 @@ final class Marshaller implements MarshallerInterface
 
         $nativeContext = $this->propertyNameHookNativeContextBuilder->build($class, $format, $nativeContext);
         $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $format, $nativeContext);
-
-        // TODO handle arrays
+        $nativeContext = $this->arrayHookNativeContextBuilder->build($format, $nativeContext);
+        // TODO phpstan template hook
 
         return $nativeContext;
     }

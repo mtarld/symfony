@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Hook;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Type\Type;
 
 final class PropertyFormatterHookNativeContextBuilder
 {
@@ -51,14 +52,14 @@ final class PropertyFormatterHookNativeContextBuilder
         };
 
         return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName, $valueGenerator, $format): string {
-            $type = (new \ReflectionFunction($closure))->getReturnType();
-            if ($type instanceof \ReflectionUnionType) {
-                $type = $type->getTypes()[0];
+            $reflectionType = (new \ReflectionFunction($closure))->getReturnType();
+            if ($reflectionType instanceof \ReflectionUnionType) {
+                $reflectionType = $reflectionType->getTypes()[0];
             }
 
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
+            $value = $valueGenerator(Type::createFromReflection($reflectionType), $formattedValueAccessor, $format, $context);
 
-            $value = $valueGenerator($type, $formattedValueAccessor, $format, $context);
             if ('' === $value) {
                 return $value;
             }

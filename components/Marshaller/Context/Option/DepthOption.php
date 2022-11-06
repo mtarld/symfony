@@ -13,7 +13,7 @@ final class DepthOption implements OptionInterface
         public readonly bool $rejectCircularReference,
     ) {
         if ($maxDepth < 0) {
-            throw new \InvalidArgumentException('TODO');
+            throw new \InvalidArgumentException(sprintf('"%s::$maxDepth" must be positive.', self::class));
         }
     }
 

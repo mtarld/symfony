@@ -16,7 +16,9 @@ final class Dto
     public string $string = 'thestring';
 
     // public Dto2 $object;
-    // public array $array = [1, 2];
+
+    /** @var array<string, Dto> */
+    public array $array = [1, 2];
 
     public function __construct()
     {

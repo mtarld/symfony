@@ -58,7 +58,7 @@ final class Context implements \IteratorAggregate
     public function get(string $optionClass): OptionInterface
     {
         if (!$this->has($optionClass)) {
-            throw new \OutOfBoundsException('TODO');
+            throw new \OutOfBoundsException(sprintf('"%s" option was not found.', $optionClass));
         }
 
         return $this->optionMap[$optionClass];

@@ -78,6 +78,8 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         $propertyKind = PropertyKindExtractor::extract($property);
         $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
+        // TODO handle null here
+
         if (PropertyKindExtractor::KIND_SCALAR === $propertyKind) {
             return self::fwrite("json_encode($propertyAccessor)", $context);
         }
