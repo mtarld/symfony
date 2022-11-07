@@ -26,23 +26,11 @@ final class JsonValueTemplateGenerator
         }
 
         if ($type->isDict()) {
-            if (!UnionTypeChecker::isHomogenousKind($type->collectionKeyTypes())) {
-                throw new \RuntimeException('Union type of collection key not homogenous.');
-            }
-
-            if (!UnionTypeChecker::isHomogenousKind($type->collectionValueTypes())) {
-                throw new \RuntimeException('Union type of collection value not homogenous.');
-            }
-
-            return self::generateDict($type->collectionKeyTypes()[0], $type->collectionValueTypes()[0], $accessor, $context);
+            return self::generateDict($type->collectionKeyTypes(), $type->collectionValueTypes(), $accessor, $context);
         }
 
         if ($type->isList()) {
-            if (!UnionTypeChecker::isHomogenousKind($type->collectionValueTypes())) {
-                throw new \RuntimeException('Union type of collection value not homogenous.');
-            }
-
-            return self::generateList($type->collectionValueTypes()[0], $accessor, $context);
+            return self::generateList($type->collectionValueTypes(), $accessor, $context);
         }
 
         throw new \LogicException(sprintf('Cannot handle "%s" type.', $type));
@@ -69,12 +57,29 @@ final class JsonValueTemplateGenerator
     }
 
     /**
+     * @param list<Type>           $keyTypes
+     * @param list<Type>           $valueTypes
      * @param array<string, mixed> $context
      */
-    private static function generateDict(Type $keyType, Type $valueType, string $accessor, array $context): string
+    private static function generateDict(array $keyTypes, array $valueTypes, string $accessor, array $context): string
     {
-        $fwrite = static function (string $content) use (&$context): string { return $context['fwrite']($content, $context); };
-        $writeLine = static function (string $content) use (&$context): string { return $context['writeLine']($content, $context); };
+        if (!UnionTypeChecker::isHomogenousKind($keyTypes)) {
+            throw new \RuntimeException('Union type of collection key not homogenous.');
+        }
+
+        if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
+            throw new \RuntimeException('Union type of collection value not homogenous.');
+        }
+
+        $keyType = $keyTypes[0];
+        $valueType = $valueTypes[0];
+
+        $fwrite = static function (string $content) use (&$context): string {
+            return $context['fwrite']($content, $context);
+        };
+        $writeLine = static function (string $content) use (&$context): string {
+            return $context['writeLine']($content, $context);
+        };
 
         $template = $fwrite("'{'")
             .$writeLine("foreach ($accessor as \$key => \$value) {");
@@ -97,12 +102,23 @@ final class JsonValueTemplateGenerator
     }
 
     /**
+     * @param list<Type>           $valueTypes
      * @param array<string, mixed> $context
      */
-    private static function generateList(Type $valueType, string $accessor, array $context): string
+    private static function generateList(array $valueTypes, string $accessor, array $context): string
     {
-        $fwrite = static function (string $content) use (&$context): string { return $context['fwrite']($content, $context); };
-        $writeLine = static function (string $content) use (&$context): string { return $context['writeLine']($content, $context); };
+        if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
+            throw new \RuntimeException('Union type of collection value not homogenous.');
+        }
+
+        $valueType = $valueTypes[0];
+
+        $fwrite = static function (string $content) use (&$context): string {
+            return $context['fwrite']($content, $context);
+        };
+        $writeLine = static function (string $content) use (&$context): string {
+            return $context['writeLine']($content, $context);
+        };
 
         $template = $fwrite("'['")
             .$writeLine("foreach ($accessor as \$item) {");

@@ -2,27 +2,45 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Hook;
+namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\Type;
 
-final class PropertyFormatterHookNativeContextBuilder
+final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeContextBuilderInterface, TemplateGenerationNativeContextBuilderInterface
 {
-    /**
-     * @param array<string, mixed>
-     *
-     * @return array<string, mixed>
-     */
-    public function build(\ReflectionClass $class, string $format, array $context): array
+    public function forMarshal(\ReflectionClass $class, string $format, ?Context $context, array $nativeContext): array
     {
-        if (!isset($context['hooks'])) {
-            $context['hooks'] = [];
+        if (!isset($nativeContext['closures'])) {
+            $nativeContext['closures'] = [];
         }
 
-        if (!isset($context['closures'])) {
-            $context['closures'] = [];
+        foreach ($class->getProperties() as $property) {
+            foreach ($property->getAttributes() as $attribute) {
+                if (Formatter::class !== $attribute->getName()) {
+                    continue;
+                }
+
+                $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
+                $nativeContext['closures'][$hookName] = $attribute->newInstance()->closure;
+            }
+        }
+
+        return $nativeContext;
+    }
+
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array
+    {
+        if (!isset($nativeContext['hooks'])) {
+            $nativeContext['hooks'] = [];
+        }
+
+        if (!isset($nativeContext['closures'])) {
+            $nativeContext['closures'] = [];
         }
 
         $properties = $class->getProperties();
@@ -37,38 +55,12 @@ final class PropertyFormatterHookNativeContextBuilder
 
                 $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
 
-                $context['closures'][$hookName] = $closure;
-                $context['hooks'][$hookName] = $this->createHook($closure, $hookName, $format);
+                $nativeContext['closures'][$hookName] = $closure;
+                $nativeContext['hooks'][$hookName] = $this->createHook($closure, $hookName, $format);
             }
         }
 
-        return $context;
-    }
-
-    /**
-     * @param array<string, mixed>
-     *
-     * @return array<string, mixed>
-     */
-    public function buildLight(\ReflectionClass $class, array $context): array
-    {
-        if (!isset($context['closures'])) {
-            $context['closures'] = [];
-        }
-
-        $properties = $class->getProperties();
-        foreach ($class->getProperties() as $property) {
-            foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
-                    continue;
-                }
-
-                $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
-                $context['closures'][$hookName] = $attribute->newInstance()->closure;
-            }
-        }
-
-        return $context;
+        return $nativeContext;
     }
 
     private function createHook(\Closure $closure, string $hookName, string $format): callable
@@ -100,13 +92,7 @@ final class PropertyFormatterHookNativeContextBuilder
         $valueParameter = (new \ReflectionFunction($closure))->getParameters()[0];
 
         if ((string) $valueParameter->getType() !== (string) $property->getType()) {
-            throw new \InvalidArgumentException(sprintf(
-                'Type of closure\'s argument of attribute "%s" must be the same as the "%s::$%s" property ("%s").',
-                Formatter::class,
-                $property->getDeclaringClass()->getName(),
-                $property->getName(),
-                (string) $property->getType(),
-            ));
+            throw new \InvalidArgumentException(sprintf('Type of closure\'s argument of attribute "%s" must be the same as the "%s::$%s" property ("%s").', Formatter::class, $property->getDeclaringClass()->getName(), $property->getName(), (string) $property->getType()));
         }
     }
 }

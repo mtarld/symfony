@@ -15,7 +15,7 @@ final class Dto
     #[Formatter('strtoupper')]
     public string $string = 'thestring';
 
-    // public Dto2 $object;
+    // private Dto2 $object;
 
     /** @var array<int, App\Dto\Dto2>|null */
     public ?array $array = [];

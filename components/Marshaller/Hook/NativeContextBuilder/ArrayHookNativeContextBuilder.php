@@ -2,20 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Hook;
+namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
+use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\TypeExtractor;
 use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
-final class ArrayHookNativeContextBuilder
+final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
-    /**
-     * @param array<string, mixed>
-     *
-     * @return array<string, mixed>
-     */
-    public function build(string $format, array $context): array
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array
     {
         $typeExtractor = new TypeExtractor();
 
@@ -24,7 +21,7 @@ final class ArrayHookNativeContextBuilder
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
         };
 
-        $context['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $valueTemplateGenerator): string {
+        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $valueTemplateGenerator): string {
             $types = $typeExtractor->extract($property);
 
             foreach ($types as $type) {
@@ -68,6 +65,6 @@ final class ArrayHookNativeContextBuilder
             return $template;
         };
 
-        return $context;
+        return $nativeContext;
     }
 }

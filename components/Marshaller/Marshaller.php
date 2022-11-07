@@ -6,19 +6,21 @@ namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\DefaultContextFactory;
-use Symfony\Component\Marshaller\Hook\ArrayHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\PropertyFormatterHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\PropertyNameHookNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Marshaller implements MarshallerInterface
 {
+    /**
+     * @param iterable<MarshalNativeContextBuilderInterface>            $marshalNativeContextBuilders
+     * @param iterable<TemplateGenerationNativeContextBuilderInterface> $templateGenerationNativeContextBuilders
+     */
     public function __construct(
         private readonly string $cacheDir,
         private readonly DefaultContextFactory $defaultContextFactory,
-        private readonly PropertyNameHookNativeContextBuilder $propertyNameHookNativeContextBuilder,
-        private readonly PropertyFormatterHookNativeContextBuilder $propertyFormatterHookNativeContextBuilder,
-        private readonly ArrayHookNativeContextBuilder $arrayHookNativeContextBuilder,
+        private readonly iterable $marshalNativeContextBuilders,
+        private readonly iterable $templateGenerationNativeContextBuilders,
     ) {
     }
 
@@ -26,21 +28,31 @@ final class Marshaller implements MarshallerInterface
     {
         $nativeContext = ['cache_path' => $this->cacheDir];
 
+        $reflectionClass = new \ReflectionClass($object);
+
         if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)))) {
-            $nativeContext = $this->computeFullContext($context, $nativeContext, $format, new \ReflectionClass($object));
+            $nativeContext = $this->mergeWithContext($context, $nativeContext);
+
+            foreach ($this->templateGenerationNativeContextBuilders as $builder) {
+                $nativeContext = $builder->forTemplateGeneration($reflectionClass, $format, $context, $nativeContext);
+            }
+
+            $this->validateObject($reflectionClass);
         } else {
-            $nativeContext = $this->computeLightContext($nativeContext, $format, new \ReflectionClass($object));
+            foreach ($this->marshalNativeContextBuilders as $builder) {
+                $nativeContext = $builder->forMarshal($reflectionClass, $format, $context, $nativeContext);
+            }
         }
 
         marshal($object, $output->stream(), $format, $nativeContext);
     }
 
     /**
-     * @param array<string, mixed>
+     * @param array<string, mixed> $nativeContext
      *
      * @return array<string, mixed>
      */
-    private function computeFullContext(?Context $context, array $nativeContext, string $format, \ReflectionClass $class): array
+    private function mergeWithContext(?Context $context, array $nativeContext): array
     {
         $defaultContext = $this->defaultContextFactory->create();
 
@@ -56,23 +68,15 @@ final class Marshaller implements MarshallerInterface
             $nativeContext += $option->toNativeContext();
         }
 
-        $nativeContext = $this->propertyNameHookNativeContextBuilder->build($class, $format, $nativeContext);
-        $nativeContext = $this->propertyFormatterHookNativeContextBuilder->build($class, $format, $nativeContext);
-        $nativeContext = $this->arrayHookNativeContextBuilder->build($format, $nativeContext);
-        // TODO phpstan template hook
-
         return $nativeContext;
     }
 
-    /**
-     * @param array<string, mixed>
-     *
-     * @return array<string, mixed>
-     */
-    private function computeLightContext(array $nativeContext, string $format, \ReflectionClass $class): array
+    private function validateObject(\ReflectionClass $class): void
     {
-        $nativeContext = $this->propertyFormatterHookNativeContextBuilder->buildLight($class, $nativeContext);
-
-        return $nativeContext;
+        foreach ($class->getProperties() as $property) {
+            if (!$property->isPublic()) {
+                throw new \RuntimeException(sprintf('"%s::$%s" must be public', $class->getName(), $property->getName()));
+            }
+        }
     }
 }
