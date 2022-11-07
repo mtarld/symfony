@@ -11,7 +11,7 @@ final class ValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    public static function generate(Type $type, string $accessor, array $context): string
+    public static function generate(Type $type, string $accessor, string $format, array $context): string
     {
         return match ($format) {
             'json' => JsonValueTemplateGenerator::generate($type, $accessor, $context),

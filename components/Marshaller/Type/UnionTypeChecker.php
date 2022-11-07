@@ -21,6 +21,14 @@ final class UnionTypeChecker
     /**
      * @param list<Type>
      */
+    public static function isHomogenousObject(array $types): bool
+    {
+        return self::checkUnionType($types, fn (Type $t): bool => $t->isObject());
+    }
+
+    /**
+     * @param list<Type>
+     */
     public static function isHomogenousCollection(array $types): bool
     {
         return self::checkUnionType($types, fn (Type $t): bool => $t->isDict());

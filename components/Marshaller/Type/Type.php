@@ -12,7 +12,7 @@ final class Type
      */
     public function __construct(
         private readonly string $name,
-        private readonly bool $isNullable,
+        private readonly bool $isNullable = false,
         private readonly ?string $className = null,
         private readonly bool $isCollection = false,
         private readonly array $collectionKeyTypes = [],

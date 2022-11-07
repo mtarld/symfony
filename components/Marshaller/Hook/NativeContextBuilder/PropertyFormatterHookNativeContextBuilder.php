@@ -75,9 +75,10 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
             $returnType = $returnType->getTypes()[0];
         }
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName, $format): string {
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            $value = ValueTemplateGenerator::generate(Type::createFromReflection($returnType), $formattedValueAccessor, $context);
+            // TODO type extractor
+            $value = ValueTemplateGenerator::generate(Type::createFromReflection($returnType), $formattedValueAccessor, $format, $context);
 
             if ('' === $value) {
                 return $value;

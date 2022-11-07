@@ -11,23 +11,24 @@ final class Dto
 {
     // #[Name('theint')]
     // public ?int $int = 12;
-    //
+
     // #[Formatter([self::class, 'formatInt'])]
     // public string $string = 'thestring';
 
-    public ?Dto2 $object;
+    /** @var self|null */
+    public ?object $object = null;
 
-    // /** @var array<int, App\Dto\Dto2>|null */
+    // /** @var list<App\Dto\Dto2>|null */
     // public ?array $array = [];
 
     public function __construct()
     {
-        $this->object = new Dto2();
+        // $this->object = new Dto2();
         // $this->array = ['foo' => new Dto2()];
     }
 
-    public static function formatInt(string $value): Dto2
-    {
-        return new Dto2();
-    }
+    // public static function formatInt(string $value): Dto2
+    // {
+    //     return new Dto2();
+    // }
 }

@@ -11,11 +11,16 @@ use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
 final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
+    public function __construct(
+        private readonly TypeExtractor $typeExtractor,
+    ) {
+    }
+
     public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
-        $typeExtractor = new TypeExtractor();
+        $typeExtractor = $this->typeExtractor;
 
-        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor): string {
+        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $format): string {
             $types = $typeExtractor->extract($property);
 
             foreach ($types as $type) {
@@ -44,7 +49,7 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
                 ++$context['indentation_level'];
             }
 
-            $value = ValueTemplateGenerator::generate($types[0], $accessor, $context);
+            $value = ValueTemplateGenerator::generate($types[0], $accessor, $format, $context);
             if ('' === $value) {
                 return '';
             }
