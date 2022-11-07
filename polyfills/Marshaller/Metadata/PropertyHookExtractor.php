@@ -37,8 +37,8 @@ final class PropertyHookExtractor
         $types = $type instanceof \ReflectionUnionType ? $type->getTypes() : [$type];
         foreach ($types as $type) {
             $hooks[] = $type->getName();
-            if ($type->allowsNull()) {
-                $hooks[] = '?'.$type->getName();
+            if (!$type->isBuiltin()) {
+                $hooks[] = 'object';
             }
         }
 

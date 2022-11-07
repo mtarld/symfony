@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
-use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
+use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\TypeExtractor;
 use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
@@ -15,12 +15,7 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
     {
         $typeExtractor = new TypeExtractor();
 
-        $valueTemplateGenerator = match ($format) {
-            'json' => JsonValueTemplateGenerator::generate(...),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
-        };
-
-        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $valueTemplateGenerator): string {
+        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor): string {
             $types = $typeExtractor->extract($property);
 
             foreach ($types as $type) {
@@ -49,7 +44,7 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
                 ++$context['indentation_level'];
             }
 
-            $value = $valueTemplateGenerator($types[0], $accessor, $context);
+            $value = ValueTemplateGenerator::generate($types[0], $accessor, $context);
             if ('' === $value) {
                 return '';
             }

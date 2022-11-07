@@ -107,8 +107,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
              $template .= self::fwrite("json_encode($propertyAccessor)", $context);
         } elseif (PropertyKindExtractor::KIND_OBJECT === $propertyKind) {
             ++$context['depth'];
-
-            $template .= self::generate(new \ReflectionClass($className), $propertyAccessor, $context);
+            $template .= self::generate(new \ReflectionClass($type->getName()), $propertyAccessor, $context);
         } else {
             throw new \LogicException(sprintf('Unexpected "%s" property kind', $propertyKind));
         }

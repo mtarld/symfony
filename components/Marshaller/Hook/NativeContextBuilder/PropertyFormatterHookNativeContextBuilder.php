@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
-use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
+use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\Type;
 use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
@@ -65,11 +65,6 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
 
     private function createHook(\Closure $closure, string $hookName, string $format): callable
     {
-        $valueTemplateGenerator = match ($format) {
-            'json' => JsonValueTemplateGenerator::generate(...),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
-        };
-
         $reflectionClosure = new \ReflectionFunction($closure);
         $returnType = $reflectionClosure->getReturnType();
         if ($returnType instanceof \ReflectionUnionType) {
@@ -80,9 +75,9 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
             $returnType = $returnType->getTypes()[0];
         }
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName, $valueTemplateGenerator): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName): string {
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            $value = $valueTemplateGenerator(Type::createFromReflection($returnType), $formattedValueAccessor, $context);
+            $value = ValueTemplateGenerator::generate(Type::createFromReflection($returnType), $formattedValueAccessor, $context);
 
             if ('' === $value) {
                 return $value;
