@@ -17,9 +17,9 @@ final class DepthOption implements OptionInterface
         }
     }
 
-    public function toNativeContext(): array
+    public function mergeNativeContext(array $nativeContext): array
     {
-        return [
+        return $nativeContext += [
             'max_depth' => $this->maxDepth,
             'reject_circular_reference' => $this->rejectCircularReference,
         ];

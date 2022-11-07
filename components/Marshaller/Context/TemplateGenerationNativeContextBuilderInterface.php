@@ -9,5 +9,5 @@ interface TemplateGenerationNativeContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array;
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array;
 }

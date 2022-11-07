@@ -31,16 +31,16 @@ final class Marshaller implements MarshallerInterface
         $reflectionClass = new \ReflectionClass($object);
 
         if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)))) {
-            $nativeContext = $this->mergeWithContext($context, $nativeContext);
+            $this->validateObject($reflectionClass);
 
             foreach ($this->templateGenerationNativeContextBuilders as $builder) {
-                $nativeContext = $builder->forTemplateGeneration($reflectionClass, $format, $context, $nativeContext);
+                $nativeContext = $builder->forTemplateGeneration($reflectionClass, $format, $nativeContext);
             }
 
-            $this->validateObject($reflectionClass);
+            $nativeContext = $this->mergeWithContext($context, $nativeContext);
         } else {
             foreach ($this->marshalNativeContextBuilders as $builder) {
-                $nativeContext = $builder->forMarshal($reflectionClass, $format, $context, $nativeContext);
+                $nativeContext = $builder->forMarshal($reflectionClass, $format, $nativeContext);
             }
         }
 
@@ -65,7 +65,7 @@ final class Marshaller implements MarshallerInterface
         }
 
         foreach ($context ?? $defaultContext as $option) {
-            $nativeContext += $option->toNativeContext();
+            $nativeContext = $option->mergeNativeContext($nativeContext);
         }
 
         return $nativeContext;

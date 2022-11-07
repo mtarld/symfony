@@ -9,5 +9,5 @@ interface MarshalNativeContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    public function forMarshal(\ReflectionClass $class, string $format, ?Context $context, array $nativeContext): array;
+    public function forMarshal(\ReflectionClass $class, string $format, array $nativeContext): array;
 }

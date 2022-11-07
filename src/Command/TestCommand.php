@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\DepthOption;
+use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -37,8 +38,8 @@ class TestCommand extends Command
     {
         $output = new StdoutStreamOutput();
 
-        // $context = new Context(new DepthOption(1, true));
         $context = new Context();
+        // $context = new Context(new DepthOption(1, true), new HookOption('object', [$this, 'test']));
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }
@@ -56,7 +57,7 @@ class TestCommand extends Command
                     $value = $context['fwrite']("'[]'", $context);
 
                     return $name.$value;
-                }
+                },
             ],
         ];
 

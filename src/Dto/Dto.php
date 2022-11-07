@@ -12,7 +12,7 @@ final class Dto
     #[Name('theint')]
     public ?int $int = 12;
 
-    #[Formatter('strtoupper')]
+    #[Formatter([self::class, 'formatInt'])]
     public string $string = 'thestring';
 
     // private Dto2 $object;

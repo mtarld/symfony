@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
-use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\TypeExtractor;
@@ -12,7 +11,7 @@ use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
 final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
-    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
         $typeExtractor = new TypeExtractor();
 
@@ -31,7 +30,7 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
             }
 
             if (!UnionTypeChecker::isHomogenousCollection($types)) {
-                throw new \RuntimeException(sprintf('Union type of "%s::$%s" property is not homogenous (some types are lists, others are dicts).', $property->getDeclaringClass()->getName(), $property->getName()));
+                throw new \RuntimeException(sprintf('Type of "%s::$%s" property is not homogenous (some types are lists, others are dicts).', $property->getDeclaringClass()->getName(), $property->getName()));
             }
 
             $accessor = sprintf('%s->%s', $objectAccessor, $property->getName());

@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Attribute\Name;
-use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 
 final class PropertyNameHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
-    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
         if (!isset($nativeContext['hooks'])) {
             $nativeContext['hooks'] = [];

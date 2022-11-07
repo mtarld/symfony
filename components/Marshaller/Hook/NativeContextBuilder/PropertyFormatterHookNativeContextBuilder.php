@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
-use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\JsonValueTemplateGenerator;
 use Symfony\Component\Marshaller\Type\Type;
+use Symfony\Component\Marshaller\Type\UnionTypeChecker;
 
 final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeContextBuilderInterface, TemplateGenerationNativeContextBuilderInterface
 {
-    public function forMarshal(\ReflectionClass $class, string $format, ?Context $context, array $nativeContext): array
+    public function forMarshal(\ReflectionClass $class, string $format, array $nativeContext): array
     {
         if (!isset($nativeContext['closures'])) {
             $nativeContext['closures'] = [];
@@ -33,7 +33,7 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
         return $nativeContext;
     }
 
-    public function forTemplateGeneration(\ReflectionClass $class, string $format, Context $context, array $nativeContext): array
+    public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
         if (!isset($nativeContext['hooks'])) {
             $nativeContext['hooks'] = [];
@@ -70,14 +70,19 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format)),
         };
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($closure, $hookName, $valueTemplateGenerator): string {
-            $reflectionType = (new \ReflectionFunction($closure))->getReturnType();
-            if ($reflectionType instanceof \ReflectionUnionType) {
-                $reflectionType = $reflectionType->getTypes()[0];
+        $reflectionClosure = new \ReflectionFunction($closure);
+        $returnType = $reflectionClosure->getReturnType();
+        if ($returnType instanceof \ReflectionUnionType) {
+            if (!UnionTypeChecker::isHomogenousKind($returnType->getTypes())) {
+                throw new \RuntimeException(sprintf('Return type of "%s()" is not homogenous.', $reflectionClosure->getName()));
             }
 
+            $returnType = $returnType->getTypes()[0];
+        }
+
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName, $valueTemplateGenerator): string {
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            $value = $valueTemplateGenerator(Type::createFromReflection($reflectionType), $formattedValueAccessor, $context);
+            $value = $valueTemplateGenerator(Type::createFromReflection($returnType), $formattedValueAccessor, $context);
 
             if ('' === $value) {
                 return $value;

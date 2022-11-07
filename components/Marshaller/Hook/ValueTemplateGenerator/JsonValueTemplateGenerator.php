@@ -64,11 +64,11 @@ final class JsonValueTemplateGenerator
     private static function generateDict(array $keyTypes, array $valueTypes, string $accessor, array $context): string
     {
         if (!UnionTypeChecker::isHomogenousKind($keyTypes)) {
-            throw new \RuntimeException('Union type of collection key not homogenous.');
+            throw new \RuntimeException('Collection key type is not homogenous.');
         }
 
         if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
-            throw new \RuntimeException('Union type of collection value not homogenous.');
+            throw new \RuntimeException('Collection value type is not homogenous.');
         }
 
         $keyType = $keyTypes[0];
@@ -108,7 +108,7 @@ final class JsonValueTemplateGenerator
     private static function generateList(array $valueTypes, string $accessor, array $context): string
     {
         if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
-            throw new \RuntimeException('Union type of collection value not homogenous.');
+            throw new \RuntimeException('Collection value type is not homogenous.');
         }
 
         $valueType = $valueTypes[0];
