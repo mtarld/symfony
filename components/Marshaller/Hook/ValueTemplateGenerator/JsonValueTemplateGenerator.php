@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Hook\ValueTemplateGenerator;
 
-use Symfony\Component\Marshaller\Type\Types;
+use Symfony\Component\Marshaller\Type\Type;
 
 /**
  * Mimic marshal_generate template generation to extend its behavior.
@@ -14,25 +14,25 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    public static function generate(Types $types, string $accessor, array $context): string
+    public static function generate(Type $type, string $accessor, array $context): string
     {
-        if ($types->isOnlyScalar()) {
+        if ($type->isScalar()) {
             return self::generateScalar($accessor, $context);
         }
 
-        if ($types->isOnlyObject() && $types->isSameClass()) {
-            return self::generateObject($types, $accessor, $context);
+        if ($type->isObject()) {
+            return self::generateObject($type, $accessor, $context);
         }
 
-        if ($types->isOnlyDict()) {
-            return self::generateDict($types->types[0]->collectionValueTypes(), $accessor, $context);
+        if ($type->isDict()) {
+            return self::generateDict($type->collectionValueType(), $accessor, $context);
         }
 
-        if ($types->isOnlyList()) {
-            return self::generateList($types->types[0]->collectionValueTypes(), $accessor, $context);
+        if ($type->isList()) {
+            return self::generateList($type->collectionValueType(), $accessor, $context);
         }
 
-        throw new \LogicException(sprintf('Cannot handle "%s" type.', $types));
+        throw new \LogicException(sprintf('Cannot handle "%s" type.', $type));
     }
 
     /**
@@ -46,11 +46,11 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private static function generateObject(Types $types, string $accessor, array $context): string
+    private static function generateObject(Type $type, string $accessor, array $context): string
     {
         $template = '';
 
-        if ($types->isNullable()) {
+        if ($type->isNullable()) {
             $template .= $context['writeLine']("if (null === $accessor) {", $context);
 
             ++$context['indentation_level'];
@@ -66,13 +66,13 @@ final class JsonValueTemplateGenerator
         $context['enclosed'] = false;
         $context['main_accessor'] = $accessor;
 
-        if ('' === $value = json_marshal_generate(new \ReflectionClass($types->types[0]->className()), $context)) {
+        if ('' === $value = json_marshal_generate(new \ReflectionClass($type->className()), $context)) {
             return '';
         }
 
         $template .= $value;
 
-        if ($types->isNullable()) {
+        if ($type->isNullable()) {
             --$context['indentation_level'];
             $template .= $context['writeLine']('}', $context);
         }
@@ -83,7 +83,7 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private static function generateDict(Types $valueTypes, string $accessor, array $context): string
+    private static function generateDict(Type $valueType, string $accessor, array $context): string
     {
         $fwrite = static function (string $content) use (&$context): string {
             return $context['fwrite']($content, $context);
@@ -104,7 +104,7 @@ final class JsonValueTemplateGenerator
         ++$context['indentation_level'];
 
         $template .= $fwrite("$prefixName.json_encode($keyName).':'")
-            .self::generate($valueTypes, $valueName, $context)
+            .self::generate($valueType, $valueName, $context)
             .$writeLine("$prefixName = ',';");
 
         --$context['depth'];
@@ -120,7 +120,7 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private static function generateList(Types $valueTypes, string $accessor, array $context): string
+    private static function generateList(Type $valueType, string $accessor, array $context): string
     {
         $fwrite = static function (string $content) use (&$context): string {
             return $context['fwrite']($content, $context);
@@ -140,7 +140,7 @@ final class JsonValueTemplateGenerator
         ++$context['indentation_level'];
 
         $template .= $fwrite($prefixName)
-            .self::generate($valueTypes, $valueName, $context)
+            .self::generate($valueType, $valueName, $context)
             .$writeLine("$prefixName = ',';");
 
         --$context['depth'];

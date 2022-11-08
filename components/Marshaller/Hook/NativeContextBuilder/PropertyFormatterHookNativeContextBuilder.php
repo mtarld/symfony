@@ -8,12 +8,12 @@ use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\TypesExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeContextBuilderInterface, TemplateGenerationNativeContextBuilderInterface
 {
     public function __construct(
-        private readonly TypesExtractor $typesExtractor,
+        private readonly TypeExtractor $typeExtractor,
     ) {
     }
 
@@ -70,11 +70,11 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
     private function createHook(\Closure $closure, \ReflectionClass $class, string $hookName, string $format): callable
     {
         $reflection = new \ReflectionFunction($closure);
-        $types = $this->typesExtractor->extract($reflection, $class);
+        $type = $this->typeExtractor->extract($reflection, $class);
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($types, $hookName, $format): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($type, $hookName, $format): string {
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            $value = ValueTemplateGenerator::generate($types, $formattedValueAccessor, $format, $context);
+            $value = ValueTemplateGenerator::generate($type, $formattedValueAccessor, $format, $context);
 
             if ('' === $value) {
                 return $value;

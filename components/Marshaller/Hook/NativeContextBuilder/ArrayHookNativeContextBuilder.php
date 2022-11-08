@@ -6,23 +6,23 @@ namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\TypesExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
     public function __construct(
-        private readonly TypesExtractor $typesExtractor,
+        private readonly TypeExtractor $typeExtractor,
     ) {
     }
 
     public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
-        $typesExtractor = $this->typesExtractor;
+        $typeExtractor = $this->typeExtractor;
 
-        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typesExtractor, $format): string {
-            $types = $typesExtractor->extract($property, $property->getDeclaringClass());
+        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $format): string {
+            $type = $typeExtractor->extract($property, $property->getDeclaringClass());
 
-            if (false === $types->isOnlyCollection()) {
+            if (false === $type->isCollection()) {
                 throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property type is not a collection.', $type->name(), $property->getDeclaringClass()->getName(), $property->getName()));
             }
 
@@ -30,7 +30,7 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
 
             $template = $context['propertyNameGenerator']($property, $context);
 
-            if ($types->isNullable()) {
+            if ($type->isNullable()) {
                 $template .= $context['writeLine']("if (null === $accessor) {", $context);
 
                 ++$context['indentation_level'];
@@ -42,14 +42,14 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
                 ++$context['indentation_level'];
             }
 
-            $value = ValueTemplateGenerator::generate($types, $accessor, $format, $context);
+            $value = ValueTemplateGenerator::generate($type, $accessor, $format, $context);
             if ('' === $value) {
                 return '';
             }
 
             $template .= $value;
 
-            if ($types->isNullable()) {
+            if ($type->isNullable()) {
                 --$context['indentation_level'];
                 $template .= $context['writeLine']('}', $context);
             }

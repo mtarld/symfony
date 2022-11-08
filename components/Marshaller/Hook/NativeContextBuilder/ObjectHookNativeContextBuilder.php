@@ -6,12 +6,12 @@ namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\TypesExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class ObjectHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
     public function __construct(
-        private readonly TypesExtractor $typesExtractor,
+        private readonly TypeExtractor $typeExtractor,
     ) {
     }
 
@@ -28,13 +28,13 @@ final class ObjectHookNativeContextBuilder implements TemplateGenerationNativeCo
 
     private function createHook(string $format): callable
     {
-        $typesExtractor = $this->typesExtractor;
+        $typeExtractor = $this->typeExtractor;
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($format, $typesExtractor): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($format, $typeExtractor): string {
             $accessor = sprintf('%s->%s', $objectAccessor, $property->getName());
-            $types = $typesExtractor->extract($property, $property->getDeclaringClass());
+            $type = $typeExtractor->extract($property, $property->getDeclaringClass());
 
-            $value = ValueTemplateGenerator::generate($types, $accessor, $format, $context);
+            $value = ValueTemplateGenerator::generate($type, $accessor, $format, $context);
             if ('' === $value) {
                 return $value;
             }

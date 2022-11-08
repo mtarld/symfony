@@ -15,7 +15,7 @@ use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
 use Symfony\Component\PropertyInfo\Type as PropertyInfoType;
 use Symfony\Component\PropertyInfo\Util\PhpStanTypeHelper;
 
-final class PhpstanTypesExtractor
+final class PhpstanTypeExtractor
 {
     private readonly PhpStanTypeHelper $docTypeHelper;
     private readonly PhpDocParser $docParser;
@@ -30,7 +30,7 @@ final class PhpstanTypesExtractor
         $this->nameScopeFactory = new NameScopeFactory();
     }
 
-    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection, \ReflectionClass $declaringClass): ?Types
+    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection, \ReflectionClass $declaringClass): ?Type
     {
         if ($reflection instanceof \ReflectionProperty) {
             return $this->extractFromProperty($reflection, $declaringClass);
@@ -39,7 +39,7 @@ final class PhpstanTypesExtractor
         return $this->extractFromReturnType($reflection, $declaringClass);
     }
 
-    public function extractFromProperty(\ReflectionProperty $property, \ReflectionClass $declaringClass): ?Types
+    public function extractFromProperty(\ReflectionProperty $property, \ReflectionClass $declaringClass): ?Type
     {
         if (null === $docNode = $this->getDocNode($property)) {
             return null;
@@ -52,10 +52,14 @@ final class PhpstanTypesExtractor
 
         $nameScope = $this->nameScopeFactory->create($declaringClass->getName());
 
-        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $declaringClass);
+        if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
+            return null;
+        }
+
+        return $this->createFromPropertyInfoType($types[0], $declaringClass);
     }
 
-    public function extractFromReturnType(\ReflectionFunctionAbstract $function, \ReflectionClass $declaringClass): ?Types
+    public function extractFromReturnType(\ReflectionFunctionAbstract $function, \ReflectionClass $declaringClass): ?Type
     {
         if (null === $docNode = $this->getDocNode($function)) {
             return null;
@@ -68,44 +72,40 @@ final class PhpstanTypesExtractor
 
         $nameScope = $this->nameScopeFactory->create($declaringClass->getName());
 
-        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $declaringClass);
+        if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
+            return null;
+        }
+
+        return $this->createFromPropertyInfoType($types[0], $declaringClass);
     }
 
-    /**
-     * @param list<PropertyInfoType> $propertyInfoTypes
-     */
-    private function createFromPropertyInfoTypes(array $propertyInfoTypes, \ReflectionClass $declaringClass): Types
+    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): Type
     {
-        $createTypeFromPropertyInfoType = static function (PropertyInfoType $propertyInfoType) use (&$createTypeFromPropertyInfoType, $declaringClass): Type {
-            $className = $propertyInfoType->getClassName();
-            $declaringClassName = $declaringClass->getName();
+        if (\count($collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()) > 1) {
+            return null;
+        }
 
-            if ('self' === $className || 'static' === $className) {
-                $className = $declaringClassName;
-            } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
-                $className = $parentClassName;
-            }
+        if (\count($collectionValueTypes = $propertyInfoType->getCollectionValueTypes()) > 1) {
+            return null;
+        }
 
-            $collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()
-                ? new Types(array_map(fn ($t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoType->getCollectionKeyTypes()))
-                : null;
+        $className = $propertyInfoType->getClassName();
+        $declaringClassName = $declaringClass->getName();
 
-            $collectionValueTypes = $propertyInfoType->getCollectionValueTypes()
-                ? new Types(array_map(fn ($t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoType->getCollectionValueTypes()))
-                : null;
+        if ('self' === $className || 'static' === $className) {
+            $className = $declaringClassName;
+        } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
+            $className = $parentClassName;
+        }
 
-
-            return new Type(
-                $propertyInfoType->getBuiltinType(),
-                $propertyInfoType->isNullable(),
-                $className,
-                $propertyInfoType->isCollection(),
-                $collectionKeyTypes,
-                $collectionValueTypes,
-            );
-        };
-
-        return new Types(array_map(fn (PropertyInfoType $t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoTypes));
+        return new Type(
+            $propertyInfoType->getBuiltinType(),
+            $propertyInfoType->isNullable(),
+            $className,
+            $propertyInfoType->isCollection(),
+            $collectionKeyTypes[0],
+            $collectionValueTypes[0],
+        );
     }
 
     private function getDocNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?PhpDocNode

@@ -82,7 +82,8 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         $type = $property->getType();
 
         if ($type instanceof \ReflectionUnionType) {
-            if (\count(array_unique(array_map(fn (\ReflectionNamedType $t): bool => $t->allowsNull(), $type->getTypes()))) > 1) {
+            $types = array_filter($type->getTypes(), fn (\ReflectionNamedType $t): bool => 'null' !== $t->getName());
+            if (\count(array_unique(array_map(fn (\ReflectionNamedType $t): bool => $t->allowsNull(), $types))) > 1) {
                 throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property is not homogenous on nullablity. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
             }
 

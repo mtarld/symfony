@@ -11,8 +11,8 @@ final class Type implements \Stringable
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
         private readonly bool $isCollection = false,
-        private readonly ?Types $collectionKeyTypes = null,
-        private readonly ?Types $collectionValueTypes = null
+        private readonly ?Type $collectionKeyType = null,
+        private readonly ?Type $collectionValueType = null
     ) {
         if ($this->isObject() && null === $this->className) {
             throw new \InvalidArgumentException('Cannot specify an object without a class name.');
@@ -55,7 +55,7 @@ final class Type implements \Stringable
 
     public function isList(): bool
     {
-        return $this->isCollection() && $this->collectionKeyTypes?->isOnly(fn (Type $t): bool => 'int' === $t->name());
+        return $this->isCollection() && 'int' === $this->collectionKeyType->name();
     }
 
     public function isDict(): bool
@@ -63,29 +63,29 @@ final class Type implements \Stringable
         return $this->isCollection() && !$this->isList();
     }
 
-    public function collectionKeyTypes(): Types
+    public function collectionKeyType(): Type
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException('Cannot get collection key types on "%s" type as it\'s not a collection', $this->name);
         }
 
-        return $this->collectionKeyTypes;
+        return $this->collectionKeyType;
     }
 
-    public function collectionValueTypes(): Types
+    public function collectionValueType(): Type
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException('Cannot get collection value types on "%s" type as it\'s not a collection', $this->name);
         }
 
-        return $this->collectionValueTypes;
+        return $this->collectionValueType;
     }
 
     public function __toString(): string
     {
         $diamond = '';
-        if ($this->collectionKeyTypes && $this->collectionValueTypes) {
-            sprintf('<%s, %s>', $this->collectionKeyTypes, $this->collectionValueTypes);
+        if ($this->collectionKeyType && $this->collectionValueType) {
+            sprintf('<%s, %s>', $this->collectionKeyType, $this->collectionValueType);
         }
 
         $name = $this->name;

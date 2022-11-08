@@ -20,9 +20,10 @@ final class PropertyKindExtractor
         }
 
         if ($type instanceof \ReflectionUnionType || $type instanceof \ReflectionIntersectionType) {
-            $kinds = array_map(self::extractFromType(...), $type->getTypes());
+            $types = array_filter($type->getTypes(), fn (\ReflectionNamedType $t): bool => 'null' !== $t->getName());
+            $kinds = array_map(self::extractFromType(...), $types);
             if (\count(array_unique($kinds)) > 1) {
-                throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property is not homogenous. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
+                throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property is not homogenous on kind. Please use whether a "%1$s" or a "%2$s::$%3$s hook.', $type, $property->getDeclaringClass()->getName(), $property->getName()));
             }
 
             return $kinds[0];

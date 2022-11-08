@@ -36,6 +36,10 @@ final class PropertyHookExtractor
 
         $types = ($type instanceof \ReflectionUnionType || $type instanceof \ReflectionIntersectionType) ? $type->getTypes() : [$type];
         foreach ($types as $type) {
+            if ('null' === $type->getName()) {
+                continue;
+            }
+
             $hooks[] = $type->getName();
             if (!$type->isBuiltin()) {
                 $hooks[] = 'object';
