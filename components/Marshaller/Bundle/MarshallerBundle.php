@@ -19,6 +19,7 @@ use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PropertyNameHookNativ
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Type\PhpDocTypeExtractor;
+use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractor;
 
@@ -75,11 +76,13 @@ final class MarshallerBundle extends Bundle
         // Type extractors
         $container->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class);
         $container->register('marshaller.type_extractor.php_doc', PhpDocTypeExtractor::class);
+        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
 
         $container->register('marshaller.type_extractor', TypeExtractor::class)
             ->setArguments([
-                new Reference('marshaller.type_extractor.reflection'),
+                new Reference('marshaller.type_extractor.phpstan'),
                 new Reference('marshaller.type_extractor.php_doc'),
+                new Reference('marshaller.type_extractor.reflection'),
             ]);
 
         // // Cache

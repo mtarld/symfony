@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
-use phpDocumentor\Reflection\DocBlock\Tags\Return_;
-use phpDocumentor\Reflection\DocBlockFactory;
-
 final class ReflectionTypeExtractor
 {
     /**
@@ -30,47 +27,26 @@ final class ReflectionTypeExtractor
             if ($types = $this->extractFromType($property->getType(), $property->getDeclaringClass())) {
                 return $types;
             }
-        } catch (\ReflectionException $e) {
-            return null;
+        } catch (\ReflectionException) {
         }
 
-        if (null === ($defaultValue = $property->getDeclaringClass()->getDefaultProperties()[$property->getName()] ?? null)) {
-            return null;
-        }
-
-        $mapTypes = [
-            'integer' => 'int',
-            'boolean' => 'bool',
-            'double' => 'float',
-        ];
-
-        $type = \gettype($defaultValue);
-        $type = $mapTypes[$type] ?? $type;
-
-        return [new Type(
-            name: $type,
-            nullable: $property->getType()->allowsNull(),
-            isCollection: 'array' === $type,
-        )];
+        return null;
     }
 
     /**
      * @return list<Type>|null
      */
-    private function extractFromReturnType(\ReflectionFunction $function): ?array
+    // TODO test
+    private function extractFromReturnType(\ReflectionFunctionAbstract $function): ?array
     {
-        $tag = DocBlockFactory::createInstance()->create($function)->getTagsByName('return')[0] ?? null;
-        if (!$tag instanceof Return_) {
-            return null;
+        try {
+            if ($types = $this->extractFromType($function->getReturnType(), $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : null)) {
+                return $types;
+            }
+        } catch (\ReflectionException) {
         }
 
-        dd('k');
-        $reflectionType = $tag->getType();
-        if (null === $docType || [] === ($types = $this->docTypeHelper->getTypes($docType))) {
-            return null;
-        }
-
-        return $this->extractFromPropertyInfoTypes($types);
+        return null;
     }
 
     /**

@@ -29,7 +29,7 @@ final class JsonObjectTemplateGenerator implements ObjectTemplateGeneratorInterf
         $context['classes'][] = $class->getName();
         $context['prefix'] = '';
 
-        $objectName = '$'.uniqid('o');
+        $objectName = '$'.uniqid('object');
 
         $template .= self::writeLine("$objectName = $accessor;", $context);
         $template .= self::fwrite("'{'", $context);

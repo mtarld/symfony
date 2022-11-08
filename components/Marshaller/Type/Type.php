@@ -18,6 +18,9 @@ final class Type
         private readonly array $collectionKeyTypes = [],
         private readonly array $collectionValueTypes = [],
     ) {
+        if ($this->isObject() && null === $this->className) {
+            throw new \InvalidArgumentException('Cannot specify an object without a class name.');
+        }
     }
 
     public static function createFromReflection(\ReflectionNamedType $reflection): self

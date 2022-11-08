@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
+use phpDocumentor\Reflection\DocBlock\Tags\Return_;
+use phpDocumentor\Reflection\DocBlock\Tags\Var_;
+use phpDocumentor\Reflection\DocBlockFactory;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPStan\PhpDocParser\Parser\ConstExprParser;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
-use phpDocumentor\Reflection\DocBlock\Tags\Return_;
-use phpDocumentor\Reflection\DocBlock\Tags\Var_;
-use phpDocumentor\Reflection\DocBlockFactory;
 use Symfony\Component\PropertyInfo\Type as PropertyInfoType;
 use Symfony\Component\PropertyInfo\Util\PhpDocTypeHelper;
 
-final class TypeExtractor
+final class PhpstanTypeExtractor
 {
     // TODO this dependencies might not be wanted
     private readonly PhpDocTypeHelper $docTypeHelper;
@@ -32,8 +32,10 @@ final class TypeExtractor
     /**
      * @return list<Type>
      */
-    public function extract(\ReflectionProperty|\ReflectionFunction $reflection): array
+    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?array
     {
+        return null;
+
         if ($reflection instanceof \ReflectionProperty) {
             return $this->extractFromProperty($reflection);
         }
@@ -44,7 +46,7 @@ final class TypeExtractor
     /**
      * @return list<Type>
      */
-    public function extractFromProperty(\ReflectionProperty $property): array
+    public function extractFromProperty(\ReflectionProperty $property): ?array
     {
         if (null === $rawDocNode = $property->getDocComment() ?: null) {
             // TODO fallback
@@ -73,7 +75,7 @@ final class TypeExtractor
     /**
      * @return list<Type>
      */
-    public function extractFromReturnType(\ReflectionFunction $function): array
+    public function extractFromReturnType(\ReflectionFunctionAbstract $function): ?array
     {
         $tag = DocBlockFactory::createInstance()->create($function)->getTagsByName('return')[0] ?? null;
         if (!$tag instanceof Return_) {

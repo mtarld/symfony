@@ -24,7 +24,7 @@ final class PhpDocTypeExtractor
         $this->docTypeHelper = new PhpDocTypeHelper();
     }
 
-    public function extract(\ReflectionProperty|\ReflectionFunction $reflection): ?array
+    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?array
     {
         if ($reflection instanceof \ReflectionProperty) {
             return $this->extractFromProperty($reflection);
@@ -60,7 +60,8 @@ final class PhpDocTypeExtractor
     /**
      * @return list<Type>|null
      */
-    public function extractFromReturnType(\ReflectionFunction $function): ?array
+    // TODO test
+    public function extractFromReturnType(\ReflectionFunctionAbstract $function): ?array
     {
         $tag = DocBlockFactory::createInstance()->create($function)->getTagsByName('return')[0] ?? null;
         if (!$tag instanceof Return_) {
@@ -72,7 +73,7 @@ final class PhpDocTypeExtractor
             return null;
         }
 
-        return $this->extractFromPropertyInfoTypes($types);
+        return $this->extractFromPropertyInfoTypes($types, $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : null);
     }
 
     /**
@@ -80,49 +81,30 @@ final class PhpDocTypeExtractor
      *
      * @return list<Type>|null
      */
-    private function extractFromPropertyInfoTypes(array $propertyInfoTypes): ?array
+    private function extractFromPropertyInfoTypes(array $propertyInfoTypes, ?\ReflectionClass $declaringClass): array
     {
-        $createTypeFromPropertyInfoType = static function (PropertyInfoType $propertyInfoType) use (&$createTypeFromPropertyInfoType): Type {
+        $createTypeFromPropertyInfoType = static function (PropertyInfoType $propertyInfoType) use (&$createTypeFromPropertyInfoType, $declaringClass): Type {
+            $className = $propertyInfoType->getClassName();
+            if (null !== $declaringClass) {
+                $declaringClassName = $declaringClass->getName();
+
+                if ('self' === $className || 'static' === $className) {
+                    $className = $declaringClassName;
+                } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
+                    $className = $parentClassName;
+                }
+            }
+
             return new Type(
                 $propertyInfoType->getBuiltinType(),
                 $propertyInfoType->isNullable(),
-                $propertyInfoType->getClassName(),
+                $className,
                 $propertyInfoType->isCollection(),
                 array_map(fn ($t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoType->getCollectionKeyTypes()),
                 array_map(fn ($t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoType->getCollectionValueTypes()),
             );
         };
 
-        $types = array_map(fn (PropertyInfoType $t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoTypes);
-        dd($types);
-
-        $parentClass = null;
-        $class = $property->getDeclaringClass()->getName();
-
-        foreach ($docBlockTypes as $type) {
-            switch ($type->className()) {
-                case 'self':
-                case 'static':
-                    $resolvedClass = $class;
-                    break;
-
-                case 'parent':
-                    if (false !== $resolvedClass = $parentClass ?? $parentClass = get_parent_class($class)) {
-                        break;
-                    }
-                    // no break
-
-                default:
-                    $types[] = $type;
-            }
-
-            $types[] = new Type('object', $type->isNullable(), $resolvedClass, $type->isCollection(), $type->collectionKeyTypes(), $type->collectionValueTypes());
-        }
-
-        if (!isset($types[0])) {
-            return null;
-        }
-
-        return [new Type(name: 'array', collection: true, collectionKeyTypes: new Type('int'), collectionValueTypes: $types[0])];
+        return array_map(fn (PropertyInfoType $t): Type => $createTypeFromPropertyInfoType($t), $propertyInfoTypes);
     }
 }

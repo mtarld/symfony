@@ -22,7 +22,7 @@ final class JsonValueTemplateGenerator
         }
 
         if ($type->isObject()) {
-            return self::generateObject(new \ReflectionClass($type->className()), $accessor, $context);
+            return self::generateObject($type, $accessor, $context);
         }
 
         if ($type->isDict()) {
@@ -47,13 +47,34 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private static function generateObject(\ReflectionClass $class, string $accessor, array $context): string
+    private static function generateObject(Type $type, string $accessor, array $context): string
     {
+        $template = '';
+
+        if ($type->isNullable()) {
+            $template .= $context['writeLine']("if (null === $accessor) {", $context);
+
+            ++$context['indentation_level'];
+            $template .= $context['fwrite']("'null'", $context);
+
+            --$context['indentation_level'];
+            $template .= $context['writeLine']('} else {', $context);
+
+            ++$context['indentation_level'];
+        }
+
         ++$context['depth'];
         $context['body_only'] = true;
         $context['main_accessor'] = $accessor;
 
-        return json_marshal_generate($class, $context);
+        $template .= json_marshal_generate(new \ReflectionClass($type->className()), $context);
+
+        if ($type->isNullable()) {
+            --$context['indentation_level'];
+            $template .= $context['writeLine']('}', $context);
+        }
+
+        return $template;
     }
 
     /**
@@ -81,22 +102,27 @@ final class JsonValueTemplateGenerator
             return $context['writeLine']($content, $context);
         };
 
+        $prefixName = '$'.uniqid('prefix');
+        $keyName = '$'.uniqid('key');
+        $valueName = '$'.uniqid('value');
+
         $template = $fwrite("'{'")
-            .$writeLine("foreach ($accessor as \$key => \$value) {");
+            .$writeLine("$prefixName = '';")
+            .$writeLine("foreach ($accessor as $keyName => $valueName) {");
 
         ++$context['depth'];
         ++$context['indentation_level'];
 
-        $template .= $fwrite("(\$prefix ?? '').json_encode(\$key).':'")
-            .self::generate($valueType, '$value', $context)
-            .$writeLine("\$prefix = ',';");
+        $template .= $fwrite("$prefixName.json_encode($keyName).':'")
+            .self::generate($valueType, $valueName, $context)
+            .$writeLine("$prefixName = ',';");
 
         --$context['depth'];
         --$context['indentation_level'];
 
         $template .= $writeLine('}')
             .$fwrite("'}'")
-            .$writeLine('unset($prefix);');
+            .$writeLine("unset($prefixName);");
 
         return $template;
     }
@@ -120,22 +146,26 @@ final class JsonValueTemplateGenerator
             return $context['writeLine']($content, $context);
         };
 
+        $prefixName = '$'.uniqid('prefix');
+        $valueName = '$'.uniqid('value');
+
         $template = $fwrite("'['")
-            .$writeLine("foreach ($accessor as \$item) {");
+            .$writeLine("$prefixName = '';")
+            .$writeLine("foreach ($accessor as $valueName) {");
 
         ++$context['depth'];
         ++$context['indentation_level'];
 
-        $template .= $fwrite("\$prefix ?? ''")
-            .self::generate($valueType, '$item', $context)
-            .$writeLine("\$prefix = ',';");
+        $template .= $fwrite($prefixName)
+            .self::generate($valueType, $valueName, $context)
+            .$writeLine("$prefixName = ',';");
 
         --$context['depth'];
         --$context['indentation_level'];
 
         $template .= $writeLine('}')
             .$fwrite("']'")
-            .$writeLine('unset($prefix);');
+            .$writeLine("unset($prefixName);");
 
         return $template;
     }
