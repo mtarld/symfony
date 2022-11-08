@@ -6,38 +6,31 @@ namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
-use Symfony\Component\Marshaller\Type\UnionTypeChecker;
+use Symfony\Component\Marshaller\Type\TypesExtractor;
 
 final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
     public function __construct(
-        private readonly TypeExtractor $typeExtractor,
+        private readonly TypesExtractor $typesExtractor,
     ) {
     }
 
     public function forTemplateGeneration(\ReflectionClass $class, string $format, array $nativeContext): array
     {
-        $typeExtractor = $this->typeExtractor;
+        $typesExtractor = $this->typesExtractor;
 
-        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typeExtractor, $format): string {
-            $types = $typeExtractor->extract($property);
+        $nativeContext['hooks']['array'] = static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($typesExtractor, $format): string {
+            $types = $typesExtractor->extract($property, $property->getDeclaringClass());
 
-            foreach ($types as $type) {
-                if (false === $type->isCollection()) {
-                    throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property type is not a collection.', $type->name(), $property->getDeclaringClass()->getName(), $property->getName()));
-                }
-            }
-
-            if (!UnionTypeChecker::isHomogenousCollection($types)) {
-                throw new \RuntimeException(sprintf('Type of "%s::$%s" property is not homogenous (some types are lists, others are dicts).', $property->getDeclaringClass()->getName(), $property->getName()));
+            if (false === $types->isOnlyCollection()) {
+                throw new \RuntimeException(sprintf('Type "%s" of "%s::$%s" property type is not a collection.', $type->name(), $property->getDeclaringClass()->getName(), $property->getName()));
             }
 
             $accessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
             $template = $context['propertyNameGenerator']($property, $context);
 
-            if ($type->isNullable()) {
+            if ($types->isNullable()) {
                 $template .= $context['writeLine']("if (null === $accessor) {", $context);
 
                 ++$context['indentation_level'];
@@ -49,14 +42,14 @@ final class ArrayHookNativeContextBuilder implements TemplateGenerationNativeCon
                 ++$context['indentation_level'];
             }
 
-            $value = ValueTemplateGenerator::generate($types[0], $accessor, $format, $context);
+            $value = ValueTemplateGenerator::generate($types, $accessor, $format, $context);
             if ('' === $value) {
                 return '';
             }
 
             $template .= $value;
 
-            if ($type->isNullable()) {
+            if ($types->isNullable()) {
                 --$context['indentation_level'];
                 $template .= $context['writeLine']('}', $context);
             }

@@ -4,27 +4,21 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
-final class ReflectionTypeExtractor
+final class ReflectionTypesExtractor
 {
-    /**
-     * @return list<Type>|null
-     */
-    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?array
+    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection, \ReflectionClass $declaringClass): ?Types
     {
         if ($reflection instanceof \ReflectionProperty) {
-            return $this->extractFromProperty($reflection);
+            return $this->extractFromProperty($reflection, $declaringClass);
         }
 
-        return $this->extractFromReturnType($reflection);
+        return $this->extractFromReturnType($reflection, $declaringClass);
     }
 
-    /**
-     * @return list<Type>|null
-     */
-    private function extractFromProperty(\ReflectionProperty $property): ?array
+    private function extractFromProperty(\ReflectionProperty $property, \ReflectionClass $declaringClass): ?Types
     {
         try {
-            if ($types = $this->extractFromType($property->getType(), $property->getDeclaringClass())) {
+            if ($types = $this->extractFromType($property->getType(), $declaringClass)) {
                 return $types;
             }
         } catch (\ReflectionException) {
@@ -33,14 +27,11 @@ final class ReflectionTypeExtractor
         return null;
     }
 
-    /**
-     * @return list<Type>|null
-     */
     // TODO test
-    private function extractFromReturnType(\ReflectionFunctionAbstract $function): ?array
+    private function extractFromReturnType(\ReflectionFunctionAbstract $function, \ReflectionClass $declaringClass): ?Types
     {
         try {
-            if ($types = $this->extractFromType($function->getReturnType(), $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : null)) {
+            if ($types = $this->extractFromType($function->getReturnType(), $declaringClass)) {
                 return $types;
             }
         } catch (\ReflectionException) {
@@ -49,15 +40,12 @@ final class ReflectionTypeExtractor
         return null;
     }
 
-    /**
-     * @return list<Type>
-     */
-    private function extractFromType(\ReflectionType $type, \ReflectionClass $class): array
+    private function extractFromType(\ReflectionType $type, \ReflectionClass $declaringClass): Types
     {
         $types = [];
         $nullable = $type->allowsNull();
 
-        foreach ($type instanceof \ReflectionUnionType ? $type->getTypes() : [$type] as $type) {
+        foreach (($type instanceof \ReflectionUnionType || $type instanceof \ReflectionIntersectionType) ? $type->getTypes() : [$type] as $type) {
             $phpTypeOrClass = $type->getName();
 
             if ('null' === $phpTypeOrClass || 'mixed' === $phpTypeOrClass || 'never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
@@ -77,15 +65,15 @@ final class ReflectionTypeExtractor
 
             $className = $phpTypeOrClass;
 
-            if ('self' === strtolower($className)) {
-                $className = $class->name;
-            } elseif ('parent' === strtolower($className) && $parent = $class->getParentClass()) {
+            if ($declaringClass && 'self' === strtolower($className)) {
+                $className = $declaringClass->name;
+            } elseif ($declaringClass && 'parent' === strtolower($className) && $parent = $declaringClass->getParentClass()) {
                 $className = $parent->name;
             }
 
             $types[] = new Type(name: 'object', isNullable: $type->allowsNull(), className: $className);
         }
 
-        return $types;
+        return new Types($types);
     }
 }

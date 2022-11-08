@@ -18,10 +18,10 @@ use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PropertyFormatterHook
 use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PropertyNameHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Type\PhpDocTypeExtractor;
-use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
-use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
+use Symfony\Component\Marshaller\Type\PhpDocTypesExtractor;
+use Symfony\Component\Marshaller\Type\PhpstanTypesExtractor;
+use Symfony\Component\Marshaller\Type\ReflectionTypesExtractor;
+use Symfony\Component\Marshaller\Type\TypesExtractor;
 
 final class MarshallerBundle extends Bundle
 {
@@ -51,18 +51,21 @@ final class MarshallerBundle extends Bundle
             ->addTag('marshaller.context.native_context_builder.template_generation');
 
         $container->register('marshaller.hook.native_context_builder.property_formatter', PropertyFormatterHookNativeContextBuilder::class)
+            ->setArguments([
+                new Reference('marshaller.types_extractor'),
+            ])
             ->addTag('marshaller.context.native_context_builder.marshal')
             ->addTag('marshaller.context.native_context_builder.template_generation');
 
         $container->register('marshaller.hook.native_context_builder.array', ArrayHookNativeContextBuilder::class)
             ->setArguments([
-                new Reference('marshaller.type_extractor'),
+                new Reference('marshaller.types_extractor'),
             ])
             ->addTag('marshaller.context.native_context_builder.template_generation');
 
         $container->register('marshaller.hook.native_context_builder.object', ObjectHookNativeContextBuilder::class)
             ->setArguments([
-                new Reference('marshaller.type_extractor'),
+                new Reference('marshaller.types_extractor'),
             ])
             ->addTag('marshaller.context.native_context_builder.template_generation');
 
@@ -74,15 +77,15 @@ final class MarshallerBundle extends Bundle
             ]);
 
         // Type extractors
-        $container->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class);
-        $container->register('marshaller.type_extractor.php_doc', PhpDocTypeExtractor::class);
-        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
+        $container->register('marshaller.types_extractor.reflection', ReflectionTypesExtractor::class);
+        $container->register('marshaller.types_extractor.php_doc', PhpDocTypesExtractor::class);
+        $container->register('marshaller.types_extractor.phpstan', PhpstanTypesExtractor::class);
 
-        $container->register('marshaller.type_extractor', TypeExtractor::class)
+        $container->register('marshaller.types_extractor', TypesExtractor::class)
             ->setArguments([
-                new Reference('marshaller.type_extractor.phpstan'),
-                new Reference('marshaller.type_extractor.php_doc'),
-                new Reference('marshaller.type_extractor.reflection'),
+                new Reference('marshaller.types_extractor.phpstan'),
+                new Reference('marshaller.types_extractor.php_doc'),
+                new Reference('marshaller.types_extractor.reflection'),
             ]);
 
         // // Cache

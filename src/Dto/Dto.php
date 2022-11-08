@@ -9,23 +9,25 @@ use Symfony\Component\Marshaller\Attribute\Name;
 
 final class Dto
 {
-    #[Name('theint')]
-    public ?int $int = 12;
+    // #[Name('theint')]
+    // public ?int $int = 12;
+    //
+    // #[Formatter([self::class, 'formatInt'])]
+    // public string $string = 'thestring';
 
-    #[Formatter([self::class, 'formatInt'])]
-    public string $string = 'thestring';
+    public Dto2&\Stringable $object;
 
-    /** @var Dto2|null */
-    public ?object $object = null;
-
-    /** @var array<string, Dto2>|null */
-    public ?array $array = [];
+    // /** @var array<string, Dto2>|null */
+    // public ?array $array = [];
 
     public function __construct()
     {
-        $this->array = ['foo' => new Dto2()];
+        // $this->array = ['foo' => new Dto2()];
     }
 
+    /**
+     * @return Dto2
+     */
     public static function formatInt(string $value): Dto2
     {
         return new Dto2();

@@ -8,11 +8,15 @@ use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\Type;
-use Symfony\Component\Marshaller\Type\UnionTypeChecker;
+use Symfony\Component\Marshaller\Type\TypesExtractor;
 
 final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeContextBuilderInterface, TemplateGenerationNativeContextBuilderInterface
 {
+    public function __construct(
+        private readonly TypesExtractor $typesExtractor,
+    ) {
+    }
+
     public function forMarshal(\ReflectionClass $class, string $format, array $nativeContext): array
     {
         if (!isset($nativeContext['closures'])) {
@@ -56,29 +60,21 @@ final class PropertyFormatterHookNativeContextBuilder implements MarshalNativeCo
                 $hookName = sprintf('%s::$%s', $class->getName(), $property->getName());
 
                 $nativeContext['closures'][$hookName] = $closure;
-                $nativeContext['hooks'][$hookName] = $this->createHook($closure, $hookName, $format);
+                $nativeContext['hooks'][$hookName] = $this->createHook($closure, $class, $hookName, $format);
             }
         }
 
         return $nativeContext;
     }
 
-    private function createHook(\Closure $closure, string $hookName, string $format): callable
+    private function createHook(\Closure $closure, \ReflectionClass $class, string $hookName, string $format): callable
     {
-        $reflectionClosure = new \ReflectionFunction($closure);
-        $returnType = $reflectionClosure->getReturnType();
-        if ($returnType instanceof \ReflectionUnionType) {
-            if (!UnionTypeChecker::isHomogenousKind($returnType->getTypes())) {
-                throw new \RuntimeException(sprintf('Return type of "%s()" is not homogenous.', $reflectionClosure->getName()));
-            }
+        $reflection = new \ReflectionFunction($closure);
+        $types = $this->typesExtractor->extract($reflection, $class);
 
-            $returnType = $returnType->getTypes()[0];
-        }
-
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($returnType, $hookName, $format): string {
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($types, $hookName, $format): string {
             $formattedValueAccessor = sprintf("\$context['closures']['%s'](%s->%s)", $hookName, $objectAccessor, $property->getName());
-            // TODO type extractor
-            $value = ValueTemplateGenerator::generate(Type::createFromReflection($returnType), $formattedValueAccessor, $format, $context);
+            $value = ValueTemplateGenerator::generate($types, $formattedValueAccessor, $format, $context);
 
             if ('' === $value) {
                 return $value;

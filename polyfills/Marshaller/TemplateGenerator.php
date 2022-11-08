@@ -19,7 +19,7 @@ final class TemplateGenerator
         'max_depth' => 512,
         'indentation_level' => 1,
         'hooks' => [],
-        'body_only' => false,
+        'enclosed' => true,
         'main_accessor' => '$object',
     ];
 
@@ -51,7 +51,7 @@ final class TemplateGenerator
         $context = $context + self::DEFAULT_CONTEXT;
 
         $body = $objectTemplateGenerator::generate($class, $context['main_accessor'], $context);
-        if ($context['body_only']) {
+        if (!$context['enclosed']) {
             return $body;
         }
 

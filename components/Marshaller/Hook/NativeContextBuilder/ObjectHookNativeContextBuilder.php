@@ -6,13 +6,12 @@ namespace Symfony\Component\Marshaller\Hook\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\TemplateGenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ValueTemplateGenerator\ValueTemplateGenerator;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
-use Symfony\Component\Marshaller\Type\UnionTypeChecker;
+use Symfony\Component\Marshaller\Type\TypesExtractor;
 
 final class ObjectHookNativeContextBuilder implements TemplateGenerationNativeContextBuilderInterface
 {
     public function __construct(
-        private readonly TypeExtractor $typeExtractor,
+        private readonly TypesExtractor $typesExtractor,
     ) {
     }
 
@@ -29,15 +28,13 @@ final class ObjectHookNativeContextBuilder implements TemplateGenerationNativeCo
 
     private function createHook(string $format): callable
     {
-        $typeExtractor = $this->typeExtractor;
+        $typesExtractor = $this->typesExtractor;
 
-        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($format, $typeExtractor): string {
-            $types = $typeExtractor->extract($property);
-            if (!UnionTypeChecker::isHomogenousObject($types)) {
-                throw new \RuntimeException(sprintf('Type of "%s::$%s" is not homogenous.', $property->getDeclaringClass()->getName(), $property->getName()));
-            }
+        return static function (\ReflectionProperty $property, string $objectAccessor, array $context) use ($format, $typesExtractor): string {
+            $accessor = sprintf('%s->%s', $objectAccessor, $property->getName());
+            $types = $typesExtractor->extract($property, $property->getDeclaringClass());
 
-            $value = ValueTemplateGenerator::generate($types[0], sprintf('%s->%s', $objectAccessor, $property->getName()), $format, $context);
+            $value = ValueTemplateGenerator::generate($types, $accessor, $format, $context);
             if ('' === $value) {
                 return $value;
             }

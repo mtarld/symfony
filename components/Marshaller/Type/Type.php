@@ -4,38 +4,19 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
-final class Type
+final class Type implements \Stringable
 {
-    /**
-     * @param list<self> $collectionKeyTypes
-     * @param list<self> $collectionValueTypes
-     */
     public function __construct(
         private readonly string $name,
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
         private readonly bool $isCollection = false,
-        private readonly array $collectionKeyTypes = [],
-        private readonly array $collectionValueTypes = [],
+        private readonly ?Types $collectionKeyTypes = null,
+        private readonly ?Types $collectionValueTypes = null
     ) {
         if ($this->isObject() && null === $this->className) {
             throw new \InvalidArgumentException('Cannot specify an object without a class name.');
         }
-    }
-
-    public static function createFromReflection(\ReflectionNamedType $reflection): self
-    {
-        $name = $reflection->getName();
-        $nullable = $reflection->allowsNull();
-        $isCollection = 'array' === $reflection->getName();
-        $className = null;
-
-        if (!$reflection->isBuiltin()) {
-            $name = 'object';
-            $className = $reflection->getName();
-        }
-
-        return new self($name, $nullable, $className, $isCollection);
     }
 
     public function name(): string
@@ -74,7 +55,7 @@ final class Type
 
     public function isList(): bool
     {
-        return $this->isCollection() && 1 === \count($this->collectionKeyTypes) && 'int' === $this->collectionKeyTypes[0]->name();
+        return $this->isCollection() && $this->collectionKeyTypes?->isOnly(fn (Type $t): bool => 'int' === $t->name());
     }
 
     public function isDict(): bool
@@ -82,19 +63,36 @@ final class Type
         return $this->isCollection() && !$this->isList();
     }
 
-    /**
-     * @return list<self>
-     */
-    public function collectionKeyTypes(): array
+    public function collectionKeyTypes(): Types
     {
+        if (!$this->isCollection()) {
+            throw new \RuntimeException('Cannot get collection key types on "%s" type as it\'s not a collection', $this->name);
+        }
+
         return $this->collectionKeyTypes;
     }
 
-    /**
-     * @return list<self>
-     */
-    public function collectionValueTypes(): array
+    public function collectionValueTypes(): Types
     {
+        if (!$this->isCollection()) {
+            throw new \RuntimeException('Cannot get collection value types on "%s" type as it\'s not a collection', $this->name);
+        }
+
         return $this->collectionValueTypes;
+    }
+
+    public function __toString(): string
+    {
+        $diamond = '';
+        if ($this->collectionKeyTypes && $this->collectionValueTypes) {
+            sprintf('<%s, %s>', $this->collectionKeyTypes, $this->collectionValueTypes);
+        }
+
+        $name = $this->name;
+        if ($this->isObject()) {
+            $name = $this->className;
+        }
+
+        return sprintf('%s%s%s', $this->isNullable ? '?' : '', $name, $diamond);
     }
 }

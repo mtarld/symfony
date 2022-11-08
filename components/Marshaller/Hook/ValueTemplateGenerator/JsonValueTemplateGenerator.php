@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Hook\ValueTemplateGenerator;
 
-use Symfony\Component\Marshaller\Type\Type;
-use Symfony\Component\Marshaller\Type\UnionTypeChecker;
+use Symfony\Component\Marshaller\Type\Types;
 
 /**
  * Mimic marshal_generate template generation to extend its behavior.
@@ -15,25 +14,25 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    public static function generate(Type $type, string $accessor, array $context): string
+    public static function generate(Types $types, string $accessor, array $context): string
     {
-        if ($type->isScalar()) {
+        if ($types->isOnlyScalar()) {
             return self::generateScalar($accessor, $context);
         }
 
-        if ($type->isObject()) {
-            return self::generateObject($type, $accessor, $context);
+        if ($types->isOnlyObject() && $types->isSameClass()) {
+            return self::generateObject($types, $accessor, $context);
         }
 
-        if ($type->isDict()) {
-            return self::generateDict($type->collectionKeyTypes(), $type->collectionValueTypes(), $accessor, $context);
+        if ($types->isOnlyDict()) {
+            return self::generateDict($types->types[0]->collectionValueTypes(), $accessor, $context);
         }
 
-        if ($type->isList()) {
-            return self::generateList($type->collectionValueTypes(), $accessor, $context);
+        if ($types->isOnlyList()) {
+            return self::generateList($types->types[0]->collectionValueTypes(), $accessor, $context);
         }
 
-        throw new \LogicException(sprintf('Cannot handle "%s" type.', $type));
+        throw new \LogicException(sprintf('Cannot handle "%s" type.', $types));
     }
 
     /**
@@ -47,11 +46,11 @@ final class JsonValueTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private static function generateObject(Type $type, string $accessor, array $context): string
+    private static function generateObject(Types $types, string $accessor, array $context): string
     {
         $template = '';
 
-        if ($type->isNullable()) {
+        if ($types->isNullable()) {
             $template .= $context['writeLine']("if (null === $accessor) {", $context);
 
             ++$context['indentation_level'];
@@ -64,12 +63,16 @@ final class JsonValueTemplateGenerator
         }
 
         ++$context['depth'];
-        $context['body_only'] = true;
+        $context['enclosed'] = false;
         $context['main_accessor'] = $accessor;
 
-        $template .= json_marshal_generate(new \ReflectionClass($type->className()), $context);
+        if ('' === $value = json_marshal_generate(new \ReflectionClass($types->types[0]->className()), $context)) {
+            return '';
+        }
 
-        if ($type->isNullable()) {
+        $template .= $value;
+
+        if ($types->isNullable()) {
             --$context['indentation_level'];
             $template .= $context['writeLine']('}', $context);
         }
@@ -78,23 +81,10 @@ final class JsonValueTemplateGenerator
     }
 
     /**
-     * @param list<Type>           $keyTypes
-     * @param list<Type>           $valueTypes
      * @param array<string, mixed> $context
      */
-    private static function generateDict(array $keyTypes, array $valueTypes, string $accessor, array $context): string
+    private static function generateDict(Types $valueTypes, string $accessor, array $context): string
     {
-        if (!UnionTypeChecker::isHomogenousKind($keyTypes)) {
-            throw new \RuntimeException('Collection key type is not homogenous.');
-        }
-
-        if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
-            throw new \RuntimeException('Collection value type is not homogenous.');
-        }
-
-        $keyType = $keyTypes[0];
-        $valueType = $valueTypes[0];
-
         $fwrite = static function (string $content) use (&$context): string {
             return $context['fwrite']($content, $context);
         };
@@ -114,7 +104,7 @@ final class JsonValueTemplateGenerator
         ++$context['indentation_level'];
 
         $template .= $fwrite("$prefixName.json_encode($keyName).':'")
-            .self::generate($valueType, $valueName, $context)
+            .self::generate($valueTypes, $valueName, $context)
             .$writeLine("$prefixName = ',';");
 
         --$context['depth'];
@@ -128,17 +118,10 @@ final class JsonValueTemplateGenerator
     }
 
     /**
-     * @param list<Type>           $valueTypes
      * @param array<string, mixed> $context
      */
-    private static function generateList(array $valueTypes, string $accessor, array $context): string
+    private static function generateList(Types $valueTypes, string $accessor, array $context): string
     {
-        if (!UnionTypeChecker::isHomogenousKind($valueTypes)) {
-            throw new \RuntimeException('Collection value type is not homogenous.');
-        }
-
-        $valueType = $valueTypes[0];
-
         $fwrite = static function (string $content) use (&$context): string {
             return $context['fwrite']($content, $context);
         };
@@ -157,7 +140,7 @@ final class JsonValueTemplateGenerator
         ++$context['indentation_level'];
 
         $template .= $fwrite($prefixName)
-            .self::generate($valueType, $valueName, $context)
+            .self::generate($valueTypes, $valueName, $context)
             .$writeLine("$prefixName = ',';");
 
         --$context['depth'];
