@@ -17,34 +17,61 @@ final class Marshaller implements MarshallerInterface
      * @param iterable<TemplateGenerationNativeContextBuilderInterface> $templateGenerationNativeContextBuilders
      */
     public function __construct(
-        private readonly string $cacheDir,
         private readonly DefaultContextFactory $defaultContextFactory,
         private readonly iterable $marshalNativeContextBuilders,
         private readonly iterable $templateGenerationNativeContextBuilders,
+        private readonly string $cacheDir,
     ) {
     }
 
     public function marshal(object $object, string $format, OutputInterface $output, Context $context = null): void
     {
-        $nativeContext = ['cache_path' => $this->cacheDir];
-
-        $reflectionClass = new \ReflectionClass($object);
-
-        if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)))) {
-            $this->validateObject($reflectionClass);
-
-            foreach ($this->templateGenerationNativeContextBuilders as $builder) {
-                $nativeContext = $builder->forTemplateGeneration($reflectionClass, $format, $nativeContext);
-            }
-
-            $nativeContext = $this->mergeWithContext($context, $nativeContext);
-        } else {
-            foreach ($this->marshalNativeContextBuilders as $builder) {
-                $nativeContext = $builder->forMarshal($reflectionClass, $format, $nativeContext);
-            }
+        $class = new \ReflectionClass($object);
+        $templateExists = file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($object::class)));
+        if (!$templateExists) {
+            $this->validateClass($class);
         }
 
+        $nativeContext = $templateExists
+            ? $this->buildMarshalNativeContext($class, $format, $context)
+            : $this->buildTemplateGenerationNativeContext($class, $format, $context);
+
         marshal($object, $output->stream(), $format, $nativeContext);
+    }
+
+    public function generate(\ReflectionClass $class, string $format, Context $context = null): string
+    {
+        $this->validateClass($class);
+
+        return marshal_generate($class, $format, $this->buildTemplateGenerationNativeContext($class, $format, $context));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildTemplateGenerationNativeContext(\ReflectionClass $class, string $format, ?Context $context): array
+    {
+        $nativeContext = ['cache_path' => $this->cacheDir];
+
+        foreach ($this->templateGenerationNativeContextBuilders as $builder) {
+            $nativeContext = $builder->forTemplateGeneration($class, $format, $nativeContext);
+        }
+
+        return $this->mergeWithContext($context, $nativeContext);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildMarshalNativeContext(\ReflectionClass $class, string $format, ?Context $context): array
+    {
+        $nativeContext = ['cache_path' => $this->cacheDir];
+
+        foreach ($this->marshalNativeContextBuilders as $builder) {
+            $nativeContext = $builder->forMarshal($class, $format, $nativeContext);
+        }
+
+        return $nativeContext;
     }
 
     /**
@@ -71,7 +98,7 @@ final class Marshaller implements MarshallerInterface
         return $nativeContext;
     }
 
-    private function validateObject(\ReflectionClass $class): void
+    private function validateClass(\ReflectionClass $class): void
     {
         foreach ($class->getProperties() as $property) {
             if (!$property->isPublic()) {

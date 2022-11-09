@@ -38,10 +38,10 @@ final class MarshallerBundle extends Bundle
         // Marshaller
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
-                new Parameter('marshaller.cache_dir'),
                 new Reference('marshaller.context.default_factory'),
                 new TaggedIteratorArgument('marshaller.context.native_context_builder.marshal'),
                 new TaggedIteratorArgument('marshaller.context.native_context_builder.template_generation'),
+                new Parameter('marshaller.cache_dir'),
             ]);
 
         $container->setAlias(MarshallerInterface::class, 'marshaller');
@@ -88,18 +88,19 @@ final class MarshallerBundle extends Bundle
                 new Reference('marshaller.type_extractor.reflection'),
             ]);
 
-        // // Cache
-        // $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)
-        //     ->setArguments([
-        //         new Parameter('marshaller.marshallable_paths'),
-        //     ]);
-        //
-        // $container->register('marshaller.cache.template_warmer', TemplateCacheWarmer::class)
-        //     ->setArguments([
-        //         new Reference('marshaller.cache.warmable_resolver'),
-        //         new Reference('marshaller.template.loader'),
-        //         new Reference('marshaller.context.declination_resolver'),
-        //     ])
-        //     ->addTag('kernel.cache_warmer');
+        // Cache
+        $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)
+            ->setArguments([
+                new Parameter('marshaller.marshallable_paths'),
+            ]);
+
+        $container->register('marshaller.cache.template_warmer', TemplateCacheWarmer::class)
+            ->setArguments([
+                new Reference('marshaller.cache.warmable_resolver'),
+                new Reference('marshaller'),
+                new Reference('filesystem'),
+                new Parameter('marshaller.cache_dir'),
+            ])
+            ->addTag('kernel.cache_warmer');
     }
 }

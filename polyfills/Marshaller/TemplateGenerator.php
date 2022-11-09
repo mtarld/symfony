@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller;
 
-use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGenerator;
-use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGeneratorInterface;
+use Symfony\Polyfill\Marshaller\Template\Json\JsonTemplateGenerator;
+use Symfony\Polyfill\Marshaller\Template\PhpWriterTrait;
+use Symfony\Polyfill\Marshaller\Template\TemplateGeneratorInterface;
+use Symfony\Polyfill\Marshaller\Metadata\Type;
 
 /**
  * @internal
  */
 final class TemplateGenerator
 {
+    use PhpWriterTrait;
+
     private const DEFAULT_CONTEXT = [
         'classes' => [],
         'reject_circular_reference' => true,
@@ -20,46 +24,84 @@ final class TemplateGenerator
         'indentation_level' => 1,
         'hooks' => [],
         'enclosed' => true,
-        'main_accessor' => '$object',
+        'main_accessor' => '$data',
+        'variables_counter' => [],
     ];
 
     /**
-     * @param array<string, mixed> $context
+     * @var array<string, TemplateGeneratorInterface>
      */
-    public static function generate(\ReflectionClass $class, string $format, array $context): string
+    private readonly array $templateGenerators;
+
+    public function __construct()
     {
-        return match ($format) {
-            'json' => self::generateJson($class, $context),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format))
-        };
+        $this->templateGenerators = [
+            'json' => new JsonTemplateGenerator(),
+        ];
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    public static function generateJson(\ReflectionClass $class, array $context): string
+    public function generate(string $type, string $format, array $context): string
     {
-        return self::doGenerate(ObjectTemplateGenerator\JsonObjectTemplateGenerator::class, $class, $context);
-    }
-
-    /**
-     * @param class-string<ObjectTemplateGeneratorInterface> $objectTemplateGeneratorClass
-     * @param array<string, mixed>                           $context
-     */
-    private static function doGenerate(string $objectTemplateGenerator, \ReflectionClass $class, array $context): string
-    {
-        $context = $context + self::DEFAULT_CONTEXT;
-
-        $body = $objectTemplateGenerator::generate($class, $context['main_accessor'], $context);
-        if (!$context['enclosed']) {
-            return $body;
+        if (!isset($this->templateGenerators[$format])) {
+            throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format));
         }
 
-        $template = '<?php'.PHP_EOL.PHP_EOL;
-        $template .= '/** @param resource $resource */'.PHP_EOL;
-        $template .= sprintf('return static function (object %s, $resource, array $context): void {%s', $context['main_accessor'], PHP_EOL);
+        $typeString = $type;
+        $type = Type::fromString($typeString);
+
+        $context = $context + self::DEFAULT_CONTEXT;
+        $context['indentation_level'] = $context['enclosed'] ? 1 : 0;
+        $accessor = $context['main_accessor'];
+
+        $template = '';
+
+        // TODO test
+        if (true === ($context['root'] ?? true) && isset($context['hooks']['root'])) {
+            return $context['hooks']['root']($class, $accessor, $context);
+        }
+
+        if ($type->isNullable()) {
+            $template .= $this->writeLine("if (null === $accessor) {", $context);
+
+            ++$context['indentation_level'];
+            $template .= $this->templateGenerators[$format]->generateNull($context);
+
+            --$context['indentation_level'];
+            $template .= $this->writeLine('} else {', $context);
+
+            ++$context['indentation_level'];
+        }
+
+        $template .= match (true) {
+            $type->isNull() => $this->templateGenerators[$format]->generateNull($context),
+            $type->isScalar() => $this->templateGenerators[$format]->generateScalar($type, $accessor, $context),
+            $type->isObject() => $this->templateGenerators[$format]->generateObject($type, $accessor, $context),
+            default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', 'TODO')),
+        };
+
+        if ($type->isNullable()) {
+            --$context['indentation_level'];
+            $template .= self::writeLine('}', $context);
+        }
+
+        if (!$context['enclosed']) {
+            return $template;
+        }
+
+        $body = $template;
+
+        $context['indentation_level'] = 0;
+
+        $template = $this->writeLine('<?php', $context);
+        $template .= $this->writeLine('/**', $context);
+        $template .= $this->writeLine(' * @param resource $resource', $context);
+        $template .= $this->writeLine(' */', $context);
+        $template .= $this->writeLine("return static function (mixed $accessor, \$resource, array \$context): void {", $context);
         $template .= $body;
-        $template .= '};'.PHP_EOL;
+        $template .= $this->writeLine('};', $context);
 
         return $template;
     }

@@ -10,25 +10,17 @@ use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Attribute\Warmable;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\DepthOption;
-use Symfony\Component\Marshaller\Context\Option\GroupsOption;
 
-#[Warmable(
-    enforcedContexts: [
-        new Context(new DepthOption(1, true), new GroupsOption('fooGroup')),
-    ],
-)]
+#[Warmable]
 final class Foo
 {
-//     #[Name('@id')]
-//     #[Formatter(self::class, 'iri')]
-//     public string $iri = 'theIri';
-//
-//     #[Groups('groupTwo')]
-//     public ?int $price = 12;
-//
-//     /** @var array<string, string|null>|null */
-//     public ?array $dict;
-//
+    #[Name('@id')]
+    #[Formatter([self::class, 'iri'])]
+    public string $iri = 'theIri';
+
+    /** @var array<string, string|null>|null */
+    public ?array $dict = ['a' => null, 'b' => 'c'];
+
 //     /** @var array<string, string|null>|null */
 //     #[Hook('my_property_accessor')]
 //     public array $collection; // component
@@ -37,15 +29,15 @@ final class Foo
 //     private array $collection;
 //
 //
-// // [
-// // 'cache_path' => '' ?? sys_tmp_dir(),
-// // 'hooks' => {
-// // 'array' => fn
-// // 'Foo::$collection' => fn,
-// // 'max_depth' => 512,
-// // 'reject_circular_reference' => true,
-// // }
-// // ]
+    // // [
+    // // 'cache_path' => '' ?? sys_tmp_dir(),
+    // // 'hooks' => {
+    // // 'array' => fn
+    // // 'Foo::$collection' => fn,
+    // // 'max_depth' => 512,
+    // // 'reject_circular_reference' => true,
+    // // }
+    // // ]
 //
 //
 //     marshal($data, $resource, $format, $context = []): void;
@@ -82,8 +74,8 @@ final class Foo
 //         // $this->obj = new Bar();
 //     }
 //
-//     public static function iri(string $value, Context $context): string
-//     {
-//         return strtoupper($value);
-//     }
+    public static function iri(string $value): string
+    {
+        return sprintf('/api/%s', $value);
+    }
 }

@@ -28,10 +28,23 @@ class TestCommand extends Command
     {
         $object = new Dto();
 
+        $this->generate();
         // $this->polyfill($object);
-        $this->component($object);
+        // $this->component($object);
 
         return Command::SUCCESS;
+    }
+
+    private function generate(): void
+    {
+        $context = [
+            'hooks' => [
+                // 'App\\Dto\\Dto::$int' => static function ($type, $accessor, $context) {
+                //     return 'ok';
+                // },
+            ],
+        ];
+        dump(marshal_generate('null', 'json', $context));
     }
 
     private function component(object $object): void
@@ -61,8 +74,6 @@ class TestCommand extends Command
             ],
         ];
 
-        dump(marshal_generate(new \ReflectionClass($object), 'json', $context));
-
-        marshal($object, $resource, 'json', $context);
+        marshal(null, $resource, 'json', $context);
     }
 }

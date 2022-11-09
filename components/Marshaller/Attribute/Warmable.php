@@ -10,14 +10,14 @@ use Symfony\Component\Marshaller\Context\Context;
 final class Warmable
 {
     /**
-     * @param list<Context> $enforcedContexts
+     * @param list<Context> $contexts
      */
     public function __construct(
-        public readonly array $enforcedContexts = [],
+        public readonly array $contexts = [],
     ) {
-        foreach ($this->enforcedContexts as $enforcedContext) {
-            if (!$enforcedContext instanceof Context) {
-                throw new \InvalidArgumentException(sprintf('Parameter "enforcedContexts" of attribute "%s" must only contains "%s" instances.', self::class, Context::class));
+        foreach ($this->contexts as $context) {
+            if (!$context instanceof Context) {
+                throw new \InvalidArgumentException(sprintf('Parameter "contexts" of attribute "%s" must only contains "%s" instances.', self::class, Context::class));
             }
         }
     }

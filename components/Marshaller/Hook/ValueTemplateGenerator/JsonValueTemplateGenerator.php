@@ -65,6 +65,7 @@ final class JsonValueTemplateGenerator
         ++$context['depth'];
         $context['enclosed'] = false;
         $context['main_accessor'] = $accessor;
+        $context['root'] = false;
 
         if ('' === $value = json_marshal_generate(new \ReflectionClass($type->className()), $context)) {
             return '';

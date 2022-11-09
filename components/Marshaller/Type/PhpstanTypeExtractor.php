@@ -98,13 +98,23 @@ final class PhpstanTypeExtractor
             $className = $parentClassName;
         }
 
+        $collectionKeyType = null;
+        if (isset($collectionKeyTypes[0])) {
+            $collectionKeyType = $this->createFromPropertyInfoType($collectionKeyTypes[0], $declaringClass);
+        }
+
+        $collectionValueType = null;
+        if (isset($collectionValueTypes[0])) {
+            $collectionValueType = $this->createFromPropertyInfoType($collectionValueTypes[0], $declaringClass);
+        }
+
         return new Type(
             $propertyInfoType->getBuiltinType(),
             $propertyInfoType->isNullable(),
             $className,
             $propertyInfoType->isCollection(),
-            $collectionKeyTypes[0],
-            $collectionValueTypes[0],
+            $collectionKeyType,
+            $collectionValueType,
         );
     }
 
