@@ -11,29 +11,24 @@ use Symfony\Polyfill\Marshaller\Template\ObjectTemplateGenerator;
  */
 final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
 {
-    protected function generateBeforeProperties(array $context): string
+    protected function beforeProperties(): string
     {
-        return $this->fwrite("'{'", $context);
+        return '{';
     }
 
-    protected function generateAfterProperties(array $context): string
+    protected function afterProperties(): string
     {
-        return $this->fwrite("'}'", $context);
+        return '}';
     }
 
-    protected function getBeforePropertyString(bool $isFirst, bool $isLast): string
+    protected function propertySeparator(): string
     {
-        return $isFirst ? '' : ',';
+        return ',';
     }
 
-    protected function getAfterPropertyString(bool $isFirst, bool $isLast): string
+    protected function propertyName(string $name): string
     {
-        return '';
-    }
-
-    protected function getPropertyNameString(string $propertyName): string
-    {
-        return sprintf('%s:', json_encode($propertyName));
+        return sprintf("%s.':'", json_encode($name));
     }
 
     protected function null(): string

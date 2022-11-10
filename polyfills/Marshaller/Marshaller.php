@@ -23,13 +23,14 @@ final class Marshaller
     {
         $type = $this->getType($data, $context);
 
-        $cacheFilename = sprintf('%s%s%s.%s.php', $context['cache_path'] ?? sys_get_temp_dir(), DIRECTORY_SEPARATOR, md5($type), $format);
+        $cachePath = $context['cache_path'] ?? sys_get_temp_dir();
+
+        $cacheFilename = sprintf('%s%s%s.%s.php', $cachePath, DIRECTORY_SEPARATOR, md5($type), $format);
 
         if (!file_exists($cacheFilename)) {
-            if (!file_exists($context['cache_path'])) {
-                mkdir($context['cache_path'], recursive: true);
+            if (!file_exists($cachePath)) {
+                mkdir($cachePath, recursive: true);
             }
-
 
             $template = marshal_generate($type, $format, $context);
             file_put_contents($cacheFilename, $template);

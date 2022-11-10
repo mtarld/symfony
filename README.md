@@ -1,16 +1,9 @@
 # TODO
 
-- warmup native types
-
-- handle mixed
-- variable incremented instead of uniqid
-- no unset
-- union type -> encode get type at runtime (narrowest class)
-- move hooks into polyfill
+- depth
+- move hooks into polyfill (name, formatter)
 - warmup file
-- Better polyfill code (split to handle multiple formats)
-- root hook (for why?)
-
+- union type -> encode get type at runtime (narrowest class)
 
 - What to do with depth and generated filename
 - Unmarshal (json stream parser with events, object instantiator component)

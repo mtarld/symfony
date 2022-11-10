@@ -28,8 +28,8 @@ class TestCommand extends Command
     {
         $object = new Dto();
 
-        $this->generate();
-        // $this->polyfill($object);
+        // $this->generate();
+        $this->polyfill($object);
         // $this->component($object);
 
 
@@ -38,14 +38,15 @@ class TestCommand extends Command
 
     private function generate(): void
     {
+        $resource = fopen('php://stdout', 'wb');
         $context = [
-            'hooks' => [
-                // 'App\\Dto\\Dto::$int' => static function ($type, $accessor, $context) {
-                //     return 'ok';
-                // },
-            ],
+            'max_depth' => 0,
+            'type' => 'array<array<string>>',
+            'cache_path' => 'var/cache/dev/marshaller',
         ];
-        dump(marshal_generate('array<?int, ?string>', 'json', $context));
+        marshal([['a', 'b'], ['c', 'd']], $resource, 'json', $context);
+
+        // dump(marshal_generate('array<?array<int, array<bool>>>', 'json', $context));
     }
 
     private function component(object $object): void
@@ -64,18 +65,9 @@ class TestCommand extends Command
 
         $context = [
             'cache_path' => 'var/cache/dev/marshaller',
-            'max_depth' => 1,
-            'nullable_data' => true,
-            'hooks' => [
-                'App\\Dto\\Dto::$array' => static function (\ReflectionProperty $property, string $objectAccessor, array $context): string {
-                    $name = $context['propertyNameGenerator']($property, $context);
-                    $value = $context['fwrite']("'[]'", $context);
-
-                    return $name.$value;
-                },
-            ],
+            'max_depth' => 2,
         ];
 
-        marshal(1, $resource, 'json', $context);
+        marshal($object, $resource, 'json', $context);
     }
 }

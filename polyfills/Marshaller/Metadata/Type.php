@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller\Metadata;
 
-use Symfony\Polyfill\Marshaller\Metadata\Type;
-
 final class Type
 {
     public function __construct(
@@ -16,77 +14,6 @@ final class Type
         private readonly ?self $collectionKeyType = null,
         private readonly ?self $collectionValueType = null
     ) {
-    }
-
-    public static function fromString(string $type): self
-    {
-        if ('null' === $type) {
-            return new self('null');
-        }
-
-        if ($isNullable = '?' === $type[0]) {
-            $type = substr($type, 1);
-        }
-
-        if (\count(explode('|', $type)) > 1) {
-            throw new \LogicException('Not implemented yet (union/intersection).');
-        }
-
-        if (in_array($type, ['int', 'string', 'float', 'bool'])) {
-            return new self($type, $isNullable);
-        }
-
-        $results = [];
-        if (preg_match('/^(?P<type>array|list)<(?P<key>.+)(?:, (?P<value>.+))?>$/', $type, $results)) {
-            $keyType = $results['key'];
-            $valueType = $results['value'] ?? null;
-
-            if ('list' === $results['type']) {
-                $valueType = $keyType;
-                $keyType = 'int';
-            }
-
-            return new Type(
-                name: 'array',
-                isNullable: $isNullable,
-                isCollection: true,
-                collectionKeyType: Type::fromString($keyType),
-                collectionValueType: Type::fromString($valueType),
-            );
-        }
-
-        if (class_exists($type)) {
-            return new self('object', $isNullable, $type);
-        }
-
-        throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $type));
-    }
-
-    public static function fromReflection(\ReflectionNamedType $reflection, \ReflectionClass $declaringClass): self
-    {
-        $phpTypeOrClass = $reflection->getName();
-
-        if ('null' === $phpTypeOrClass || 'mixed' === $phpTypeOrClass || 'never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
-            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $reflection));
-        }
-
-        if ('array' === $phpTypeOrClass) {
-            throw new \RuntimeException('todo array');
-        }
-
-        if ($reflection->isBuiltin()) {
-            return new Type(name: $phpTypeOrClass, isNullable: $reflection->allowsNull());
-        }
-
-        $className = $phpTypeOrClass;
-
-        if ($declaringClass && 'self' === strtolower($className)) {
-            $className = $declaringClass->name;
-        } elseif ($declaringClass && 'parent' === strtolower($className) && $parent = $declaringClass->getParentClass()) {
-            $className = $parent->name;
-        }
-
-        return new Type(name: 'object', isNullable: $reflection->allowsNull(), className: $className);
     }
 
     public function name(): string
@@ -121,5 +48,63 @@ final class Type
     public function isObject(): bool
     {
         return 'object' === $this->name;
+    }
+
+    public function isCollection(): bool
+    {
+        return $this->isCollection;
+    }
+
+    public function isList(): bool
+    {
+        return $this->isCollection() && 'int' === $this->collectionKeyType->name();
+    }
+
+    public function isDict(): bool
+    {
+        return $this->isCollection() && !$this->isList();
+    }
+
+    public function collectionKeyType(): Type
+    {
+        if (!$this->isCollection()) {
+            throw new \RuntimeException('Cannot get collection key types on "%s" type as it\'s not a collection', $this->name);
+        }
+
+        return $this->collectionKeyType;
+    }
+
+    public function collectionValueType(): Type
+    {
+        if (!$this->isCollection()) {
+            throw new \RuntimeException('Cannot get collection value types on "%s" type as it\'s not a collection', $this->name);
+        }
+
+        return $this->collectionValueType;
+    }
+
+    public function __toString(): string
+    {
+        if ($this->isNull()) {
+            return 'null';
+        }
+
+        $nullablePrefix = $this->isNullable() ? '?' : '';
+
+        if ($this->isCollection()) {
+            $diamond = '';
+            if ($this->collectionKeyType && $this->collectionValueType) {
+                $diamond = sprintf('<%s, %s>', (string) $this->collectionKeyType, (string) $this->collectionValueType);
+            }
+
+            return $nullablePrefix.'array'.$diamond;
+        }
+
+        $name = $this->name();
+        if ($this->isObject()) {
+            $name = $this->className();
+        }
+
+        return $name;
     }
 }

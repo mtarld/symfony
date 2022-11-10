@@ -8,12 +8,18 @@ if (!function_exists('marshal')) {
     /**
      * @param array<string, mixed> $context
      */
-    function marshal(mixed $data, $resource, string $format, array $context = []): void { (new p\Marshaller())->marshal($data, $resource, $format, $context); }
+    function marshal(mixed $data, $resource, string $format, array $context = []): void
+    {
+        (new p\Marshaller())->marshal($data, $resource, $format, $context);
+    }
 }
 
 if (!function_exists('marshal_generate')) {
     /**
      * @param array<string, mixed> $context
      */
-    function marshal_generate(string $type, string $format, array $context = []): string { return (new p\TemplateGenerator())->generate($type, $format, $context); }
+    function marshal_generate(string $type, string $format, array $context = []): string
+    {
+        return (new p\Generator())->generate($type, $format, $context);
+    }
 }

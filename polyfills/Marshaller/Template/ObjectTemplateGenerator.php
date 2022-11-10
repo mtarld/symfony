@@ -6,6 +6,7 @@ namespace Symfony\Polyfill\Marshaller\Template;
 
 use Symfony\Polyfill\Marshaller\Metadata\HookExtractor;
 use Symfony\Polyfill\Marshaller\Metadata\Type;
+use Symfony\Polyfill\Marshaller\Metadata\TypeFactory;
 
 /**
  * @internal
@@ -18,60 +19,39 @@ abstract class ObjectTemplateGenerator
     private readonly HookExtractor $hookExtractor;
 
     public function __construct(
-        private readonly TemplateGeneratorInterface $templateGenerator,
+        private readonly TemplateGenerator $templateGenerator,
     ) {
         $this->hookExtractor = new HookExtractor();
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateBeforeProperties(array $context): string;
+    abstract protected function beforeProperties(): string;
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateAfterProperties(array $context): string;
+    abstract protected function afterProperties(): string;
 
-    abstract protected function getBeforePropertyString(bool $isFirst, bool $isLast): string;
+    abstract protected function propertySeparator(): string;
 
-    abstract protected function getAfterPropertyString(bool $isFirst, bool $isLast): string;
-
-    abstract protected function getPropertyNameString(string $propertyName): string;
+    abstract protected function propertyName(string $name): string;
 
     /**
      * @param array<string, mixed> $context
      */
     final public function generate(Type $type, string $accessor, array $context): string
     {
-        $className = $type->className();
-        $class = new \ReflectionClass($className);
-
-        if (isset($context['classes'][$className]) && $context['reject_circular_reference']) {
-            throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
-        }
-
-        $context['classes'][$className] = true;
-
-        if ($context['depth'] > $context['max_depth']) {
-            return '';
-        }
+        $class = new \ReflectionClass($type->className());
 
         $objectName = $this->scopeVariableName('object', $context);
 
-        $template = $this->writeLine("$objectName = $accessor;", $context);
-        $template .= $this->generateBeforeProperties($context);
+        $template = $this->writeLine("$objectName = $accessor;", $context)
+            .$this->fwrite(sprintf("'%s'", addslashes($this->beforeProperties())), $context);
 
         $properties = $class->getProperties();
-        $lastIndex = \count($properties) - 1;
+        $propertySeparator = '';
 
         foreach ($properties as $i => $property) {
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
                 $hookContext = $context + [
                     'propertyNameGenerator' => $this->generatePropertyName(...),
                     'propertyValueGenerator' => $this->generatePropertyValue(...),
-                    'fwrite' => $this->fwrite(...),
-                    'writeLine' => $this->writeLine(...),
                 ];
 
                 $template .= $hook($property, $objectName, $hookContext);
@@ -79,22 +59,13 @@ abstract class ObjectTemplateGenerator
                 continue;
             }
 
-            if (null === $propertyValue = $this->generatePropertyValue($property, $objectName, $context)) {
-                continue;
-            }
+            $template .= $this->generatePropertyName($property, $propertySeparator, $context)
+                .$this->generatePropertyValue($property, $objectName, $context);
 
-            $isFirst = 0 === $i;
-            $isLast = $lastIndex === $i;
-
-            $template .= $this->generatePropertyName($property, $this->getBeforePropertyString($isFirst, $isLast), $context);
-            $template .= $propertyValue;
-
-            if ('' !== $afterPropertyString = $this->getAfterPropertyString($isFirst, $isLast)) {
-                $template .= $this->fwrite($afterPropertyString, $context);
-            }
+            $propertySeparator = $this->propertySeparator();
         }
 
-        $template .= $this->generateAfterProperties($context);
+        $template .= $this->fwrite(sprintf("'%s'", addslashes($this->afterProperties())), $context);
 
         return $template;
     }
@@ -104,20 +75,25 @@ abstract class ObjectTemplateGenerator
       */
      private function generatePropertyName(\ReflectionProperty $property, string $prefix, array $context): string
      {
-         return $this->fwrite(sprintf("'%s%s'", $prefix, $this->getPropertyNameString($property->getName())), $context);
+         $content = '' === $prefix
+             ? $this->propertyName($property->getName())
+             : sprintf("'%s'.%s", $prefix, $this->propertyName($property->getName()))
+         ;
+
+         return $this->fwrite($content, $context);
      }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): ?string
+    private function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): string
     {
         $reflectionType = $property->getType();
         if (!$reflectionType instanceof \ReflectionNamedType) {
             throw new \LogicException('Not implemented yet (union/intersection).');
         }
 
-        $type = Type::fromReflection($reflectionType, $property->getDeclaringClass());
+        $type = TypeFactory::createFromReflection($reflectionType, $property->getDeclaringClass());
 
         $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
@@ -135,14 +111,7 @@ abstract class ObjectTemplateGenerator
             ++$context['indentation_level'];
         }
 
-        if ($type->isScalar()) {
-            $template .= $this->templateGenerator->generateScalar($type, $propertyAccessor, $context + ['enclosed' => false]);
-        } elseif ($type->isObject()) {
-            ++$context['depth'];
-            $template .= $this->generate($type, $propertyAccessor, $context);
-        } else {
-            throw new \LogicException(sprintf('Unexpected "%s" property kind', $propertyKind));
-        }
+        $template .= $this->templateGenerator->generate($type, $propertyAccessor, $context);
 
         if ($type->isNullable()) {
             --$context['indentation_level'];

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Symfony\Polyfill\Marshaller\Template\Json;
 
 use Symfony\Polyfill\Marshaller\Metadata\Type;
-use Symfony\Polyfill\Marshaller\Template\ScalarTemplateGenerator;
+use Symfony\Polyfill\Marshaller\Template\PhpWriterTrait;
 
-final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
+final class JsonScalarTemplateGenerator
 {
-    protected function generateValue(Type $type, string $accessor, array $context): string
+    use PhpWriterTrait;
+
+    public function generate(Type $type, string $accessor, array $context): string
     {
         return $this->fwrite("json_encode($accessor)", $context);
     }

@@ -19,9 +19,7 @@ final class HookExtractor
             return $hook;
         }
 
-        $type = Type::fromReflection($property->getType(), $property->getDeclaringClass());
-
-        return $this->extractFromType($type, $context);
+        return null;
     }
 
     /**
@@ -47,7 +45,7 @@ final class HookExtractor
     }
 
     /**
-     * @param list<string> $hookNames
+     * @param list<string>         $hookNames
      * @param array<string, mixed> $context
      */
     private function findHook(array $hookNames, array $context): ?callable
