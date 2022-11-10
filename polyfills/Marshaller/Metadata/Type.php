@@ -36,8 +36,23 @@ final class Type
             return new self($type, $isNullable);
         }
 
-        if (preg_match('/^(?:array|list)<.+>$/', $type)) {
-            throw new \RuntimeException('todo array');
+        $results = [];
+        if (preg_match('/^(?P<type>array|list)<(?P<key>.+)(?:, (?P<value>.+))?>$/', $type, $results)) {
+            $keyType = $results['key'];
+            $valueType = $results['value'] ?? null;
+
+            if ('list' === $results['type']) {
+                $valueType = $keyType;
+                $keyType = 'int';
+            }
+
+            return new Type(
+                name: 'array',
+                isNullable: $isNullable,
+                isCollection: true,
+                collectionKeyType: Type::fromString($keyType),
+                collectionValueType: Type::fromString($valueType),
+            );
         }
 
         if (class_exists($type)) {

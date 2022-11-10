@@ -1,5 +1,7 @@
 # TODO
 
+- warmup native types
+
 - handle mixed
 - variable incremented instead of uniqid
 - no unset

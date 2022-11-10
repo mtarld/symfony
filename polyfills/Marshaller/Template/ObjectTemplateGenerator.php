@@ -33,19 +33,10 @@ abstract class ObjectTemplateGenerator
      */
     abstract protected function generateAfterProperties(array $context): string;
 
-    /**
-     * @param array<string, mixed> $context
-     */
     abstract protected function getBeforePropertyString(bool $isFirst, bool $isLast): string;
 
-    /**
-     * @param array<string, mixed> $context
-     */
     abstract protected function getAfterPropertyString(bool $isFirst, bool $isLast): string;
 
-    /**
-     * @param array<string, mixed> $context
-     */
     abstract protected function getPropertyNameString(string $propertyName): string;
 
     /**

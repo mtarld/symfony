@@ -32,6 +32,7 @@ class TestCommand extends Command
         // $this->polyfill($object);
         // $this->component($object);
 
+
         return Command::SUCCESS;
     }
 
@@ -44,7 +45,7 @@ class TestCommand extends Command
                 // },
             ],
         ];
-        dump(marshal_generate('null', 'json', $context));
+        dump(marshal_generate('array<?int, ?string>', 'json', $context));
     }
 
     private function component(object $object): void
@@ -62,8 +63,9 @@ class TestCommand extends Command
         $resource = fopen('php://stdout', 'wb');
 
         $context = [
-            'cache_path' => '/tmp/marshaller',
+            'cache_path' => 'var/cache/dev/marshaller',
             'max_depth' => 1,
+            'nullable_data' => true,
             'hooks' => [
                 'App\\Dto\\Dto::$array' => static function (\ReflectionProperty $property, string $objectAccessor, array $context): string {
                     $name = $context['propertyNameGenerator']($property, $context);
@@ -74,6 +76,6 @@ class TestCommand extends Command
             ],
         ];
 
-        marshal(null, $resource, 'json', $context);
+        marshal(1, $resource, 'json', $context);
     }
 }

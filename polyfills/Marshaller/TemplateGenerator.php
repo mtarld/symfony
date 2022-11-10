@@ -75,6 +75,7 @@ final class TemplateGenerator
             ++$context['indentation_level'];
         }
 
+        dd($type);
         $template .= match (true) {
             $type->isNull() => $this->templateGenerators[$format]->generateNull($context),
             $type->isScalar() => $this->templateGenerators[$format]->generateScalar($type, $accessor, $context),
@@ -97,6 +98,7 @@ final class TemplateGenerator
 
         $template = $this->writeLine('<?php', $context);
         $template .= $this->writeLine('/**', $context);
+        $template .= $this->writeLine(sprintf(' * @param %s $data', $typeString), $context);
         $template .= $this->writeLine(' * @param resource $resource', $context);
         $template .= $this->writeLine(' */', $context);
         $template .= $this->writeLine("return static function (mixed $accessor, \$resource, array \$context): void {", $context);
