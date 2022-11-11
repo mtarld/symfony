@@ -10,8 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\HookOption;
-use Symfony\Component\Marshaller\Context\Option\HooksOption;
 use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
@@ -55,6 +53,7 @@ class TestCommand extends Command
 
         $context = new Context();
         // $context = new Context(new TypeOption('int'));
+        $context = new Context(new NullableDataOption());
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }

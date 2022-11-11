@@ -17,16 +17,23 @@ final class WarmableResolver
     }
 
     /**
-     * @return \Generator<\ReflectionClass>
+     * @return \Generator<array{0: class-string, 1: Warmable}>
      */
     public function resolve(): \Generator
     {
         foreach ($this->fromPaths($this->paths) as $class) {
-            if (!$this->isWarmable($class)) {
+            $attribute = null;
+            foreach ($class->getAttributes() as $attribute) {
+                if (Warmable::class === $attribute->getName()) {
+                    $attribute = $attribute->newInstance();
+                }
+            }
+
+            if (null === $attribute) {
                 continue;
             }
 
-            yield $class;
+            yield [$class->getName(), $attribute];
         }
     }
 
@@ -73,16 +80,5 @@ final class WarmableResolver
 
             yield $reflectionClass;
         }
-    }
-
-    private function isWarmable(\ReflectionClass $class): bool
-    {
-        foreach ($class->getAttributes() as $attribute) {
-            if (Warmable::class === $attribute->getName()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

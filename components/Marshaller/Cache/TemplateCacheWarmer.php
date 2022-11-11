@@ -11,33 +11,26 @@ use Symfony\Component\Marshaller\MarshallerInterface;
 
 final class TemplateCacheWarmer implements CacheWarmerInterface
 {
+    /**
+     * @param list<string> $formats
+     */
     public function __construct(
         private readonly WarmableResolver $warmableResolver,
         private readonly MarshallerInterface $marshaller,
         private readonly Filesystem $filesystem,
         private readonly string $cacheDir,
+        private readonly array $formats,
+        private readonly bool $nullableData,
     ) {
     }
 
     public function warmUp(string $cacheDir): void
     {
-        foreach ($this->warmableResolver->resolve() as $class) {
-            // TODO fixme name should depend on context
-            // $this->loadAttributeContexts($class);
-
-            $path = sprintf('%s/%s.php', $this->cacheDir, md5($class->getName()));
-            if (!$this->filesystem->exists($path)) {
-                // TODO json must be dynamic
-                // TODO method with filename
-                // $this->warmUpFile()
-                $this->filesystem->dumpFile($path, $this->marshaller->generate($class, 'json'));
+        foreach ($this->warmableResolver->resolve() as [$class, $attribute]) {
+            foreach ($this->formats as $format) {
+                $this->warmClass($class, $attribute, $format);
             }
         }
-    }
-
-    public function warmUpFile(string $class, string $format, string $filename): void
-    {
-        $this->filesystem->dumpFile($path, $this->marshaller->generate($class, 'json'));
     }
 
     public function isOptional(): bool
@@ -45,17 +38,20 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
         return false;
     }
 
-    private function loadAttributeContexts(\ReflectionClass $class): void
+    /**
+     * @param class-string $class
+     */
+    private function warmClass(string $class, Warmable $attribute, string $format): void
     {
-        foreach ($class->getAttributes() as $attribute) {
-            if (Warmable::class !== $attribute->getName()) {
-                continue;
-            }
-
-            foreach ($attribute->newInstance()->contexts as $context) {
-                // TODO json must be dynamic
-                $this->marshaller->generate($class, 'json', $context);
-            }
+        $path = sprintf('%s/%s.%s.php', $this->cacheDir, md5($class), $format);
+        if ($this->filesystem->exists($path)) {
+            return;
         }
+
+        if ($attribute->nullable ?? $this->nullableData) {
+            $class = '?'.$class;
+        }
+
+        $this->filesystem->dumpFile($path, $this->marshaller->generate($class, $format));
     }
 }

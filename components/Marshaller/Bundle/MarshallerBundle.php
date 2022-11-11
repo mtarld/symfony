@@ -27,8 +27,9 @@ final class MarshallerBundle extends Bundle
         parent::build($container);
 
         $container->setParameter('marshaller.cache_dir', sprintf('%s/marshaller', $container->getParameter('kernel.cache_dir')));
-
-        $container->setParameter('marshaller.marshallable_paths', [sprintf('src/Dto', $container->getParameter('kernel.project_dir'))]);
+        $container->setParameter('marshaller.warmable_paths', [sprintf('src/Dto', $container->getParameter('kernel.project_dir'))]);
+        $container->setParameter('marshaller.warmable_formats', ['json']);
+        $container->setParameter('marshaller.warmable_nullable_data', true);
 
         // Marshaller
         $container->register('marshaller', Marshaller::class)
@@ -71,7 +72,7 @@ final class MarshallerBundle extends Bundle
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)
             ->setArguments([
-                new Parameter('marshaller.marshallable_paths'),
+                new Parameter('marshaller.warmable_paths'),
             ]);
 
         $container->register('marshaller.cache.template_warmer', TemplateCacheWarmer::class)
@@ -80,6 +81,8 @@ final class MarshallerBundle extends Bundle
                 new Reference('marshaller'),
                 new Reference('filesystem'),
                 new Parameter('marshaller.cache_dir'),
+                new Parameter('marshaller.warmable_formats'),
+                new Parameter('marshaller.warmable_nullable_data'),
             ])
             ->addTag('kernel.cache_warmer');
     }

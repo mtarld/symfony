@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use Symfony\Component\Marshaller\Attribute\Warmable;
+
+#[Warmable]
 final class Dto
 {
     #[\MarshalName('test')]
@@ -25,13 +28,8 @@ final class Dto
         $this->object = new Dto2();
     }
 
-    /**
-     * @return Dto2|null
-     */
-    public static function multiplyAndCast(int $value, array $context): object
+    public static function multiplyAndCast(int $value, array $context): string
     {
-        return new Dto2();
-
         return (string) (2 * $value);
     }
 }

@@ -15,7 +15,6 @@ use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
 use Symfony\Component\PropertyInfo\Type as PropertyInfoType;
 use Symfony\Component\PropertyInfo\Util\PhpStanTypeHelper;
 
-// TODO fixme handle template T
 final class PhpstanTypeExtractor
 {
     private readonly PhpStanTypeHelper $docTypeHelper;
@@ -87,7 +86,6 @@ final class PhpstanTypeExtractor
 
             return $nullablePrefix.$className;
         }
-
 
         if ($propertyInfoType->isCollection()) {
             if (\count($collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()) > 1) {

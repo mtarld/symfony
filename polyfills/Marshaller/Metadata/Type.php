@@ -108,6 +108,6 @@ final class Type
             $name = $this->className();
         }
 
-        return $name;
+        return $nullablePrefix.$name;
     }
 }
