@@ -12,6 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\HooksOption;
+use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -40,7 +42,7 @@ class TestCommand extends Command
         $resource = fopen('php://stdout', 'wb');
         $context = [
             'type' => 'array<array<string>>',
-            'cache_path' => 'var/cache/dev/marshaller',
+            'cache_dir' => 'var/cache/dev/marshaller',
         ];
         marshal([['a', 'b'], ['c', 'd']], $resource, 'json', $context);
 
@@ -52,14 +54,9 @@ class TestCommand extends Command
         $output = new StdoutStreamOutput();
 
         $context = new Context();
-        $context = new Context(new HooksOption(['App\\Dto\\Dto::$int' => $this->test(...)]));
+        // $context = new Context(new TypeOption('int'));
 
         $this->marshaller->marshal($object, 'json', $output, $context);
-    }
-
-    private function test(\ReflectionProperty $p, string $accessor, string $format, array $context): string
-    {
-        return '';
     }
 
     private function polyfill(object $object): void
@@ -67,10 +64,10 @@ class TestCommand extends Command
         $resource = fopen('php://stdout', 'wb');
 
         $context = [
-            'cache_path' => 'var/cache/dev/marshaller',
+            'cache_dir' => 'var/cache/dev/marshaller',
             'hooks' => [
                 'property' => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
-                    $context['main_accessor'] = $accessor;
+                    $context['accessor'] = $accessor;
                     $context['enclosed'] = false;
 
                     unset($context['hooks']['string']);
@@ -78,7 +75,7 @@ class TestCommand extends Command
                     return marshal_generate($type, $format, $context);
                 },
                 'string' => static function (string $type, string $accessor, string $format, array $context): string {
-                    $context['main_accessor'] = $accessor;
+                    $context['accessor'] = $accessor;
                     $context['enclosed'] = false;
 
                     unset($context['hooks']['string']);

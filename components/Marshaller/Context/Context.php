@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Context;
 
+use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
+
 final class Context implements \IteratorAggregate
 {
     /**
@@ -16,6 +19,10 @@ final class Context implements \IteratorAggregate
         $map = [];
         foreach ($options as $option) {
             $map[get_class($option)] = $option;
+        }
+
+        if (isset($map[NullableDataOption::class], $map[TypeOption::class])) {
+            throw new \InvalidArgumentException(sprintf('Cannot use both "%s" and "%s" options', NullableDataOption::class, TypeOption::class));
         }
 
         $this->optionMap = $map;

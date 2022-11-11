@@ -10,10 +10,10 @@ final class Dto
     #[\MarshalFormatter([self::class, 'multiplyAndCast'])]
     public int $int = 12;
 
-    /**
-     * @var Dto2|null
-     */
-    public object $object;
+    // /**
+    //  * @var Dto2|null
+    //  */
+    // public object $object;
 
     // /**
     //  * @var array<array<string, list<bool|null>>>

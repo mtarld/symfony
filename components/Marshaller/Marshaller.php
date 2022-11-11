@@ -7,6 +7,8 @@ namespace Symfony\Component\Marshaller;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\GenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\MarshalNativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Marshaller implements MarshallerInterface
@@ -22,7 +24,6 @@ final class Marshaller implements MarshallerInterface
     ) {
     }
 
-    // TODO type context
     public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
     {
         $type = $this->getType($data, $context);
@@ -45,7 +46,7 @@ final class Marshaller implements MarshallerInterface
     private function buildGenerationNativeContext(string $type, string $format, Context $context = null): array
     {
         $context = $context ?? new Context();
-        $nativeContext = ['cache_path' => $this->cacheDir];
+        $nativeContext = [];
 
         foreach ($this->generationNativeContextBuilders as $builder) {
             $nativeContext = $builder->forGeneration($type, $format, $context, $nativeContext);
@@ -62,7 +63,7 @@ final class Marshaller implements MarshallerInterface
     private function buildMarshalNativeContext(mixed $data, string $format, Context $context = null): array
     {
         $context = $context ?? new Context();
-        $nativeContext = ['cache_path' => $this->cacheDir];
+        $nativeContext = [];
 
         foreach ($this->marshalNativeContextBuilders as $builder) {
             $nativeContext = $builder->forMarshal($data, $format, $context, $nativeContext);
@@ -71,24 +72,16 @@ final class Marshaller implements MarshallerInterface
         return $nativeContext;
     }
 
-    // TODO move me into the polyfill
-    private function validateClass(\ReflectionClass $class): void
-    {
-        foreach ($class->getProperties() as $property) {
-            if (!$property->isPublic()) {
-                throw new \RuntimeException(sprintf('"%s::$%s" must be public', $class->getName(), $property->getName()));
-            }
-        }
-    }
-
     /**
      * @param array<string, mixed> $context
      */
     private function getType(mixed $data, ?Context $context): string
     {
-        // TODO nullable option
-        // $nullablePrefix = true === ($context['nullable_data'] ?? false) ? '?' : '';
-        $nullablePrefix = '';
+        if (null !== $context && null !== ($typeOption = $context->get(TypeOption::class))) {
+            return $typeOption->type;
+        }
+
+        $nullablePrefix = (null !== $context && null !== $context->get(NullableDataOption::class)) ? '?' : '';
 
         if (is_object($data)) {
             return $nullablePrefix.$data::class;

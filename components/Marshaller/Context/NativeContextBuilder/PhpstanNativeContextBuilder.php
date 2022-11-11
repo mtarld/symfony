@@ -22,7 +22,7 @@ final class PhpstanNativeContextBuilder implements GenerationNativeContextBuilde
             }
 
             $context['enclosed'] = false;
-            $context['main_accessor'] = $accessor;
+            $context['accessor'] = $accessor;
 
             unset($context['hooks']['property']);
 
@@ -36,7 +36,7 @@ final class PhpstanNativeContextBuilder implements GenerationNativeContextBuilde
             }
 
             $context['enclosed'] = false;
-            $context['main_accessor'] = $accessor;
+            $context['accessor'] = $accessor;
 
             unset($context['hooks']['function']);
 

@@ -17,7 +17,7 @@ final class Marshaller
     {
         $type = $this->getType($data, $context);
 
-        $cachePath = $context['cache_path'] ?? sys_get_temp_dir();
+        $cachePath = $context['cache_dir'] ?? sys_get_temp_dir();
 
         $cacheFilename = sprintf('%s%s%s.%s.php', $cachePath, DIRECTORY_SEPARATOR, md5($type), $format);
 

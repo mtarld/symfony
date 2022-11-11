@@ -19,7 +19,7 @@ final class Generator
     private const DEFAULT_CONTEXT = [
         'generated_classes' => [],
         'hooks' => [],
-        'main_accessor' => '$data',
+        'accessor' => '$data',
         'indentation_level' => 0,
         'variable_counters' => [],
         'enclosed' => true,
@@ -53,7 +53,7 @@ final class Generator
 
         $type = TypeFactory::createFromString($type);
         $context = $context + self::DEFAULT_CONTEXT;
-        $accessor = $context['main_accessor'];
+        $accessor = $context['accessor'];
 
         if (!$context['enclosed']) {
             return $this->templateGenerators[$format]->generate($type, $accessor, $context);
