@@ -11,8 +11,8 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
-use Symfony\Component\Marshaller\Context\DefaultContextFactory;
-use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PhpstanHookNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\PhpstanNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
@@ -30,21 +30,22 @@ final class MarshallerBundle extends Bundle
         // Marshaller
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
-                new TaggedIteratorArgument('marshaller.context.native_context_builder'),
+                new TaggedIteratorArgument('marshaller.context.native_context_builder.generation'),
+                new TaggedIteratorArgument('marshaller.context.native_context_builder.marshal'),
                 new Parameter('marshaller.cache_dir'),
             ]);
 
         $container->setAlias(MarshallerInterface::class, 'marshaller');
 
-        // Context
-        $container->register('marshaller.context.default_factory', DefaultContextFactory::class);
-
-        // Hook native context builders
-        $container->register('marshaller.hook.native_context_builder.phpstan', PhpstanHookNativeContextBuilder::class)
+        // Context builder
+        $container->register('marshaller.native_context_builder.phpstan', PhpstanNativeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor.phpstan'),
             ])
-            ->addTag('marshaller.context.native_context_builder');
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 512]);
+
+        $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 256]);
 
         // Type extractors
         $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);

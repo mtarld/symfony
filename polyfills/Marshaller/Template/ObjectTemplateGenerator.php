@@ -49,13 +49,20 @@ abstract class ObjectTemplateGenerator
 
         foreach ($properties as $i => $property) {
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
+                $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
+
                 $hookContext = $context + [
-                    'propertyNameGenerator' => $this->generatePropertyName(...),
-                    'propertyValueGenerator' => $this->generatePropertyValue(...),
+                    'property_name_generator' => $this->generatePropertyName(...),
+                    'property_value_generator' => $this->generatePropertyValue(...),
+                    'property_type' => $type,
+                    'property_separator' => $propertySeparator,
                 ];
 
-                if (null !== $hookResult = $hook($property, $objectName, $this->templateGenerator->format(), $hookContext)) {
+                $propertyAccessor = sprintf('%s->%s', $objectName, $property->getName());
+
+                if (null !== $hookResult = $hook($property, $propertyAccessor, $this->templateGenerator->format(), $hookContext)) {
                     $template .= $hookResult;
+                    $propertySeparator = $this->propertySeparator();
 
                     continue;
                 }
@@ -116,19 +123,13 @@ abstract class ObjectTemplateGenerator
     {
         $formatterReflection = (new \ReflectionFunction(\Closure::fromCallable($formatter)));
         $accessor = sprintf('%s(%s, $context)', $formatter, $accessor);
+        $type = TypeFactory::createFromReflection($formatterReflection->getReturnType(), $formatterReflection->getClosureScopeClass());
 
         if (null !== $hook = $this->hookExtractor->extractFromFunction($formatterReflection, $context)) {
-            $hookContext = $context + [
-                'propertyNameGenerator' => $this->generatePropertyName(...),
-                'propertyValueGenerator' => $this->generatePropertyValue(...),
-            ];
-
-            if (null !== $hookResult = $hook($formatterReflection, $accessor, $this->templateGenerator->format(), $hookContext)) {
+            if (null !== $hookResult = $hook($formatterReflection, $accessor, $this->templateGenerator->format(), $context)) {
                 return $hookResult;
             }
         }
-
-        $type = TypeFactory::createFromReflection($formatterReflection->getReturnType(), $formatterReflection->getClosureScopeClass());
 
         return $this->templateGenerator->generate($type, $accessor, $context);
     }

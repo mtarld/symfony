@@ -14,6 +14,10 @@ trait PhpWriterTrait
      */
     protected function fwrite(string $content, array $context): string
     {
+        if ("''" === $content) {
+            return '';
+        }
+
         return $this->writeLine(sprintf('fwrite($resource, %s);', $content), $context);
     }
 

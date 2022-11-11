@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\NativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\GenerationNativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 
 final class Marshaller implements MarshallerInterface
 {
     /**
-     * @param iterable<NativeContextBuilderInterface> $nativeContextBuilders
+     * @param iterable<GenerationNativeContextBuilderInterface> $generationNativeContextBuilders
+     * @param iterable<MarshalNativeContextBuilderInterface>    $marshalNativeContextBuilders
      */
     public function __construct(
-        private readonly iterable $nativeContextBuilders,
+        private readonly iterable $generationNativeContextBuilders,
+        private readonly iterable $marshalNativeContextBuilders,
         private readonly string $cacheDir,
     ) {
     }
@@ -23,28 +26,15 @@ final class Marshaller implements MarshallerInterface
     public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
     {
         $type = $this->getType($data, $context);
-        $templateExists = file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, $type, $format));
+        $templateExists = file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format));
+        $nativeContext = $templateExists ? $this->buildMarshalNativeContext($data, $format, $context) : $this->buildGenerationNativeContext($type, $format, $context);
 
-        // Enforce generation with a complete context
-        if (!$templateExists) {
-            $this->generate($type, $format, $context);
-        }
-
-        marshal($data, $output->stream(), $format, ['cache_path' => $this->cacheDir]);
+        marshal($data, $output->stream(), $format, $nativeContext);
     }
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        $nativeContext = ['cache_path' => $this->cacheDir];
-
-        foreach ($this->nativeContextBuilders as $builder) {
-            $nativeContext = $builder->build($format, $nativeContext);
-        }
-
-        // TODO
-        // $nativeContext = $this->mergeWithContext($context, $nativeContext);
-
-        return marshal_generate($type, $format, $nativeContext);
+        return marshal_generate($type, $format, $this->buildGenerationNativeContext($type, $format, $context));
     }
 
     /**
@@ -52,28 +42,30 @@ final class Marshaller implements MarshallerInterface
      *
      * @return array<string, mixed>
      */
-    private function mergeWithContext(?Context $context, array $nativeContext): array
+    private function buildGenerationNativeContext(string $type, string $format, Context $context = null): array
     {
-        // $defaultContext = $this->defaultContextFactory->create();
-        //
-        // if (null !== $context) {
-        //     foreach ($defaultContext as $defaultOption) {
-        //         if (!$context->has($defaultOption::class)) {
-        //             $context = $context->with($defaultOption);
-        //         }
-        //     }
-        // }
-        //
-        // foreach ($context ?? $defaultContext as $option) {
-        //     $nativeContext = $option->mergeNativeContext($nativeContext);
-        // }
+        $context = $context ?? new Context();
+        $nativeContext = ['cache_path' => $this->cacheDir];
 
-        if (null === $context) {
-            return $nativeContext;
+        foreach ($this->generationNativeContextBuilders as $builder) {
+            $nativeContext = $builder->forGeneration($type, $format, $context, $nativeContext);
         }
 
-        foreach ($context as $option) {
-            $nativeContext = $option->mergeNativeContext($nativeContext);
+        return $nativeContext;
+    }
+
+    /**
+     * @param array<string, mixed> $nativeContext
+     *
+     * @return array<string, mixed>
+     */
+    private function buildMarshalNativeContext(mixed $data, string $format, Context $context = null): array
+    {
+        $context = $context ?? new Context();
+        $nativeContext = ['cache_path' => $this->cacheDir];
+
+        foreach ($this->marshalNativeContextBuilders as $builder) {
+            $nativeContext = $builder->forMarshal($data, $format, $context, $nativeContext);
         }
 
         return $nativeContext;
@@ -94,7 +86,7 @@ final class Marshaller implements MarshallerInterface
      */
     private function getType(mixed $data, ?Context $context): string
     {
-        // TODO
+        // TODO nullable option
         // $nullablePrefix = true === ($context['nullable_data'] ?? false) ? '?' : '';
         $nullablePrefix = '';
 

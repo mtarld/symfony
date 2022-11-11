@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-/**
- * @template T of Dto2
- */
 final class Dto
 {
     #[\MarshalName('test')]
     #[\MarshalFormatter([self::class, 'multiplyAndCast'])]
     public int $int = 12;
-    //
-    // /**
-    //  * @var Dto2|null
-    //  */
-    // public object $object;
+
+    /**
+     * @var Dto2|null
+     */
+    public object $object;
 
     // /**
     //  * @var array<array<string, list<bool|null>>>
@@ -29,11 +26,11 @@ final class Dto
     }
 
     /**
-     * @return Dto2
+     * @return Dto2|null
      */
-    public static function multiplyAndCast(int $value, array $context): ?object
+    public static function multiplyAndCast(int $value, array $context): object
     {
-        return null;
+        return new Dto2();
 
         return (string) (2 * $value);
     }

@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
+use Symfony\Component\Marshaller\Context\Option\HooksOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -51,10 +52,14 @@ class TestCommand extends Command
         $output = new StdoutStreamOutput();
 
         $context = new Context();
-        // $context = new Context(new HookOption('object', [$this, 'test']));
+        $context = new Context(new HooksOption(['App\\Dto\\Dto::$int' => $this->test(...)]));
 
-        dd($this->marshaller->generate($object::class, 'json', $context));
         $this->marshaller->marshal($object, 'json', $output, $context);
+    }
+
+    private function test(\ReflectionProperty $p, string $accessor, string $format, array $context): string
+    {
+        return '';
     }
 
     private function polyfill(object $object): void
@@ -65,7 +70,6 @@ class TestCommand extends Command
             'cache_path' => 'var/cache/dev/marshaller',
             'hooks' => [
                 'property' => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
-                    dd($property);
                     $context['main_accessor'] = $accessor;
                     $context['enclosed'] = false;
 

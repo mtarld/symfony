@@ -48,8 +48,6 @@ final class PhpstanTypeExtractor
             throw new \LogicException('Not implemented yet (union/intersection).');
         }
 
-        dump($this->createFromPropertyInfoType($types[0], $property->getDeclaringClass()));
-
         return $this->createFromPropertyInfoType($types[0], $property->getDeclaringClass());
     }
 

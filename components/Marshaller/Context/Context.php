@@ -7,11 +7,11 @@ namespace Symfony\Component\Marshaller\Context;
 final class Context implements \IteratorAggregate
 {
     /**
-     * @var array<class-string<OptionInterface>, OptionInterface>
+     * @var array<class-string, object>
      */
     private readonly array $optionMap;
 
-    public function __construct(OptionInterface ...$options)
+    public function __construct(object ...$options)
     {
         $map = [];
         foreach ($options as $option) {
@@ -21,7 +21,7 @@ final class Context implements \IteratorAggregate
         $this->optionMap = $map;
     }
 
-    public function with(OptionInterface ...$options): self
+    public function with(object ...$options): self
     {
         return new self(...[
             ...array_values($this->optionMap),
@@ -30,7 +30,7 @@ final class Context implements \IteratorAggregate
     }
 
     /**
-     * @param class-string<OptionInterface> $optionClasses
+     * @param class-string $optionClasses
      */
     public function without(string ...$optionClasses): self
     {
@@ -43,29 +43,15 @@ final class Context implements \IteratorAggregate
     }
 
     /**
-     * @param class-string<OptionInterface> $optionClass
+     * @param class-string $optionClass
      */
-    public function has(string $optionClass): bool
+    public function get(string $optionClass): ?object
     {
-        return isset($this->optionMap[$optionClass]);
+        return $this->optionMap[$optionClass] ?? null;
     }
 
     /**
-     * @param class-string<OptionInterface>
-     *
-     * @throws \OutOfBoundsException
-     */
-    public function get(string $optionClass): OptionInterface
-    {
-        if (!$this->has($optionClass)) {
-            throw new \OutOfBoundsException(sprintf('"%s" option was not found.', $optionClass));
-        }
-
-        return $this->optionMap[$optionClass];
-    }
-
-    /**
-     * @return list<OptionInterface>
+     * @return list<object>
      */
     public function getIterator(): \Traversable
     {

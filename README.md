@@ -1,6 +1,5 @@
 # TODO
 
-- Phpstan/Phpdoc hook
 - Hook option
 - warmup file
 - union type -> encode get type at runtime (narrowest class)
