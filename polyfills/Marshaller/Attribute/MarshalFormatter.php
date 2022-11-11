@@ -42,4 +42,3 @@ final class MarshalFormatter
         $this->callable = $callable;
     }
 }
-

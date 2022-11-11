@@ -12,15 +12,11 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Context\DefaultContextFactory;
-use Symfony\Component\Marshaller\Hook\NativeContextBuilder\ArrayHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Hook\NativeContextBuilder\ObjectHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PropertyFormatterHookNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PropertyNameHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Type\PhpDocTypeExtractor;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
-use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class MarshallerBundle extends Bundle
@@ -30,8 +26,6 @@ final class MarshallerBundle extends Bundle
         parent::build($container);
 
         $container->setParameter('marshaller.cache_dir', sprintf('%s/marshaller', $container->getParameter('kernel.cache_dir')));
-        $container->setParameter('marshaller.depth.max_depth', 8);
-        $container->setParameter('marshaller.depth.reject_circular_reference', true);
 
         $container->setParameter('marshaller.marshallable_paths', [sprintf('src/Dto', $container->getParameter('kernel.project_dir'))]);
 
@@ -47,22 +41,6 @@ final class MarshallerBundle extends Bundle
         $container->setAlias(MarshallerInterface::class, 'marshaller');
 
         // Hook native context builders
-        $container->register('marshaller.hook.native_context_builder.property_name', PropertyNameHookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.template_generation');
-
-        $container->register('marshaller.hook.native_context_builder.property_formatter', PropertyFormatterHookNativeContextBuilder::class)
-            ->setArguments([
-                new Reference('marshaller.type_extractor'),
-            ])
-            ->addTag('marshaller.context.native_context_builder.marshal')
-            ->addTag('marshaller.context.native_context_builder.template_generation');
-
-        $container->register('marshaller.hook.native_context_builder.array', ArrayHookNativeContextBuilder::class)
-            ->setArguments([
-                new Reference('marshaller.type_extractor'),
-            ])
-            ->addTag('marshaller.context.native_context_builder.template_generation');
-
         $container->register('marshaller.hook.native_context_builder.object', ObjectHookNativeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor'),
@@ -70,14 +48,9 @@ final class MarshallerBundle extends Bundle
             ->addTag('marshaller.context.native_context_builder.template_generation');
 
         // Context
-        $container->register('marshaller.context.default_factory', DefaultContextFactory::class)
-            ->setArguments([
-                new Parameter('marshaller.depth.max_depth'),
-                new Parameter('marshaller.depth.reject_circular_reference'),
-            ]);
+        $container->register('marshaller.context.default_factory', DefaultContextFactory::class);
 
         // Type extractors
-        $container->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class);
         $container->register('marshaller.type_extractor.php_doc', PhpDocTypeExtractor::class);
         $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
 
@@ -85,7 +58,6 @@ final class MarshallerBundle extends Bundle
             ->setArguments([
                 new Reference('marshaller.type_extractor.phpstan'),
                 new Reference('marshaller.type_extractor.php_doc'),
-                new Reference('marshaller.type_extractor.reflection'),
             ]);
 
         // Cache

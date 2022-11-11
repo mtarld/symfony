@@ -10,7 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\DepthOption;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
@@ -32,7 +31,6 @@ class TestCommand extends Command
         $this->polyfill($object);
         // $this->component($object);
 
-
         return Command::SUCCESS;
     }
 
@@ -40,7 +38,6 @@ class TestCommand extends Command
     {
         $resource = fopen('php://stdout', 'wb');
         $context = [
-            'max_depth' => 0,
             'type' => 'array<array<string>>',
             'cache_path' => 'var/cache/dev/marshaller',
         ];
@@ -54,7 +51,7 @@ class TestCommand extends Command
         $output = new StdoutStreamOutput();
 
         $context = new Context();
-        // $context = new Context(new DepthOption(1, true), new HookOption('object', [$this, 'test']));
+        // $context = new Context(new HookOption('object', [$this, 'test']));
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }
@@ -65,7 +62,6 @@ class TestCommand extends Command
 
         $context = [
             'cache_path' => 'var/cache/dev/marshaller',
-            'max_depth' => 2,
         ];
 
         marshal($object, $resource, 'json', $context);

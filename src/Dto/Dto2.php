@@ -17,4 +17,3 @@ final class Dto2
         return $self;
     }
 }
-

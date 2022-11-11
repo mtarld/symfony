@@ -50,7 +50,7 @@ final class PhpDocTypeExtractor
             return null;
         }
 
-        if (\count($types = $this->docTypeHelper->getTypes($reflectionType)) !== 1) {
+        if (1 !== \count($types = $this->docTypeHelper->getTypes($reflectionType))) {
             return null;
         }
 
@@ -75,7 +75,7 @@ final class PhpDocTypeExtractor
             return null;
         }
 
-        if (\count($types = $this->docTypeHelper->getTypes($reflectionType)) !== 1) {
+        if (1 !== \count($types = $this->docTypeHelper->getTypes($reflectionType))) {
             return null;
         }
 
