@@ -75,9 +75,20 @@ abstract class ObjectTemplateGenerator
       */
      private function generatePropertyName(\ReflectionProperty $property, string $prefix, array $context): string
      {
+         $name = $property->getName();
+         foreach ($property->getAttributes() as $attribute) {
+             if (\MarshalName::class !== $attribute->getName()) {
+                 continue;
+             }
+
+             $name = $attribute->newInstance()->name;
+
+             break;
+         }
+
          $content = '' === $prefix
-             ? $this->propertyName($property->getName())
-             : sprintf("'%s'.%s", $prefix, $this->propertyName($property->getName()))
+             ? $this->propertyName($name)
+             : sprintf("'%s'.%s", $prefix, $this->propertyName($name))
          ;
 
          return $this->fwrite($content, $context);
@@ -88,36 +99,30 @@ abstract class ObjectTemplateGenerator
      */
     private function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): string
     {
+        $formatter = null;
         $reflectionType = $property->getType();
-        if (!$reflectionType instanceof \ReflectionNamedType) {
-            throw new \LogicException('Not implemented yet (union/intersection).');
-        }
-
-        $type = TypeFactory::createFromReflection($reflectionType, $property->getDeclaringClass());
+        $declaringClass = $property->getDeclaringClass();
 
         $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
 
-        $template = '';
+        foreach ($property->getAttributes() as $attribute) {
+            if (\MarshalFormatter::class !== $attribute->getName()) {
+                continue;
+            }
 
-        if ($type->isNullable()) {
-            $template .= $this->writeLine("if (null === $propertyAccessor) {", $context);
+            $callable = $attribute->newInstance()->callable;
 
-            ++$context['indentation_level'];
-            $template .= $this->fwrite("'null'", $context);
+            $formatter = (new \ReflectionFunction(\Closure::fromCallable($callable)));
+            $reflectionType = $formatter->getReturnType();
+            $declaringClass = $formatter->getClosureScopeClass();
 
-            --$context['indentation_level'];
-            $template .= $this->writeLine('} else {', $context);
+            $propertyAccessor = sprintf('%s(%s, $context)', $callable, $propertyAccessor);
 
-            ++$context['indentation_level'];
+            break;
         }
 
-        $template .= $this->templateGenerator->generate($type, $propertyAccessor, $context);
+        $type = TypeFactory::createFromReflection($reflectionType, $declaringClass);
 
-        if ($type->isNullable()) {
-            --$context['indentation_level'];
-            $template .= self::writeLine('}', $context);
-        }
-
-        return $template;
+        return $this->templateGenerator->generate($type, $propertyAccessor, $context);
     }
 }

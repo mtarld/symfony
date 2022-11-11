@@ -22,6 +22,7 @@ final class Generator
         'main_accessor' => '$data',
         'indentation_level' => 0,
         'variable_counters' => [],
+        'enclosed' => true,
     ];
 
     /**

@@ -40,7 +40,11 @@
             "Symfony\\Component\\Marshaller\\": "components/Marshaller/",
             "Symfony\\Polyfill\\Marshaller\\": "polyfills/Marshaller/"
         },
-        "files": [ "polyfills/Marshaller/bootstrap.php" ]
+        "files": [
+            "polyfills/Marshaller/bootstrap.php",
+            "polyfills/Marshaller/Attribute/MarshalName.php",
+            "polyfills/Marshaller/Attribute/MarshalFormatter.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

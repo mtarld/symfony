@@ -28,7 +28,7 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
 
     protected function propertyName(string $name): string
     {
-        return sprintf("%s.':'", json_encode($name));
+        return sprintf("'%s'.':'", json_encode($name));
     }
 
     protected function null(): string

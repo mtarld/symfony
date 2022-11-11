@@ -72,8 +72,12 @@ final class TypeFactory
         throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $string));
     }
 
-    public static function createFromReflection(\ReflectionNamedType $reflection, \ReflectionClass $declaringClass): Type
+    public static function createFromReflection(\ReflectionType $reflection, \ReflectionClass $declaringClass): Type
     {
+        if (!$reflection instanceof \ReflectionNamedType) {
+            throw new \LogicException('Not implemented yet (union/intersection).');
+        }
+
         $phpTypeOrClass = $reflection->getName();
 
         if ('null' === $phpTypeOrClass || 'mixed' === $phpTypeOrClass || 'never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {

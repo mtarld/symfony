@@ -1,6 +1,5 @@
 # TODO
 
-- depth
 - move hooks into polyfill (name, formatter)
 - warmup file
 - union type -> encode get type at runtime (narrowest class)
