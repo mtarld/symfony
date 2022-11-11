@@ -54,9 +54,11 @@ abstract class ObjectTemplateGenerator
                     'propertyValueGenerator' => $this->generatePropertyValue(...),
                 ];
 
-                $template .= $hook($property, $objectName, $hookContext);
+                if (null !== $hookResult = $hook($property, $objectName, $this->templateGenerator->format(), $hookContext)) {
+                    $template .= $hookResult;
 
-                continue;
+                    continue;
+                }
             }
 
             $template .= $this->generatePropertyName($property, $propertySeparator, $context)
@@ -92,32 +94,42 @@ abstract class ObjectTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private function generatePropertyValue(\ReflectionProperty $property, string $objectAccessor, array $context): string
+    private function generatePropertyValue(\ReflectionProperty $property, string $accessor, array $context): string
     {
-        $formatter = null;
-        $reflectionType = $property->getType();
-        $declaringClass = $property->getDeclaringClass();
-
-        $propertyAccessor = sprintf('%s->%s', $objectAccessor, $property->getName());
+        $accessor = sprintf('%s->%s', $accessor, $property->getName());
 
         foreach ($property->getAttributes() as $attribute) {
-            if (\MarshalFormatter::class !== $attribute->getName()) {
-                continue;
+            if (\MarshalFormatter::class === $attribute->getName()) {
+                return $this->propertyFormatter($attribute->newInstance()->callable, $accessor, $context);
             }
-
-            $callable = $attribute->newInstance()->callable;
-
-            $formatter = (new \ReflectionFunction(\Closure::fromCallable($callable)));
-            $reflectionType = $formatter->getReturnType();
-            $declaringClass = $formatter->getClosureScopeClass();
-
-            $propertyAccessor = sprintf('%s(%s, $context)', $callable, $propertyAccessor);
-
-            break;
         }
 
-        $type = TypeFactory::createFromReflection($reflectionType, $declaringClass);
+        $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
 
-        return $this->templateGenerator->generate($type, $propertyAccessor, $context);
+        return $this->templateGenerator->generate($type, $accessor, $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function propertyFormatter(callable $formatter, string $accessor, array $context): string
+    {
+        $formatterReflection = (new \ReflectionFunction(\Closure::fromCallable($formatter)));
+        $accessor = sprintf('%s(%s, $context)', $formatter, $accessor);
+
+        if (null !== $hook = $this->hookExtractor->extractFromFunction($formatterReflection, $context)) {
+            $hookContext = $context + [
+                'propertyNameGenerator' => $this->generatePropertyName(...),
+                'propertyValueGenerator' => $this->generatePropertyValue(...),
+            ];
+
+            if (null !== $hookResult = $hook($formatterReflection, $accessor, $this->templateGenerator->format(), $hookContext)) {
+                return $hookResult;
+            }
+        }
+
+        $type = TypeFactory::createFromReflection($formatterReflection->getReturnType(), $formatterReflection->getClosureScopeClass());
+
+        return $this->templateGenerator->generate($type, $accessor, $context);
     }
 }

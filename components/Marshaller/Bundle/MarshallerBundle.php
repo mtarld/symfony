@@ -12,12 +12,10 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Context\DefaultContextFactory;
-use Symfony\Component\Marshaller\Hook\NativeContextBuilder\ObjectHookNativeContextBuilder;
+use Symfony\Component\Marshaller\Hook\NativeContextBuilder\PhpstanHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Type\PhpDocTypeExtractor;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class MarshallerBundle extends Bundle
 {
@@ -32,33 +30,24 @@ final class MarshallerBundle extends Bundle
         // Marshaller
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
-                new Reference('marshaller.context.default_factory'),
-                new TaggedIteratorArgument('marshaller.context.native_context_builder.marshal'),
-                new TaggedIteratorArgument('marshaller.context.native_context_builder.template_generation'),
+                new TaggedIteratorArgument('marshaller.context.native_context_builder'),
                 new Parameter('marshaller.cache_dir'),
             ]);
 
         $container->setAlias(MarshallerInterface::class, 'marshaller');
 
-        // Hook native context builders
-        $container->register('marshaller.hook.native_context_builder.object', ObjectHookNativeContextBuilder::class)
-            ->setArguments([
-                new Reference('marshaller.type_extractor'),
-            ])
-            ->addTag('marshaller.context.native_context_builder.template_generation');
-
         // Context
         $container->register('marshaller.context.default_factory', DefaultContextFactory::class);
 
-        // Type extractors
-        $container->register('marshaller.type_extractor.php_doc', PhpDocTypeExtractor::class);
-        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
-
-        $container->register('marshaller.type_extractor', TypeExtractor::class)
+        // Hook native context builders
+        $container->register('marshaller.hook.native_context_builder.phpstan', PhpstanHookNativeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor.phpstan'),
-                new Reference('marshaller.type_extractor.php_doc'),
-            ]);
+            ])
+            ->addTag('marshaller.context.native_context_builder');
+
+        // Type extractors
+        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)

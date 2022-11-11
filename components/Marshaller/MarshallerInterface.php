@@ -9,7 +9,7 @@ use Symfony\Component\Marshaller\Output\OutputInterface;
 
 interface MarshallerInterface
 {
-    public function marshal(object $object, string $format, OutputInterface $output, Context $context = null): void;
+    public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void;
 
-    public function generate(\ReflectionClass $class, string $format, Context $context = null): string;
+    public function generate(string $type, string $format, Context $context = null): string;
 }

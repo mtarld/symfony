@@ -15,6 +15,7 @@ use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
 use Symfony\Component\PropertyInfo\Type as PropertyInfoType;
 use Symfony\Component\PropertyInfo\Util\PhpStanTypeHelper;
 
+// TODO fixme handle template T
 final class PhpstanTypeExtractor
 {
     private readonly PhpStanTypeHelper $docTypeHelper;
@@ -30,16 +31,7 @@ final class PhpstanTypeExtractor
         $this->nameScopeFactory = new NameScopeFactory();
     }
 
-    public function extract(\ReflectionProperty|\ReflectionFunctionAbstract $reflection, \ReflectionClass $declaringClass): ?Type
-    {
-        if ($reflection instanceof \ReflectionProperty) {
-            return $this->extractFromProperty($reflection, $declaringClass);
-        }
-
-        return $this->extractFromReturnType($reflection, $declaringClass);
-    }
-
-    public function extractFromProperty(\ReflectionProperty $property, \ReflectionClass $declaringClass): ?Type
+    public function extractFromProperty(\ReflectionProperty $property): ?string
     {
         if (null === $docNode = $this->getDocNode($property)) {
             return null;
@@ -50,16 +42,18 @@ final class PhpstanTypeExtractor
             return null;
         }
 
-        $nameScope = $this->nameScopeFactory->create($declaringClass->getName());
+        $nameScope = $this->nameScopeFactory->create($property->getDeclaringClass()->getName());
 
         if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
-            return null;
+            throw new \LogicException('Not implemented yet (union/intersection).');
         }
 
-        return $this->createFromPropertyInfoType($types[0], $declaringClass);
+        dump($this->createFromPropertyInfoType($types[0], $property->getDeclaringClass()));
+
+        return $this->createFromPropertyInfoType($types[0], $property->getDeclaringClass());
     }
 
-    public function extractFromReturnType(\ReflectionFunctionAbstract $function, \ReflectionClass $declaringClass): ?Type
+    public function extractFromReturnType(\ReflectionFunction $function): ?string
     {
         if (null === $docNode = $this->getDocNode($function)) {
             return null;
@@ -70,52 +64,53 @@ final class PhpstanTypeExtractor
             return null;
         }
 
-        $nameScope = $this->nameScopeFactory->create($declaringClass->getName());
+        $nameScope = $this->nameScopeFactory->create($function->getClosureScopeClass()->getName());
 
         if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
             return null;
         }
 
-        return $this->createFromPropertyInfoType($types[0], $declaringClass);
+        return $this->createFromPropertyInfoType($types[0], $function->getClosureScopeClass());
     }
 
-    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): Type
+    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): ?string
     {
-        if (\count($collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()) > 1) {
-            return null;
+        $nullablePrefix = $propertyInfoType->isNullable() ? '?' : '';
+
+        if (null !== $propertyInfoType->getClassName()) {
+            $className = $propertyInfoType->getClassName();
+            $declaringClassName = $declaringClass->getName();
+
+            if ('self' === $className || 'static' === $className) {
+                $className = $declaringClassName;
+            } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
+                $className = $parentClassName;
+            }
+
+            return $nullablePrefix.$className;
         }
 
-        if (\count($collectionValueTypes = $propertyInfoType->getCollectionValueTypes()) > 1) {
-            return null;
-        }
 
-        $className = $propertyInfoType->getClassName();
-        $declaringClassName = $declaringClass->getName();
+        if ($propertyInfoType->isCollection()) {
+            if (\count($collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()) > 1) {
+                throw new \LogicException('Not implemented yet (union/intersection).');
+            }
 
-        if ('self' === $className || 'static' === $className) {
-            $className = $declaringClassName;
-        } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
-            $className = $parentClassName;
-        }
+            if (\count($collectionValueTypes = $propertyInfoType->getCollectionValueTypes()) > 1) {
+                throw new \LogicException('Not implemented yet (union/intersection).');
+            }
 
-        $collectionKeyType = null;
-        if (isset($collectionKeyTypes[0])) {
-            $collectionKeyType = $this->createFromPropertyInfoType($collectionKeyTypes[0], $declaringClass);
-        }
+            $collectionKeyType = 'int';
+            if (isset($collectionKeyTypes[0])) {
+                $collectionKeyType = $this->createFromPropertyInfoType($collectionKeyTypes[0], $declaringClass);
+            }
 
-        $collectionValueType = null;
-        if (isset($collectionValueTypes[0])) {
             $collectionValueType = $this->createFromPropertyInfoType($collectionValueTypes[0], $declaringClass);
+
+            return $nullablePrefix.sprintf('array<%s, %s>', $collectionKeyType, $collectionValueType);
         }
 
-        return new Type(
-            $propertyInfoType->getBuiltinType(),
-            $propertyInfoType->isNullable(),
-            $className,
-            $propertyInfoType->isCollection(),
-            $collectionKeyType,
-            $collectionValueType,
-        );
+        return $nullablePrefix.$propertyInfoType->getBuiltinType();
     }
 
     private function getDocNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?PhpDocNode

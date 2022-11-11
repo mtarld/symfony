@@ -42,7 +42,6 @@ abstract class DictTemplateGenerator
 
         ++$context['indentation_level'];
 
-        // $template .= $this->fwrite($prefixName.$this->keyName($keyName), $context)
         $template .= $this->fwrite(sprintf('%s.%s', $prefixName, $this->keyName($keyName)), $context)
             .$this->templateGenerator->generate($type->collectionValueType(), $valueName, $context)
             .$this->writeLine(sprintf("$prefixName = '%s';", addslashes($this->valueSeparator())), $context);

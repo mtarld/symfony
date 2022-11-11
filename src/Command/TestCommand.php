@@ -28,8 +28,8 @@ class TestCommand extends Command
         $object = new Dto();
 
         // $this->generate();
-        $this->polyfill($object);
-        // $this->component($object);
+        // $this->polyfill($object);
+        $this->component($object);
 
         return Command::SUCCESS;
     }
@@ -53,6 +53,7 @@ class TestCommand extends Command
         $context = new Context();
         // $context = new Context(new HookOption('object', [$this, 'test']));
 
+        dd($this->marshaller->generate($object::class, 'json', $context));
         $this->marshaller->marshal($object, 'json', $output, $context);
     }
 
@@ -63,6 +64,15 @@ class TestCommand extends Command
         $context = [
             'cache_path' => 'var/cache/dev/marshaller',
             'hooks' => [
+                'property' => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
+                    dd($property);
+                    $context['main_accessor'] = $accessor;
+                    $context['enclosed'] = false;
+
+                    unset($context['hooks']['string']);
+
+                    return marshal_generate($type, $format, $context);
+                },
                 'string' => static function (string $type, string $accessor, string $format, array $context): string {
                     $context['main_accessor'] = $accessor;
                     $context['enclosed'] = false;

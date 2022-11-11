@@ -9,12 +9,6 @@ namespace Symfony\Polyfill\Marshaller;
  */
 final class Marshaller
 {
-    private const MAP_TYPES = [
-        'integer' => 'int',
-        'boolean' => 'bool',
-        'double' => 'float',
-    ];
-
     /**
      * @param resource             $resource
      * @param array<string, mixed> $context
@@ -56,6 +50,12 @@ final class Marshaller
 
         $type = strtolower(gettype($data));
 
-        return $nullablePrefix.(self::MAP_TYPES[$type] ?? $type);
+        $typesMap = [
+            'integer' => 'int',
+            'boolean' => 'bool',
+            'double' => 'float',
+        ];
+
+        return $nullablePrefix.($typesMap[$type] ?? $type);
     }
 }

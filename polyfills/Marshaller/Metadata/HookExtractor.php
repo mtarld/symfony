@@ -14,8 +14,31 @@ final class HookExtractor
      */
     public function extractFromProperty(\ReflectionProperty $property, array $context): ?callable
     {
-        $hookNames = [sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName())];
+        $hookNames = [
+            sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName()),
+            'property',
+        ];
+
         if (null !== $hook = $this->findHook($hookNames, $context)) {
+            // TODO validate
+            return $hook;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function extractFromFunction(\ReflectionFunction $function, array $context): ?callable
+    {
+        $hookNames = [
+            sprintf('%s::%s()', $function->getClosureScopeClass()->getName(), $function->getName()),
+            'function',
+        ];
+
+        if (null !== $hook = $this->findHook($hookNames, $context)) {
+            // TODO validate
             return $hook;
         }
 
@@ -41,6 +64,7 @@ final class HookExtractor
             array_unshift($hookNames, $type->className());
         }
 
+        // TODO validate
         return $this->findHook($hookNames, $context);
     }
 
