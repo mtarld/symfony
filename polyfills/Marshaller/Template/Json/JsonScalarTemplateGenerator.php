@@ -7,6 +7,9 @@ namespace Symfony\Polyfill\Marshaller\Template\Json;
 use Symfony\Polyfill\Marshaller\Metadata\Type;
 use Symfony\Polyfill\Marshaller\Template\PhpWriterTrait;
 
+/**
+ * @internal
+ */
 final class JsonScalarTemplateGenerator
 {
     use PhpWriterTrait;

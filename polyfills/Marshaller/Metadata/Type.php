@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller\Metadata;
 
+/**
+ * @internal
+ */
 final class Type
 {
     public function __construct(

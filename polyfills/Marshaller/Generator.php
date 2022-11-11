@@ -17,7 +17,7 @@ final class Generator
     use PhpWriterTrait;
 
     private const DEFAULT_CONTEXT = [
-        'classes' => [],
+        'generated_classes' => [],
         'hooks' => [],
         'main_accessor' => '$data',
         'indentation_level' => 0,
@@ -32,9 +32,14 @@ final class Generator
 
     public function __construct()
     {
-        $this->templateGenerators = [
-            'json' => new JsonTemplateGenerator(),
+        /** @var list<TemplateGenerator> $templateGenerators */
+        $templateGenerators = [
+            new JsonTemplateGenerator(),
         ];
+
+        foreach ($templateGenerators as $templateGenerator) {
+            $this->templateGenerators[$templateGenerator->format()] = $templateGenerator;
+        }
     }
 
     /**
@@ -47,16 +52,12 @@ final class Generator
         }
 
         $type = TypeFactory::createFromString($type);
-
         $context = $context + self::DEFAULT_CONTEXT;
-
-        if (true === ($context['root'] ?? true) && isset($context['hooks']['root'])) {
-            $context['root'] = false;
-
-            return $context['hooks']['root']((string) $type, $format, $context);
-        }
-
         $accessor = $context['main_accessor'];
+
+        if (!$context['enclosed']) {
+            return $this->templateGenerators[$format]->generate($type, $accessor, $context);
+        }
 
         $template = $this->writeLine('<?php', $context)
             .$this->writeLine('/**', $context)

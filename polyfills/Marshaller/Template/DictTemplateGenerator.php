@@ -6,6 +6,9 @@ namespace Symfony\Polyfill\Marshaller\Template;
 
 use Symfony\Polyfill\Marshaller\Metadata\Type;
 
+/**
+ * @internal
+ */
 abstract class DictTemplateGenerator
 {
     use PhpWriterTrait;

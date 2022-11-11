@@ -6,6 +6,9 @@ namespace Symfony\Polyfill\Marshaller\Template\Json;
 
 use Symfony\Polyfill\Marshaller\Template\ListTemplateGenerator;
 
+/**
+ * @internal
+ */
 final class JsonListTemplateGenerator extends ListTemplateGenerator
 {
     protected function beforeValues(): string

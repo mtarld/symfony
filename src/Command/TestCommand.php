@@ -62,6 +62,16 @@ class TestCommand extends Command
 
         $context = [
             'cache_path' => 'var/cache/dev/marshaller',
+            'hooks' => [
+                'string' => static function (string $type, string $accessor, string $format, array $context): string {
+                    $context['main_accessor'] = $accessor;
+                    $context['enclosed'] = false;
+
+                    unset($context['hooks']['string']);
+
+                    return marshal_generate($type, $format, $context);
+                },
+            ],
         ];
 
         marshal($object, $resource, 'json', $context);

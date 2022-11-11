@@ -70,29 +70,24 @@ abstract class ObjectTemplateGenerator
         return $template;
     }
 
-     /**
-      * @param array<string, mixed> $context
-      */
-     private function generatePropertyName(\ReflectionProperty $property, string $prefix, array $context): string
-     {
-         $name = $property->getName();
-         foreach ($property->getAttributes() as $attribute) {
-             if (\MarshalName::class !== $attribute->getName()) {
-                 continue;
-             }
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function generatePropertyName(\ReflectionProperty $property, string $prefix, array $context): string
+    {
+        $name = $property->getName();
+        foreach ($property->getAttributes() as $attribute) {
+            if (\MarshalName::class !== $attribute->getName()) {
+                continue;
+            }
 
-             $name = $attribute->newInstance()->name;
+            $name = $attribute->newInstance()->name;
 
-             break;
-         }
+            break;
+        }
 
-         $content = '' === $prefix
-             ? $this->propertyName($name)
-             : sprintf("'%s'.%s", $prefix, $this->propertyName($name))
-         ;
-
-         return $this->fwrite($content, $context);
-     }
+        return $this->fwrite(sprintf("'%s%s'", $prefix, $this->propertyName($name)), $context);
+    }
 
     /**
      * @param array<string, mixed> $context

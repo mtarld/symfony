@@ -7,13 +7,12 @@ namespace App\Dto;
 final class Dto
 {
     #[\MarshalName('test')]
-    #[\MarshalFormatter([Dto2::class, 'multiplyAndCast'])]
+    #[\MarshalFormatter([self::class, 'multiplyAndCast'])]
     public int $int = 12;
 
     public string $string = 's';
 
     public Dto2 $object;
-    public ?Dto2 $object2 = null;
 
     public function __construct()
     {

@@ -7,6 +7,9 @@ namespace Symfony\Polyfill\Marshaller\Template\Json;
 use Symfony\Polyfill\Marshaller\Metadata\Type;
 use Symfony\Polyfill\Marshaller\Template\TemplateGenerator;
 
+/**
+ * @internal
+ */
 final class JsonTemplateGenerator extends TemplateGenerator
 {
     private readonly JsonScalarTemplateGenerator $scalarGenerator;
@@ -22,6 +25,11 @@ final class JsonTemplateGenerator extends TemplateGenerator
         $this->objectGenerator = new JsonObjectTemplateGenerator($this);
         $this->listGenerator = new JsonListTemplateGenerator($this);
         $this->dictGenerator = new JsonDictTemplateGenerator($this);
+    }
+
+    public function format(): string
+    {
+        return 'json';
     }
 
     protected function generateScalar(Type $type, string $accessor, array $context): string

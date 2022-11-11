@@ -7,6 +7,9 @@ namespace Symfony\Polyfill\Marshaller\Template;
 use Symfony\Polyfill\Marshaller\Metadata\HookExtractor;
 use Symfony\Polyfill\Marshaller\Metadata\Type;
 
+/**
+ * @internal
+ */
 abstract class TemplateGenerator
 {
     use PhpWriterTrait;
@@ -43,6 +46,8 @@ abstract class TemplateGenerator
      */
     abstract protected function generateNull(array $context): string;
 
+    abstract public function format(): string;
+
     /**
      * @param array<string, mixed> $context
      */
@@ -56,7 +61,7 @@ abstract class TemplateGenerator
             ++$context['indentation_level'];
 
             if (null !== $hook = $this->hookExtractor->extractFromType(new Type('null'), $context)) {
-                $template .= $hook('null', $accessor, $context);
+                $template .= $hook('null', $accessor, $this->format(), $context);
             } else {
                 $template .= $this->null($context);
             }
@@ -68,7 +73,7 @@ abstract class TemplateGenerator
         }
 
         if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $template .= $hook((string) $type, $accessor, $context);
+            $template .= $hook((string) $type, $accessor, $this->format(), $context);
         } else {
             $template .= match (true) {
                 $type->isNull() => $this->null($context),
@@ -105,7 +110,7 @@ abstract class TemplateGenerator
     {
         $className = $type->className();
 
-        if (isset($context['classes'][$className])) {
+        if (isset($context['generated_classes'][$className])) {
             throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
         }
 

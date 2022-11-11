@@ -6,6 +6,9 @@ namespace Symfony\Polyfill\Marshaller\Template\Json;
 
 use Symfony\Polyfill\Marshaller\Template\DictTemplateGenerator;
 
+/**
+ * @internal
+ */
 final class JsonDictTemplateGenerator extends DictTemplateGenerator
 {
     protected function beforeValues(): string
