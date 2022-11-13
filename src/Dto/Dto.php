@@ -12,8 +12,9 @@ final class Dto
     public int $int = 12;
     public ?\Stringable $string = null;
 
+    // TODO null not handled
     /**
-     * @var Dto2|null
+     * @var TwoAbstract|OneAbstract|Dto2|ThreeAbstract|string|null
      */
     public object $object;
 

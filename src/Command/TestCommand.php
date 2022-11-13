@@ -55,7 +55,7 @@ class TestCommand extends Command
         $context = new Context();
         // $context = new Context(new TypeOption('int'));
         // $context = new Context(new NullableDataOption());
-        $context = new Context(new ValidateDataOption());
+        // $context = new Context(new ValidateDataOption());
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }

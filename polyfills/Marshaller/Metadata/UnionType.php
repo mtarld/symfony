@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Polyfill\Marshaller\Metadata;
 
-final class UnionType implements \Stringable, \Countable
+final class UnionType implements \Stringable
 {
     /**
      * @param list<Type> $ypes
@@ -22,11 +22,6 @@ final class UnionType implements \Stringable, \Countable
     public function __toString(): string
     {
         return implode('|', array_map(fn (Type $t): string => (string) $t));
-    }
-
-    public function count(): int
-    {
-        return \count($this->types);
     }
 
     private function everyTypeIs(callable $callable): bool

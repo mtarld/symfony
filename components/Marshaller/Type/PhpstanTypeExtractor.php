@@ -67,7 +67,13 @@ final class PhpstanTypeExtractor
      */
     private function createFromPropertyInfoTypes(array $propertyInfoTypes, \ReflectionClass $declaringClass): string
     {
-        return implode('|', array_map(fn (PropertyInfoType $t): string => $this->createFromPropertyInfoType($t, $declaringClass), $propertyInfoTypes));
+        $union = implode('|', array_map(fn (PropertyInfoType $t): string => $this->createFromPropertyInfoType($t, $declaringClass), $propertyInfoTypes));
+
+        if ('?' === $union[0]) {
+            $union = substr($union, 1).'|null';
+        }
+
+        return $union;
     }
 
     private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): string

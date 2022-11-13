@@ -1,7 +1,6 @@
 # TODO
 
 ## Marshal
-- union type: narrowest class
 - phpstan
     - throw on intersection type
     - handle template T
