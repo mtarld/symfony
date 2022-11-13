@@ -43,11 +43,7 @@ final class PhpstanTypeExtractor
 
         $nameScope = $this->nameScopeFactory->create($property->getDeclaringClass()->getName());
 
-        if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
-            throw new \LogicException('Not implemented yet (union/intersection).');
-        }
-
-        return $this->createFromPropertyInfoType($types[0], $property->getDeclaringClass());
+        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $property->getDeclaringClass());
     }
 
     public function extractFromReturnType(\ReflectionFunction $function): ?string
@@ -63,14 +59,18 @@ final class PhpstanTypeExtractor
 
         $nameScope = $this->nameScopeFactory->create($function->getClosureScopeClass()->getName());
 
-        if (\count($types = $this->docTypeHelper->getTypes($tag->value, $nameScope)) > 1) {
-            return null;
-        }
-
-        return $this->createFromPropertyInfoType($types[0], $function->getClosureScopeClass());
+        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $function->getClosureScopeClass());
     }
 
-    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): ?string
+    /**
+     * @param list<PropertyInfoType> $propertyInfoTypes
+     */
+    private function createFromPropertyInfoTypes(array $propertyInfoTypes, \ReflectionClass $declaringClass): string
+    {
+        return implode('|', array_map(fn (PropertyInfoType $t): string => $this->createFromPropertyInfoType($t, $declaringClass), $propertyInfoTypes));
+    }
+
+    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): string
     {
         $nullablePrefix = $propertyInfoType->isNullable() ? '?' : '';
 
@@ -88,20 +88,15 @@ final class PhpstanTypeExtractor
         }
 
         if ($propertyInfoType->isCollection()) {
-            if (\count($collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes()) > 1) {
-                throw new \LogicException('Not implemented yet (union/intersection).');
-            }
-
-            if (\count($collectionValueTypes = $propertyInfoType->getCollectionValueTypes()) > 1) {
-                throw new \LogicException('Not implemented yet (union/intersection).');
-            }
+            $collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes();
+            $collectionValueTypes = $propertyInfoType->getCollectionValueTypes();
 
             $collectionKeyType = 'int';
             if (isset($collectionKeyTypes[0])) {
-                $collectionKeyType = $this->createFromPropertyInfoType($collectionKeyTypes[0], $declaringClass);
+                $collectionKeyType = $this->createFromPropertyInfoTypes($collectionKeyTypes, $declaringClass);
             }
 
-            $collectionValueType = $this->createFromPropertyInfoType($collectionValueTypes[0], $declaringClass);
+            $collectionValueType = $this->createFromPropertyInfoTypes($collectionValueTypes, $declaringClass);
 
             return $nullablePrefix.sprintf('array<%s, %s>', $collectionKeyType, $collectionValueType);
         }

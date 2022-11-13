@@ -6,6 +6,7 @@ namespace Symfony\Polyfill\Marshaller\Template;
 
 use Symfony\Polyfill\Marshaller\Metadata\HookExtractor;
 use Symfony\Polyfill\Marshaller\Metadata\Type;
+use Symfony\Polyfill\Marshaller\Metadata\UnionType;
 
 /**
  * @internal
@@ -14,10 +15,12 @@ abstract class TemplateGenerator
 {
     use PhpWriterTrait;
 
+    private readonly UnionTemplateGenerator $unionGenerator;
     private readonly HookExtractor $hookExtractor;
 
     public function __construct()
     {
+        $this->unionGenerator = new UnionTemplateGenerator($this);
         $this->hookExtractor = new HookExtractor();
     }
 
@@ -51,7 +54,7 @@ abstract class TemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    final public function generate(Type $type, string $accessor, array $context): string
+    final public function generate(Type|UnionType $type, string $accessor, array $context): string
     {
         $template = '';
 
@@ -72,18 +75,7 @@ abstract class TemplateGenerator
             ++$context['indentation_level'];
         }
 
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $template .= $hook((string) $type, $accessor, $this->format(), $context);
-        } else {
-            $template .= match (true) {
-                $type->isNull() => $this->null($context),
-                $type->isScalar() => $this->scalar($type, $accessor, $context),
-                $type->isObject() => $this->object($type, $accessor, $context),
-                $type->isList() => $this->list($type, $accessor, $context),
-                $type->isDict() => $this->dict($type, $accessor, $context),
-                default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', $typeString)),
-            };
-        }
+        $template .= $this->generateTypeTemplate($type, $accessor, $context);
 
         if ($type->isNullable()) {
             --$context['indentation_level'];
@@ -93,6 +85,29 @@ abstract class TemplateGenerator
         --$context['indentation_level'];
 
         return $template;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function generateTypeTemplate(Type|UnionType $type, string $accessor, array $context): string
+    {
+        if ($type instanceof UnionType) {
+            return $this->union($type, $accessor, $context);
+        }
+
+        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
+            return $hook((string) $type, $accessor, $this->format(), $context);
+        }
+
+        return match (true) {
+            $type->isNull() => $this->null($context),
+            $type->isScalar() => $this->scalar($type, $accessor, $context),
+            $type->isObject() => $this->object($type, $accessor, $context),
+            $type->isList() => $this->list($type, $accessor, $context),
+            $type->isDict() => $this->dict($type, $accessor, $context),
+            default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', $typeString)),
+        };
     }
 
     /**
@@ -141,5 +156,13 @@ abstract class TemplateGenerator
     private function null(array $context): string
     {
         return $this->generateNull($context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function union(UnionType $type, string $accessor, array $context): string
+    {
+        return $this->unionGenerator->generate($type, $accessor, $context);
     }
 }

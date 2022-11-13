@@ -36,11 +36,33 @@ abstract class DictTemplateGenerator
         $keyName = $this->scopeVariableName('key', $context);
         $valueName = $this->scopeVariableName('value', $context);
 
-        $template = $this->fwrite(sprintf("'%s'", addslashes($this->beforeValues())), $context)
+        $template = '';
+
+        if ($context['validate_data']) {
+            $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($accessor)), $context);
+            ++$context['indentation_level'];
+
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $accessor), $context);
+            --$context['indentation_level'];
+
+            $template .= $this->writeLine('}', $context);
+        }
+
+        $template .= $this->fwrite(sprintf("'%s'", addslashes($this->beforeValues())), $context)
             .$this->writeLine("$prefixName = '';", $context)
             .$this->writeLine("foreach ($accessor as $keyName => $valueName) {", $context);
 
         ++$context['indentation_level'];
+
+        if ($context['validate_data']) {
+            $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->collectionKeyType()->validator($keyName)), $context);
+            ++$context['indentation_level'];
+
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $keyName), $context);
+            --$context['indentation_level'];
+
+            $template .= $this->writeLine('}', $context);
+        }
 
         $template .= $this->fwrite(sprintf('%s.%s', $prefixName, $this->keyName($keyName)), $context)
             .$this->templateGenerator->generate($type->collectionValueType(), $valueName, $context)

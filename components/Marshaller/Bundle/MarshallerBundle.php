@@ -16,6 +16,7 @@ use Symfony\Component\Marshaller\Context\NativeContextBuilder\HookNativeContextB
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\NullableDataNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\PhpstanNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\TypeNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValidateDataNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
@@ -29,7 +30,7 @@ final class MarshallerBundle extends Bundle
         $container->setParameter('marshaller.cache_dir', sprintf('%s/marshaller', $container->getParameter('kernel.cache_dir')));
         $container->setParameter('marshaller.warmable_paths', [sprintf('src/Dto', $container->getParameter('kernel.project_dir'))]);
         $container->setParameter('marshaller.warmable_formats', ['json']);
-        $container->setParameter('marshaller.warmable_nullable_data', true);
+        $container->setParameter('marshaller.warmable_nullable_data', false);
 
         // Marshaller
         $container->register('marshaller', Marshaller::class)
@@ -49,22 +50,25 @@ final class MarshallerBundle extends Bundle
             ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 1000])
             ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => 1000]);
 
-        $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 900])
-            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => 900]);
+        $container->register('marshaller.native_context_builder.validate_data', ValidateDataNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 900]);
 
-        $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
+        $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 800])
             ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => 800]);
+
+        $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 700])
+            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => 700]);
 
         $container->register('marshaller.native_context_builder.phpstan', PhpstanNativeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor.phpstan'),
             ])
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 700]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 600]);
 
         $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 600]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => 500]);
 
         // Type extractors
         $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);

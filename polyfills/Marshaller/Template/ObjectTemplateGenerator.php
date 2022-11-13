@@ -44,12 +44,26 @@ abstract class ObjectTemplateGenerator
         $template = $this->writeLine("$objectName = $accessor;", $context)
             .$this->fwrite(sprintf("'%s'", addslashes($this->beforeProperties())), $context);
 
+        if ($context['validate_data']) {
+            $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($objectName)), $context);
+            ++$context['indentation_level'];
+
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $objectName), $context);
+            --$context['indentation_level'];
+
+            $template .= $this->writeLine('}', $context);
+        }
+
         $properties = $class->getProperties();
         $propertySeparator = '';
 
         foreach ($properties as $i => $property) {
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
-                $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
+                try {
+                    $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
+                } catch (\InvalidArgumentException) {
+                    $type = null;
+                }
 
                 $hookContext = $context + [
                     'property_name_generator' => $this->generatePropertyName(...),

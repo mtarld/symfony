@@ -9,7 +9,7 @@ namespace Symfony\Polyfill\Marshaller\Metadata;
  */
 final class TypeFactory
 {
-    public static function createFromString(string $string): Type
+    public static function createFromString(string $string): Type|UnionType
     {
         if ('null' === $string) {
             return new Type('null');
@@ -19,8 +19,8 @@ final class TypeFactory
             $string = substr($string, 1);
         }
 
-        if (\count(explode('|', $string)) > 1) {
-            throw new \LogicException('Not implemented yet (union/intersection).');
+        if (\count(explode('&', $string)) > 1) {
+            throw new \LogicException('Cannot handle intersection types.');
         }
 
         if (in_array($string, ['int', 'string', 'float', 'bool'])) {
@@ -62,7 +62,6 @@ final class TypeFactory
             return new Type(
                 name: 'array',
                 isNullable: $isNullable,
-                isCollection: true,
                 collectionKeyType: self::createFromString($keyType),
                 collectionValueType: self::createFromString($valueType),
             );
@@ -72,13 +71,21 @@ final class TypeFactory
             return new Type('object', $isNullable, $string);
         }
 
+        if (\count($types = explode('|', $string)) > 1) {
+            return new UnionType(array_map(fn (string $t): Type => self::createFromString($t), $types));
+        }
+
         throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $string));
     }
 
-    public static function createFromReflection(\ReflectionType $reflection, \ReflectionClass $declaringClass): Type
+    public static function createFromReflection(\ReflectionType $reflection, \ReflectionClass $declaringClass): Type|UnionType
     {
-        if (!$reflection instanceof \ReflectionNamedType) {
-            throw new \LogicException('Not implemented yet (union/intersection).');
+        if ($reflection instanceof \ReflectionIntersectionType) {
+            throw new \LogicException('Cannot handle intersection types.');
+        }
+
+        if ($reflection instanceof \ReflectionUnionType) {
+            return new UnionType(array_map(fn (\ReflectionNamedType $t): Type => self::createFromReflection($t, $declaringClass), $reflection->getTypes()));
         }
 
         $phpTypeOrClass = $reflection->getName();

@@ -9,9 +9,8 @@ use Symfony\Component\Marshaller\Attribute\Warmable;
 #[Warmable]
 final class Dto
 {
-    #[\MarshalName('test')]
-    #[\MarshalFormatter([self::class, 'multiplyAndCast'])]
-    public int $int = 12;
+    // public int $int = 12;
+    public ?\Stringable $string = null;
 
     // /**
     //  * @var Dto2|null
@@ -19,9 +18,9 @@ final class Dto
     // public object $object;
 
     // /**
-    //  * @var array<array<string, list<bool|null>>>
+    //  * @var array<int, string>
     //  */
-    // public array $string = [];
+    // public array $string = ['o' => true];
 
     public function __construct()
     {

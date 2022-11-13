@@ -12,6 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
+use Symfony\Component\Marshaller\Context\Option\ValidateDataOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -53,7 +54,8 @@ class TestCommand extends Command
 
         $context = new Context();
         // $context = new Context(new TypeOption('int'));
-        $context = new Context(new NullableDataOption());
+        // $context = new Context(new NullableDataOption());
+        $context = new Context(new ValidateDataOption());
 
         $this->marshaller->marshal($object, 'json', $output, $context);
     }

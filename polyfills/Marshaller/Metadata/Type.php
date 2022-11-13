@@ -7,15 +7,14 @@ namespace Symfony\Polyfill\Marshaller\Metadata;
 /**
  * @internal
  */
-final class Type
+final class Type implements \Stringable
 {
     public function __construct(
         private readonly string $name,
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
-        private readonly bool $isCollection = false,
-        private readonly ?self $collectionKeyType = null,
-        private readonly ?self $collectionValueType = null
+        private readonly self|UnionType|null $collectionKeyType = null,
+        private readonly self|UnionType|null $collectionValueType = null
     ) {
     }
 
@@ -55,12 +54,12 @@ final class Type
 
     public function isCollection(): bool
     {
-        return $this->isCollection;
+        return null !== $this->collectionKeyType && null !== $this->collectionValueType;
     }
 
     public function isList(): bool
     {
-        return $this->isCollection() && 'int' === $this->collectionKeyType->name();
+        return $this->isCollection() && 'int' === $this->collectionKeyType?->name();
     }
 
     public function isDict(): bool
@@ -68,7 +67,7 @@ final class Type
         return $this->isCollection() && !$this->isList();
     }
 
-    public function collectionKeyType(): Type
+    public function collectionKeyType(): Type|UnionType
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException('Cannot get collection key types on "%s" type as it\'s not a collection', $this->name);
@@ -77,7 +76,7 @@ final class Type
         return $this->collectionKeyType;
     }
 
-    public function collectionValueType(): Type
+    public function collectionValueType(): Type|UnionType
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException('Cannot get collection value types on "%s" type as it\'s not a collection', $this->name);
@@ -109,5 +108,30 @@ final class Type
         }
 
         return $nullablePrefix.$name;
+    }
+
+    public function validator(string $accessor): string
+    {
+        if ('null' === $this->name()) {
+            return sprintf('null === %s', $accessor);
+        }
+
+        if ($this->isScalar()) {
+            return sprintf('is_%s(%s)', $this->name(), $accessor);
+        }
+
+        if ($this->isList()) {
+            return sprintf('is_array(%s) && array_is_list(%1$s)', $accessor);
+        }
+
+        if ($this->isDict()) {
+            return sprintf('is_array(%s) && !array_is_list(%1$s)', $accessor);
+        }
+
+        if ($this->isObject()) {
+            return sprintf('%s instanceof %s', $accessor, $this->className());
+        }
+
+        throw new \RuntimeException(sprintf('Cannot find validator for "%s"', (string) $this));
     }
 }
