@@ -50,7 +50,7 @@ final class UnionTemplateGenerator
             $template .= $this->writeLine('} else {', $context);
             ++$context['indentation_level'];
 
-            $template .= $this->writeLine("throw new \UnexpectedValueException(sprintf('Invalid \"%s\" type', '$accessor'));", $context);
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
         }
 

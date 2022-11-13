@@ -48,7 +48,7 @@ abstract class ObjectTemplateGenerator
             $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($objectName)), $context);
             ++$context['indentation_level'];
 
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $objectName), $context);
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
 
             $template .= $this->writeLine('}', $context);
@@ -57,7 +57,11 @@ abstract class ObjectTemplateGenerator
         $properties = $class->getProperties();
         $propertySeparator = '';
 
+        $currentAccessor = $context['readable_accessor'];
+
         foreach ($properties as $i => $property) {
+            $context['readable_accessor'] = sprintf('%s::$%s', $currentAccessor, $property->getName());
+
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
                 try {
                     $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());

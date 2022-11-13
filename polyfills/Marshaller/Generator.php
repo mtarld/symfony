@@ -55,6 +55,7 @@ final class Generator
         $type = TypeFactory::createFromString($type);
         $context = $context + self::DEFAULT_CONTEXT;
         $accessor = $context['accessor'];
+        $context['readable_accessor'] = $context['readable_accessor'] ?? $accessor;
 
         if (!$context['enclosed']) {
             return $this->templateGenerators[$format]->generate($type, $accessor, $context);

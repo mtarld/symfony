@@ -23,7 +23,7 @@ abstract class ScalarGenerator
             $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($accessor)), $context);
             ++$context['indentation_level'];
 
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $accessor), $context);
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
 
             $template .= $this->writeLine('}', $context);

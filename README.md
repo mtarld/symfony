@@ -1,11 +1,11 @@
 # TODO
 
 ## Marshal
-- union type: encode get type at runtime (narrowest class)
-- validate data (optin): better exception path / component option
-- throw on intersection type
-- phpstan handle template T
-- phpstan find var type if possible with component hook
+- union type: narrowest class
+- phpstan
+    - throw on intersection type
+    - handle template T
+    - find var type if possible with component hook
 
 ## Unmarshal
 - json stream parser with events

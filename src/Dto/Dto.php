@@ -9,18 +9,18 @@ use Symfony\Component\Marshaller\Attribute\Warmable;
 #[Warmable]
 final class Dto
 {
-    // public int $int = 12;
+    public int $int = 12;
     public ?\Stringable $string = null;
 
-    // /**
-    //  * @var Dto2|null
-    //  */
-    // public object $object;
+    /**
+     * @var Dto2|null
+     */
+    public object $object;
 
-    // /**
-    //  * @var array<int, string>
-    //  */
-    // public array $string = ['o' => true];
+    /**
+     * @var array<int, string>
+     */
+    public array $array = [];
 
     public function __construct()
     {

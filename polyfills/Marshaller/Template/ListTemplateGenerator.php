@@ -39,11 +39,13 @@ abstract class ListTemplateGenerator
             $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($accessor)), $context);
             ++$context['indentation_level'];
 
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $accessor), $context);
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
 
             $template .= $this->writeLine('}', $context);
         }
+
+        $context['readable_accessor'] = sprintf('%s[]', $context['readable_accessor']);
 
         $template .= $this->fwrite(sprintf("'%s'", addslashes($this->beforeValues())), $context)
             .$this->writeLine("$prefixName = '';", $context)
