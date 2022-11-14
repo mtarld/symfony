@@ -7,14 +7,13 @@ namespace App\Dto;
 use Symfony\Component\Marshaller\Attribute\Warmable;
 
 #[Warmable]
-final class Dto
+final class Dto extends OneAbstract
 {
     public int $int = 12;
     public ?\Stringable $string = null;
 
-    // TODO null not handled
     /**
-     * @var TwoAbstract|OneAbstract|Dto2|ThreeAbstract|string|null
+     * @var Dto2
      */
     public object $object;
 

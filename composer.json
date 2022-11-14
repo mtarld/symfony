@@ -1,27 +1,25 @@
 {
     "type": "project",
     "license": "proprietary",
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
         "php": ">=8.0.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "nikic/php-parser": "^4.15",
-        "phpdocumentor/reflection-docblock": "^5.3",
-        "phpdocumentor/type-resolver": "^1.6",
-        "phpstan/phpdoc-parser": "^1.13",
         "symfony/console": "6.0.*",
         "symfony/dotenv": "6.0.*",
-        "symfony/filesystem": "6.0.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "6.0.*",
-        "symfony/maker-bundle": "^1.38",
-        "symfony/property-access": "6.0.*",
-        "symfony/property-info": "6.0.*",
+        "symfony/polyfill-marshaller": "*",
+        "symfony/marshaller": "*",
         "symfony/runtime": "6.0.*",
         "symfony/yaml": "6.0.*"
     },
+    "repositories": [
+        { "type": "path", "url": "./polyfills/Marshaller" },
+        { "type": "path", "url": "./components/Marshaller" }
+    ],
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
@@ -36,15 +34,8 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/",
-            "Symfony\\Component\\Marshaller\\": "components/Marshaller/",
-            "Symfony\\Polyfill\\Marshaller\\": "polyfills/Marshaller/"
-        },
-        "files": [
-            "polyfills/Marshaller/bootstrap.php",
-            "polyfills/Marshaller/Attribute/MarshalName.php",
-            "polyfills/Marshaller/Attribute/MarshalFormatter.php"
-        ]
+            "App\\": "src/"
+        }
     },
     "autoload-dev": {
         "psr-4": {

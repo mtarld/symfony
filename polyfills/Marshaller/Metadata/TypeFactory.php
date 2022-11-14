@@ -15,7 +15,7 @@ final class TypeFactory
             return new Type('null');
         }
 
-        if ($isNullable = '?' === $string[0]) {
+        if ($isNullable = str_starts_with($string, '?')) {
             $string = substr($string, 1);
         }
 

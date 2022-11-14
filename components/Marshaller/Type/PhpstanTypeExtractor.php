@@ -5,121 +5,61 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Type;
 
 use PHPStan\PhpDocParser\Ast\PhpDoc\InvalidTagValueNode;
-use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
+use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPStan\PhpDocParser\Parser\ConstExprParser;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
-use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
-use Symfony\Component\PropertyInfo\Type as PropertyInfoType;
-use Symfony\Component\PropertyInfo\Util\PhpStanTypeHelper;
 
 final class PhpstanTypeExtractor
 {
-    private readonly PhpStanTypeHelper $docTypeHelper;
-    private readonly PhpDocParser $docParser;
-    private readonly Lexer $lexer;
-    private readonly NameScopeFactory $nameScopeFactory;
+    private readonly PhpstanTypeHelper $phpstanTypeHelper;
+    private readonly PhpDocParser $phpstanDocParser;
+    private readonly Lexer $phpstanLexer;
 
     public function __construct(
     ) {
-        $this->docTypeHelper = new PhpStanTypeHelper();
-        $this->docParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
-        $this->lexer = new Lexer();
-        $this->nameScopeFactory = new NameScopeFactory();
+        $this->phpstanTypeHelper = new PhpstanTypeHelper();
+        $this->phpstanDocParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
+        $this->phpstanLexer = new Lexer();
     }
 
     public function extractFromProperty(\ReflectionProperty $property): ?string
     {
-        if (null === $docNode = $this->getDocNode($property)) {
+        if (null === $type = $this->getTypeNode($property)) {
             return null;
         }
 
-        $tag = $docNode->getTagsByName('@var')[0] ?? null;
-        if (null === $tag || $tag->value instanceof InvalidTagValueNode) {
-            return null;
-        }
-
-        $nameScope = $this->nameScopeFactory->create($property->getDeclaringClass()->getName());
-
-        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $property->getDeclaringClass());
+        return $this->phpstanTypeHelper->getType($type, $property->getDeclaringClass()->getName());
     }
 
     public function extractFromReturnType(\ReflectionFunction $function): ?string
     {
-        if (null === $docNode = $this->getDocNode($function)) {
+        if (null === $type = $this->getTypeNode($function)) {
             return null;
         }
 
-        $tag = $docNode->getTagsByName('@return')[0] ?? null;
-        if (null === $tag || $tag->value instanceof InvalidTagValueNode) {
-            return null;
-        }
-
-        $nameScope = $this->nameScopeFactory->create($function->getClosureScopeClass()->getName());
-
-        return $this->createFromPropertyInfoTypes($this->docTypeHelper->getTypes($tag->value, $nameScope), $function->getClosureScopeClass());
+        return $this->phpstanTypeHelper->getType($type, $function->getClosureScopeClass()->getName());
     }
 
-    /**
-     * @param list<PropertyInfoType> $propertyInfoTypes
-     */
-    private function createFromPropertyInfoTypes(array $propertyInfoTypes, \ReflectionClass $declaringClass): string
-    {
-        $union = implode('|', array_map(fn (PropertyInfoType $t): string => $this->createFromPropertyInfoType($t, $declaringClass), $propertyInfoTypes));
-
-        if ('?' === $union[0]) {
-            $union = substr($union, 1).'|null';
-        }
-
-        return $union;
-    }
-
-    private function createFromPropertyInfoType(PropertyInfoType $propertyInfoType, \ReflectionClass $declaringClass): string
-    {
-        $nullablePrefix = $propertyInfoType->isNullable() ? '?' : '';
-
-        if (null !== $propertyInfoType->getClassName()) {
-            $className = $propertyInfoType->getClassName();
-            $declaringClassName = $declaringClass->getName();
-
-            if ('self' === $className || 'static' === $className) {
-                $className = $declaringClassName;
-            } elseif ('parent' === $className && false !== $parentClassName = get_parent_class($declaringClassName)) {
-                $className = $parentClassName;
-            }
-
-            return $nullablePrefix.$className;
-        }
-
-        if ($propertyInfoType->isCollection()) {
-            $collectionKeyTypes = $propertyInfoType->getCollectionKeyTypes();
-            $collectionValueTypes = $propertyInfoType->getCollectionValueTypes();
-
-            $collectionKeyType = 'int';
-            if (isset($collectionKeyTypes[0])) {
-                $collectionKeyType = $this->createFromPropertyInfoTypes($collectionKeyTypes, $declaringClass);
-            }
-
-            $collectionValueType = $this->createFromPropertyInfoTypes($collectionValueTypes, $declaringClass);
-
-            return $nullablePrefix.sprintf('array<%s, %s>', $collectionKeyType, $collectionValueType);
-        }
-
-        return $nullablePrefix.$propertyInfoType->getBuiltinType();
-    }
-
-    private function getDocNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?PhpDocNode
+    private function getTypeNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?TypeNode
     {
         if (null === $rawDocNode = $reflection->getDocComment() ?: null) {
             return null;
         }
 
-        $tokens = new TokenIterator($this->lexer->tokenize($rawDocNode));
-        $docNode = $this->docParser->parse($tokens);
+        $tokens = new TokenIterator($this->phpstanLexer->tokenize($rawDocNode));
+        $docNode = $this->phpstanDocParser->parse($tokens);
         $tokens->consumeTokenType(Lexer::TOKEN_END);
 
-        return $docNode;
+        $tagName = $reflection instanceof \ReflectionProperty ? '@var' : '@return';
+        $tag = $docNode->getTagsByName($tagName)[0] ?? null;
+
+        if (null === $tag || $tag->value instanceof InvalidTagValueNode) {
+            return null;
+        }
+
+        return $tag->value->type;
     }
 }
