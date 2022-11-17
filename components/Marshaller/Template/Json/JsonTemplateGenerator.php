@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Template\Json;
 
-use Symfony\Polyfill\Marshaller\Metadata\Type;
-use Symfony\Polyfill\Marshaller\Template\TemplateGenerator;
+use Symfony\Component\Marshaller\Template\TemplateGenerator;
+use Symfony\Component\Marshaller\Type\Type;
 
 /**
  * @internal
@@ -27,7 +27,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
         $this->dictGenerator = new JsonDictTemplateGenerator($this);
     }
 
-    public function format(): string
+    public static function format(): string
     {
         return 'json';
     }

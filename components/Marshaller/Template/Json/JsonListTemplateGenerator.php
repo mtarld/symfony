@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Template\Json;
 
-use Symfony\Polyfill\Marshaller\Template\ListTemplateGenerator;
+use Symfony\Component\Marshaller\Template\ListTemplateGenerator;
 
 /**
  * @internal

@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Metadata;
+namespace Symfony\Component\Marshaller\Hook;
+
+use Symfony\Component\Marshaller\Type\Type;
+
 
 /**
  * @internal

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Template;
 
-use Symfony\Polyfill\Marshaller\Metadata\HookExtractor;
-use Symfony\Polyfill\Marshaller\Metadata\Type;
-use Symfony\Polyfill\Marshaller\Metadata\UnionType;
+use Symfony\Component\Marshaller\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Type\Type;
+use Symfony\Component\Marshaller\Type\UnionType;
 
 /**
  * @internal
@@ -49,7 +49,7 @@ abstract class TemplateGenerator
      */
     abstract protected function generateNull(array $context): string;
 
-    abstract public function format(): string;
+    abstract public static function format(): string;
 
     /**
      * @param array<string, mixed> $context

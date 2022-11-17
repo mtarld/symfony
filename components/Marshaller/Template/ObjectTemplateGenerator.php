@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Template;
 
-use Symfony\Polyfill\Marshaller\Metadata\HookExtractor;
-use Symfony\Polyfill\Marshaller\Metadata\Type;
-use Symfony\Polyfill\Marshaller\Metadata\TypeFactory;
+use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Attribute\Name;
+use Symfony\Component\Marshaller\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Type\Type;
+use Symfony\Component\Marshaller\Type\TypeFactory;
 
 /**
  * @internal
@@ -63,16 +65,17 @@ abstract class ObjectTemplateGenerator
             $context['readable_accessor'] = sprintf('%s::$%s', $currentAccessor, $property->getName());
 
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
+                $type = null;
+
                 try {
                     $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
                 } catch (\InvalidArgumentException) {
-                    $type = null;
                 }
 
                 $hookContext = $context + [
                     'property_name_generator' => $this->generatePropertyName(...),
                     'property_value_generator' => $this->generatePropertyValue(...),
-                    'property_type' => $type,
+                    'property_type' => (string) $type,
                     'property_separator' => $propertySeparator,
                 ];
 
@@ -108,7 +111,7 @@ abstract class ObjectTemplateGenerator
     {
         $name = $property->getName();
         foreach ($property->getAttributes() as $attribute) {
-            if (\MarshalName::class !== $attribute->getName()) {
+            if (Name::class !== $attribute->getName()) {
                 continue;
             }
 
@@ -128,7 +131,7 @@ abstract class ObjectTemplateGenerator
         $accessor = sprintf('%s->%s', $accessor, $property->getName());
 
         foreach ($property->getAttributes() as $attribute) {
-            if (\MarshalFormatter::class === $attribute->getName()) {
+            if (Formatter::class === $attribute->getName()) {
                 return $this->propertyFormatter($attribute->newInstance()->callable, $accessor, $context);
             }
         }

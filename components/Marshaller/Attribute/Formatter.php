@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::TARGET_PROPERTY)]
-final class MarshalFormatter
+namespace Symfony\Component\Marshaller\Attribute;
+
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+final class Formatter
 {
     public readonly string $callable;
 

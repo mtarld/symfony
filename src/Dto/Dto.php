@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Attribute\Warmable;
 
 #[Warmable]
-final class Dto extends OneAbstract
+final class Dto
 {
+    #[Formatter([self::class, 'multiplyAndCast'])]
     public int $int = 12;
-    public ?\Stringable $string = null;
+
+    #[Name('test')]
+    public ?string $string = null;
 
     /**
      * @var Dto2

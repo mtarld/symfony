@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Metadata;
+namespace Symfony\Component\Marshaller\Type;
 
 /**
  * @internal
@@ -16,6 +16,9 @@ final class Type implements \Stringable
         private readonly self|UnionType|null $collectionKeyType = null,
         private readonly self|UnionType|null $collectionValueType = null
     ) {
+        if ($this->isObject() && null === $this->className) {
+            throw new \InvalidArgumentException(sprintf('Class name of "%s" has not been set.', $this->name));
+        }
     }
 
     public function name(): string
@@ -31,7 +34,7 @@ final class Type implements \Stringable
     public function className(): string
     {
         if (!$this->isObject()) {
-            throw new \RuntimeException('Cannot get class on "%s" type as it\'s not an object', $this->name);
+            throw new \RuntimeException(sprintf('Cannot get class on "%s" type as it\'s not an object.', $this->name));
         }
 
         return $this->className;

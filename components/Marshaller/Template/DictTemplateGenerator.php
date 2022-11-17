@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Template;
 
-use Symfony\Polyfill\Marshaller\Metadata\Type;
+use Symfony\Component\Marshaller\Type\Type;
 
 /**
  * @internal

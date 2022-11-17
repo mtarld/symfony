@@ -111,9 +111,6 @@
     "symfony/polyfill-intl-normalizer": {
         "version": "v1.25.0"
     },
-    "symfony/polyfill-marshaller": {
-        "version": "dev-polyfill"
-    },
     "symfony/polyfill-mbstring": {
         "version": "v1.25.0"
     },

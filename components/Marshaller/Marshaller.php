@@ -5,37 +5,28 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\GenerationNativeContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\MarshalNativeContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
-use Symfony\Component\Marshaller\Context\Option\TypeOption;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\NativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Output\OutputInterface;
+use Symfony\Component\Marshaller\Type\TypeFactory;
 
 final class Marshaller implements MarshallerInterface
 {
     /**
-     * @param iterable<GenerationNativeContextBuilderInterface> $generationNativeContextBuilders
-     * @param iterable<MarshalNativeContextBuilderInterface>    $marshalNativeContextBuilders
+     * @param iterable<NativeContextBuilderInterface> $nativeContextBuilders
      */
     public function __construct(
-        private readonly iterable $generationNativeContextBuilders,
-        private readonly iterable $marshalNativeContextBuilders,
-        private readonly string $cacheDir,
+        private readonly iterable $nativeContextBuilders,
     ) {
     }
 
     public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
     {
-        $type = $this->getType($data, $context);
-        $templateExists = file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format));
-        $nativeContext = $templateExists ? $this->buildMarshalNativeContext($data, $format, $context) : $this->buildGenerationNativeContext($type, $format, $context);
-
-        marshal($data, $output->stream(), $format, $nativeContext);
+        marshal($data, $output->stream(), $format, $this->buildNativeContext($format, $context));
     }
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        return marshal_generate($type, $format, $this->buildGenerationNativeContext($type, $format, $context));
+        return marshal_generate($type, $format, $this->buildNativeContext($format, $context));
     }
 
     /**
@@ -43,58 +34,101 @@ final class Marshaller implements MarshallerInterface
      *
      * @return array<string, mixed>
      */
-    private function buildGenerationNativeContext(string $type, string $format, Context $context = null): array
+    private function buildNativeContext(string $format, Context $context = null): array
     {
         $context = $context ?? new Context();
         $nativeContext = [];
 
-        foreach ($this->generationNativeContextBuilders as $builder) {
-            $nativeContext = $builder->forGeneration($type, $format, $context, $nativeContext);
+        foreach ($this->nativeContextBuilders as $builder) {
+            $nativeContext = $builder->build($format, $context, $nativeContext);
         }
 
         return $nativeContext;
     }
+}
 
-    /**
-     * @param array<string, mixed> $nativeContext
-     *
-     * @return array<string, mixed>
-     */
-    private function buildMarshalNativeContext(mixed $data, string $format, Context $context = null): array
-    {
-        $context = $context ?? new Context();
-        $nativeContext = [];
+/**
+ * @param array<string, mixed> $context
+ * @param resource             $resource
+ */
+function marshal(mixed $data, $resource, string $format, array $context = []): void
+{
+    $nullablePrefix = true === ($context['nullable_data'] ?? false) ? '?' : '';
 
-        foreach ($this->marshalNativeContextBuilders as $builder) {
-            $nativeContext = $builder->forMarshal($data, $format, $context, $nativeContext);
+    $type = match (true) {
+        isset($context['type']) => $nullablePrefix.$context['type'],
+        is_object($data) => $nullablePrefix.$data::class,
+        default => (static function (mixed $data): string {
+            $type = strtolower(gettype($data));
+            $typesMap = [
+                'integer' => 'int',
+                'boolean' => 'bool',
+                'double' => 'float',
+            ];
+
+            return $nullablePrefix.($typesMap[$type] ?? $type);
+        })(),
+    };
+
+    $cachePath = $context['cache_dir'] ?? sys_get_temp_dir();
+    $cacheFilename = sprintf('%s%s%s.%s.php', $cachePath, DIRECTORY_SEPARATOR, md5($type), $format);
+
+    if (!file_exists($cacheFilename)) {
+        if (!file_exists($cachePath)) {
+            mkdir($cachePath, recursive: true);
         }
 
-        return $nativeContext;
+        $template = marshal_generate($type, $format, $context);
+        file_put_contents($cacheFilename, $template);
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function getType(mixed $data, ?Context $context): string
-    {
-        if (null !== $context && null !== ($typeOption = $context->get(TypeOption::class))) {
-            return $typeOption->type;
-        }
+    (require $cacheFilename)($data, $resource, $context);
+}
 
-        $nullablePrefix = (null !== $context && null !== $context->get(NullableDataOption::class)) ? '?' : '';
+/**
+ * @param array<string, mixed> $context
+ */
+function marshal_generate(string $type, string $format, array $context = []): string
+{
+    /** @var array<string, TemplateGenerator> $templateGenerators */
+    $templateGenerators = [
+        Template\Json\JsonTemplateGenerator::format() => new Template\Json\JsonTemplateGenerator(),
+    ];
 
-        if (is_object($data)) {
-            return $nullablePrefix.$data::class;
-        }
-
-        $type = strtolower(gettype($data));
-
-        $typesMap = [
-            'integer' => 'int',
-            'boolean' => 'bool',
-            'double' => 'float',
-        ];
-
-        return $nullablePrefix.($typesMap[$type] ?? $type);
+    if (!isset($templateGenerators[$format])) {
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format));
     }
+
+    $type = TypeFactory::createFromString($type);
+    $context = $context + [
+        'generated_classes' => [],
+        'hooks' => [],
+        'accessor' => '$data',
+        'indentation_level' => 0,
+        'variable_counters' => [],
+        'enclosed' => true,
+        'validate_data' => false,
+    ];
+
+    $accessor = $context['accessor'];
+    $context['readable_accessor'] = $context['readable_accessor'] ?? $accessor;
+
+    if (!$context['enclosed']) {
+        return $templateGenerators[$format]->generate($type, $accessor, $context);
+    }
+
+    $template = '<?php'.PHP_EOL
+        .'/**'.PHP_EOL
+        .sprintf(' * @param %s $data', (string) $type).PHP_EOL
+        .' * @param resource $resource'.PHP_EOL
+        .' */'.PHP_EOL
+        ."return static function (mixed $accessor, \$resource, array \$context): void {".PHP_EOL;
+
+    ++$context['indentation_level'];
+
+    $template .= $templateGenerators[$format]->generate($type, $accessor, $context);
+
+    --$context['indentation_level'];
+
+    return $template .= '};';
 }

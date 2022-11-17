@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3897bcc52055293cb1ba5bd077f3dc7e",
+    "content-hash": "966c1a73185736506d68a8f03ce9f5b8",
     "packages": [
         {
             "name": "phpdocumentor/reflection-common",
@@ -1744,7 +1744,7 @@
         },
         {
             "name": "symfony/marshaller",
-            "version": "dev-polyfill",
+            "version": "dev-component",
             "dist": {
                 "type": "path",
                 "url": "./components/Marshaller",
@@ -1933,36 +1933,6 @@
                 }
             ],
             "time": "2022-11-03T14:55:06+00:00"
-        },
-        {
-            "name": "symfony/polyfill-marshaller",
-            "version": "dev-polyfill",
-            "dist": {
-                "type": "path",
-                "url": "./polyfills/Marshaller",
-                "reference": "3def7a93eeefe8c960811cc3dd39614814068048"
-            },
-            "require": {
-                "php": ">=8.1"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Polyfill\\Marshaller\\": ""
-                },
-                "files": [
-                    "bootstrap.php"
-                ],
-                "classmap": [
-                    "Resources/stubs"
-                ]
-            },
-            "license": [
-                "MIT"
-            ],
-            "transport-options": {
-                "relative": true
-            }
         },
         {
             "name": "symfony/polyfill-mbstring",

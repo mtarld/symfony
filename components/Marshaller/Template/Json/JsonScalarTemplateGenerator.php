@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Template\Json;
 
-use Symfony\Polyfill\Marshaller\Metadata\Type;
-use Symfony\Polyfill\Marshaller\Template\ScalarGenerator;
+use Symfony\Component\Marshaller\Template\ScalarGenerator;
+use Symfony\Component\Marshaller\Type\Type;
 
 /**
  * @internal

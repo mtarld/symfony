@@ -7,14 +7,16 @@ namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 
-final class PhpstanNativeContextBuilder implements GenerationNativeContextBuilderInterface
+use function Symfony\Component\Marshaller\marshal_generate;
+
+final class PhpstanNativeContextBuilder implements NativeContextBuilderInterface
 {
     public function __construct(
         private readonly PhpstanTypeExtractor $typeExtractor,
     ) {
     }
 
-    public function forGeneration(string $type, string $format, Context $context, array $nativeContext): array
+    public function build(string $format, Context $context, array $nativeContext): array
     {
         $nativeContext['hooks']['property'] = function (\ReflectionProperty $property, string $accessor, string $format, array $context): ?string {
             if (null === $type = $this->typeExtractor->extractFromProperty($property)) {

@@ -15,6 +15,8 @@ use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Context\Option\ValidateDataOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
+use function Symfony\Component\Marshaller\marshal;
+use function Symfony\Component\Marshaller\marshal_generate;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
@@ -27,28 +29,37 @@ class TestCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $object = new Dto();
+        // $this->generateFunction();
+        $this->generate();
 
-        // $this->generate();
-        // $this->polyfill($object);
-        $this->component($object);
+        // $this->marshal();
+        // $this->marshalFunction();
 
         return Command::SUCCESS;
     }
 
-    private function generate(): void
+    private function generateFunction(): void
     {
-        $resource = fopen('php://stdout', 'wb');
         $context = [
-            'type' => 'array<array<string>>',
             'cache_dir' => 'var/cache/dev/marshaller',
         ];
-        marshal([['a', 'b'], ['c', 'd']], $resource, 'json', $context);
 
-        // dump(marshal_generate('array<?array<int, array<bool>>>', 'json', $context));
+        echo marshal_generate('array<array<string>>', 'json', $context);
     }
 
-    private function component(object $object): void
+    private function generate(): void
+    {
+        $object = new Dto();
+
+        $context = new Context();
+        // $context = new Context(new TypeOption('int'));
+        // $context = new Context(new NullableDataOption());
+        // $context = new Context(new ValidateDataOption());
+
+        echo $this->marshaller->generate('?'.Dto::class, 'json', $context);
+    }
+
+    private function marshal(): void
     {
         $output = new StdoutStreamOutput();
 
@@ -60,8 +71,9 @@ class TestCommand extends Command
         $this->marshaller->marshal($object, 'json', $output, $context);
     }
 
-    private function polyfill(object $object): void
+    private function marshalFunction(): void
     {
+        $object = new Dto();
         $resource = fopen('php://stdout', 'wb');
 
         $context = [
@@ -73,7 +85,7 @@ class TestCommand extends Command
 
                     unset($context['hooks']['string']);
 
-                    return marshal_generate($type, $format, $context);
+                    return marshal_generate($context['property_type'], $format, $context);
                 },
                 'string' => static function (string $type, string $accessor, string $format, array $context): string {
                     $context['accessor'] = $accessor;

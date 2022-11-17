@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Template;
 
 /**
  * @internal

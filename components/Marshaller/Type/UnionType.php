@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Polyfill\Marshaller\Metadata;
+namespace Symfony\Component\Marshaller\Type;
 
 final class UnionType implements \Stringable
 {
