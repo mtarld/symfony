@@ -13,6 +13,8 @@ use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\CacheDirNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValueFormatterNativeContextBuilder;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\NameFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\NullableDataNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValidateDataNativeContextBuilder;
@@ -51,8 +53,14 @@ final class MarshallerExtension extends Extension
         $container->register('marshaller.native_context_builder.phpstan_type.hook', PhpstanTypeHookNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 600]);
 
-        $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
+        $container->register('marshaller.native_context_builder.name_formatter', NameFormatterNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
+
+        $container->register('marshaller.native_context_builder.value_formatter', ValueFormatterNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
+
+        $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => 400]);
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)

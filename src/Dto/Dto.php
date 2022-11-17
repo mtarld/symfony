@@ -12,24 +12,29 @@ use Symfony\Component\Marshaller\Attribute\Warmable;
 final class Dto
 {
     #[Formatter([self::class, 'multiplyAndCast'])]
-    public int $int = 12;
+    public int $id = 12;
 
-    #[Name('test')]
-    public ?string $string = null;
+    // #[Name('test')]
+    // public ?string $string = null;
+    //
+    // /**
+    //  * @var Dto2
+    //  */
+    // public object $object;
 
-    /**
-     * @var Dto2
-     */
-    public object $object;
+    // /**
+    //  * @var list<object>
+    //  */
+    // public array $resources = [];
 
-    /**
-     * @var array<int, string>
-     */
-    public array $array = [];
+    // /**
+    //  * @var array<int, string>
+    //  */
+    // public array $array = [];
 
     public function __construct()
     {
-        $this->object = new Dto2();
+        // $this->object = new Dto2();
     }
 
     public static function multiplyAndCast(int $value, array $context): string

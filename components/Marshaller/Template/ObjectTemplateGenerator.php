@@ -109,7 +109,15 @@ abstract class ObjectTemplateGenerator
      */
     private function generatePropertyName(\ReflectionProperty $property, string $prefix, array $context): string
     {
+        $propertyName = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
+
         $name = $property->getName();
+        if (null !== $formatter = ($context['name_formatters'][$propertyName] ?? null)) {
+            $name = sprintf('$context[\'name_formatters\'][\'%s\'](\'%s\', $context)', $propertyName, $name);
+
+            return $this->fwrite(sprintf("'%s\"'.%s.'\":'", $prefix, $name), $context);
+        }
+
         foreach ($property->getAttributes() as $attribute) {
             if (Name::class !== $attribute->getName()) {
                 continue;
@@ -130,9 +138,17 @@ abstract class ObjectTemplateGenerator
     {
         $accessor = sprintf('%s->%s', $accessor, $property->getName());
 
+        $propertyName = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
+
+        if (null !== $formatter = ($context['value_formatters'][$propertyName] ?? null)) {
+            return $this->propertyFormatter(sprintf('$context[\'value_formatters\'][\'%s\']', $propertyName), $formatter, $accessor, $context);
+        }
+
         foreach ($property->getAttributes() as $attribute) {
             if (Formatter::class === $attribute->getName()) {
-                return $this->propertyFormatter($attribute->newInstance()->callable, $accessor, $context);
+                $callable = $attribute->newInstance()->callable;
+
+                return $this->propertyFormatter((string) $callable, $callable, $accessor, $context);
             }
         }
 
@@ -144,10 +160,10 @@ abstract class ObjectTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyFormatter(callable $formatter, string $accessor, array $context): string
+    private function propertyFormatter(string $formatterAccessor, callable $formatter, string $accessor, array $context): string
     {
         $formatterReflection = (new \ReflectionFunction(\Closure::fromCallable($formatter)));
-        $accessor = sprintf('%s(%s, $context)', $formatter, $accessor);
+        $accessor = sprintf('%s(%s, $context)', $formatterAccessor, $accessor);
         $type = TypeFactory::createFromReflection($formatterReflection->getReturnType(), $formatterReflection->getClosureScopeClass());
 
         if (null !== $hook = $this->hookExtractor->extractFromFunction($formatterReflection, $context)) {

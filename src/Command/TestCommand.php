@@ -10,11 +10,11 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
-use Symfony\Component\Marshaller\Context\Option\TypeOption;
-use Symfony\Component\Marshaller\Context\Option\ValidateDataOption;
+use Symfony\Component\Marshaller\Context\Option\NameFormattersOption;
+use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
+
 use function Symfony\Component\Marshaller\marshal;
 use function Symfony\Component\Marshaller\marshal_generate;
 
@@ -68,8 +68,42 @@ class TestCommand extends Command
         // $context = new Context(new NullableDataOption());
         // $context = new Context(new ValidateDataOption());
 
+        $valueFormatters = new ValueFormattersOption([
+            'App\\Dto\\Dto::$id' => $this->test(...),
+        ]);
+
+        $nameFormatters = new NameFormattersOption([
+            'App\\Dto\\Dto::$id' => $this->test2(...),
+        ]);
+
+        $context = new Context($nameFormatters, $valueFormatters);
+
         $this->marshaller->marshal(new Dto(), 'json', $output, $context);
     }
+
+    public function test(int $value, array $context): string
+    {
+        return sprintf('/foo/bar/%d', $value);
+    }
+
+    public function test2(string $name, array $context): string
+    {
+        return '@id';
+    }
+
+    // private function test(\ReflectionProperty $property, string $accessor, string $format, array $context): string
+    // {
+    //     $key = str_repeat(' ', 4 * $context['indentation_level'])
+    //         .'fwrite($resource, \'"@id":\');'
+    //         .PHP_EOL;
+    //
+    //     $context['enclosed'] = false;
+    //     $context['accessor'] = sprintf('$context[\'closures\'][\'prepareIri\'](%s)', $accessor);
+    //
+    //     $value = marshal_generate('string', $format, $context);
+    //
+    //     return $key.$value;
+    // }
 
     private function marshalFunction(): void
     {

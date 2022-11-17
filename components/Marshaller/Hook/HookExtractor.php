@@ -22,7 +22,7 @@ final class HookExtractor
             'property',
         ];
 
-        if (null === $hook = $this->findHook($hookNames, $context)) {
+        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
             return null;
         }
 
@@ -65,7 +65,7 @@ final class HookExtractor
             'function',
         ];
 
-        if (null === $hook = $this->findHook($hookNames, $context)) {
+        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
             return null;
         }
 
@@ -117,9 +117,11 @@ final class HookExtractor
             array_unshift($hookNames, $type->className());
         }
 
-        if (null === $hook = $this->findHook($hookNames, $context)) {
+        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
             return null;
         }
+
+        $reflection = new \ReflectionFunction($hook);
 
         if (4 !== \count($reflection->getParameters())) {
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 4 arguments.', $hookName));
@@ -151,12 +153,14 @@ final class HookExtractor
     /**
      * @param list<string>         $hookNames
      * @param array<string, mixed> $context
+     *
+     * @return array{0: string, 1: callable}
      */
-    private function findHook(array $hookNames, array $context): ?callable
+    private function findHook(array $hookNames, array $context): ?array
     {
         foreach ($hookNames as $hookName) {
             if (null !== ($hook = $context['hooks'][$hookName] ?? null)) {
-                return $hook;
+                return [$hookName, $hook];
             }
         }
 
