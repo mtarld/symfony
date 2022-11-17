@@ -16,7 +16,6 @@
         "symfony/yaml": "6.0.*"
     },
     "repositories": [
-        { "type": "path", "url": "./polyfills/Marshaller" },
         { "type": "path", "url": "./components/Marshaller" }
     ],
     "config": {
