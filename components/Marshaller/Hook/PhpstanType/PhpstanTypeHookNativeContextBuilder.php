@@ -2,18 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
+namespace Symfony\Component\Marshaller\Hook\PhpstanType;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\NativeContextBuilderInterface;
+use Symfony\Component\Marshaller\Hook\PhpstanType\PhpstanTypeExtractor;
 
 use function Symfony\Component\Marshaller\marshal_generate;
 
-final class PhpstanNativeContextBuilder implements NativeContextBuilderInterface
+final class PhpstanTypeHookNativeContextBuilder implements NativeContextBuilderInterface
 {
-    public function __construct(
-        private readonly PhpstanTypeExtractor $typeExtractor,
-    ) {
+    private readonly PhpstanTypeExtractor $typeExtractor;
+
+    public function __construct()
+    {
+        $this->typeExtractor = new PhpstanTypeExtractor();
     }
 
     public function build(string $format, Context $context, array $nativeContext): array

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Cache;
 
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Marshaller\Attribute\Warmable;
 use Symfony\Component\Marshaller\MarshallerInterface;
@@ -17,7 +16,6 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
     public function __construct(
         private readonly WarmableResolver $warmableResolver,
         private readonly MarshallerInterface $marshaller,
-        private readonly Filesystem $filesystem,
         private readonly string $cacheDir,
         private readonly array $formats,
         private readonly bool $nullableData,
@@ -44,7 +42,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
     private function warmClass(string $class, Warmable $attribute, string $format): void
     {
         $path = sprintf('%s/%s.%s.php', $this->cacheDir, md5($class), $format);
-        if ($this->filesystem->exists($path)) {
+        if (file_exists($path)) {
             return;
         }
 
@@ -52,6 +50,6 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
             $class = '?'.$class;
         }
 
-        $this->filesystem->dumpFile($path, $this->marshaller->generate($class, $format));
+        file_put_contents($path, $this->marshaller->generate($class, $format));
     }
 }

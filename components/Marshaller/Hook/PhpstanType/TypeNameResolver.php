@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Type;
+namespace Symfony\Component\Marshaller\Hook\PhpstanType;
 
 use phpDocumentor\Reflection\Types\ContextFactory;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Type;
+namespace Symfony\Component\Marshaller\Hook\PhpstanType;
 
 use PHPStan\PhpDocParser\Ast\PhpDoc\InvalidTagValueNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
@@ -18,8 +18,8 @@ final class PhpstanTypeExtractor
     private readonly PhpDocParser $phpstanDocParser;
     private readonly Lexer $phpstanLexer;
 
-    public function __construct(
-    ) {
+    public function __construct()
+    {
         $this->phpstanTypeHelper = new PhpstanTypeHelper();
         $this->phpstanDocParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
         $this->phpstanLexer = new Lexer();

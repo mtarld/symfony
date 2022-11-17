@@ -2,36 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Bundle;
+namespace Symfony\Component\Marshaller\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\CacheDirNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\HookNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\NullableDataNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\PhpstanNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValidateDataNativeContextBuilder;
+use Symfony\Component\Marshaller\Hook\PhpstanType\PhpstanTypeHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 
-final class MarshallerBundle extends Bundle
+final class MarshallerExtension extends Extension
 {
-    public function build(ContainerBuilder $container): void
+    public function load(array $configs, ContainerBuilder $container): void
     {
-        parent::build($container);
-
-        $container->setParameter('marshaller.cache_dir', sprintf('%s/marshaller', $container->getParameter('kernel.cache_dir')));
-        $container->setParameter('marshaller.warmable_paths', [sprintf('src/Dto', $container->getParameter('kernel.project_dir'))]);
-        $container->setParameter('marshaller.warmable_formats', ['json']);
-        $container->setParameter('marshaller.warmable_nullable_data', false);
-
         // Marshaller
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
@@ -56,17 +48,11 @@ final class MarshallerBundle extends Bundle
         $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 700]);
 
-        $container->register('marshaller.native_context_builder.phpstan', PhpstanNativeContextBuilder::class)
-            ->setArguments([
-                new Reference('marshaller.type_extractor.phpstan'),
-            ])
+        $container->register('marshaller.native_context_builder.phpstan_type.hook', PhpstanTypeHookNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 600]);
 
         $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
-
-        // Type extractors
-        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)
@@ -78,7 +64,6 @@ final class MarshallerBundle extends Bundle
             ->setArguments([
                 new Reference('marshaller.cache.warmable_resolver'),
                 new Reference('marshaller'),
-                new Reference('filesystem'),
                 new Parameter('marshaller.cache_dir'),
                 new Parameter('marshaller.warmable_formats'),
                 new Parameter('marshaller.warmable_nullable_data'),

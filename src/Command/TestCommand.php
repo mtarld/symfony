@@ -30,9 +30,9 @@ class TestCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // $this->generateFunction();
-        $this->generate();
+        // $this->generate();
 
-        // $this->marshal();
+        $this->marshal();
         // $this->marshalFunction();
 
         return Command::SUCCESS;
@@ -68,7 +68,7 @@ class TestCommand extends Command
         // $context = new Context(new NullableDataOption());
         // $context = new Context(new ValidateDataOption());
 
-        $this->marshaller->marshal($object, 'json', $output, $context);
+        $this->marshaller->marshal(new Dto(), 'json', $output, $context);
     }
 
     private function marshalFunction(): void

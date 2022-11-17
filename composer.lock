@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "966c1a73185736506d68a8f03ce9f5b8",
+    "content-hash": "a4e68eef32b5e23ecd8b791b4255fa4a",
     "packages": [
         {
             "name": "phpdocumentor/reflection-common",
@@ -1748,13 +1748,12 @@
             "dist": {
                 "type": "path",
                 "url": "./components/Marshaller",
-                "reference": "e03519e65dfc161fc3d90be75973d28d3d5c9590"
+                "reference": "9ad86336e39646f86aaa5384f2f7dd77505a203b"
             },
             "require": {
                 "php": ">=8.1",
                 "phpdocumentor/reflection-docblock": "^5.3",
-                "phpstan/phpdoc-parser": "^1.13",
-                "symfony/filesystem": "6.0.*"
+                "phpstan/phpdoc-parser": "^1.13"
             },
             "type": "library",
             "autoload": {
