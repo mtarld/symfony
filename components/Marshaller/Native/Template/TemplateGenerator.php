@@ -63,11 +63,7 @@ abstract class TemplateGenerator
 
             ++$context['indentation_level'];
 
-            if (null !== $hook = $this->hookExtractor->extractFromType(Type::createFromString('null'), $context)) {
-                $template .= $hook('null', $accessor, $this->format(), $context);
-            } else {
-                $template .= $this->null($context);
-            }
+            $template .= $this->null($context);
 
             --$context['indentation_level'];
             $template .= $this->writeLine('} else {', $context);
@@ -96,18 +92,30 @@ abstract class TemplateGenerator
             return $this->union($type, $accessor, $context);
         }
 
+        $valueTemplateGenerator = function (Type $type, string $accessor, array $context): string {
+            return match (true) {
+                $type->isNull() => $this->null($context),
+                $type->isScalar() => $this->scalar($type, $accessor, $context),
+                $type->isObject() => $this->object($type, $accessor, $context),
+                $type->isList() => $this->list($type, $accessor, $context),
+                $type->isDict() => $this->dict($type, $accessor, $context),
+                default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', (string) $type)),
+            };
+        };
+
         if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            return $hook((string) $type, $accessor, $this->format(), $context);
+            $hookContext = $context + [
+                'type_value_template_generator' => static function (string $type, string $accessor, array $context) use ($valueTemplateGenerator): string {
+                    $type = Type::createFromString($type);
+
+                    return $valueTemplateGenerator($type, $accessor, $context);
+                },
+            ];
+
+            return $hook((string) $type, $accessor, $this->format(), $hookContext);
         }
 
-        return match (true) {
-            $type->isNull() => $this->null($context),
-            $type->isScalar() => $this->scalar($type, $accessor, $context),
-            $type->isObject() => $this->object($type, $accessor, $context),
-            $type->isList() => $this->list($type, $accessor, $context),
-            $type->isDict() => $this->dict($type, $accessor, $context),
-            default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', $typeString)),
-        };
+        return $valueTemplateGenerator($type, $accessor, $context);
     }
 
     /**

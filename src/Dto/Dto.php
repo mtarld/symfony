@@ -10,10 +10,10 @@ use Symfony\Component\Marshaller\Attribute\Warmable;
 #[Warmable]
 final class Dto
 {
-    #[Name('@id')]
+    // #[Name('@id')]
     public int $id = 12;
 
-    public ?string $string = null;
+    // public ?string $string = null;
     //
     // /**
     //  * @var Dto2

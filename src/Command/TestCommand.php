@@ -12,6 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\TypeValueFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
@@ -73,19 +74,25 @@ class TestCommand extends Command
         //     'App\\Dto\\Dto::$id' => $this->test(...),
         // ]);
 
-        $nameFormatter = new PropertyNameFormatterOption([
+        $propertyNameFormatter = new PropertyNameFormatterOption([
             Dto::class => [
                 'id' => $this->test2(...),
             ],
         ]);
 
-        $valueFormatter = new PropertyValueFormatterOption([
+        $propertyValueFormatter = new PropertyValueFormatterOption([
             Dto::class => [
                 'id' => $this->test(...),
             ],
         ]);
 
-        $context = new Context($nameFormatter, $valueFormatter);
+        $valueFormatter = new TypeValueFormatterOption([
+            'string' => static function (string $value, array $context): string {
+                return strtoupper($value);
+            },
+        ]);
+
+        $context = new Context($propertyNameFormatter, $propertyValueFormatter, $valueFormatter);
 
         $this->marshaller->marshal(new Dto(), 'json', $output, $context);
     }

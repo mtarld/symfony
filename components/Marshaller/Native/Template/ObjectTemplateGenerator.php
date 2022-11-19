@@ -72,8 +72,8 @@ abstract class ObjectTemplateGenerator
 
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
                 $hookContext = $context + [
-                    'name_template_generator' => $this->generatePropertyName(...),
-                    'value_template_generator' => function (string $type, string $accessor, array $context): string {
+                    'property_name_template_generator' => $this->generatePropertyName(...),
+                    'property_value_template_generator' => function (string $type, string $accessor, array $context): string {
                         return $this->templateGenerator->generate(Type::createFromString($type), $accessor, $context);
                     },
                 ];

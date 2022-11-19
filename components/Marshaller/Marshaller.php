@@ -8,6 +8,7 @@ use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\NativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
+use Symfony\Component\Marshaller\Hook\TypeHook;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 
 use function Symfony\Component\Marshaller\Native\marshal;
@@ -50,6 +51,7 @@ final class Marshaller implements MarshallerInterface
         }
 
         $nativeContext['hooks']['property'] = (new PropertyHook())(...);
+        $nativeContext['hooks']['type'] = (new TypeHook())(...);
 
         return $nativeContext;
     }

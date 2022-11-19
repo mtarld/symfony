@@ -59,7 +59,10 @@ final class HookExtractor
      */
     public function extractFromType(Type $type, array $context): ?callable
     {
-        $hookNames = [$type->name()];
+        $hookNames = [
+            $type->name(),
+            'type',
+        ];
 
         if ($type->isNullable()) {
             $hookNames[] = '?'.$type->name();

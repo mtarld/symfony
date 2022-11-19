@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\TypeValueFormatterOption;
 
-final class PropertyValueFormatterNativeContextBuilder implements NativeContextBuilderInterface
+final class TypeValueFormatterNativeContextBuilder implements NativeContextBuilderInterface
 {
     public function build(string $type, string $format, Context $context, array $nativeContext): array
     {
-        /** @var PropertyValueFormatterOption|null $valueFormatterOption */
-        $valueFormatterOption = $context->get(PropertyValueFormatterOption::class);
+        /** @var TypeValueFormatterOption|null $valueFormatterOption */
+        $valueFormatterOption = $context->get(TypeValueFormatterOption::class);
         if (null === $valueFormatterOption) {
             return $nativeContext;
         }
 
         foreach ($valueFormatterOption->formatters as $formatterName => $formatter) {
-            $nativeContext['symfony']['property_value_formatter'][$formatterName] = $formatter;
+            $nativeContext['symfony']['type_value_formatter'][$formatterName] = $formatter;
         }
 
         return $nativeContext;
