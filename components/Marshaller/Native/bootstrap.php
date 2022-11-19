@@ -61,11 +61,9 @@ function marshal_generate(string $type, string $format, array $context = []): st
         'indentation_level' => 0,
         'variable_counters' => [],
         'enclosed' => true,
-        'validate_data' => false,
     ];
 
     $accessor = $context['accessor'];
-    $context['readable_accessor'] = $context['readable_accessor'] ?? $accessor;
 
     if (!$context['enclosed']) {
         return $templateGenerators[$format]->generate($type, $accessor, $context);

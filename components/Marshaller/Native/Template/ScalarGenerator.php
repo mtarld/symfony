@@ -17,20 +17,6 @@ abstract class ScalarGenerator
 
     final public function generate(Type $type, string $accessor, array $context): string
     {
-        $template = '';
-
-        if ($context['validate_data']) {
-            $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($accessor)), $context);
-            ++$context['indentation_level'];
-
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
-            --$context['indentation_level'];
-
-            $template .= $this->writeLine('}', $context);
-        }
-
-        $template .= $this->scalar($type, $accessor, $context);
-
-        return $template;
+        return $this->scalar($type, $accessor, $context);
     }
 }

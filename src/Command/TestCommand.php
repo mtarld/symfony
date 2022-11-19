@@ -56,7 +56,6 @@ class TestCommand extends Command
         $context = new Context();
         $context = new Context(new TypeOption('int'));
         // $context = new Context(new NullableDataOption());
-        // $context = new Context(new ValidateDataOption());
 
         echo $this->marshaller->generate('?'.Dto::class, 'json', $context);
     }
@@ -68,7 +67,6 @@ class TestCommand extends Command
         $context = new Context();
         // $context = new Context(new TypeOption('int'));
         // $context = new Context(new NullableDataOption());
-        // $context = new Context(new ValidateDataOption());
 
         // $valueFormatters = new ValueFormattersOption([
         //     'App\\Dto\\Dto::$id' => $this->test(...),

@@ -73,9 +73,6 @@ final class MarshallerExtension extends Extension
         $container->register('marshaller.native_context_builder.property_value_formatter', PropertyValueFormatterNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 899]); // needs to be after formatter_attribute
 
-        // $container->register('marshaller.native_context_builder.validate_data', ValidateDataNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
-        //
         // $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
         //     ->addTag('marshaller.context.native_context_builder', ['priority' => 800]);
         //

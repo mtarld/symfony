@@ -33,7 +33,7 @@ final class UnionTemplateGenerator
 
             if (0 === $i) {
                 $ifStructure = sprintf('if (%s) {', $type->validator($accessor));
-            } elseif ($typesCount - 1 === $i && !$context['validate_data']) {
+            } elseif ($typesCount - 1 === $i) {
                 $ifStructure = '} else {';
             }
 
@@ -41,14 +41,6 @@ final class UnionTemplateGenerator
             ++$context['indentation_level'];
 
             $template .= $this->templateGenerator->generate($type, $accessor, $context);
-            --$context['indentation_level'];
-        }
-
-        if ($context['validate_data']) {
-            $template .= $this->writeLine('} else {', $context);
-            ++$context['indentation_level'];
-
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
         }
 
