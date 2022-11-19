@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
+namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\HooksOption;
+use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\NativeContext\NativeContextBuilderInterface;
 
 final class HookNativeContextBuilder implements NativeContextBuilderInterface
 {
     public function build(string $type, string $format, Context $context, array $nativeContext): array
     {
-        /** @var HooksOption|null $hooksOption */
-        $hooksOption = $context->get(HooksOption::class);
-        if (null === $hooksOption) {
+        /** @var HookOption|null $hookOption */
+        $hookOption = $context->get(HookOption::class);
+        if (null === $hookOption) {
             return $nativeContext;
         }
 
-        foreach ($hooksOption->hooks as $hookName => $hook) {
+        foreach ($hookOption->hooks as $hookName => $hook) {
             $nativeContext['hooks'][$hookName] = $hook;
         }
 

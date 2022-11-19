@@ -14,6 +14,7 @@ use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\NativeContext\CacheDirNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\PropertyNameFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\PropertyValueFormatterNativeContextBuilder;
@@ -78,18 +79,9 @@ final class MarshallerExtension extends Extension
         //
         // $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
         //     ->addTag('marshaller.context.native_context_builder', ['priority' => 700]);
-        //
-        // $container->register('marshaller.native_context_builder.name', NameNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 600]);
-        //
-        // $container->register('marshaller.native_context_builder.phpstan_type.hook', PhpstanTypeHookNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
-        //
-        // $container->register('marshaller.native_context_builder.value_formatter', ValueFormatterNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 300]);
-        //
-        // $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 200]);
+
+        $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => 100]);
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)

@@ -27,12 +27,14 @@ final class PropertyHook
 
         $name = sprintf("'%s'", $property->getName());
         if (isset($symfonyContext['property_name_formatter'][$identifier])) {
-            $name = sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, $context)', $identifier, $name);
+            $name = sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, \'%s\', $context)', $identifier, $name, $format);
         }
+
+        // TODO be able to set property type at runtime using option (Collection -> array<int, int>)
 
         $type = $symfonyContext['type_extractor']->extractFromProperty($property);
         if (null !== $formatter = ($symfonyContext['property_value_formatter'][$identifier] ?? null)) {
-            $accessor = sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, $context)', $identifier, $accessor);
+            $accessor = sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, \'%s\', $context)', $identifier, $accessor, $format);
             $type = $symfonyContext['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
         }
 

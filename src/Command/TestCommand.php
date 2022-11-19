@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Dto\Collection;
 use App\Dto\Dto;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeValueFormatterOption;
@@ -17,8 +19,8 @@ use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
-use function Symfony\Component\Marshaller\marshal;
-use function Symfony\Component\Marshaller\marshal_generate;
+use function Symfony\Component\Marshaller\Native\marshal;
+use function Symfony\Component\Marshaller\Native\marshal_generate;
 
 #[AsCommand(name: 'test')]
 class TestCommand extends Command
@@ -65,42 +67,48 @@ class TestCommand extends Command
         $output = new StdoutStreamOutput();
 
         $context = new Context();
-        // $context = new Context(new TypeOption('int'));
-        // $context = new Context(new NullableDataOption());
 
-        // $valueFormatters = new ValueFormattersOption([
-        //     'App\\Dto\\Dto::$id' => $this->test(...),
+        // $propertyNameFormatter = new PropertyNameFormatterOption([
+        //     Dto::class => [
+        //         'id' => $this->test2(...),
+        //     ],
+        // ]);
+        //
+        // $propertyValueFormatter = new PropertyValueFormatterOption([
+        //     Dto::class => [
+        //         'id' => $this->test(...),
+        //     ],
+        // ]);
+        //
+        // $valueFormatter = new TypeValueFormatterOption([
+        //     Collection::class => function (Collection $value, string $format, array $context): string {
+        //         return strtoupper($value);
+        //     },
         // ]);
 
-        $propertyNameFormatter = new PropertyNameFormatterOption([
-            Dto::class => [
-                'id' => $this->test2(...),
-            ],
+        $hook = new HookOption([
+            sprintf('%s::$collection', Collection::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
+                $context['accessor'] = $accessor;
+                $context['enclosed'] = false;
+
+                unset($context['hooks'][Collection::class]);
+
+                return $context['property_name_template_generator'](sprintf("'%s'", $property->getName()), $context)
+                    .marshal_generate('array<int, int>', $format, $context);
+            }
         ]);
 
-        $propertyValueFormatter = new PropertyValueFormatterOption([
-            Dto::class => [
-                'id' => $this->test(...),
-            ],
-        ]);
+        $context = new Context($hook);
 
-        $valueFormatter = new TypeValueFormatterOption([
-            'string' => static function (string $value, array $context): string {
-                return strtoupper($value);
-            },
-        ]);
-
-        $context = new Context($propertyNameFormatter, $propertyValueFormatter, $valueFormatter);
-
-        $this->marshaller->marshal(new Dto(), 'json', $output, $context);
+        $this->marshaller->marshal(new Collection(1, 2, 3), 'json', $output, $context);
     }
 
-    public function test(int $value, array $context): string
+    public function test(int $value, string $format, array $context): string
     {
         return sprintf('/foo/bar/%d', $value);
     }
 
-    public function test2(string $name, array $context): string
+    public function test2(string $name, string $format, array $context): string
     {
         return strtoupper($name);
     }

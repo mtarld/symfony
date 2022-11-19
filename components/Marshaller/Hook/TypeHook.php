@@ -21,7 +21,7 @@ final class TypeHook
         }
 
         if (null !== $formatter = ($symfonyContext['type_value_formatter'][$type] ?? null)) {
-            $accessor = sprintf('$context[\'symfony\'][\'type_value_formatter\'][\'%s\'](%s, $context)', $type, $accessor);
+            $accessor = sprintf('$context[\'symfony\'][\'type_value_formatter\'][\'%s\'](%s, \'%s\', $context)', $type, $accessor, $format);
             $type = $symfonyContext['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
         }
 
