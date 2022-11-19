@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Native\Template\Json;
 
-use Symfony\Component\Marshaller\Template\DictTemplateGenerator;
+use Symfony\Component\Marshaller\Native\Template\DictTemplateGenerator;
 
 /**
  * @internal

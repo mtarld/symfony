@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Native\Template\Json;
 
-use Symfony\Component\Marshaller\Template\TemplateGenerator;
-use Symfony\Component\Marshaller\Type\Type;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
+use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @internal

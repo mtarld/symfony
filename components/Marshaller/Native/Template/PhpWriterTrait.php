@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Native\Template;
 
 /**
  * @internal
@@ -14,7 +14,7 @@ trait PhpWriterTrait
      */
     protected function fwrite(string $content, array $context): string
     {
-        if ("''" === $content) {
+        if ('' === $content || "''" === $content) {
             return '';
         }
 

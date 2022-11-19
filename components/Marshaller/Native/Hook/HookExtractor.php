@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Hook;
+namespace Symfony\Component\Marshaller\Native\Hook;
 
-use Symfony\Component\Marshaller\Type\Type;
-
+use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @internal
@@ -35,49 +34,6 @@ final class HookExtractor
         $propertyParameterType = $reflection->getParameters()[0]->getType();
         if (!$propertyParameterType instanceof \ReflectionNamedType || \ReflectionProperty::class !== $propertyParameterType->getName()) {
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionProperty::class));
-        }
-
-        $accessorParameterType = $reflection->getParameters()[1]->getType();
-        if (!$accessorParameterType instanceof \ReflectionNamedType || 'string' !== $accessorParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
-        }
-
-        $formatParameterType = $reflection->getParameters()[2]->getType();
-        if (!$formatParameterType instanceof \ReflectionNamedType || 'string' !== $formatParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
-        }
-
-        $contextParameterType = $reflection->getParameters()[3]->getType();
-        if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fourth argument.', $hookName));
-        }
-
-        return $hook;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    public function extractFromFunction(\ReflectionFunction $function, array $context): ?callable
-    {
-        $hookNames = [
-            sprintf('%s::%s()', $function->getClosureScopeClass()->getName(), $function->getName()),
-            'function',
-        ];
-
-        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
-            return null;
-        }
-
-        $reflection = new \ReflectionFunction($hook);
-
-        if (4 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 4 arguments.', $hookName));
-        }
-
-        $functionParameterType = $reflection->getParameters()[0]->getType();
-        if (!$functionParameterType instanceof \ReflectionNamedType || \ReflectionFunction::class !== $functionParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionFunction::class));
         }
 
         $accessorParameterType = $reflection->getParameters()[1]->getType();

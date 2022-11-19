@@ -6,10 +6,11 @@ namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
+use Symfony\Component\Marshaller\NativeContext\NativeContextBuilderInterface;
 
 final class ValueFormatterNativeContextBuilder implements NativeContextBuilderInterface
 {
-    public function build(string $format, Context $context, array $nativeContext): array
+    public function build(string $type, string $format, Context $context, array $nativeContext): array
     {
         /** @var ValueFormattersOption|null $valueFormattersOption */
         $valueFormattersOption = $context->get(ValueFormattersOption::class);

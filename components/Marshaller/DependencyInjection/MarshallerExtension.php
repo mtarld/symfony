@@ -11,16 +11,11 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\CacheDirNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\HookNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValueFormatterNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\NameFormatterNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\NullableDataNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\TypeNativeContextBuilder;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\ValidateDataNativeContextBuilder;
-use Symfony\Component\Marshaller\Hook\PhpstanType\PhpstanTypeHookNativeContextBuilder;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
+use Symfony\Component\Marshaller\NativeContext\CacheDirNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\NameFormatterNativeContextBuilder;
 
 final class MarshallerExtension extends Extension
 {
@@ -41,26 +36,32 @@ final class MarshallerExtension extends Extension
             ])
             ->addTag('marshaller.context.native_context_builder', ['priority' => 1000]);
 
-        $container->register('marshaller.native_context_builder.validate_data', ValidateDataNativeContextBuilder::class)
+        $container->register('marshaller.native_context_builder.name_attribute', NameAttributeNativeContextBuilder::class)
             ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
 
-        $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 800]);
-
-        $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 700]);
-
-        $container->register('marshaller.native_context_builder.phpstan_type.hook', PhpstanTypeHookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 600]);
-
         $container->register('marshaller.native_context_builder.name_formatter', NameFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => 899]); // needs to be after name_formatters
 
-        $container->register('marshaller.native_context_builder.value_formatter', ValueFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
-
-        $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 400]);
+        // $container->register('marshaller.native_context_builder.validate_data', ValidateDataNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
+        //
+        // $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 800]);
+        //
+        // $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 700]);
+        //
+        // $container->register('marshaller.native_context_builder.name', NameNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 600]);
+        //
+        // $container->register('marshaller.native_context_builder.phpstan_type.hook', PhpstanTypeHookNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 500]);
+        //
+        // $container->register('marshaller.native_context_builder.value_formatter', ValueFormatterNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 300]);
+        //
+        // $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
+        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 200]);
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)

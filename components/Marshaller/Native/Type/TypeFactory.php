@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Type;
+namespace Symfony\Component\Marshaller\Native\Type;
 
 /**
  * @internal
@@ -111,5 +111,17 @@ final class TypeFactory
         }
 
         return new Type(name: 'object', isNullable: $reflection->allowsNull(), className: $className);
+    }
+
+    public static function createFromData(mixed $data, bool $nullable): Type
+    {
+        if (is_object($data)) {
+            return new Type(name: 'object', isNullable: $nullable, className: $data::class);
+        }
+
+        $builtinType = strtolower(gettype($data));
+        $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
+
+        return new Type(name: $builtinType, isNullable: $nullable);
     }
 }

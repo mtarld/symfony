@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Native\Template;
 
 /**
  * @internal

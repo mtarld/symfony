@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template\Json;
+namespace Symfony\Component\Marshaller\Native\Template\Json;
 
-use Symfony\Component\Marshaller\Template\ObjectTemplateGenerator;
+use Symfony\Component\Marshaller\Native\Template\ObjectTemplateGenerator;
 
 /**
  * @internal
@@ -26,9 +26,14 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
         return ',';
     }
 
-    protected function propertyName(string $name): string
+    protected function beforePropertyName(): string
     {
-        return sprintf('%s:', json_encode($name));
+        return '"';
+    }
+
+    protected function afterPropertyName(): string
+    {
+        return '":';
     }
 
     protected function null(): string

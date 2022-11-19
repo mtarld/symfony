@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Native\Template;
 
-use Symfony\Component\Marshaller\Type\Type;
+use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @internal
  */
-abstract class DictTemplateGenerator
+abstract class ListTemplateGenerator
 {
     use PhpWriterTrait;
     use VariableNameScoperTrait;
@@ -25,15 +25,12 @@ abstract class DictTemplateGenerator
 
     abstract protected function valueSeparator(): string;
 
-    abstract protected function keyName(string $name): string;
-
     /**
      * @param array<string, mixed> $context
      */
     final public function generate(Type $type, string $accessor, array $context): string
     {
         $prefixName = $this->scopeVariableName('prefix', $context);
-        $keyName = $this->scopeVariableName('key', $context);
         $valueName = $this->scopeVariableName('value', $context);
 
         $template = '';
@@ -42,7 +39,7 @@ abstract class DictTemplateGenerator
             $template .= $this->writeLine(sprintf('if (!(%s)) {', $type->validator($accessor)), $context);
             ++$context['indentation_level'];
 
-            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $accessor), $context);
+            $template .= $this->writeLine(sprintf("throw new \UnexpectedValueException('Invalid \"%s\" type');", $context['readable_accessor']), $context);
             --$context['indentation_level'];
 
             $template .= $this->writeLine('}', $context);
@@ -52,11 +49,11 @@ abstract class DictTemplateGenerator
 
         $template .= $this->fwrite(sprintf("'%s'", addslashes($this->beforeValues())), $context)
             .$this->writeLine("$prefixName = '';", $context)
-            .$this->writeLine("foreach ($accessor as $keyName => $valueName) {", $context);
+            .$this->writeLine("foreach ($accessor as $valueName) {", $context);
 
         ++$context['indentation_level'];
 
-        $template .= $this->fwrite(sprintf('%s.%s', $prefixName, $this->keyName($keyName)), $context)
+        $template .= $this->fwrite($prefixName, $context)
             .$this->templateGenerator->generate($type->collectionValueType(), $valueName, $context)
             .$this->writeLine(sprintf("$prefixName = '%s';", addslashes($this->valueSeparator())), $context);
 

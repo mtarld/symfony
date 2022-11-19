@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
+namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 
@@ -13,7 +13,7 @@ final class CacheDirNativeContextBuilder implements NativeContextBuilderInterfac
     ) {
     }
 
-    public function build(string $format, Context $context, array $nativeContext): array
+    public function build(string $type, string $format, Context $context, array $nativeContext): array
     {
         $nativeContext['cache_dir'] = $this->cacheDir;
 

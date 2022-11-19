@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Context\Option;
 
-final class NameFormattersOption
+final class NameFormatterOption
 {
     /**
      * @var array<string, \Closure>
@@ -21,6 +21,8 @@ final class NameFormattersOption
         foreach ($formatters as $propertyName => $formatter) {
             $closures[$propertyName] = \Closure::fromCallable($formatter);
         }
+
+        // TODO validate signature
 
         $this->formatters = $closures;
     }

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Template;
+namespace Symfony\Component\Marshaller\Native\Template;
 
-use Symfony\Component\Marshaller\Type\Type;
-use Symfony\Component\Marshaller\Type\UnionType;
+use Symfony\Component\Marshaller\Native\Type\Type;
+use Symfony\Component\Marshaller\Native\Type\UnionType;
 
 /**
  * @internal

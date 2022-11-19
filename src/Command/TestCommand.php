@@ -10,7 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\NameFormattersOption;
+use Symfony\Component\Marshaller\Context\Option\NameFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
@@ -52,7 +52,7 @@ class TestCommand extends Command
         $object = new Dto();
 
         $context = new Context();
-        // $context = new Context(new TypeOption('int'));
+        $context = new Context(new TypeOption('int'));
         // $context = new Context(new NullableDataOption());
         // $context = new Context(new ValidateDataOption());
 
@@ -68,15 +68,15 @@ class TestCommand extends Command
         // $context = new Context(new NullableDataOption());
         // $context = new Context(new ValidateDataOption());
 
-        $valueFormatters = new ValueFormattersOption([
-            'App\\Dto\\Dto::$id' => $this->test(...),
-        ]);
+        // $valueFormatters = new ValueFormattersOption([
+        //     'App\\Dto\\Dto::$id' => $this->test(...),
+        // ]);
 
-        $nameFormatters = new NameFormattersOption([
+        $nameFormatter = new NameFormatterOption([
             'App\\Dto\\Dto::$id' => $this->test2(...),
         ]);
 
-        $context = new Context($nameFormatters, $valueFormatters);
+        $context = new Context($nameFormatter);
 
         $this->marshaller->marshal(new Dto(), 'json', $output, $context);
     }
@@ -88,7 +88,7 @@ class TestCommand extends Command
 
     public function test2(string $name, array $context): string
     {
-        return '@id';
+        return strtoupper($name);
     }
 
     // private function test(\ReflectionProperty $property, string $accessor, string $format, array $context): string
@@ -119,7 +119,8 @@ class TestCommand extends Command
 
                     unset($context['hooks']['string']);
 
-                    return marshal_generate($context['property_type'], $format, $context);
+                    return $context['property_name_generator']($property, $context['property_separator'], $context)
+                        .marshal_generate($context['property_type'], $format, $context);
                 },
                 'string' => static function (string $type, string $accessor, string $format, array $context): string {
                     $context['accessor'] = $accessor;
@@ -127,8 +128,7 @@ class TestCommand extends Command
 
                     unset($context['hooks']['string']);
 
-                    return marshal_generate($type, $format, $context);
-                },
+                    return marshal_generate($type, $format, $context); },
             ],
         ];
 
