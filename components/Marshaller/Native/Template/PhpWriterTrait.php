@@ -18,7 +18,7 @@ trait PhpWriterTrait
             return '';
         }
 
-        return $this->writeLine(sprintf('fwrite($resource, %s);', $content), $context);
+        return $this->writeLine(sprintf('\fwrite($resource, %s);', $content), $context);
     }
 
     /**

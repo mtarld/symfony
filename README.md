@@ -4,7 +4,9 @@
 - remove json_encode and handle strings
 - name by hooks
 - formatter by hooks
-- backslash json_encode
+- backslash fwrite
+- require nested classes
+- split native context building?
 
 ## Unmarshal
 - json stream parser with events

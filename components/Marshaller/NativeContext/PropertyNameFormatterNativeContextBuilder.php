@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\NameFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
 
-final class NameFormatterNativeContextBuilder implements NativeContextBuilderInterface
+final class PropertyNameFormatterNativeContextBuilder implements NativeContextBuilderInterface
 {
     public function build(string $type, string $format, Context $context, array $nativeContext): array
     {
-        /** @var NameFormatterOption|null $nameFormatterOption */
-        $nameFormatterOption = $context->get(NameFormatterOption::class);
+        /** @var PropertyNameFormatterOption|null $nameFormatterOption */
+        $nameFormatterOption = $context->get(PropertyNameFormatterOption::class);
         if (null === $nameFormatterOption) {
             return $nativeContext;
         }

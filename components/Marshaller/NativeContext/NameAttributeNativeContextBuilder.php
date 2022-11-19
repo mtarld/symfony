@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\NativeContext\NativeContextBuilderInterface;
 
 final class NameAttributeNativeContextBuilder implements NativeContextBuilderInterface
 {

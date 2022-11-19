@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native;
 
-use Symfony\Component\Marshaller\Native\Template;
-use Symfony\Component\Marshaller\Native\Type\TypeFactory;
+use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @param array<string, mixed> $context
@@ -13,7 +12,17 @@ use Symfony\Component\Marshaller\Native\Type\TypeFactory;
  */
 function marshal(mixed $data, $resource, string $format, array $context = []): void
 {
-    $type = isset($context['type']) ? $context['type'] : (string) TypeFactory::createFromData($data, $context['nullable_data'] ?? false);
+    $nullablePrefix = ($context['nullable_data'] ?? false) ? '?' : '';
+
+    $builtinType = strtolower(gettype($data));
+    $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
+    $type = $nullablePrefix.$builtinType;
+
+    if (is_object($data)) {
+        $type = $nullablePrefix.$data::class;
+    }
+
+    $type = isset($context['type']) ? $context['type'] : $type;
 
     $cachePath = $context['cache_dir'] ?? sys_get_temp_dir();
     $cacheFilename = sprintf('%s%s%s.%s.php', $cachePath, DIRECTORY_SEPARATOR, md5($type), $format);
@@ -44,7 +53,7 @@ function marshal_generate(string $type, string $format, array $context = []): st
         throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format));
     }
 
-    $type = TypeFactory::createFromString($type);
+    $type = Type::createFromString($type);
     $context = $context + [
         'generated_classes' => [],
         'hooks' => [],

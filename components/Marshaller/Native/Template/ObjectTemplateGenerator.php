@@ -6,7 +6,7 @@ namespace Symfony\Component\Marshaller\Native\Template;
 
 use Symfony\Component\Marshaller\Native\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Native\Type\Type;
-use Symfony\Component\Marshaller\Native\Type\TypeFactory;
+use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
  * @internal
@@ -17,11 +17,13 @@ abstract class ObjectTemplateGenerator
     use VariableNameScoperTrait;
 
     private readonly HookExtractor $hookExtractor;
+    private readonly ReflectionTypeExtractor $reflectionTypeExtractor;
 
     public function __construct(
         private readonly TemplateGenerator $templateGenerator,
     ) {
         $this->hookExtractor = new HookExtractor();
+        $this->reflectionTypeExtractor = new ReflectionTypeExtractor();
     }
 
     abstract protected function beforeProperties(): string;
@@ -69,18 +71,10 @@ abstract class ObjectTemplateGenerator
             $template .= $this->fwrite(sprintf("'%s'", $propertySeparator), $context);
 
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
-                $type = null;
-
-                try {
-                    $type = TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass());
-                } catch (\InvalidArgumentException) {
-                }
-
                 $hookContext = $context + [
-                    'property_type' => (string) $type,
                     'name_template_generator' => $this->generatePropertyName(...),
                     'value_template_generator' => function (string $type, string $accessor, array $context): string {
-                        return $this->templateGenerator->generate(TypeFactory::createFromString($type), $accessor, $context);
+                        return $this->templateGenerator->generate(Type::createFromString($type), $accessor, $context);
                     },
                 ];
 
@@ -98,7 +92,7 @@ abstract class ObjectTemplateGenerator
 
             $template .= $this->generatePropertyName(sprintf("'%s'", $property->getName()), $context);
             $template .= $this->templateGenerator->generate(
-                TypeFactory::createFromReflection($property->getType(), $property->getDeclaringClass()),
+                Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($property)),
                 $propertyAccessor,
                 $context,
             );
@@ -116,6 +110,8 @@ abstract class ObjectTemplateGenerator
      */
     private function generatePropertyName(string $name, array $context): string
     {
-        return $this->fwrite(sprintf("'%s'.%s.'%s'", $this->beforePropertyName(), $name, $this->afterPropertyName()), $context);
+        return $this->fwrite(sprintf("'%s'", $this->beforePropertyName()), $context)
+            .$this->fwrite($name, $context)
+            .$this->fwrite(sprintf("'%s'", $this->afterPropertyName()), $context);
     }
 }

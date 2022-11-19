@@ -10,7 +10,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Option\NameFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
@@ -72,11 +73,19 @@ class TestCommand extends Command
         //     'App\\Dto\\Dto::$id' => $this->test(...),
         // ]);
 
-        $nameFormatter = new NameFormatterOption([
-            'App\\Dto\\Dto::$id' => $this->test2(...),
+        $nameFormatter = new PropertyNameFormatterOption([
+            Dto::class => [
+                'id' => $this->test2(...),
+            ],
         ]);
 
-        $context = new Context($nameFormatter);
+        $valueFormatter = new PropertyValueFormatterOption([
+            Dto::class => [
+                'id' => $this->test(...),
+            ],
+        ]);
+
+        $context = new Context($nameFormatter, $valueFormatter);
 
         $this->marshaller->marshal(new Dto(), 'json', $output, $context);
     }
@@ -128,7 +137,8 @@ class TestCommand extends Command
 
                     unset($context['hooks']['string']);
 
-                    return marshal_generate($type, $format, $context); },
+                    return marshal_generate($type, $format, $context);
+                },
             ],
         ];
 

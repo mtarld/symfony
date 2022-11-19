@@ -14,6 +14,12 @@ final class JsonScalarTemplateGenerator extends ScalarGenerator
 {
     protected function scalar(Type $type, string $accessor, array $context): string
     {
-        return $this->fwrite("json_encode($accessor)", $context);
+        if ('string' === $type->name()) {
+            return $this->fwrite("'\"'", $context)
+                .$this->fwrite($accessor, $context)
+                .$this->fwrite("'\"'", $context);
+        }
+
+        return $this->fwrite($accessor, $context);
     }
 }

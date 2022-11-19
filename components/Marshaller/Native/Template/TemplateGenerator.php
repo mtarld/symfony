@@ -63,7 +63,7 @@ abstract class TemplateGenerator
 
             ++$context['indentation_level'];
 
-            if (null !== $hook = $this->hookExtractor->extractFromType(new Type('null'), $context)) {
+            if (null !== $hook = $this->hookExtractor->extractFromType(Type::createFromString('null'), $context)) {
                 $template .= $hook('null', $accessor, $this->format(), $context);
             } else {
                 $template .= $this->null($context);
