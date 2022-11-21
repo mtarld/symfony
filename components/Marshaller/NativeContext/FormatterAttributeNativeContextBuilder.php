@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
 
-final class FormatterAttributeNativeContextBuilder implements NativeContextBuilderInterface
+final class FormatterAttributeNativeContextBuilder implements GenerateNativeContextBuilderInterface
 {
-    public function build(string $type, string $format, Context $context, array $nativeContext): array
+    public function buildGenerateNativeContext(string $type, Context $context, array $nativeContext): array
     {
         if (!class_exists($type)) {
             return $nativeContext;
@@ -21,11 +21,8 @@ final class FormatterAttributeNativeContextBuilder implements NativeContextBuild
                     continue;
                 }
 
-                $formatterName = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-
-                $callable = $attribute->newInstance()->callable;
-
-                $nativeContext['symfony']['property_value_formatter'][$formatterName] = $callable;
+                $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
+                $nativeContext['symfony']['property_value_formatter'][$propertyIdentifier] = $attribute->newInstance()->closure;
 
                 break;
             }

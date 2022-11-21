@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Attribute;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class Formatter
 {
-    public readonly string $callable;
+    public readonly \Closure $closure;
 
     /**
      * @param string|array{0: class-string, 1: string} $callable
@@ -37,10 +37,6 @@ final class Formatter
             throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must have an array for second argument.', self::class));
         }
 
-        if (is_array($callable)) {
-            $callable = sprintf('%s::%s', $callable[0], $callable[1]);
-        }
-
-        $this->callable = $callable;
+        $this->closure = \Closure::fromCallable($callable);
     }
 }

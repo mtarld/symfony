@@ -86,14 +86,14 @@ class TestCommand extends Command
         //         'collection' => 'array<int, int>',
         //     ],
         // ]);
-        //
-        // $valueFormatter = new TypeValueFormatterOption([
-        //     Collection::class => function (Collection $value, string $format, array $context): string {
-        //         return strtoupper($value);
-        //     },
-        // ]);
-        //
-        $type = new TypeOption(Dto::class);
+
+        $valueFormatter = new TypeValueFormatterOption([
+            Collection::class => function (Collection $value, array $context): string {
+                return strtoupper($value);
+            },
+        ]);
+
+        // $type = new TypeOption(Dto::class);
         //
         // $hook = new HookOption([
         //     sprintf('%s::$collection', Collection::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
@@ -107,7 +107,7 @@ class TestCommand extends Command
         //     }
         // ]);
 
-        $context = new Context($type);
+        // $context = new Context($valueFormatter);
 
         $this->marshaller->marshal(new Dto(), 'json', $output, $context);
         // $this->marshaller->marshal(new Collection(1, 2, 3), 'json', $output, $context);

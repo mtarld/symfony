@@ -106,9 +106,7 @@ abstract class TemplateGenerator
         if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
             $hookContext = $context + [
                 'type_value_template_generator' => static function (string $type, string $accessor, array $context) use ($valueTemplateGenerator): string {
-                    $type = Type::createFromString($type);
-
-                    return $valueTemplateGenerator($type, $accessor, $context);
+                    return $valueTemplateGenerator(Type::createFromString($type), $accessor, $context);
                 },
             ];
 

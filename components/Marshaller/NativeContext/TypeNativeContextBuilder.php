@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 
-final class TypeNativeContextBuilder implements NativeContextBuilderInterface
+final class TypeNativeContextBuilder implements MarshalNativeContextBuilderInterface
 {
-    public function build(string $type, string $format, Context $context, array $nativeContext): array
+    public function buildMarshalNativeContext(string $type, Context $context, array $nativeContext): array
     {
         if (null !== ($typeOption = $context->get(TypeOption::class))) {
             $nativeContext['type'] = $typeOption->type;

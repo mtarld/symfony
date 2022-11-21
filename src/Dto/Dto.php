@@ -8,11 +8,17 @@ use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Attribute\Warmable;
 
+function test(int $value, array $context): string
+{
+    return (string) (2 * $value);
+}
+
 #[Warmable]
 final class Dto
 {
     #[Name('@id')]
-    #[Formatter([self::class, 'multiplyAndCast'])]
+    // #[Formatter([self::class, 'multiplyAndCast'])]
+    #[Formatter('App\\Dto\\test')]
     public int $id = 12;
 
     // public ?string $string = null;

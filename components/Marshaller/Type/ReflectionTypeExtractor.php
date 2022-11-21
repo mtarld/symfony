@@ -13,10 +13,10 @@ final class ReflectionTypeExtractor
 
     public function extractFromReturnType(\ReflectionFunction $function): string
     {
-        return $this->extractFromReflection($function->getReturnType(), $function->getClosureScopeClass());
+        return $this->extractFromReflection($function->getReturnType(), $function->getClosureScopeClass() ?? null);
     }
 
-    private function extractFromReflection(\ReflectionType $reflection, \ReflectionClass $declaringClass): string
+    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
     {
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';
 

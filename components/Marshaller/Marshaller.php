@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\NativeContextBuilder\NativeContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\Option\NullableDataOption;
+use Symfony\Component\Marshaller\Context\NativeContextBuilder\GenerateNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
 use Symfony\Component\Marshaller\Hook\TypeHook;
 use Symfony\Component\Marshaller\Output\OutputInterface;
@@ -17,23 +16,31 @@ use function Symfony\Component\Marshaller\Native\marshal_generate;
 final class Marshaller implements MarshallerInterface
 {
     /**
-     * @param iterable<NativeContextBuilderInterface> $nativeContextBuilders
+     * @param iterable<MashalNativeContextBuilderInterface>   $marshalNativeContextBuilders
+     * @param iterable<GenerateNativeContextBuilderInterface> $generateNativeContextBuilders
      */
     public function __construct(
-        private readonly iterable $nativeContextBuilders,
+        private readonly iterable $marshalNativeContextBuilders,
+        private readonly iterable $generateNativeContextBuilders,
+        private readonly string $cacheDir,
     ) {
     }
 
     public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
     {
-        $type = $this->getTypeFromData($data, null !== $context?->get(NullableDataOption::class));
+        $type = $this->getTypeFromData($data);
 
-        marshal($data, $output->stream(), $format, $this->buildNativeContext($type, $format, $context));
+        // if template does not exist, it'll be generated therefore native context must be filled accordingly
+        $nativeContext = file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))
+            ? $this->buildMarshalNativeContext($type, $context)
+            : $this->buildGenerateNativeContext($type, $context);
+
+        marshal($data, $output->stream(), $format, $nativeContext);
     }
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        return marshal_generate($type, $format, $this->buildNativeContext($type, $format, $context));
+        return marshal_generate($type, $format, $this->buildGenerateNativeContext($type, $format, $context));
     }
 
     /**
@@ -41,13 +48,30 @@ final class Marshaller implements MarshallerInterface
      *
      * @return array<string, mixed>
      */
-    private function buildNativeContext(string $type, string $format, ?Context $context): array
+    private function buildMarshalNativeContext(string $type, ?Context $context): array
     {
         $context = $context ?? new Context();
         $nativeContext = [];
 
-        foreach ($this->nativeContextBuilders as $builder) {
-            $nativeContext = $builder->build($type, $format, $context, $nativeContext);
+        foreach ($this->marshalNativeContextBuilders as $builder) {
+            $nativeContext = $builder->buildMarshalNativeContext($type, $context, $nativeContext);
+        }
+
+        return $nativeContext;
+    }
+
+    /**
+     * @param array<string, mixed> $nativeContext
+     *
+     * @return array<string, mixed>
+     */
+    private function buildGenerateNativeContext(string $type, ?Context $context): array
+    {
+        $context = $context ?? new Context();
+        $nativeContext = [];
+
+        foreach ($this->generateNativeContextBuilders as $builder) {
+            $nativeContext = $builder->buildGenerateNativeContext($type, $context, $nativeContext);
         }
 
         $nativeContext['hooks']['property'] = (new PropertyHook())(...);
@@ -56,17 +80,15 @@ final class Marshaller implements MarshallerInterface
         return $nativeContext;
     }
 
-    private function getTypeFromData(mixed $data, bool $nullable): string
+    private function getTypeFromData(mixed $data): string
     {
-        $nullablePrefix = $nullable ? '?' : '';
-
         if (is_object($data)) {
-            return $nullablePrefix.$data::class;
+            return $data::class;
         }
 
         $builtinType = strtolower(gettype($data));
         $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
 
-        return $nullablePrefix.$builtinType;
+        return $builtinType;
     }
 }

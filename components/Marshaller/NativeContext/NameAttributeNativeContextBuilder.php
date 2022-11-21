@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
 
-final class NameAttributeNativeContextBuilder implements NativeContextBuilderInterface
+final class NameAttributeNativeContextBuilder implements GenerateNativeContextBuilderInterface
 {
-    public function build(string $type, string $format, Context $context, array $nativeContext): array
+    public function buildGenerateNativeContext(string $type, Context $context, array $nativeContext): array
     {
         if (!class_exists($type)) {
             return $nativeContext;
@@ -21,12 +21,8 @@ final class NameAttributeNativeContextBuilder implements NativeContextBuilderInt
                     continue;
                 }
 
-                $formatterName = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $name = $attribute->newInstance()->name;
-
-                $nativeContext['symfony']['property_name_formatter'][$formatterName] = static function () use ($name): string {
-                    return $name;
-                };
+                $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
+                $nativeContext['symfony']['property_name'][$propertyIdentifier] = $attribute->newInstance()->name;
 
                 break;
             }
