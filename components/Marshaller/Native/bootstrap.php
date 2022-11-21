@@ -12,14 +12,11 @@ use Symfony\Component\Marshaller\Native\Type\Type;
  */
 function marshal(mixed $data, $resource, string $format, array $context = []): void
 {
-    $nullablePrefix = ($context['nullable_data'] ?? false) ? '?' : '';
-
     $builtinType = strtolower(gettype($data));
-    $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
-    $type = $nullablePrefix.$builtinType;
 
+    $type = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
     if (is_object($data)) {
-        $type = $nullablePrefix.$data::class;
+        $type = $data::class;
     }
 
     $type = isset($context['type']) ? $context['type'] : $type;

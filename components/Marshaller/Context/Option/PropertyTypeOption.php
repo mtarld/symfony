@@ -24,6 +24,8 @@ final class PropertyTypeOption
             }
         }
 
+        // TODO validate type
+
         $this->types = $types;
     }
 }

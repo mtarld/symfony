@@ -24,9 +24,9 @@ final class PropertyHook
             throw new \RuntimeException(sprintf('"%s::$%s" must be public', $property->getDeclaringClass()->getName(), $property->getName()));
         }
 
-        $name = $this->propertyName($property, $propertyIdentifier, $format, $context);
+        $name = $this->propertyName($property, $propertyIdentifier, $context);
         $type = $this->propertyType($property, $propertyIdentifier, $context);
-        $accessor = $this->propertyAccessor($propertyIdentifier, $accessor, $format, $context);
+        $accessor = $this->propertyAccessor($propertyIdentifier, $accessor, $context);
 
         return $context['property_name_template_generator']($name, $context).$context['property_value_template_generator']($type, $accessor, $context);
     }
@@ -34,7 +34,7 @@ final class PropertyHook
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyName(\ReflectionProperty $property, string $propertyIdentifier, string $format, array $context): string
+    private function propertyName(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
     {
         $name = sprintf("'%s'", $property->getName());
 
@@ -42,7 +42,7 @@ final class PropertyHook
             return $name;
         }
 
-        return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, \'%s\', $context)', $propertyIdentifier, $name, $format);
+        return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $name);
     }
 
     /**
@@ -64,12 +64,12 @@ final class PropertyHook
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyAccessor(string $propertyIdentifier, string $accessor, string $format, array $context): string
+    private function propertyAccessor(string $propertyIdentifier, string $accessor, array $context): string
     {
         if (!isset($context['symfony']['property_value_formatter'][$propertyIdentifier])) {
             return $accessor;
         }
 
-        return sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, \'%s\', $context)', $propertyIdentifier, $accessor, $format);
+        return sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $accessor);
     }
 }

@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Context\NativeContextBuilder;
+namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
-use Symfony\Component\Marshaller\NativeContext\NativeContextBuilderInterface;
 
 final class TypeNativeContextBuilder implements NativeContextBuilderInterface
 {

@@ -15,6 +15,7 @@ use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyTypeOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Context\Option\TypeValueFormatterOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
@@ -79,19 +80,21 @@ class TestCommand extends Command
         //         'id' => $this->test(...),
         //     ],
         // ]);
-
-        $propertyType = new PropertyTypeOption([
-            Collection::class => [
-                'collection' => 'array<int, int>',
-            ],
-        ]);
-
+        //
+        // $propertyType = new PropertyTypeOption([
+        //     Collection::class => [
+        //         'collection' => 'array<int, int>',
+        //     ],
+        // ]);
+        //
         // $valueFormatter = new TypeValueFormatterOption([
         //     Collection::class => function (Collection $value, string $format, array $context): string {
         //         return strtoupper($value);
         //     },
         // ]);
-
+        //
+        $type = new TypeOption(Dto::class);
+        //
         // $hook = new HookOption([
         //     sprintf('%s::$collection', Collection::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
         //         $context['accessor'] = $accessor;
@@ -104,9 +107,10 @@ class TestCommand extends Command
         //     }
         // ]);
 
-        $context = new Context($propertyType);
+        $context = new Context($type);
 
-        $this->marshaller->marshal(new Collection(1, 2, 3), 'json', $output, $context);
+        $this->marshaller->marshal(new Dto(), 'json', $output, $context);
+        // $this->marshaller->marshal(new Collection(1, 2, 3), 'json', $output, $context);
     }
 
     public function test(int $value, string $format, array $context): string

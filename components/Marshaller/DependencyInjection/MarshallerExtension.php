@@ -14,12 +14,14 @@ use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\NativeContext\CacheDirNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\PropertyNameFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\PropertyTypeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\PropertyValueFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeValueFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
@@ -54,38 +56,35 @@ final class MarshallerExtension extends Extension
             ])
             ->addTag('marshaller.context.native_context_builder', ['priority' => 1000]);
 
+        $container->register('marshaller.native_context_builder.type_value_formatter', TypeValueFormatterNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => 1000]);
+
         $container->register('marshaller.native_context_builder.type_extractor', TypeExtractorNativeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor'),
             ])
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 1000]);
-
-        $container->register('marshaller.native_context_builder.type_value_formatter', TypeValueFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -100]);
 
         $container->register('marshaller.native_context_builder.name_attribute', NameAttributeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -100]);
 
-        // $container->register('marshaller.native_context_builder.formatter_attribute', FormatterAttributeNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
+        $container->register('marshaller.native_context_builder.formatter_attribute', FormatterAttributeNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -100]);
 
         $container->register('marshaller.native_context_builder.property_type', PropertyTypeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 900]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -100]);
+
+        $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -100]);
 
         $container->register('marshaller.native_context_builder.property_name_formatter', PropertyNameFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 899]); // needs to be after name_attribute
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -200]); // need to be after name_attribute
 
         $container->register('marshaller.native_context_builder.property_value_formatter', PropertyValueFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 899]); // needs to be after formatter_attribute
-
-        // $container->register('marshaller.native_context_builder.nullable_data', NullableDataNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 800]);
-        //
-        // $container->register('marshaller.native_context_builder.type', TypeNativeContextBuilder::class)
-        //     ->addTag('marshaller.context.native_context_builder', ['priority' => 700]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -200]); // need to be after formatter_attribute
 
         $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder', ['priority' => 100]);
+            ->addTag('marshaller.context.native_context_builder', ['priority' => -1000]); // need to be applied last (to be able to override generated hooks)
 
         // Cache
         $container->register('marshaller.cache.warmable_resolver', WarmableResolver::class)
