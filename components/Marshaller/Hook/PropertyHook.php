@@ -14,10 +14,9 @@ final class PropertyHook
      */
     public function __invoke(\ReflectionProperty $property, string $accessor, string $format, array $context): string
     {
-        $symfonyContext = $context['symfony'] ?? [];
-        $identifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
+        $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
-        if (!isset($symfonyContext['type_extractor'])) {
+        if (!isset($context['symfony']['type_extractor'])) {
             throw new \RuntimeException("Missing \"\$context['symfony']['type_extractor']\".");
         }
 
@@ -25,19 +24,52 @@ final class PropertyHook
             throw new \RuntimeException(sprintf('"%s::$%s" must be public', $property->getDeclaringClass()->getName(), $property->getName()));
         }
 
-        $name = sprintf("'%s'", $property->getName());
-        if (isset($symfonyContext['property_name_formatter'][$identifier])) {
-            $name = sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, \'%s\', $context)', $identifier, $name, $format);
-        }
-
-        // TODO be able to set property type at runtime using option (Collection -> array<int, int>)
-
-        $type = $symfonyContext['type_extractor']->extractFromProperty($property);
-        if (null !== $formatter = ($symfonyContext['property_value_formatter'][$identifier] ?? null)) {
-            $accessor = sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, \'%s\', $context)', $identifier, $accessor, $format);
-            $type = $symfonyContext['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
-        }
+        $name = $this->propertyName($property, $propertyIdentifier, $format, $context);
+        $type = $this->propertyType($property, $propertyIdentifier, $context);
+        $accessor = $this->propertyAccessor($propertyIdentifier, $accessor, $format, $context);
 
         return $context['property_name_template_generator']($name, $context).$context['property_value_template_generator']($type, $accessor, $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function propertyName(\ReflectionProperty $property, string $propertyIdentifier, string $format, array $context): string
+    {
+        $name = sprintf("'%s'", $property->getName());
+
+        if (!isset($context['symfony']['property_name_formatter'][$propertyIdentifier])) {
+            return $name;
+        }
+
+        return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, \'%s\', $context)', $propertyIdentifier, $name, $format);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function propertyType(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
+    {
+        if (null !== $type = ($context['symfony']['property_type'][$propertyIdentifier] ?? null)) {
+            return $type;
+        }
+
+        if (null !== $formatter = ($context['symfony']['property_value_formatter'][$propertyIdentifier] ?? null)) {
+            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
+        }
+
+        return $context['symfony']['type_extractor']->extractFromProperty($property);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function propertyAccessor(string $propertyIdentifier, string $accessor, string $format, array $context): string
+    {
+        if (!isset($context['symfony']['property_value_formatter'][$propertyIdentifier])) {
+            return $accessor;
+        }
+
+        return sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, \'%s\', $context)', $propertyIdentifier, $accessor, $format);
     }
 }

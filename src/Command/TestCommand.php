@@ -13,9 +13,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyNameFormatterOption;
+use Symfony\Component\Marshaller\Context\Option\PropertyTypeOption;
 use Symfony\Component\Marshaller\Context\Option\PropertyValueFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeValueFormatterOption;
-use Symfony\Component\Marshaller\Context\Option\ValueFormattersOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Output\StdoutStreamOutput;
 
@@ -79,26 +79,32 @@ class TestCommand extends Command
         //         'id' => $this->test(...),
         //     ],
         // ]);
-        //
+
+        $propertyType = new PropertyTypeOption([
+            Collection::class => [
+                'collection' => 'array<int, int>',
+            ],
+        ]);
+
         // $valueFormatter = new TypeValueFormatterOption([
         //     Collection::class => function (Collection $value, string $format, array $context): string {
         //         return strtoupper($value);
         //     },
         // ]);
 
-        $hook = new HookOption([
-            sprintf('%s::$collection', Collection::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
-                $context['accessor'] = $accessor;
-                $context['enclosed'] = false;
+        // $hook = new HookOption([
+        //     sprintf('%s::$collection', Collection::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
+        //         $context['accessor'] = $accessor;
+        //         $context['enclosed'] = false;
+        //
+        //         unset($context['hooks'][Collection::class]);
+        //
+        //         return $context['property_name_template_generator'](sprintf("'%s'", $property->getName()), $context)
+        //             .marshal_generate('array<int, int>', $format, $context);
+        //     }
+        // ]);
 
-                unset($context['hooks'][Collection::class]);
-
-                return $context['property_name_template_generator'](sprintf("'%s'", $property->getName()), $context)
-                    .marshal_generate('array<int, int>', $format, $context);
-            }
-        ]);
-
-        $context = new Context($hook);
+        $context = new Context($propertyType);
 
         $this->marshaller->marshal(new Collection(1, 2, 3), 'json', $output, $context);
     }

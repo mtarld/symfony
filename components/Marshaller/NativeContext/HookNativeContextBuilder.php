@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
-use Symfony\Component\Marshaller\NativeContext\NativeContextBuilderInterface;
 
 final class HookNativeContextBuilder implements NativeContextBuilderInterface
 {
