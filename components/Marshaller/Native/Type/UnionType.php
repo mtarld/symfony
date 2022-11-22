@@ -19,12 +19,7 @@ final class UnionType implements \Stringable
         return $this->atLeastOneTypeIs(fn (Type $t): bool => $t->isNull());
     }
 
-    public function __toString(): string
-    {
-        return implode('|', array_map(fn (Type $t): string => (string) $t, $this->types));
-    }
-
-    private function everyTypeIs(callable $callable): bool
+    public function everyTypeIs(callable $callable): bool
     {
         foreach ($this->types as $type) {
             if (!$callable($type)) {
@@ -35,7 +30,7 @@ final class UnionType implements \Stringable
         return true;
     }
 
-    private function atLeastOneTypeIs(callable $callable): bool
+    public function atLeastOneTypeIs(callable $callable): bool
     {
         foreach ($this->types as $type) {
             if ($callable($type)) {
@@ -44,5 +39,10 @@ final class UnionType implements \Stringable
         }
 
         return false;
+    }
+
+    public function __toString(): string
+    {
+        return implode('|', array_map(fn (Type $t): string => (string) $t, $this->types));
     }
 }

@@ -152,21 +152,6 @@ final class TypeTest extends TestCase
                 ),
             ),
         ];
-
-        // union types
-        yield ['int|string', new UnionType([new Type('int'), new Type('string')])];
-        yield ['int|string|null', new UnionType([new Type('int'), new Type('string'), new Type('null')])];
-        yield [
-            'array<string, string|float>|array<int, bool>',
-            new UnionType([
-                new Type(
-                    'array',
-                    collectionKeyType: new Type('string'),
-                    collectionValueType: new UnionType([new Type('string'), new Type('float')]),
-                ),
-                new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('bool')),
-            ]),
-        ];
     }
 
     /**
