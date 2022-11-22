@@ -2,6 +2,7 @@
 
 ## Marshal
 - tests
+- remove PHPUnit dependency
 
 ## Unmarshal
 - json stream parser with events

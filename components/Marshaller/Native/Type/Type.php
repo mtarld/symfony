@@ -9,7 +9,7 @@ namespace Symfony\Component\Marshaller\Native\Type;
  */
 final class Type implements \Stringable
 {
-    private function __construct(
+    public function __construct(
         private readonly string $name,
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
@@ -17,12 +17,71 @@ final class Type implements \Stringable
         private readonly self|UnionType|null $collectionValueType = null
     ) {
         if ($this->isObject() && null === $this->className) {
-            throw new \InvalidArgumentException(sprintf('Class name of "%s" has not been set.', $this->name));
+            throw new \InvalidArgumentException(sprintf('Missing className of "%s" type.', $this->name));
+        }
+
+        if ($this->collectionKeyType xor $this->collectionValueType) {
+            throw new \InvalidArgumentException(sprintf('Missing either collectionKeyType or collectionValueType of "%s" type.', $this->name));
         }
     }
 
     public static function createFromString(string $string): Type|UnionType
     {
+        $currentTypeString = '';
+        $typeStrings = [];
+        $nestedLevel = 0;
+
+        foreach (str_split(str_replace(' ', '', $string)) as $char) {
+            if ('<' === $char) {
+                ++$nestedLevel;
+            }
+
+            if ('>' === $char) {
+                --$nestedLevel;
+            }
+
+            if ('|' === $char && 0 === $nestedLevel) {
+                $typeStrings[] = $currentTypeString;
+                $currentTypeString = '';
+
+                continue;
+            }
+
+            $currentTypeString .= $char;
+        }
+
+        $typeStrings[] = $currentTypeString;
+
+        if (0 !== $nestedLevel) {
+            throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+        }
+
+        if (\count($typeStrings) > 1) {
+            $nullable = false;
+            $types = [];
+
+            foreach ($typeStrings as $typeString) {
+                if (str_starts_with($typeString, '?')) {
+                    $nullable = true;
+                    $typeString = substr($typeString, 1);
+                }
+
+                if ('null' === $typeString) {
+                    $nullable = true;
+
+                    continue;
+                }
+
+                $types[] = self::createFromString($typeString);
+            }
+
+            if ($nullable) {
+                $types[] = new self('null');
+            }
+
+            return new UnionType($types);
+        }
+
         if ('null' === $string) {
             return new Type('null');
         }
@@ -35,12 +94,12 @@ final class Type implements \Stringable
             throw new \LogicException('Cannot handle intersection types.');
         }
 
-        if (in_array($string, ['int', 'string', 'float', 'bool'])) {
+        if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
             return new Type($string, $isNullable);
         }
 
         $results = [];
-        if (preg_match('/^array<(?P<diamond>.+)>$/', $string, $results)) {
+        if (\preg_match('/^array<(?P<diamond>.+)>$/', $string, $results)) {
             $nestedLevel = 0;
             $keyType = $valueType = '';
             $isReadingKey = true;
@@ -71,6 +130,10 @@ final class Type implements \Stringable
                 $keyType = 'int';
             }
 
+            if (0 !== $nestedLevel) {
+                throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+            }
+
             return new Type(
                 name: 'array',
                 isNullable: $isNullable,
@@ -83,11 +146,7 @@ final class Type implements \Stringable
             return new Type('object', $isNullable, $string);
         }
 
-        if (\count($types = explode('|', $string)) > 1) {
-            return new UnionType(array_map(fn (string $t): Type => self::createFromString($t), $types));
-        }
-
-        throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $string));
+        throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
     }
 
     public function name(): string
@@ -142,7 +201,7 @@ final class Type implements \Stringable
     public function collectionKeyType(): Type|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException('Cannot get collection key types on "%s" type as it\'s not a collection', $this->name);
+            throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection', $this->name));
         }
 
         return $this->collectionKeyType;
@@ -151,7 +210,7 @@ final class Type implements \Stringable
     public function collectionValueType(): Type|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException('Cannot get collection value types on "%s" type as it\'s not a collection', $this->name);
+            throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection', $this->name));
         }
 
         return $this->collectionValueType;
@@ -204,6 +263,6 @@ final class Type implements \Stringable
             return sprintf('%s instanceof %s', $accessor, $this->className());
         }
 
-        throw new \RuntimeException(sprintf('Cannot find validator for "%s"', (string) $this));
+        throw new \LogicException(sprintf('Cannot find validator for "%s"', (string) $this));
     }
 }

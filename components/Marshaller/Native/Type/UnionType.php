@@ -21,7 +21,7 @@ final class UnionType implements \Stringable
 
     public function __toString(): string
     {
-        return implode('|', array_map(fn (Type $t): string => (string) $t));
+        return implode('|', array_map(fn (Type $t): string => (string) $t, $this->types));
     }
 
     private function everyTypeIs(callable $callable): bool
