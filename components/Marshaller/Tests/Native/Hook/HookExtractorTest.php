@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Native\Hook;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Native\Type\Type;
+use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 
 final class HookExtractorTest extends TestCase
 {
@@ -70,14 +71,14 @@ final class HookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), ['int' => $hook, '?int' => $createTypeHook()], $scalarType];
         yield [$hook = $createTypeHook(), ['?int' => $hook, 'type' => $createTypeHook()], $scalarType];
 
-        $objectType = new Type('object', isNullable: true, className: self::class);
+        $objectType = new Type('object', isNullable: true, className: ClassicDummy::class);
 
         yield [$hook = $createTypeHook(), ['object' => $hook], $objectType];
         yield [$hook = $createTypeHook(), ['?object' => $hook], $objectType];
-        yield [$hook = $createTypeHook(), [self::class => $hook], $objectType];
-        yield [$hook = $createTypeHook(), ['?'.self::class => $hook], $objectType];
-        yield [$hook = $createTypeHook(), [self::class => $hook, '?'.self::class => $createTypeHook()], $objectType];
-        yield [$hook = $createTypeHook(), ['?'.self::class => $hook, 'object' => $createTypeHook()], $objectType];
+        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook], $objectType];
+        yield [$hook = $createTypeHook(), ['?'.ClassicDummy::class => $hook], $objectType];
+        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook, '?'.ClassicDummy::class => $createTypeHook()], $objectType];
+        yield [$hook = $createTypeHook(), ['?'.ClassicDummy::class => $hook, 'object' => $createTypeHook()], $objectType];
         yield [$hook = $createTypeHook(), ['object' => $hook, '?object' => $createTypeHook()], $objectType];
         yield [$hook = $createTypeHook(), ['?object' => $hook, 'type' => $createTypeHook()], $objectType];
     }

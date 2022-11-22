@@ -9,13 +9,19 @@ use Symfony\Component\Marshaller\Native\Type\Type;
 /**
  * @internal
  */
-abstract class ScalarGenerator
+abstract class ScalarTemplateGenerator
 {
     use PhpWriterTrait;
 
+    /**
+     * @param array<string, mixed> $context
+     */
     abstract protected function scalar(Type $type, string $accessor, array $context): string;
 
-    final public function generate(Type $type, string $accessor, array $context): string
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function generate(Type $type, string $accessor, array $context): string
     {
         return $this->scalar($type, $accessor, $context);
     }

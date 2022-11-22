@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template\Json;
 
-use Symfony\Component\Marshaller\Native\Template\ScalarGenerator;
+use Symfony\Component\Marshaller\Native\Template\ScalarTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @internal
  */
-final class JsonScalarTemplateGenerator extends ScalarGenerator
+final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
 {
     protected function scalar(Type $type, string $accessor, array $context): string
     {

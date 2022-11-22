@@ -16,17 +16,21 @@ final class UnionTemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGenerator $templateGenerator,
+        private readonly TemplateGeneratorInterface $templateGenerator,
     ) {
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    final public function generate(UnionType $type, string $accessor, array $context): string
+    public function generate(UnionType $type, string $accessor, array $context): string
     {
         $template = '';
+
         $typesCount = count($type->types);
+        if (0 === $typesCount) {
+            return '';
+        }
 
         foreach ($this->sortTypesByPriority($type->types) as $i => $type) {
             $ifStructure = sprintf('} elseif (%s) {', $type->validator($accessor));
@@ -64,8 +68,19 @@ final class UnionTemplateGenerator
         }
 
         $classes = [];
+        $previousClass = null;
         foreach (array_keys($objectTypes) as $class) {
-            $classes[] = ['class' => $class, 'parent' => get_parent_class($class)];
+            $classOrParent = $class;
+
+            while ($classOrParent) {
+                $classes[$classOrParent] = ['class' => $classOrParent];
+                if ($previousClass && $previousClass !== $classOrParent) {
+                    $classes[$previousClass]['parent'] = $classOrParent;
+                }
+
+                $previousClass = $classOrParent;
+                $classOrParent = get_parent_class($classOrParent);
+            }
         }
 
         $classTree = $this->buildClassTree($classes, false);
@@ -83,15 +98,17 @@ final class UnionTemplateGenerator
 
         $sortedObjectTypes = [];
         foreach (array_keys($classDepths) as $class) {
-            $sortedObjectTypes[] = $objectTypes[$class];
+            if (isset($objectTypes[$class])) {
+                $sortedObjectTypes[] = $objectTypes[$class];
+            }
         }
 
         return array_merge($regularTypes, $sortedObjectTypes);
     }
 
     /**
-     * @param list<array{0: class-string, 1: class-string|false}> $classes
-     * @param class-string|false                                  $parentClass
+     * @param array<string, array{class: class-string, parent: class-string|false}> $classes
+     * @param class-string|false                                                    $parentClass
      *
      * @return array<string, array{children: array}>
      */
@@ -100,7 +117,7 @@ final class UnionTemplateGenerator
         $branch = [];
 
         foreach ($classes as $class) {
-            if ($class['parent'] === $parentClass) {
+            if (($class['parent'] ?? false) === $parentClass) {
                 if ([] !== $children = $this->buildClassTree($classes, $class['class'])) {
                     $class['children'] = $children;
                 }

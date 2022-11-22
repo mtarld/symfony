@@ -15,7 +15,7 @@ abstract class DictTemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGenerator $templateGenerator,
+        private readonly TemplateGeneratorInterface $templateGenerator,
     ) {
     }
 
@@ -30,7 +30,7 @@ abstract class DictTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    final public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, string $accessor, array $context): string
     {
         $prefixName = $this->scopeVariableName('prefix', $context);
         $keyName = $this->scopeVariableName('key', $context);

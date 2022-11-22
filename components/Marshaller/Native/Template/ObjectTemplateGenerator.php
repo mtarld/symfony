@@ -20,7 +20,7 @@ abstract class ObjectTemplateGenerator
     private readonly ReflectionTypeExtractor $reflectionTypeExtractor;
 
     public function __construct(
-        private readonly TemplateGenerator $templateGenerator,
+        private readonly TemplateGeneratorInterface $templateGenerator,
     ) {
         $this->hookExtractor = new HookExtractor();
         $this->reflectionTypeExtractor = new ReflectionTypeExtractor();
@@ -39,7 +39,7 @@ abstract class ObjectTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    final public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, string $accessor, array $context): string
     {
         $class = new \ReflectionClass($type->className());
 
@@ -51,7 +51,7 @@ abstract class ObjectTemplateGenerator
         $properties = $class->getProperties();
         $propertySeparator = '';
 
-        foreach ($properties as $i => $property) {
+        foreach ($properties as $property) {
             $propertyAccessor = sprintf('%s->%s', $objectName, $property->getName());
 
             $template .= $this->fwrite(sprintf("'%s'", $propertySeparator), $context);

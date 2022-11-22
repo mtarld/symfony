@@ -35,9 +35,4 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
     {
         return '":';
     }
-
-    protected function null(): string
-    {
-        return 'null';
-    }
 }

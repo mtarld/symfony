@@ -15,7 +15,7 @@ abstract class ListTemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGenerator $templateGenerator,
+        private readonly TemplateGeneratorInterface $templateGenerator,
     ) {
     }
 
@@ -28,7 +28,7 @@ abstract class ListTemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    final public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, string $accessor, array $context): string
     {
         $prefixName = $this->scopeVariableName('prefix', $context);
         $valueName = $this->scopeVariableName('value', $context);

@@ -28,6 +28,6 @@ final class JsonDictTemplateGenerator extends DictTemplateGenerator
 
     protected function keyName(string $name): string
     {
-        return "json_encode($name).':'";
+        return "\json_encode($name).':'";
     }
 }

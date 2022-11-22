@@ -41,9 +41,11 @@ function marshal(mixed $data, $resource, string $format, array $context = []): v
  */
 function marshal_generate(string $type, string $format, array $context = []): string
 {
+    $jsonTemplateGenerator = new Template\Json\JsonTemplateGenerator();
+
     /** @var array<string, TemplateGenerator> $templateGenerators */
     $templateGenerators = [
-        Template\Json\JsonTemplateGenerator::format() => new Template\Json\JsonTemplateGenerator(),
+        $jsonTemplateGenerator->format() => $jsonTemplateGenerator,
     ];
 
     if (!isset($templateGenerators[$format])) {

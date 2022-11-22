@@ -11,50 +11,30 @@ use Symfony\Component\Marshaller\Native\Type\UnionType;
 /**
  * @internal
  */
-abstract class TemplateGenerator
+abstract class TemplateGenerator implements TemplateGeneratorInterface
 {
     use PhpWriterTrait;
 
-    private readonly UnionTemplateGenerator $unionGenerator;
     private readonly HookExtractor $hookExtractor;
 
-    public function __construct()
-    {
-        $this->unionGenerator = new UnionTemplateGenerator($this);
+    public function __construct(
+        private readonly ScalarTemplateGenerator $scalarGenerator,
+        private readonly NullTemplateGenerator $nullGenerator,
+        private readonly ObjectTemplateGenerator $objectGenerator,
+        private readonly ListTemplateGenerator $listGenerator,
+        private readonly DictTemplateGenerator $dictGenerator,
+        private readonly UnionTemplateGenerator $unionGenerator,
+        private readonly string $format,
+    ) {
         $this->hookExtractor = new HookExtractor();
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateScalar(Type $type, string $accessor, array $context): string;
+    public function format(): string
+    {
+        return $this->format;
+    }
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateObject(Type $type, string $accessor, array $context): string;
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateList(Type $type, string $accessor, array $context): string;
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateDict(Type $type, string $accessor, array $context): string;
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    abstract protected function generateNull(array $context): string;
-
-    abstract public static function format(): string;
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    final public function generate(Type|UnionType $type, string $accessor, array $context): string
+    public function generate(Type|UnionType $type, string $accessor, array $context): string
     {
         $template = '';
 
@@ -63,7 +43,7 @@ abstract class TemplateGenerator
 
             ++$context['indentation_level'];
 
-            $template .= $this->null($context);
+            $template .= $this->generateTypeTemplate(new Type('null'), 'NO_ACCESSOR', $context);
 
             --$context['indentation_level'];
             $template .= $this->writeLine('} else {', $context);
@@ -89,16 +69,16 @@ abstract class TemplateGenerator
     private function generateTypeTemplate(Type|UnionType $type, string $accessor, array $context): string
     {
         if ($type instanceof UnionType) {
-            return $this->union($type, $accessor, $context);
+            return $this->unionGenerator->generate($type, $accessor, $context);
         }
 
         $valueTemplateGenerator = function (Type $type, string $accessor, array $context): string {
             return match (true) {
-                $type->isNull() => $this->null($context),
-                $type->isScalar() => $this->scalar($type, $accessor, $context),
-                $type->isObject() => $this->object($type, $accessor, $context),
-                $type->isList() => $this->list($type, $accessor, $context),
-                $type->isDict() => $this->dict($type, $accessor, $context),
+                $type->isNull() => $this->nullGenerator->generate($context),
+                $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
+                $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
+                $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
+                $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
                 default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', (string) $type)),
             };
         };
@@ -110,7 +90,9 @@ abstract class TemplateGenerator
                 },
             ];
 
-            return $hook((string) $type, $accessor, $this->format(), $hookContext);
+            if (null !== $hookResult = $hook((string) $type, $accessor, $this->format, $hookContext)) {
+                return $hookResult;
+            }
         }
 
         return $valueTemplateGenerator($type, $accessor, $context);
@@ -119,15 +101,7 @@ abstract class TemplateGenerator
     /**
      * @param array<string, mixed> $context
      */
-    private function scalar(Type $type, string $accessor, array $context): string
-    {
-        return $this->generateScalar($type, $accessor, $context);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function object(Type $type, string $accessor, array $context): string
+    private function generateObjectTemplate(Type $type, string $accessor, array $context): string
     {
         $className = $type->className();
 
@@ -135,40 +109,8 @@ abstract class TemplateGenerator
             throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
         }
 
-        $context['classes'][$className] = true;
+        $context['generated_classes'][$className] = true;
 
-        return $this->generateObject($type, $accessor, $context);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function list(Type $type, string $accessor, array $context): string
-    {
-        return $this->generateList($type, $accessor, $context);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function dict(Type $type, string $accessor, array $context): string
-    {
-        return $this->generateDict($type, $accessor, $context);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function null(array $context): string
-    {
-        return $this->generateNull($context);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function union(UnionType $type, string $accessor, array $context): string
-    {
-        return $this->unionGenerator->generate($type, $accessor, $context);
+        return $this->objectGenerator->generate($type, $accessor, $context);
     }
 }

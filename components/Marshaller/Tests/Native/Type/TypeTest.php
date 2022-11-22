@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Native\Type;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
+use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 
 final class TypeTest extends TestCase
 {
@@ -32,8 +33,8 @@ final class TypeTest extends TestCase
         yield [new Type('int', isNullable: true), '?int'];
 
         // object types
-        yield [new Type('object', className: self::class), self::class];
-        yield [new Type('object', isNullable: true, className: self::class), '?'.self::class];
+        yield [new Type('object', className: ClassicDummy::class), ClassicDummy::class];
+        yield [new Type('object', isNullable: true, className: ClassicDummy::class), '?'.ClassicDummy::class];
 
         // collection types
         yield [new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int')), 'array<int, int>'];
@@ -124,8 +125,8 @@ final class TypeTest extends TestCase
         yield ['?int', new Type('int', isNullable: true)];
 
         // object types
-        yield [self::class, new Type('object', className: self::class)];
-        yield ['?'.self::class, new Type('object', isNullable: true, className: self::class)];
+        yield [ClassicDummy::class, new Type('object', className: ClassicDummy::class)];
+        yield ['?'.ClassicDummy::class, new Type('object', isNullable: true, className: ClassicDummy::class)];
 
         // collection types
         yield ['array<int, int>', new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int'))];
@@ -175,7 +176,7 @@ final class TypeTest extends TestCase
         yield ['is_bool($accessor)', new Type('bool')];
 
         // object types
-        yield [sprintf('$accessor instanceof %s', self::class), new Type('object', className: self::class)];
+        yield [sprintf('$accessor instanceof %s', ClassicDummy::class), new Type('object', className: ClassicDummy::class)];
 
         // collection types
         yield ['is_array($accessor) && array_is_list($accessor)', new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int'))];
@@ -258,7 +259,7 @@ final class TypeTest extends TestCase
         yield ['type' => new Type('bool'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false];
         yield ['type' => new Type('float'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false];
         yield ['type' => new Type('null'), 'scalar' => false, 'null' => true, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false];
-        yield ['type' => new Type('object', className: self::class), 'scalar' => false, 'null' => false, 'object' => true, 'collection' => false, 'list' => false, 'dict' => false];
+        yield ['type' => new Type('object', className: ClassicDummy::class), 'scalar' => false, 'null' => false, 'object' => true, 'collection' => false, 'list' => false, 'dict' => false];
         yield [
             'type' => new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int')),
             'scalar' => false,

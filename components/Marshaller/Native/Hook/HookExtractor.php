@@ -59,6 +59,7 @@ final class HookExtractor
      */
     public function extractFromType(Type $type, array $context): ?callable
     {
+        // TODO add global type (scalar, list, dict, object, ...)
         $hookNames = [$type->name()];
 
         if ($type->isNullable()) {
