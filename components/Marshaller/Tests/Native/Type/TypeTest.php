@@ -249,7 +249,7 @@ final class TypeTest extends TestCase
     }
 
     /**
-     * @return iterable<array{'type': Type, 'scalar': bool, 'null': bool, 'object': bool, 'collection': bool, 'list': bool, 'dict': bool}>
+     * @return iterable<array{type: Type, scalar: bool, null: bool, object: bool, collection: bool, list: bool, dict: bool}>
      */
     public function isserDataProvider(): iterable
     {
