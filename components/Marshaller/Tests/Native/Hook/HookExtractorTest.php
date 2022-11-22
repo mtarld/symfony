@@ -109,12 +109,18 @@ final class HookExtractorTest extends TestCase
      */
     public function propertyHookValidationDataProvider(): iterable
     {
-        yield [null, static function (\ReflectionProperty $property, string $accessor, string $format, array $context) {}];
-        yield ['Hook "property" must have exactly 4 arguments.', static function () {}];
-        yield ['Hook "property" must have a "ReflectionProperty" for first argument.', static function (int $property, string $accessor, string $format, array $context) {}];
-        yield ['Hook "property" must have a "string" for second argument.', static function (\ReflectionProperty $property, int $accessor, string $format, array $context) {}];
-        yield ['Hook "property" must have a "string" for third argument.', static function (\ReflectionProperty $property, string $accessor, int $format, array $context) {}];
-        yield ['Hook "property" must have an "array" for fourth argument.', static function (\ReflectionProperty $property, string $accessor, string $format, int $context) {}];
+        yield [null, static function (\ReflectionProperty $property, string $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "property" must have exactly 4 arguments.', static function () {
+        }];
+        yield ['Hook "property" must have a "ReflectionProperty" for first argument.', static function (int $property, string $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "property" must have a "string" for second argument.', static function (\ReflectionProperty $property, int $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "property" must have a "string" for third argument.', static function (\ReflectionProperty $property, string $accessor, int $format, array $context) {
+        }];
+        yield ['Hook "property" must have an "array" for fourth argument.', static function (\ReflectionProperty $property, string $accessor, string $format, int $context) {
+        }];
     }
 
     /**
@@ -137,11 +143,17 @@ final class HookExtractorTest extends TestCase
      */
     public function typeHookValidationDataProvider(): iterable
     {
-        yield [null, static function (string $type, string $accessor, string $format, array $context) {}];
-        yield ['Hook "type" must have exactly 4 arguments.', static function () {}];
-        yield ['Hook "type" must have a "string" for first argument.', static function (int $type, string $accessor, string $format, array $context) {}];
-        yield ['Hook "type" must have a "string" for second argument.', static function (string $type, int $accessor, string $format, array $context) {}];
-        yield ['Hook "type" must have a "string" for third argument.', static function (string $type, string $accessor, int $format, array $context) {}];
-        yield ['Hook "type" must have an "array" for fourth argument.', static function (string $type, string $accessor, string $format, int $context) {}];
+        yield [null, static function (string $type, string $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "type" must have exactly 4 arguments.', static function () {
+        }];
+        yield ['Hook "type" must have a "string" for first argument.', static function (int $type, string $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "type" must have a "string" for second argument.', static function (string $type, int $accessor, string $format, array $context) {
+        }];
+        yield ['Hook "type" must have a "string" for third argument.', static function (string $type, string $accessor, int $format, array $context) {
+        }];
+        yield ['Hook "type" must have an "array" for fourth argument.', static function (string $type, string $accessor, string $format, int $context) {
+        }];
     }
 }
