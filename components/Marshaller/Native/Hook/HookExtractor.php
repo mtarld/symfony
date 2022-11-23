@@ -59,22 +59,7 @@ final class HookExtractor
      */
     public function extractFromType(Type $type, array $context): ?callable
     {
-        // TODO add global type (scalar, list, dict, object, ...)
-        $hookNames = [$type->name()];
-
-        if ($type->isNullable()) {
-            $hookNames[] = '?'.$type->name();
-        }
-
-        if ($type->isObject()) {
-            if ($type->isNullable()) {
-                array_unshift($hookNames, '?'.$type->className());
-            }
-
-            array_unshift($hookNames, $type->className());
-        }
-
-        $hookNames[] = 'type';
+        $hookNames = $this->typeHookNames($type);
 
         if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
             return null;
@@ -107,6 +92,60 @@ final class HookExtractor
         }
 
         return $hook;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function typeHookNames(Type $type): array
+    {
+        $hookNames = ['type'];
+
+        if ($type->isNull()) {
+            array_unshift($hookNames, $type->name());
+
+            return $hookNames;
+        }
+
+        if ($type->isScalar()) {
+            array_unshift($hookNames, $type->name(), 'scalar');
+            if ($type->isNullable()) {
+                array_unshift($hookNames, '?'.$type->name());
+            }
+
+            return $hookNames;
+        }
+
+        if ($type->isObject()) {
+            array_unshift($hookNames, $type->className(), 'object');
+            if ($type->isNullable()) {
+                array_unshift($hookNames, '?'.$type->className());
+            }
+
+            return $hookNames;
+        }
+
+        if ($type->isCollection()) {
+            array_unshift($hookNames, 'collection');
+
+            if ($type->isList()) {
+                array_unshift($hookNames, 'list');
+            }
+
+            if ($type->isDict()) {
+                array_unshift($hookNames, 'dict');
+            }
+
+            array_unshift($hookNames, $type->name());
+
+            if ($type->isNullable()) {
+                array_unshift($hookNames, '?'.$type->name());
+            }
+
+            return $hookNames;
+        }
+
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" type', (string) $type));
     }
 
     /**

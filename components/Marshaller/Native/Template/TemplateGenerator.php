@@ -79,7 +79,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
                 $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
                 $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
                 $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
-                default => throw new \InvalidArgumentException(sprintf('Cannot handle "%s" type', (string) $type)),
+                default => throw new \InvalidArgumentException(sprintf('Unkown "%s" type', (string) $type)),
             };
         };
 

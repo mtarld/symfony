@@ -45,7 +45,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
     public function testThrowOnInvalidType(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot handle "foo" type');
+        $this->expectExceptionMessage('Unknown "foo" type');
 
         $this->createGenerator()->generate(new Type('foo'), '$accessor', $this->context());
     }

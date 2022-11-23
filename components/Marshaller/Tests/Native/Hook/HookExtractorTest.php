@@ -52,6 +52,14 @@ final class HookExtractorTest extends TestCase
         $this->assertSame($expectedHook, (new HookExtractor())->extractFromType($type, ['hooks' => $hooks]));
     }
 
+    public function testExtractFromTypeThrowOnInvalidType(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown "foo" type');
+
+        (new HookExtractor())->extractFromType(new Type('foo'), []);
+    }
+
     /**
      * @return iterable<array{0: ?callable, 1: array<string, callable>}, 2: Type>
      */
@@ -60,27 +68,58 @@ final class HookExtractorTest extends TestCase
         $createTypeHook = fn () => static function (string $type, string $accessor, string $format, array $context) {
         };
 
+        yield [null, [], new Type('int')];
+        yield [null, ['other' => $createTypeHook()], new Type('int')];
+
+        $nullType = new Type('null');
+
+        yield [$hook = $createTypeHook(), ['null' => $hook], $nullType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $nullType];
+        yield [$hook = $createTypeHook(), ['null' => $hook, 'type' => $createTypeHook()], $nullType];
+
         $scalarType = new Type('int', isNullable: true);
 
-        yield [null, [], $scalarType];
-        yield [null, ['other' => $createTypeHook()], $scalarType];
-
-        yield [$hook = $createTypeHook(), ['type' => $hook], $scalarType];
-        yield [$hook = $createTypeHook(), ['int' => $hook], $scalarType];
         yield [$hook = $createTypeHook(), ['?int' => $hook], $scalarType];
-        yield [$hook = $createTypeHook(), ['int' => $hook, '?int' => $createTypeHook()], $scalarType];
-        yield [$hook = $createTypeHook(), ['?int' => $hook, 'type' => $createTypeHook()], $scalarType];
+        yield [$hook = $createTypeHook(), ['int' => $hook], $scalarType];
+        yield [$hook = $createTypeHook(), ['scalar' => $hook], $scalarType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $scalarType];
+        yield [$hook = $createTypeHook(), ['?int' => $hook, 'int' => $createTypeHook()], $scalarType];
+        yield [$hook = $createTypeHook(), ['int' => $hook, 'scalar' => $createTypeHook()], $scalarType];
+        yield [$hook = $createTypeHook(), ['scalar' => $hook, 'type' => $createTypeHook()], $scalarType];
 
         $objectType = new Type('object', isNullable: true, className: ClassicDummy::class);
 
-        yield [$hook = $createTypeHook(), ['object' => $hook], $objectType];
-        yield [$hook = $createTypeHook(), ['?object' => $hook], $objectType];
-        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook], $objectType];
         yield [$hook = $createTypeHook(), ['?'.ClassicDummy::class => $hook], $objectType];
-        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook, '?'.ClassicDummy::class => $createTypeHook()], $objectType];
-        yield [$hook = $createTypeHook(), ['?'.ClassicDummy::class => $hook, 'object' => $createTypeHook()], $objectType];
-        yield [$hook = $createTypeHook(), ['object' => $hook, '?object' => $createTypeHook()], $objectType];
-        yield [$hook = $createTypeHook(), ['?object' => $hook, 'type' => $createTypeHook()], $objectType];
+        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook], $objectType];
+        yield [$hook = $createTypeHook(), ['object' => $hook], $objectType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $objectType];
+        yield [$hook = $createTypeHook(), ['?'.ClassicDummy::class => $hook, ClassicDummy::class => $createTypeHook()], $objectType];
+        yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook, 'object' => $createTypeHook()], $objectType];
+        yield [$hook = $createTypeHook(), ['object' => $hook, 'type' => $createTypeHook()], $objectType];
+
+        $listType = new Type('array', isNullable: true, collectionKeyType: new Type('int'), collectionValueType: new Type('int'));
+
+        yield [$hook = $createTypeHook(), ['?array' => $hook], $listType];
+        yield [$hook = $createTypeHook(), ['array' => $hook], $listType];
+        yield [$hook = $createTypeHook(), ['list' => $hook], $listType];
+        yield [$hook = $createTypeHook(), ['collection' => $hook], $listType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $listType];
+        yield [$hook = $createTypeHook(), ['?array' => $hook, 'array' => $createTypeHook()], $listType];
+        yield [$hook = $createTypeHook(), ['array' => $hook, 'list' => $createTypeHook()], $listType];
+        yield [$hook = $createTypeHook(), ['list' => $hook, 'collection' => $createTypeHook()], $listType];
+        yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $listType];
+
+        $dictType = new Type('array', isNullable: true, collectionKeyType: new Type('string'), collectionValueType: new Type('int'));
+
+        yield [$hook = $createTypeHook(), ['?array' => $hook], $dictType];
+        yield [$hook = $createTypeHook(), ['array' => $hook], $dictType];
+        yield [$hook = $createTypeHook(), ['dict' => $hook], $dictType];
+        yield [$hook = $createTypeHook(), ['collection' => $hook], $dictType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $dictType];
+        yield [$hook = $createTypeHook(), ['?array' => $hook, 'array' => $createTypeHook()], $dictType];
+        yield [$hook = $createTypeHook(), ['array' => $hook, 'dict' => $createTypeHook()], $dictType];
+        yield [$hook = $createTypeHook(), ['dict' => $hook, 'collection' => $createTypeHook()], $dictType];
+        yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $dictType];
     }
 
     /**
