@@ -49,7 +49,7 @@ function marshal_generate(string $type, string $format, array $context = []): st
     ];
 
     if (!isset($templateGenerators[$format])) {
-        throw new \InvalidArgumentException(sprintf('Unknown "%s" format', $format));
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format));
     }
 
     $type = Type::createFromString($type);
@@ -68,9 +68,9 @@ function marshal_generate(string $type, string $format, array $context = []): st
         return $templateGenerators[$format]->generate($type, $accessor, $context);
     }
 
-    $template = '<?php'.PHP_EOL
+    $template = '<?php'.PHP_EOL.PHP_EOL
         .'/**'.PHP_EOL
-        .sprintf(' * @param %s $data', (string) $type).PHP_EOL
+        .sprintf(' * @param %s %s', (string) $type, $accessor).PHP_EOL
         .' * @param resource $resource'.PHP_EOL
         .' */'.PHP_EOL
         ."return static function (mixed $accessor, \$resource, array \$context): void {".PHP_EOL;
@@ -81,5 +81,5 @@ function marshal_generate(string $type, string $format, array $context = []): st
 
     --$context['indentation_level'];
 
-    return $template .= '};';
+    return $template .= '};'.PHP_EOL;
 }

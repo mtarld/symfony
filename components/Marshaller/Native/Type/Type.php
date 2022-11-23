@@ -201,7 +201,7 @@ final class Type implements \Stringable
     public function collectionKeyType(): Type|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection', $this->name));
+            throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
         }
 
         return $this->collectionKeyType;
@@ -210,7 +210,7 @@ final class Type implements \Stringable
     public function collectionValueType(): Type|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection', $this->name));
+            throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
         }
 
         return $this->collectionValueType;
@@ -263,6 +263,6 @@ final class Type implements \Stringable
             return sprintf('%s instanceof %s', $accessor, $this->className());
         }
 
-        throw new \LogicException(sprintf('Cannot find validator for "%s"', (string) $this));
+        throw new \LogicException(sprintf('Cannot find validator for "%s".', (string) $this));
     }
 }

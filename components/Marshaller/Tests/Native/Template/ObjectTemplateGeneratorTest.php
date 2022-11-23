@@ -47,7 +47,7 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
         $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('"%s::$name" must be public', DummyWithNotPublicProperty::class));
+        $this->expectExceptionMessage(sprintf('"%s::$name" must be public.', DummyWithNotPublicProperty::class));
 
         $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: DummyWithNotPublicProperty::class), '$accessor', $this->context());
     }

@@ -55,7 +55,7 @@ final class HookExtractorTest extends TestCase
     public function testExtractFromTypeThrowOnInvalidType(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown "foo" type');
+        $this->expectExceptionMessage('Unknown "foo" type.');
 
         (new HookExtractor())->extractFromType(new Type('foo'), []);
     }

@@ -49,11 +49,11 @@ final class ReflectionTypeExtractor
         $phpTypeOrClass = $reflection->getName();
 
         if ('null' === $phpTypeOrClass || 'mixed' === $phpTypeOrClass || 'never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
-            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $phpTypeOrClass));
+            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', $phpTypeOrClass));
         }
 
         if ('array' === $phpTypeOrClass) {
-            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type', $phpTypeOrClass));
+            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', $phpTypeOrClass));
         }
 
         if ($reflection->isBuiltin()) {

@@ -79,7 +79,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
                 $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
                 $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
                 $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
-                default => throw new \InvalidArgumentException(sprintf('Unkown "%s" type', (string) $type)),
+                default => throw new \InvalidArgumentException(sprintf('Unkown "%s" type.', (string) $type)),
             };
         };
 
@@ -106,7 +106,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
         $className = $type->className();
 
         if (isset($context['generated_classes'][$className])) {
-            throw new \RuntimeException(sprintf('Circular reference on "%s" detected.', $className));
+            throw new \RuntimeException(sprintf('Circular reference detected on "%s" detected.', $className));
         }
 
         $context['generated_classes'][$className] = true;

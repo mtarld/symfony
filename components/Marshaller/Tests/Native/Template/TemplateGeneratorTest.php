@@ -45,7 +45,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
     public function testThrowOnInvalidType(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown "foo" type');
+        $this->expectExceptionMessage('Unknown "foo" type.');
 
         $this->createGenerator()->generate(new Type('foo'), '$accessor', $this->context());
     }
@@ -192,7 +192,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
         $context['generated_classes']['foo'] = true;
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Circular reference on "foo" detected.');
+        $this->expectExceptionMessage('Circular reference detected on "foo" detected.');
 
         $generator->generate(new Type('object', className: 'foo'), '$accessor', $context);
     }

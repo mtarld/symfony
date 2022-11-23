@@ -73,7 +73,7 @@ abstract class ObjectTemplateGenerator
             }
 
             if (!$property->isPublic()) {
-                throw new \RuntimeException(sprintf('"%s::$%s" must be public', $class->getName(), $property->getName()));
+                throw new \RuntimeException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
             }
 
             $template .= $this->generatePropertyName(sprintf("'%s'", $property->getName()), $context);

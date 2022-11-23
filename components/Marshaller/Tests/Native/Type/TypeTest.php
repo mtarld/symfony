@@ -226,7 +226,7 @@ final class TypeTest extends TestCase
     public function testCannotGetCollectionKeyTypeOnNonCollection(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Cannot get collection key type on "int" type as it\'s not a collection');
+        $this->expectExceptionMessage('Cannot get collection key type on "int" type as it\'s not a collection.');
 
         (new Type('int'))->collectionKeyType();
     }
@@ -234,7 +234,7 @@ final class TypeTest extends TestCase
     public function testCannotGetCollectionValueTypeOnNonCollection(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Cannot get collection value type on "int" type as it\'s not a collection');
+        $this->expectExceptionMessage('Cannot get collection value type on "int" type as it\'s not a collection.');
 
         (new Type('int'))->collectionValueType();
     }

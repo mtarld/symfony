@@ -145,7 +145,7 @@ final class HookExtractor
             return $hookNames;
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown "%s" type', (string) $type));
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type));
     }
 
     /**

@@ -104,7 +104,7 @@ final class PhpstanTypeHelper
             return sprintf('array<%s, %s>', $keyType, $valueType);
         }
 
-        throw new \LogicException(sprintf('Unhandled "%s" generic type', (string) $node));
+        throw new \LogicException(sprintf('Unhandled "%s" generic type.', (string) $node));
     }
 
     private function extractArrayType(ArrayTypeNode|ArrayShapeNode $node, TypeNameResolver $nameResolver): string

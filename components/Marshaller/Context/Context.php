@@ -22,7 +22,7 @@ final class Context implements \IteratorAggregate
         }
 
         if (isset($map[NullableDataOption::class], $map[TypeOption::class])) {
-            throw new \InvalidArgumentException(sprintf('Cannot use both "%s" and "%s" options', NullableDataOption::class, TypeOption::class));
+            throw new \InvalidArgumentException(sprintf('Cannot use both "%s" and "%s" options.', NullableDataOption::class, TypeOption::class));
         }
 
         $this->optionMap = $map;
