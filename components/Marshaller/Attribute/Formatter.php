@@ -28,13 +28,12 @@ final class Formatter
             throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must be static.', self::class));
         }
 
-        if (2 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must have exactly two arguments.', self::class));
-        }
+        if (null !== ($contextParameter = $reflection->getParameters()[1] ?? null)) {
+            $contextParameterType = $contextParameter->getType();
 
-        $contextParameterType = $reflection->getParameters()[1]->getType();
-        if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must have an array for second argument.', self::class));
+            if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
+                throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must have an array for second argument.', self::class));
+            }
         }
 
         $this->closure = \Closure::fromCallable($callable);

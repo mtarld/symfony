@@ -43,18 +43,14 @@ final class MarshalTest extends TestCase
      */
     public function marshalContentDataProvider(): iterable
     {
-        $object = new ClassicDummy();
-        $object->id = 1;
-        $object->name = 'dummy';
-
         yield [1];
         yield ['foo'];
         yield [null];
         yield [.01];
         yield [false, 'bool'];
-        yield [$object];
+        yield [new ClassicDummy()];
         yield [[1, 2, 3], 'array<int, int>'];
-        yield [[1, 2.12, $object], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
+        yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
         yield [[1, 2, 3.12], 'array<int, int|float>'];
         yield [['a' => 'b', 'c' => 'd'], 'array<string, string>'];
         yield [['a' => false, 'b' => 'd'], 'array<string, string|bool>'];

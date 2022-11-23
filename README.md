@@ -1,9 +1,9 @@
 # TODO
 
 ## Marshal
-- constructor property promotion
 - tests
 - remove PHPUnit dependency
+- autoregister in framework extension (later)
 
 ## Unmarshal
 - json stream parser with events
