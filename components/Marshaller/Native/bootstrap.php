@@ -12,21 +12,23 @@ use Symfony\Component\Marshaller\Native\Type\Type;
  */
 function marshal(mixed $data, $resource, string $format, array $context = []): void
 {
-    $builtinType = strtolower(gettype($data));
+    if (isset($context['type'])) {
+        $type = $context['type'];
+    } else {
+        $builtinType = strtolower(gettype($data));
 
-    $type = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
-    if (is_object($data)) {
-        $type = $data::class;
+        $type = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
+        if (is_object($data)) {
+            $type = $data::class;
+        }
     }
 
-    $type = isset($context['type']) ? $context['type'] : $type;
-
-    $cachePath = $context['cache_dir'] ?? sys_get_temp_dir();
-    $cacheFilename = sprintf('%s%s%s.%s.php', $cachePath, DIRECTORY_SEPARATOR, md5($type), $format);
+    $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
+    $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, md5($type), $format);
 
     if (!file_exists($cacheFilename)) {
-        if (!file_exists($cachePath)) {
-            mkdir($cachePath, recursive: true);
+        if (!file_exists($cacheDir)) {
+            mkdir($cacheDir, recursive: true);
         }
 
         $template = marshal_generate($type, $format, $context);

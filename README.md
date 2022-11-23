@@ -1,6 +1,7 @@
 # TODO
 
 ## Marshal
+- constructor property promotion
 - tests
 - remove PHPUnit dependency
 

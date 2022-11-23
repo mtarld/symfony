@@ -145,7 +145,7 @@ final class HookExtractorTest extends TestCase
     }
 
     /**
-     * @return iterable<?string, callable>
+     * @return iterable<array{0: ?string, 1: callable}>
      */
     public function propertyHookValidationDataProvider(): iterable
     {
@@ -179,7 +179,7 @@ final class HookExtractorTest extends TestCase
     }
 
     /**
-     * @return iterable<?string, callable>
+     * @return iterable<array{0: ?string, 1: callable}>
      */
     public function typeHookValidationDataProvider(): iterable
     {

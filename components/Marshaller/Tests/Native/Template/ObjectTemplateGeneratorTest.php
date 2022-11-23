@@ -8,6 +8,7 @@ use Symfony\Component\Marshaller\Native\Template\ObjectTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\ConstructorPropertyPromotedDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNotPublicProperty;
 
 final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
@@ -36,6 +37,28 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
             '\fwrite($resource, \'name\');',
+            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
+            'NESTED',
+            '\fwrite($resource, \'AFTER_PROPERTIES\');',
+        ], $this->lines($template));
+    }
+
+    public function testGenerateWithConstructorPropertyPromotion(): void
+    {
+        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->with(new Type('int'), '$object_0->id', ['indentation_level' => 0, 'variable_counters' => ['object' => 1]])
+            ->willReturn('NESTED'.PHP_EOL);
+
+        $template = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ConstructorPropertyPromotedDummy::class), '$accessor', $this->context());
+
+        $this->assertSame([
+            '$object_0 = $accessor;',
+            '\fwrite($resource, \'BEFORE_PROPERTIES\');',
+            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
+            '\fwrite($resource, \'id\');',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'AFTER_PROPERTIES\');',

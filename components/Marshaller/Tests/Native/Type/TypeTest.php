@@ -95,6 +95,14 @@ final class TypeTest extends TestCase
         Type::createFromString('array<int, array<string, bool>');
     }
 
+    public function testCreateThrowOnRawArray(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid "array" type.');
+
+        Type::createFromString('array');
+    }
+
     public function testCreateThrowOnUnknownType(): void
     {
         $this->expectException(\InvalidArgumentException::class);

@@ -20,6 +20,10 @@ final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
                 .$this->fwrite("'\"'", $context);
         }
 
+        if ('bool' === $type->name()) {
+            return $this->fwrite("$accessor ? 'true' : 'false'", $context);
+        }
+
         return $this->fwrite($accessor, $context);
     }
 }
