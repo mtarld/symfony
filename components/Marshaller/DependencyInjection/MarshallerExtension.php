@@ -25,7 +25,6 @@ use Symfony\Component\Marshaller\NativeContext\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeValueFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
 
 final class MarshallerExtension extends Extension
 {
@@ -47,12 +46,12 @@ final class MarshallerExtension extends Extension
         // Type extractors
         //
         $container->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class);
-        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class);
+        $container->setAlias('marshaller.type_extractor', 'marshaller.type_extractor.reflection');
 
-        $container->register('marshaller.type_extractor', TypeExtractor::class)
+        $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class)
+            ->setDecoratedService('marshaller.type_extractor')
             ->setArguments([
-                new Reference('marshaller.type_extractor.reflection'),
-                new Reference('marshaller.type_extractor.phpstan'),
+                new Reference('.inner'),
             ]);
 
         //

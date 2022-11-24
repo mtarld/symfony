@@ -4,19 +4,29 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
-final class ReflectionTypeExtractor
+final class ReflectionTypeExtractor implements TypeExtractorInterface
 {
     public function extractFromProperty(\ReflectionProperty $property): string
     {
-        return $this->extractFromReflection($property->getType(), $property->getDeclaringClass());
+        if (null === $type = $property->getType()) {
+            throw new \InvalidArgumentException(sprintf('Type of "%s::$%s" has not been defined.', $property->getDeclaringClass()->getName(), $property->getName()));
+        }
+
+        return $this->extractFromReflection($type, $property->getDeclaringClass());
     }
 
-    public function extractFromReturnType(\ReflectionFunction $function): string
+    public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
     {
-        return $this->extractFromReflection($function->getReturnType(), $function->getClosureScopeClass() ?? null);
+        $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+
+        if (null === $type = $function->getReturnType()) {
+            throw new \InvalidArgumentException(sprintf('Return type of "%s::%s()" has not been defined.', $declaringClass->getName(), $function->getName()));
+        }
+
+        return $this->extractFromReflection($type, $declaringClass);
     }
 
-    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
+    private function extractFromReflection(\ReflectionNamedType|\ReflectionUnionType|\ReflectionIntersectionType $reflection, ?\ReflectionClass $declaringClass): string
     {
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';
 
@@ -25,35 +35,17 @@ final class ReflectionTypeExtractor
         }
 
         if ($reflection instanceof \ReflectionUnionType) {
-            $nullable = false;
-            $typeStrings = [];
-
-            foreach ($reflection->getTypes() as $type) {
-                $typeString = $this->extractFromReflection($type, $declaringClass);
-
-                if (str_starts_with($typeString, '?')) {
-                    $nullable = true;
-                    $typeString = substr($typeString, 1);
-                }
-
-                $typeStrings[] = $typeString;
-            }
-
-            if ($nullable && !in_array('null', $typeStrings)) {
-                $typeStrings[] = 'null';
-            }
-
-            return implode('|', $typeStrings);
+            return implode('|', array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes()));
         }
 
         $phpTypeOrClass = $reflection->getName();
 
-        if ('null' === $phpTypeOrClass || 'mixed' === $phpTypeOrClass || 'never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
+        if ('never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
             throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', $phpTypeOrClass));
         }
 
-        if ('array' === $phpTypeOrClass) {
-            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', $phpTypeOrClass));
+        if ('mixed' === $phpTypeOrClass || 'null' === $phpTypeOrClass) {
+            return $phpTypeOrClass;
         }
 
         if ($reflection->isBuiltin()) {

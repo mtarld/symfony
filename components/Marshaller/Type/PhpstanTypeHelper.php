@@ -32,7 +32,7 @@ final class PhpstanTypeHelper
     private function extractType(TypeNode $node, TypeNameResolver $nameResolver): string
     {
         return match (get_class($node)) {
-            UnionTypeNode::class => $this->extractUnionType($node, $nameResolver),
+            UnionTypeNode::class => implode('|', array_map(fn (TypeNode $t): string => $this->extractType($t, $nameResolver), $node->types)),
             IdentifierTypeNode::class => $this->extractIdentifierType($node, $nameResolver),
             GenericTypeNode::class => $this->extractGenericType($node, $nameResolver),
             ArrayTypeNode::class, ArrayShapeNode::class => $this->extractArrayType($node, $nameResolver),
@@ -43,32 +43,9 @@ final class PhpstanTypeHelper
         };
     }
 
-    private function extractUnionType(UnionTypeNode $node, TypeNameResolver $nameResolver): string
-    {
-        $nullable = false;
-        $typeStrings = [];
-
-        foreach ($node->types as $type) {
-            $typeString = $this->extractType($type, $nameResolver);
-
-            if (str_starts_with($typeString, '?')) {
-                $nullable = true;
-                $typeString = substr($typeString, 1);
-            }
-
-            $typeStrings[] = $typeString;
-        }
-
-        if ($nullable && !in_array('null', $typeStrings)) {
-            $typeStrings[] = 'null';
-        }
-
-        return implode('|', $typeStrings);
-    }
-
     private function extractIdentifierType(IdentifierTypeNode $node, TypeNameResolver $nameResolver): string
     {
-        $type = match ($node->name) {
+        return match ($node->name) {
             'bool', 'boolean', 'true', 'false' => 'bool',
             'int', 'integer' => 'int',
             'float' => 'float',
@@ -81,14 +58,8 @@ final class PhpstanTypeHelper
             'null' => 'null',
             'static', 'self' => $nameResolver->resolveRootClass(),
             'parent' => $nameResolver->resolveParentClass(),
-            default => null,
+            default => $nameResolver->resolve($node->name),
         };
-
-        if (null === $type) {
-            $type = $nameResolver->resolve($node->name);
-        }
-
-        return $type;
     }
 
     private function extractGenericType(GenericTypeNode $node, TypeNameResolver $nameResolver): string
@@ -123,6 +94,6 @@ final class PhpstanTypeHelper
             $valueType = new UnionTypeNode(array_map(fn (ArrayShapeItemNode $i): TypeNode => $i->valueType, $node->items));
         }
 
-        return sprintf('array<string, %s>', $this->extractType($valueType));
+        return sprintf('array<string, %s>', $this->extractType($valueType, $nameResolver));
     }
 }

@@ -7,15 +7,13 @@ namespace Symfony\Component\Marshaller\Tests\NativeContext;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
-use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
-use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
-use Symfony\Component\Marshaller\Type\TypeExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class TypeExtractorNativeContextBuilderTest extends TestCase
 {
     public function testAddTypeExtractorToNativeContext(): void
     {
-        $typeExtractor = new TypeExtractor(new ReflectionTypeExtractor(), new PhpstanTypeExtractor());
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $this->assertSame([
             'symfony' => [

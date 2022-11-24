@@ -3,9 +3,9 @@
 ## Marshal
 - tests
 - test option/native context building/generation combination
+- auto register interfaces in compiler pass
 - create dedicated exceptions and wrap native ones
 - create a proper component
-- autoregister in framework extension (later)
 
 ## Unmarshal
 - json stream parser with events

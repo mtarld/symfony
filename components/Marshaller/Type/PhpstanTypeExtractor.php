@@ -12,35 +12,38 @@ use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
 
-final class PhpstanTypeExtractor
+final class PhpstanTypeExtractor implements TypeExtractorInterface
 {
     private readonly PhpstanTypeHelper $phpstanTypeHelper;
     private readonly PhpDocParser $phpstanDocParser;
     private readonly Lexer $phpstanLexer;
 
-    public function __construct()
-    {
+    public function __construct(
+        private readonly TypeExtractorInterface $decoratedTypeExtractor,
+    ) {
         $this->phpstanTypeHelper = new PhpstanTypeHelper();
         $this->phpstanDocParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
         $this->phpstanLexer = new Lexer();
     }
 
-    public function extractFromProperty(\ReflectionProperty $property): ?string
+    public function extractFromProperty(\ReflectionProperty $property): string
     {
         if (null === $type = $this->getTypeNode($property)) {
-            return null;
+            return $this->decoratedTypeExtractor->extractFromProperty($property);
         }
 
         return $this->phpstanTypeHelper->getType($type, $property->getDeclaringClass()->getName());
     }
 
-    public function extractFromReturnType(\ReflectionFunction $function): ?string
+    public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
     {
         if (null === $type = $this->getTypeNode($function)) {
-            return null;
+            return $this->decoratedTypeExtractor->extractFromReturnType($function);
         }
 
-        return $this->phpstanTypeHelper->getType($type, $function->getClosureScopeClass()->getName());
+        $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+
+        return $this->phpstanTypeHelper->getType($type, $declaringClass->getName());
     }
 
     private function getTypeNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?TypeNode

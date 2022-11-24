@@ -6,6 +6,9 @@ namespace Symfony\Component\Marshaller\Type;
 
 use phpDocumentor\Reflection\Types\ContextFactory;
 
+/**
+ * @internal
+ */
 final class TypeNameResolver
 {
     /**
