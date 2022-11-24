@@ -1760,12 +1760,15 @@
             "dist": {
                 "type": "path",
                 "url": "./components/Marshaller",
-                "reference": "30f0e1fece1c558ca07ce52ace5026a425d5ea54"
+                "reference": "fcd37b665f6ad3827f1b4d44271a934f7d32b6d4"
             },
             "require": {
                 "php": ">=8.1",
                 "phpdocumentor/reflection-docblock": "^5.3",
                 "phpstan/phpdoc-parser": "^1.13"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
             },
             "type": "library",
             "autoload": {
