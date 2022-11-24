@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Context\Option;
 final class PropertyTypeOption
 {
     /**
-     * @var array<string, array<string, string>
+     * @var array<string, string>
      */
     public readonly array $types;
 
@@ -23,8 +23,6 @@ final class PropertyTypeOption
                 $types[sprintf('%s::$%s', $className, $propertyName)] = $type;
             }
         }
-
-        // TODO validate type
 
         $this->types = $types;
     }

@@ -16,16 +16,20 @@ final class PropertyValueFormatterOption
      */
     public function __construct(array $classPropertyValueFormatters)
     {
-        $closures = [];
+        $formatters = [];
 
         foreach ($classPropertyValueFormatters as $className => $propertyValueFormatters) {
             foreach ($propertyValueFormatters as $propertyName => $valueFormatter) {
-                $closures[sprintf('%s::$%s', $className, $propertyName)] = \Closure::fromCallable($valueFormatter);
+                $propertyIdentifier = sprintf('%s::$%s', $className, $propertyName);
+
+                if (!is_callable($valueFormatter)) {
+                    throw new \InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $propertyIdentifier, self::class));
+                }
+
+                $formatters[$propertyIdentifier] = \Closure::fromCallable($valueFormatter);
             }
         }
 
-        // TODO validate signature
-
-        $this->formatters = $closures;
+        $this->formatters = $formatters;
     }
 }

@@ -16,14 +16,16 @@ final class TypeValueFormatterOption
      */
     public function __construct(array $typeValueFormatters)
     {
-        $closures = [];
+        $formatters = [];
 
         foreach ($typeValueFormatters as $typeName => $valueFormatter) {
-            $closures[$typeName] = \Closure::fromCallable($valueFormatter);
+            if (!is_callable($valueFormatter)) {
+                throw new \InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $typeName, self::class));
+            }
+
+            $formatters[$typeName] = \Closure::fromCallable($valueFormatter);
         }
 
-        // TODO validate signature
-
-        $this->formatters = $closures;
+        $this->formatters = $formatters;
     }
 }

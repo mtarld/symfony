@@ -7,10 +7,10 @@ namespace Symfony\Component\Marshaller\Attribute;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class Formatter
 {
-    public readonly \Closure $closure;
+    public readonly \Closure $formatter;
 
     /**
-     * @param string|array{0: class-string, 1: string} $callable
+     * @param callable $callable
      */
     public function __construct(string|array $callable)
     {
@@ -18,9 +18,11 @@ final class Formatter
             throw new \InvalidArgumentException(sprintf('Parameter "$callable" of attribute "%s" must be a valid callable.', self::class));
         }
 
-        $reflection = new \ReflectionFunction(\Closure::fromCallable($callable));
+        $this->formatter = \Closure::fromCallable($callable);
 
-        if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType || 'never' === $returnType)) {
+        $reflection = new \ReflectionFunction($this->formatter);
+
+        if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must be not return "void" nor "never".', self::class));
         }
 
@@ -32,10 +34,8 @@ final class Formatter
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must have an array for second argument.', self::class));
+                throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" second argument must be an array.', self::class));
             }
         }
-
-        $this->closure = \Closure::fromCallable($callable);
     }
 }

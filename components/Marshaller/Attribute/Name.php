@@ -10,8 +10,5 @@ final class Name
     public function __construct(
         public readonly string $name,
     ) {
-        if ('' === $name) {
-            throw new \InvalidArgumentException(sprintf('Parameter "name" of attribute "%s" must be a non-empty string.', self::class));
-        }
     }
 }

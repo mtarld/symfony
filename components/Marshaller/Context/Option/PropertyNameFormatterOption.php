@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Context\Option;
 final class PropertyNameFormatterOption
 {
     /**
-     * @var array<string, \Closure>
+     * @var array<string, callable>
      */
     public readonly array $formatters;
 
@@ -16,16 +16,20 @@ final class PropertyNameFormatterOption
      */
     public function __construct(array $classPropertyNameFormatters)
     {
-        $closures = [];
+        $formatters = [];
 
         foreach ($classPropertyNameFormatters as $className => $propertyNameFormatters) {
             foreach ($propertyNameFormatters as $propertyName => $nameFormatter) {
-                $closures[sprintf('%s::$%s', $className, $propertyName)] = \Closure::fromCallable($nameFormatter);
+                $propertyIdentifier = sprintf('%s::$%s', $className, $propertyName);
+
+                if (!is_callable($nameFormatter)) {
+                    throw new \InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $propertyIdentifier, self::class));
+                }
+
+                $formatters[$propertyIdentifier] = \Closure::fromCallable($nameFormatter);
             }
         }
 
-        // TODO validate signature
-
-        $this->formatters = $closures;
+        $this->formatters = $formatters;
     }
 }

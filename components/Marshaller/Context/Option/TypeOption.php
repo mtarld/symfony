@@ -9,8 +9,5 @@ final class TypeOption
     public function __construct(
         public readonly string $type,
     ) {
-        if ('' === $type) {
-            throw new \InvalidArgumentException(sprintf('Type of attribute "%s" must be an non empty string.', self::class));
-        }
     }
 }

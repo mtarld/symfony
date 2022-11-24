@@ -30,7 +30,8 @@ final class TypeHook
     private function type(string $type, array $context): string
     {
         if (null !== $formatter = ($context['symfony']['type_value_formatter'][$type] ?? null)) {
-            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
+            // TODO validate
+            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter));
         }
 
         return $type;

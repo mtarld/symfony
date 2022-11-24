@@ -38,12 +38,24 @@ final class PropertyHook
     {
         $name = sprintf("'%s'", $property->getName());
 
-        if (isset($context['symfony']['property_name_formatter'][$propertyIdentifier])) {
-            return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $name);
-        }
-
         if (isset($context['symfony']['property_name'][$propertyIdentifier])) {
             return sprintf("'%s'", $context['symfony']['property_name'][$propertyIdentifier]);
+        }
+
+        if (isset($context['symfony']['property_name_formatter'][$propertyIdentifier])) {
+            $formatterReflection = new \ReflectionFunction($context['symfony']['property_name_formatter'][$propertyIdentifier]);
+
+            if (null === ($declaringClass = $formatterReflection->getClosureScopeClass()) || $formatterReflection->isStatic()) {
+                // TODO validate
+                $callable = sprintf('%s(%s, $context)', $formatterReflection->getName(), $name);
+                if (null !== $declaringClass) {
+                    $callable = sprintf('%s::%s', $declaringClass->getName(), $callable);
+                }
+
+                return $callable;
+            }
+
+            return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $name);
         }
 
         return $name;
@@ -59,7 +71,8 @@ final class PropertyHook
         }
 
         if (null !== $formatter = ($context['symfony']['property_value_formatter'][$propertyIdentifier] ?? null)) {
-            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction(\Closure::fromCallable($formatter)));
+            // TODO validate
+            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter));
         }
 
         return $context['symfony']['type_extractor']->extractFromProperty($property);
@@ -77,6 +90,7 @@ final class PropertyHook
         $formatterReflection = new \ReflectionFunction($formatter);
 
         if (null === ($declaringClass = $formatterReflection->getClosureScopeClass()) || $formatterReflection->isStatic()) {
+            // TODO validate
             $callable = sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
             if (null !== $declaringClass) {
                 $callable = sprintf('%s::%s', $declaringClass->getName(), $callable);
