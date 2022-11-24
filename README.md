@@ -5,7 +5,6 @@
 - test option/native context building/generation combination
 - create dedicated exceptions and wrap native ones
 - create a proper component
-- remove PHPUnit dependency
 - autoregister in framework extension (later)
 
 ## Unmarshal

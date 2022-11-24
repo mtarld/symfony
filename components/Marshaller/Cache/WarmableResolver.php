@@ -17,7 +17,7 @@ final class WarmableResolver
     }
 
     /**
-     * @return \Generator<array{0: class-string, 1: Warmable}>
+     * @return \Generator<class-string, Warmable>
      */
     public function resolve(): \Generator
     {
@@ -33,7 +33,7 @@ final class WarmableResolver
                 continue;
             }
 
-            yield [$class->getName(), $attribute];
+            yield $class->getName() => $attribute;
         }
     }
 

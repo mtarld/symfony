@@ -24,7 +24,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
 
     public function warmUp(string $cacheDir): void
     {
-        foreach ($this->warmableResolver->resolve() as [$class, $attribute]) {
+        foreach ($this->warmableResolver->resolve() as $class => $attribute) {
             foreach ($this->formats as $format) {
                 $this->warmClass($class, $attribute, $format);
             }
@@ -44,6 +44,10 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
         $path = sprintf('%s/%s.%s.php', $this->cacheDir, md5($class), $format);
         if (file_exists($path)) {
             return;
+        }
+
+        if (!file_exists($this->cacheDir)) {
+            mkdir($this->cacheDir, recursive: true);
         }
 
         if ($attribute->nullable ?? $this->nullableData) {
