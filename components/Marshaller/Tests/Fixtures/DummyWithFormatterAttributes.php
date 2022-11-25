@@ -11,10 +11,7 @@ final class DummyWithFormatterAttributes
     #[Formatter([self::class, 'doubleAndCastToString'])]
     public int $id = 1;
 
-    #[Formatter('strtoupper')]
     public string $name = 'dummy';
-
-    public bool $enabled = true;
 
     public static function doubleAndCastToString(int $value, array $context): string
     {

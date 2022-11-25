@@ -47,8 +47,16 @@ final class TypeHook
 
         $formatterReflection = new \ReflectionFunction($formatter);
 
+        if (!$formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName()) || !$formatterReflection->isStatic()) {
+            throw new \InvalidArgumentException(sprintf('Type formatter "%s" must be a static method.', $type));
+        }
+
         if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
+        }
+
+        if (2 !== \count($formatterReflection->getParameters())) {
+            throw new \InvalidArgumentException(sprintf('Type formatter "%s" must have exactly two parameters.', $type));
         }
 
         if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
@@ -59,16 +67,6 @@ final class TypeHook
             }
         }
 
-        $isMethod = $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
-
-        if ($isMethod && $formatterReflection->isStatic()) {
-            return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
-        }
-
-        if (!$isMethod && !str_contains($formatterReflection->getName(), '{closure}')) {
-            return sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
-        }
-
-        throw new \InvalidArgumentException(sprintf('Type formatter "%s" must be either a non anonymous function or a static method.', $type));
+        return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
     }
 }

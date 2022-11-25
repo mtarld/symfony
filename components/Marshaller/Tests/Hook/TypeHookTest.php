@@ -42,8 +42,7 @@ final class TypeHookTest extends TestCase
     public function generateTemplateDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
-        yield ['int', '$accessor', ['string' => strtoupper(...)]];
-        yield ['string', 'strtoupper($accessor, $context)', ['int' => strtoupper(...)]];
+        yield ['int', '$accessor', ['string' => DummyWithMethods::doubleAndCastToString(...)]];
         yield ['string', sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class), ['int' => DummyWithMethods::doubleAndCastToString(...)]];
     }
 
@@ -55,13 +54,35 @@ final class TypeHookTest extends TestCase
         (new TypeHook())('type', '$accessor', 'format', []);
     }
 
-    public function testThrowWhenInvalidTypeFormatterContextParameter(): void
+    public function testThrowWhenInvalidTypeFormatterParametersCount(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $typeFormatters = [
-            'int' => fn (int $value, int $context) => (string) (2 * $value),
+            'int' => DummyWithMethods::tooManyParameters(...),
+        ];
+
+        $context = [
+            'symfony' => [
+                'type_extractor' => $typeExtractor,
+                'type_formatter' => $typeFormatters,
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Type formatter "int" must have exactly two parameters.');
+
+        (new TypeHook())('int', '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenInvalidTypeFormatterContextTypeParameter(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromReturnType')->willReturn('string');
+
+        $typeFormatters = [
+            'int' => DummyWithMethods::invalidContextType(...),
         ];
 
         $context = [
@@ -77,26 +98,6 @@ final class TypeHookTest extends TestCase
         (new TypeHook())('int', '$accessor', 'format', $context);
     }
 
-    public function testThrowWhenAnonymousFunctionTypeFormatter(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
-
-        $context = [
-            'symfony' => [
-                'type_extractor' => $typeExtractor,
-                'type_formatter' => [
-                    'int' => fn (int $value, array $context) => (string) (2 * $value),
-                ],
-            ],
-        ];
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Type formatter "int" must be either a non anonymous function or a static method.');
-
-        (new TypeHook())('int', '$accessor', 'format', $context);
-    }
-
     public function testThrowWhenNonStaticMethodTypeFormatter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
@@ -106,13 +107,13 @@ final class TypeHookTest extends TestCase
             'symfony' => [
                 'type_extractor' => $typeExtractor,
                 'type_formatter' => [
-                    'int' => (new DummyWithMethods())->tripleAndCastToString(...),
+                    'int' => (new DummyWithMethods())->nonStatic(...),
                 ],
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Type formatter "int" must be either a non anonymous function or a static method.');
+        $this->expectExceptionMessage('Type formatter "int" must be a static method.');
 
         (new TypeHook())('int', '$accessor', 'format', $context);
     }

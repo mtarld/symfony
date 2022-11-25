@@ -82,8 +82,7 @@ final class PropertyHookTest extends TestCase
     public function generateValueTemplatePartDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
-        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => strtoupper(...)]];
-        yield ['string', 'strtoupper($accessor, $context)', [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)]];
+        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)]];
         yield [
             'string',
             sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
@@ -113,13 +112,30 @@ final class PropertyHookTest extends TestCase
         (new PropertyHook())(new \ReflectionProperty(DummyWithNotPublicProperty::class, 'name'), '$accessor', 'format', $context);
     }
 
-    public function testThrowWhenInvalidPropertyFormatterContextParameter(): void
+    public function testThrowWhenInvalidPropertyFormatterParametersCount(): void
     {
         $context = [
             'symfony' => [
                 'type_extractor' => $this->createStub(TypeExtractorInterface::class),
                 'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => fn (int $id, int $context) => (string) (2 * $id),
+                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::tooManyParameters(...),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must have exactly two parameters.', ClassicDummy::class));
+
+        (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenInvalidPropertyFormatterContextTypeParameter(): void
+    {
+        $context = [
+            'symfony' => [
+                'type_extractor' => $this->createStub(TypeExtractorInterface::class),
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::invalidContextType(...),
                 ],
             ],
         ];
@@ -130,36 +146,19 @@ final class PropertyHookTest extends TestCase
         (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
     }
 
-    public function testThrowWhenAnonymousFunctionTypeFormatter(): void
-    {
-        $context = [
-            'symfony' => [
-                'type_extractor' => $this->createStub(TypeExtractorInterface::class),
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => fn (int $value, array $context) => (string) (2 * $value),
-                ],
-            ],
-        ];
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be either a non anonymous function or a static method.', ClassicDummy::class));
-
-        (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
-    }
-
     public function testThrowWhenNonStaticMethodTypeFormatter(): void
     {
         $context = [
             'symfony' => [
                 'type_extractor' => $this->createStub(TypeExtractorInterface::class),
                 'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->tripleAndCastToString(...),
+                    sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->nonStatic(...),
                 ],
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be either a non anonymous function or a static method.', ClassicDummy::class));
+        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be a static method.', ClassicDummy::class));
 
         (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
     }

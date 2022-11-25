@@ -29,9 +29,16 @@ final class Marshaller implements MarshallerInterface
     {
         $nativeContext = ['cache_dir' => $this->cacheDir];
 
+        $type = $this->getTypeFromData($data);
+
         /** @var TypeOption|null $typeOption */
         if ($typeOption = $context?->get(TypeOption::class)) {
-            $nativeContext['type'] = $typeOption->type;
+            $type = $nativeContext['type'] = $typeOption->type;
+        }
+
+        // if template does not exist, it'll be generated therefore native context must be filled accordingly
+        if (!file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))) {
+            $nativeContext = $this->buildMarshalGenerateNativeContext($type, $context, $nativeContext);
         }
 
         marshal($data, $output->stream(), $format, $nativeContext);
@@ -39,9 +46,19 @@ final class Marshaller implements MarshallerInterface
 
     public function generate(string $type, string $format, Context $context = null): string
     {
+        return marshal_generate($type, $format, $this->buildMarshalGenerateNativeContext($type, $context));
+    }
+
+    /**
+     * @param array<string, mixed> $nativeContext
+     *
+     * @return array<string, mixed>
+     */
+    private function buildMarshalGenerateNativeContext(string $type, ?Context $context, array $nativeContext = []): array
+    {
         $context = $context ?? new Context();
-        $nativeContext = [
-            'cache_dir' => $this->cacheDir,
+
+        $nativeContext += [
             'hooks' => [
                 'property' => (new PropertyHook())(...),
                 'type' => (new TypeHook())(...),
@@ -52,6 +69,18 @@ final class Marshaller implements MarshallerInterface
             $nativeContext = $builder->build($type, $context, $nativeContext);
         }
 
-        return marshal_generate($type, $format, $nativeContext);
+        return $nativeContext;
+    }
+
+    private function getTypeFromData(mixed $data): string
+    {
+        if (is_object($data)) {
+            return $data::class;
+        }
+
+        $builtinType = strtolower(gettype($data));
+        $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
+
+        return $builtinType;
     }
 }

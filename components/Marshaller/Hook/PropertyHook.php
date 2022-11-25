@@ -68,9 +68,16 @@ final class PropertyHook
 
         $formatterReflection = new \ReflectionFunction($formatter);
 
-        // TODO test
+        if (!$formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName()) || !$formatterReflection->isStatic()) {
+            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
+        }
+
         if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
+        }
+
+        if (2 !== \count($formatterReflection->getParameters())) {
+            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must have exactly two parameters.', $propertyIdentifier));
         }
 
         if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
@@ -81,16 +88,6 @@ final class PropertyHook
             }
         }
 
-        $isMethod = $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
-
-        if ($isMethod && $formatterReflection->isStatic()) {
-            return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
-        }
-
-        if (!$isMethod && !str_contains($formatterReflection->getName(), '{closure}')) {
-            return sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
-        }
-
-        throw new \InvalidArgumentException(sprintf('Property formatter "%s" must be either a non anonymous function or a static method.', $propertyIdentifier));
+        return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
     }
 }

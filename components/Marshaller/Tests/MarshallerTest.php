@@ -6,8 +6,18 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Option\HookOption;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
+use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\TypeFormatterNativeContextBuilder;
+use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
+use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
@@ -33,14 +43,18 @@ final class MarshallerTest extends TestCase
     }
 
     /**
-     * @dataProvider generateTemplateDataProvider
+     * @dataProvider marshalGenerateDataProvider
      *
      * @param list<string> $expectedLines
      */
-    public function testGenerateTemplate(array $expectedLines, string $type, ?Context $context): void
+    public function testMarshalGenerate(array $expectedLines, string $type, ?Context $context): void
     {
         $marshalGenerateContextBuilders = [
             new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
+            new HookNativeContextBuilder(),
+            new NameAttributeNativeContextBuilder(),
+            new FormatterAttributeNativeContextBuilder(),
+            new TypeFormatterNativeContextBuilder(),
         ];
 
         $lines = explode("\n", (new Marshaller($marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
@@ -52,7 +66,7 @@ final class MarshallerTest extends TestCase
     /**
      * @return iterable<array{0: list<string>, 1: string, 2: Context}
      */
-    public function generateTemplateDataProvider(): iterable
+    public function marshalGenerateDataProvider(): iterable
     {
         $typeExtractorNativeContextBuilder = new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor()));
 
@@ -67,5 +81,125 @@ final class MarshallerTest extends TestCase
             '    \fwrite($resource, $data);',
             '};',
         ], 'int', null];
+
+        yield [[
+            '<?php',
+            '',
+            '/**',
+            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes $data',
+            ' * @param resource $resource',
+            ' */',
+            'return static function (mixed $data, $resource, array $context): void {',
+            '    $object_0 = $data;',
+            '    \fwrite($resource, \'{\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'@id\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, $object_0->id);',
+            '    \fwrite($resource, \',\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'name\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \',\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'active\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, $object_0->enabled ? \'true\' : \'false\');',
+            '    \fwrite($resource, \'}\');',
+            '};',
+        ], DummyWithNameAttributes::class, null];
+
+        yield [[
+            '<?php',
+            '',
+            '/**',
+            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes $data',
+            ' * @param resource $resource',
+            ' */',
+            'return static function (mixed $data, $resource, array $context): void {',
+            '    $object_0 = $data;',
+            '    \fwrite($resource, \'{\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'id\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context));',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \',\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'name\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'}\');',
+            '};',
+        ], DummyWithFormatterAttributes::class, null];
+
+        yield [[
+            '<?php',
+            '',
+            '/**',
+            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
+            ' * @param resource $resource',
+            ' */',
+            'return static function (mixed $data, $resource, array $context): void {',
+            '    $object_0 = $data;',
+            '    \fwrite($resource, \'{\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'id\');',
+            '    \fwrite($resource, \'":\');',
+            '    HOOK',
+            '    \fwrite($resource, \',\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'name\');',
+            '    \fwrite($resource, \'":\');',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, \'"\');',
+            '    \fwrite($resource, \'}\');',
+            '};',
+        ], ClassicDummy::class, new Context(new HookOption(['int' => fn (string $type, string $accessor, string $format, array $context): string => '    HOOK'.PHP_EOL]))];
+    }
+
+    /**
+     * @dataProvider marshalDataProvider
+     *
+     * @param list<string> $expectedLines
+     */
+    public function testMarshal(mixed $expectedDecodedData, mixed $data, ?Context $context): void
+    {
+        $marshalGenerateContextBuilders = [
+            new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
+            new HookNativeContextBuilder(),
+            new NameAttributeNativeContextBuilder(),
+            new FormatterAttributeNativeContextBuilder(),
+            new TypeFormatterNativeContextBuilder(),
+        ];
+
+        (new Marshaller($marshalGenerateContextBuilders, $this->cacheDir))->marshal($data, 'json', $output = new MemoryStreamOutput(), $context);
+
+        $this->assertSame($expectedDecodedData, json_decode((string) $output, true));
+    }
+
+    /**
+     * @return iterable<array{0: array<string, mixed>, 1: mixed, 2: Context}
+     */
+    public function marshalDataProvider(): iterable
+    {
+        yield [null, null, null];
+        yield [1, 1, null];
+        yield ['1', 1, new Context(new TypeOption('string'))];
+        yield [['id' => 1, 'name' => 'dummy'], new ClassicDummy(), null];
+        yield [['@id' => 1, 'name' => 'dummy', 'active' => true], new DummyWithNameAttributes(), null];
+        yield [['id' => '2', 'name' => 'dummy'], new DummyWithFormatterAttributes(), null];
+        yield [['foo' => 'bar', 'name' => 'dummy'], new ClassicDummy(), new Context(new HookOption([
+            sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
+                return '    \fwrite($resource, \'"foo": "bar"\');';
+            },
+        ]))];
     }
 }

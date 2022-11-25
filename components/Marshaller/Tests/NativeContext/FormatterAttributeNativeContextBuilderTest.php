@@ -19,7 +19,6 @@ final class FormatterAttributeNativeContextBuilderTest extends TestCase
             'symfony' => [
                 'property_formatter' => [
                     sprintf('%s::$id', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
-                    sprintf('%s::$name', DummyWithFormatterAttributes::class) => strtoupper(...),
                 ],
             ],
         ], $nativeContext);

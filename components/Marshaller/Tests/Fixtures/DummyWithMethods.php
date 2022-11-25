@@ -13,7 +13,17 @@ final class DummyWithMethods
         return (string) (2 * $value);
     }
 
-    public function tripleAndCastToString(int $value, array $context): string
+    public static function tooManyParameters(int $value, array $context, bool $extraParameter): string
+    {
+        return (string) (3 * $value);
+    }
+
+    public static function invalidContextType(int $value, bool $context): string
+    {
+        return (string) (3 * $value);
+    }
+
+    public function nonStatic(int $value, array $context): string
     {
         return (string) (3 * $value);
     }
