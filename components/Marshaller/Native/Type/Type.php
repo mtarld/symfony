@@ -17,19 +17,18 @@ final class Type implements \Stringable
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
         private readonly bool $isGeneric = false,
-        private readonly ?array $genericTypes = null,
+        private readonly array $genericTypes = [],
     ) {
         if ($this->isObject() && null === $this->className) {
-            throw new \InvalidArgumentException(sprintf('Missing className of "%s" type.', $this->name));
+            throw new \InvalidArgumentException('Missing className of "object" type.');
         }
 
-        // TODO test
         if ($this->isGeneric && !$this->genericTypes) {
             throw new \InvalidArgumentException(sprintf('Missing generic types of "%s" type.', $this->name));
         }
 
         if ('array' === $this->name && 2 !== \count($this->genericTypes)) {
-            throw new \InvalidArgumentException(sprintf('Invalid generic types of "%s" type.', $this->name));
+            throw new \InvalidArgumentException('Invalid generic types of "array" type.');
         }
     }
 
@@ -263,7 +262,7 @@ final class Type implements \Stringable
         }
 
         if ($this->isGeneric()) {
-            $name .= sprintf('<%s>', implode(', ', (string) $this->genericTypes));
+            $name .= sprintf('<%s>', implode(', ', $this->genericTypes));
         }
 
         return $nullablePrefix.$name;

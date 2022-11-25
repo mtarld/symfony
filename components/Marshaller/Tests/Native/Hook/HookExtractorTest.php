@@ -97,7 +97,7 @@ final class HookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook, 'object' => $createTypeHook()], $objectType];
         yield [$hook = $createTypeHook(), ['object' => $hook, 'type' => $createTypeHook()], $objectType];
 
-        $listType = new Type('array', isNullable: true, collectionKeyType: new Type('int'), collectionValueType: new Type('int'));
+        $listType = new Type('array', isNullable: true, isGeneric: true, genericTypes: [new Type('int'), new Type('int')]);
 
         yield [$hook = $createTypeHook(), ['?array' => $hook], $listType];
         yield [$hook = $createTypeHook(), ['array' => $hook], $listType];
@@ -109,7 +109,7 @@ final class HookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), ['list' => $hook, 'collection' => $createTypeHook()], $listType];
         yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $listType];
 
-        $dictType = new Type('array', isNullable: true, collectionKeyType: new Type('string'), collectionValueType: new Type('int'));
+        $dictType = new Type('array', isNullable: true, isGeneric: true, genericTypes: [new Type('string'), new Type('int')]);
 
         yield [$hook = $createTypeHook(), ['?array' => $hook], $dictType];
         yield [$hook = $createTypeHook(), ['array' => $hook], $dictType];

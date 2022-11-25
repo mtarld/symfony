@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Native\Type;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
+use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 
 final class UnionTypeTest extends TestCase
 {
@@ -29,7 +30,7 @@ final class UnionTypeTest extends TestCase
         $callable = fn (Type $t): bool => $t->isScalar();
 
         $this->assertTrue((new UnionType([new Type('int'), new Type('string')]))->everyTypeIs($callable));
-        $this->assertFalse((new UnionType([new Type('int'), new Type('array')]))->everyTypeIs($callable));
+        $this->assertFalse((new UnionType([new Type('int'), new Type('object', className: ClassicDummy::class)]))->everyTypeIs($callable));
     }
 
     /**
@@ -52,10 +53,10 @@ final class UnionTypeTest extends TestCase
             new UnionType([
                 new Type(
                     'array',
-                    collectionKeyType: new Type('string'),
-                    collectionValueType: new UnionType([new Type('string'), new Type('float')]),
+                    isGeneric: true,
+                    genericTypes: [new Type('string'), new UnionType([new Type('string'), new Type('float')])],
                 ),
-                new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('bool')),
+                new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')]),
             ]),
         ];
     }

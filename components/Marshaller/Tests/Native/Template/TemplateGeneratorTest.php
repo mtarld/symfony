@@ -38,8 +38,9 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
         yield [['NULL'], new Type('null')];
         yield [['SCALAR'], new Type('int')];
         yield [['OBJECT'], new Type('object', className: ClassicDummy::class)];
-        yield [['LIST'], new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int'))];
-        yield [['DICT'], new Type('array', collectionKeyType: new Type('string'), collectionValueType: new Type('int'))];
+        yield [['LIST'], new Type('array', isGeneric: true, genericTypes:[new Type('int'), new Type('int')])];
+        yield [['DICT'], new Type('array', isGeneric: true, genericTypes:[new Type('string'), new Type('int')])];
+
     }
 
     public function testThrowOnInvalidType(): void

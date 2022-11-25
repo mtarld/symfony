@@ -16,7 +16,7 @@ final class JsonDictTemplateGeneratorTest extends TemplateGeneratorTestCase
         $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
         $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
 
-        $type = new Type('array', collectionKeyType: new Type('string'), collectionValueType: new Type('int'));
+        $type = new Type('array', isGeneric: true, genericTypes:[new Type('string'), new Type('int')]);
         $template = (new JsonDictTemplateGenerator($templateGenerator))->generate($type, '$accessor', $this->context());
 
         $this->assertSame([

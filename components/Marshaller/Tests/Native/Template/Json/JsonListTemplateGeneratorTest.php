@@ -16,7 +16,7 @@ final class JsonListTemplateGeneratorTest extends TemplateGeneratorTestCase
         $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
         $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
 
-        $type = new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int'));
+        $type = new Type('array', isGeneric: true, genericTypes:[new Type('int'), new Type('int')]);
         $template = (new JsonListTemplateGenerator($templateGenerator))->generate($type, '$accessor', $this->context());
 
         $this->assertSame([
