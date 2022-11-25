@@ -17,4 +17,8 @@ final class DummyWithMethods
     {
         return (string) (3 * $value);
     }
+
+    public static function void(): void
+    {
+    }
 }

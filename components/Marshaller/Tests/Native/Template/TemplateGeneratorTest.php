@@ -128,7 +128,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
 
                     $this->assertSame(1, $context['indentation_level']);
                     $this->assertArrayHasKey('hooks', $context);
-                    $this->assertIsCallable($context['type_value_template_generator']);
+                    $this->assertIsCallable($context['type_template_generator']);
 
                     return 'INT_HOOK'.PHP_EOL;
                 },
@@ -159,7 +159,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
         $this->assertSame(2, $hookCallCount);
     }
 
-    public function testTypeValueGenerator(): void
+    public function testTypeGenerator(): void
     {
         $hookCallCount = 0;
 
@@ -168,7 +168,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
                 'int' => function (string $type, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
                     ++$hookCallCount;
 
-                    $this->assertSame(['DICT'], $this->lines($context['type_value_template_generator']('array<string, int>', $accessor, $context)));
+                    $this->assertSame(['DICT'], $this->lines($context['type_template_generator']('array<string, int>', $accessor, $context)));
 
                     return 'INT_HOOK'.PHP_EOL;
                 },

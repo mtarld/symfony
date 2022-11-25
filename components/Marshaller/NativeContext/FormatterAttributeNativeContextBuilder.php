@@ -22,7 +22,7 @@ final class FormatterAttributeNativeContextBuilder implements GenerateNativeCont
                 }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $nativeContext['symfony']['property_value_formatter'][$propertyIdentifier] = $attribute->newInstance()->formatter;
+                $nativeContext['symfony']['property_formatter'][$propertyIdentifier] = $attribute->newInstance()->formatter;
 
                 break;
             }

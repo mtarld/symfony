@@ -11,13 +11,13 @@ use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
 
 final class FormatterAttributeNativeContextBuilderTest extends TestCase
 {
-    public function testAddPropertyValueFormattersToNativeContext(): void
+    public function testAddPropertyFormattersToNativeContext(): void
     {
         $nativeContext = (new FormatterAttributeNativeContextBuilder())->buildGenerateNativeContext(DummyWithFormatterAttributes::class, new Context(), []);
 
         $this->assertEquals([
             'symfony' => [
-                'property_value_formatter' => [
+                'property_formatter' => [
                     sprintf('%s::$id', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
                     sprintf('%s::$name', DummyWithFormatterAttributes::class) => strtoupper(...),
                 ],

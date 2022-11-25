@@ -72,7 +72,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
             return $this->unionGenerator->generate($type, $accessor, $context);
         }
 
-        $valueTemplateGenerator = function (Type $type, string $accessor, array $context): string {
+        $typeTemplateGenerator = function (Type $type, string $accessor, array $context): string {
             return match (true) {
                 $type->isNull() => $this->nullGenerator->generate($context),
                 $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
@@ -85,8 +85,8 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
 
         if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
             $hookContext = $context + [
-                'type_value_template_generator' => static function (string $type, string $accessor, array $context) use ($valueTemplateGenerator): string {
-                    return $valueTemplateGenerator(Type::createFromString($type), $accessor, $context);
+                'type_template_generator' => static function (string $type, string $accessor, array $context) use ($typeTemplateGenerator): string {
+                    return $typeTemplateGenerator(Type::createFromString($type), $accessor, $context);
                 },
             ];
 
@@ -95,7 +95,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
             }
         }
 
-        return $valueTemplateGenerator($type, $accessor, $context);
+        return $typeTemplateGenerator($type, $accessor, $context);
     }
 
     /**

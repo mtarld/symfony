@@ -42,33 +42,7 @@ final class PropertyHook
             return sprintf("'%s'", $context['symfony']['property_name'][$propertyIdentifier]);
         }
 
-        if (!isset($context['symfony']['property_name_formatter'][$propertyIdentifier])) {
-            return $name;
-        }
-
-        $formatterReflection = new \ReflectionFunction($context['symfony']['property_name_formatter'][$propertyIdentifier]);
-
-        if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
-            $contextParameterType = $contextParameter->getType();
-
-            if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of property name formatter "%s" must be an array.', $propertyIdentifier));
-            }
-        }
-
-        $isAnonymous = str_contains($formatterReflection->getName(), '{closure}');
-        $isMethod = !$isAnonymous && $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
-
-        if ($isAnonymous || ($isMethod && !$formatterReflection->isStatic())) {
-            return sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $name);
-        }
-
-        $callable = sprintf('%s(%s, $context)', $formatterReflection->getName(), $name);
-        if (null !== $declaringClass = $declaringClass = $formatterReflection->getClosureScopeClass()) {
-            $callable = sprintf('%s::%s', $declaringClass->getName(), $callable);
-        }
-
-        return $callable;
+        return $name;
     }
 
     /**
@@ -76,12 +50,8 @@ final class PropertyHook
      */
     private function propertyType(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
     {
-        if (null !== $formatter = ($context['symfony']['property_value_formatter'][$propertyIdentifier] ?? null)) {
+        if (null !== $formatter = ($context['symfony']['property_formatter'][$propertyIdentifier] ?? null)) {
             return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter));
-        }
-
-        if (null !== $type = ($context['symfony']['property_type'][$propertyIdentifier] ?? null)) {
-            return $type;
         }
 
         return $context['symfony']['type_extractor']->extractFromProperty($property);
@@ -92,32 +62,35 @@ final class PropertyHook
      */
     private function propertyAccessor(string $propertyIdentifier, string $accessor, array $context): string
     {
-        if (null === $formatter = ($context['symfony']['property_value_formatter'][$propertyIdentifier] ?? null)) {
+        if (null === $formatter = ($context['symfony']['property_formatter'][$propertyIdentifier] ?? null)) {
             return $accessor;
         }
 
         $formatterReflection = new \ReflectionFunction($formatter);
 
+        // TODO test
+        if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
+            throw new \InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
+        }
+
         if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of property value formatter "%s" must be an array.', $propertyIdentifier));
+                throw new \InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
             }
         }
 
-        $isAnonymous = str_contains($formatterReflection->getName(), '{closure}');
-        $isMethod = !$isAnonymous && $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
+        $isMethod = $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
 
-        if ($isAnonymous || ($isMethod && !$formatterReflection->isStatic())) {
-            return sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s\'](%s, $context)', $propertyIdentifier, $accessor);
+        if ($isMethod && $formatterReflection->isStatic()) {
+            return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
         }
 
-        $callable = sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
-        if (null !== $declaringClass = $declaringClass = $formatterReflection->getClosureScopeClass()) {
-            $callable = sprintf('%s::%s', $declaringClass->getName(), $callable);
+        if (!$isMethod && !str_contains($formatterReflection->getName(), '{closure}')) {
+            return sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
         }
 
-        return $callable;
+        throw new \InvalidArgumentException(sprintf('Property formatter "%s" must be either a non anonymous function or a static method.', $propertyIdentifier));
     }
 }

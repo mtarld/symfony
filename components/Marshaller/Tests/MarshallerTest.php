@@ -12,7 +12,7 @@ use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
-final class MarhsallerTest extends TestCase
+final class MarshallerTest extends TestCase
 {
     private string $cacheDir;
 

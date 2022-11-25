@@ -19,13 +19,12 @@ final class PropertyHookTest extends TestCase
      * @param array<string, string>   $propertyNames
      * @param array<string, callable> $propertyNameFormatters
      */
-    public function testGenerateNameTemplatePart(string $expectedName, array $propertyNames, array $propertyNameFormatters): void
+    public function testGenerateNameTemplatePart(string $expectedName, array $propertyNames): void
     {
         $context = [
             'symfony' => [
                 'type_extractor' => $this->createStub(TypeExtractorInterface::class),
                 'property_name' => $propertyNames,
-                'property_name_formatter' => $propertyNameFormatters,
             ],
             'property_name_template_generator' => fn (string $name): string => $name,
             'property_value_template_generator' => fn (): string => '|PROPERTY_VALUE',
@@ -43,54 +42,18 @@ final class PropertyHookTest extends TestCase
      */
     public function generateNameTemplatePartDataProvider(): iterable
     {
-        $regularAnonymous = function (string $name, array $context): string {
-            return strtoupper($name);
-        };
-
-        $staticAnonymous = static function (string $name, array $context): string {
-            return strtoupper($name);
-        };
-
-        $arrowAnonymous = fn (string $name, array $context): string => strtoupper($name);
-
-        yield ['\'id\'', [], []];
-        yield ['\'id\'', [sprintf('%s::$name', ClassicDummy::class) => 'identifier'], [sprintf('%s::$name', ClassicDummy::class) => strtoupper(...)]];
-        yield ['\'identifier\'', [sprintf('%s::$id', ClassicDummy::class) => 'identifier'], [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)]];
-        yield ['strtoupper(\'id\', $context)', [], [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)]];
-        yield [
-            sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s::$id\'](\'id\', $context)', ClassicDummy::class),
-            [],
-            [sprintf('%s::$id', ClassicDummy::class) => $regularAnonymous],
-        ];
-        yield [
-            sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s::$id\'](\'id\', $context)', ClassicDummy::class),
-            [],
-            [sprintf('%s::$id', ClassicDummy::class) => $staticAnonymous],
-        ];
-        yield [
-            sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s::$id\'](\'id\', $context)', ClassicDummy::class),
-            [],
-            [sprintf('%s::$id', ClassicDummy::class) => $arrowAnonymous],
-        ];
-        yield [
-            sprintf('$context[\'symfony\'][\'property_name_formatter\'][\'%s::$id\'](\'id\', $context)', ClassicDummy::class),
-            [],
-            [sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->tripleAndCastToString(...)],
-        ];
-        yield [
-            sprintf('%s::doubleAndCastToString(\'id\', $context)', DummyWithMethods::class),
-            [],
-            [sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)],
-        ];
+        yield ['\'id\'', []];
+        yield ['\'id\'', [sprintf('%s::$name', ClassicDummy::class) => 'identifier']];
+        yield ['\'identifier\'', [sprintf('%s::$id', ClassicDummy::class) => 'identifier']];
     }
 
     /**
      * @dataProvider generateValueTemplatePartDataProvider
      *
-     * @param array<string, callable> $propertyValueFormatters
+     * @param array<string, callable> $propertyFormatters
      * @param array<string, string>   $propertyTypes
      */
-    public function testGenerateValueTemplatePart(string $expectedType, string $expectedAccessor, array $propertyValueFormatters, array $propertyTypes): void
+    public function testGenerateValueTemplatePart(string $expectedType, string $expectedAccessor, array $propertyFormatters): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractFromProperty')->willReturnCallback(fn (\ReflectionProperty $c): string => $c->getType()->getName());
@@ -99,8 +62,7 @@ final class PropertyHookTest extends TestCase
         $context = [
             'symfony' => [
                 'type_extractor' => $typeExtractor,
-                'property_value_formatter' => $propertyValueFormatters,
-                'property_type' => $propertyTypes,
+                'property_formatter' => $propertyFormatters,
             ],
             'property_name_template_generator' => fn (): string => 'PROPERTY_NAME|',
             'property_value_template_generator' => fn (string $type, string $accessor, array $context): string => sprintf('%s|%s', $type, $accessor),
@@ -119,51 +81,13 @@ final class PropertyHookTest extends TestCase
      */
     public function generateValueTemplatePartDataProvider(): iterable
     {
-        $regularAnonymous = function (int $value, array $context): string {
-            return (string) (2 * $value);
-        };
-
-        $staticAnonymous = static function (int $value, array $context): string {
-            return (string) (2 * $value);
-        };
-
-        $arrowAnonymous = fn (int $value, array $context): string => (string) (2 * $value);
-
-        yield ['int', '$accessor', [], []];
-        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => strtoupper(...)], [sprintf('%s::$name', ClassicDummy::class) => 'string']];
-        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => strtoupper(...)], [sprintf('%s::$name', ClassicDummy::class) => 'bool']];
-        yield ['bool', '$accessor', [], [sprintf('%s::$id', ClassicDummy::class) => 'bool']];
-        yield ['string', 'strtoupper($accessor, $context)', [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)], []];
-        yield ['string', 'strtoupper($accessor, $context)', [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)], [sprintf('%s::$id', ClassicDummy::class) => 'bool']];
-        yield [
-            'string',
-            sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s::$id\']($accessor, $context)', ClassicDummy::class),
-            [sprintf('%s::$id', ClassicDummy::class) => $regularAnonymous],
-            [],
-        ];
-        yield [
-            'string',
-            sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s::$id\']($accessor, $context)', ClassicDummy::class),
-            [sprintf('%s::$id', ClassicDummy::class) => $staticAnonymous],
-            [],
-        ];
-        yield [
-            'string',
-            sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s::$id\']($accessor, $context)', ClassicDummy::class),
-            [sprintf('%s::$id', ClassicDummy::class) => $arrowAnonymous],
-            [],
-        ];
-        yield [
-            'string',
-            sprintf('$context[\'symfony\'][\'property_value_formatter\'][\'%s::$id\']($accessor, $context)', ClassicDummy::class),
-            [sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->tripleAndCastToString(...)],
-            [],
-        ];
+        yield ['int', '$accessor', []];
+        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => strtoupper(...)]];
+        yield ['string', 'strtoupper($accessor, $context)', [sprintf('%s::$id', ClassicDummy::class) => strtoupper(...)]];
         yield [
             'string',
             sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
             [sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)],
-            [],
         ];
     }
 
@@ -189,40 +113,70 @@ final class PropertyHookTest extends TestCase
         (new PropertyHook())(new \ReflectionProperty(DummyWithNotPublicProperty::class, 'name'), '$accessor', 'format', $context);
     }
 
-    public function testThrowWhenInvalidPropertyNameFormatterContextParameter(): void
+    public function testThrowWhenInvalidPropertyFormatterContextParameter(): void
     {
-        $propertyNameFormatters = [
-            sprintf('%s::$id', ClassicDummy::class) => fn (string $name, int $context) => strtoupper($name),
-        ];
-
         $context = [
             'symfony' => [
                 'type_extractor' => $this->createStub(TypeExtractorInterface::class),
-                'property_name_formatter' => $propertyNameFormatters,
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => fn (int $id, int $context) => (string) (2 * $id),
+                ],
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Second argument of property name formatter "%s::$id" must be an array.', ClassicDummy::class));
+        $this->expectExceptionMessage(sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class));
 
         (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
     }
 
-    public function testThrowWhenInvalidPropertyValueFormatterContextParameter(): void
+    public function testThrowWhenAnonymousFunctionTypeFormatter(): void
     {
-        $propertyValueFormatters = [
-            sprintf('%s::$id', ClassicDummy::class) => fn (int $id, int $context) => (string) (2 * $id),
-        ];
-
         $context = [
             'symfony' => [
                 'type_extractor' => $this->createStub(TypeExtractorInterface::class),
-                'property_value_formatter' => $propertyValueFormatters,
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => fn (int $value, array $context) => (string) (2 * $value),
+                ],
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Second argument of property value formatter "%s::$id" must be an array.', ClassicDummy::class));
+        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be either a non anonymous function or a static method.', ClassicDummy::class));
+
+        (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenNonStaticMethodTypeFormatter(): void
+    {
+        $context = [
+            'symfony' => [
+                'type_extractor' => $this->createStub(TypeExtractorInterface::class),
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->tripleAndCastToString(...),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be either a non anonymous function or a static method.', ClassicDummy::class));
+
+        (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenVoidMethodTypeFormatter(): void
+    {
+        $context = [
+            'symfony' => [
+                'type_extractor' => $this->createStub(TypeExtractorInterface::class),
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::void(...),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Return type of property formatter "%s::$id" must not be "void" nor "never".', ClassicDummy::class));
 
         (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
     }

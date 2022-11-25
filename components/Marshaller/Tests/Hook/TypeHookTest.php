@@ -14,9 +14,9 @@ final class TypeHookTest extends TestCase
     /**
      * @dataProvider generateTemplateDataProvider
      *
-     * @param array<string, callable> $typeValueFormatters
+     * @param array<string, callable> $typeFormatters
      */
-    public function testGenerateTemplate(string $expectedType, string $expectedAccessor, array $typeValueFormatters): void
+    public function testGenerateTemplate(string $expectedType, string $expectedAccessor, array $typeFormatters): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractFromReturnType')->willReturnCallback(fn (\ReflectionFunctionAbstract $c): string => $c->getReturnType()->getName());
@@ -24,9 +24,9 @@ final class TypeHookTest extends TestCase
         $context = [
             'symfony' => [
                 'type_extractor' => $typeExtractor,
-                'type_value_formatter' => $typeValueFormatters,
+                'type_formatter' => $typeFormatters,
             ],
-            'type_value_template_generator' => fn (string $type, string $accessor, array $context): string => sprintf('%s|%s', $type, $accessor),
+            'type_template_generator' => fn (string $type, string $accessor, array $context): string => sprintf('%s|%s', $type, $accessor),
         ];
 
         $result = (new TypeHook())('int', '$accessor', 'format', $context);
@@ -41,23 +41,9 @@ final class TypeHookTest extends TestCase
      */
     public function generateTemplateDataProvider(): iterable
     {
-        $regularAnonymous = function (int $value, array $context): string {
-            return (string) (2 * $value);
-        };
-
-        $staticAnonymous = static function (int $value, array $context): string {
-            return (string) (2 * $value);
-        };
-
-        $arrowAnonymous = fn (int $value, array $context): string => (string) (2 * $value);
-
         yield ['int', '$accessor', []];
         yield ['int', '$accessor', ['string' => strtoupper(...)]];
         yield ['string', 'strtoupper($accessor, $context)', ['int' => strtoupper(...)]];
-        yield ['string', '$context[\'symfony\'][\'type_value_formatter\'][\'int\']($accessor, $context)', ['int' => $regularAnonymous]];
-        yield ['string', '$context[\'symfony\'][\'type_value_formatter\'][\'int\']($accessor, $context)', ['int' => $staticAnonymous]];
-        yield ['string', '$context[\'symfony\'][\'type_value_formatter\'][\'int\']($accessor, $context)', ['int' => $arrowAnonymous]];
-        yield ['string', '$context[\'symfony\'][\'type_value_formatter\'][\'int\']($accessor, $context)', ['int' => (new DummyWithMethods())->tripleAndCastToString(...)]];
         yield ['string', sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class), ['int' => DummyWithMethods::doubleAndCastToString(...)]];
     }
 
@@ -74,19 +60,79 @@ final class TypeHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
-        $typeValueFormatters = [
+        $typeFormatters = [
             'int' => fn (int $value, int $context) => (string) (2 * $value),
         ];
 
         $context = [
             'symfony' => [
                 'type_extractor' => $typeExtractor,
-                'type_value_formatter' => $typeValueFormatters,
+                'type_formatter' => $typeFormatters,
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Second argument of type value formatter "int" must be an array.');
+        $this->expectExceptionMessage('Second argument of type formatter "int" must be an array.');
+
+        (new TypeHook())('int', '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenAnonymousFunctionTypeFormatter(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromReturnType')->willReturn('string');
+
+        $context = [
+            'symfony' => [
+                'type_extractor' => $typeExtractor,
+                'type_formatter' => [
+                    'int' => fn (int $value, array $context) => (string) (2 * $value),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Type formatter "int" must be either a non anonymous function or a static method.');
+
+        (new TypeHook())('int', '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenNonStaticMethodTypeFormatter(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromReturnType')->willReturn('string');
+
+        $context = [
+            'symfony' => [
+                'type_extractor' => $typeExtractor,
+                'type_formatter' => [
+                    'int' => (new DummyWithMethods())->tripleAndCastToString(...),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Type formatter "int" must be either a non anonymous function or a static method.');
+
+        (new TypeHook())('int', '$accessor', 'format', $context);
+    }
+
+    public function testThrowWhenVoidMethodTypeFormatter(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromReturnType')->willReturn('string');
+
+        $context = [
+            'symfony' => [
+                'type_extractor' => $typeExtractor,
+                'type_formatter' => [
+                    'int' => DummyWithMethods::void(...),
+                ],
+            ],
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Return type of type formatter "int" must not be "void" nor "never".');
 
         (new TypeHook())('int', '$accessor', 'format', $context);
     }

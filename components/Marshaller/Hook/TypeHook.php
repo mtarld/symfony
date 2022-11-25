@@ -21,7 +21,7 @@ final class TypeHook
         $accessor = $this->accessor($type, $accessor, $context);
         $accessorType = $this->type($type, $context);
 
-        return $context['type_value_template_generator']($accessorType, $accessor, $context);
+        return $context['type_template_generator']($accessorType, $accessor, $context);
     }
 
     /**
@@ -29,7 +29,7 @@ final class TypeHook
      */
     private function type(string $type, array $context): string
     {
-        if (null === $formatter = ($context['symfony']['type_value_formatter'][$type] ?? null)) {
+        if (null === $formatter = ($context['symfony']['type_formatter'][$type] ?? null)) {
             return $type;
         }
 
@@ -41,32 +41,34 @@ final class TypeHook
      */
     private function accessor(string $type, string $accessor, array $context): string
     {
-        if (null === $formatter = ($context['symfony']['type_value_formatter'][$type] ?? null)) {
+        if (null === $formatter = ($context['symfony']['type_formatter'][$type] ?? null)) {
             return $accessor;
         }
 
         $formatterReflection = new \ReflectionFunction($formatter);
 
+        if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
+            throw new \InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
+        }
+
         if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of type value formatter "%s" must be an array.', $type));
+                throw new \InvalidArgumentException(sprintf('Second argument of type formatter "%s" must be an array.', $type));
             }
         }
 
-        $isAnonymous = str_contains($formatterReflection->getName(), '{closure}');
-        $isMethod = !$isAnonymous && $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
+        $isMethod = $formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName());
 
-        if ($isAnonymous || ($isMethod && !$formatterReflection->isStatic())) {
-            return sprintf('$context[\'symfony\'][\'type_value_formatter\'][\'%s\'](%s, $context)', $type, $accessor);
+        if ($isMethod && $formatterReflection->isStatic()) {
+            return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
         }
 
-        $callable = sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
-        if (null !== $declaringClass = $declaringClass = $formatterReflection->getClosureScopeClass()) {
-            $callable = sprintf('%s::%s', $declaringClass->getName(), $callable);
+        if (!$isMethod && !str_contains($formatterReflection->getName(), '{closure}')) {
+            return sprintf('%s(%s, $context)', $formatterReflection->getName(), $accessor);
         }
 
-        return $callable;
+        throw new \InvalidArgumentException(sprintf('Type formatter "%s" must be either a non anonymous function or a static method.', $type));
     }
 }

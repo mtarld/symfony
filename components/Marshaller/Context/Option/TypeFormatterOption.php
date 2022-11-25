@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Context\Option;
 
-final class TypeValueFormatterOption
+final class TypeFormatterOption
 {
     /**
      * @var array<string, \Closure>
@@ -12,18 +12,18 @@ final class TypeValueFormatterOption
     public readonly array $formatters;
 
     /**
-     * @param array<string, callable> $typeValueFormatters
+     * @param array<string, callable> $typeFormatters
      */
-    public function __construct(array $typeValueFormatters)
+    public function __construct(array $typeFormatters)
     {
         $formatters = [];
 
-        foreach ($typeValueFormatters as $typeName => $valueFormatter) {
-            if (!is_callable($valueFormatter)) {
+        foreach ($typeFormatters as $typeName => $formatter) {
+            if (!is_callable($formatter)) {
                 throw new \InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $typeName, self::class));
             }
 
-            $formatters[$typeName] = \Closure::fromCallable($valueFormatter);
+            $formatters[$typeName] = \Closure::fromCallable($formatter);
         }
 
         $this->formatters = $formatters;
