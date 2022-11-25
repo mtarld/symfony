@@ -19,6 +19,6 @@ final class TypeExtractorNativeContextBuilderTest extends TestCase
             'symfony' => [
                 'type_extractor' => $typeExtractor,
             ],
-        ], (new TypeExtractorNativeContextBuilder($typeExtractor))->buildGenerateNativeContext('useless', new Context(), []));
+        ], (new TypeExtractorNativeContextBuilder($typeExtractor))->build('useless', new Context(), []));
     }
 }

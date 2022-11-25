@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 
-final class TypeFormatterNativeContextBuilder implements GenerateNativeContextBuilderInterface
+final class TypeFormatterNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
 {
-    public function buildGenerateNativeContext(string $type, Context $context, array $nativeContext): array
+    public function build(string $type, Context $context, array $nativeContext): array
     {
         /** @var TypeFormatterOption|null $typeFormatterOption */
         $typeFormatterOption = $context->get(TypeFormatterOption::class);

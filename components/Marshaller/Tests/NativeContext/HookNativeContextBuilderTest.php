@@ -18,7 +18,7 @@ final class HookNativeContextBuilderTest extends TestCase
             'bar' => $barHook = fn () => 'bar',
         ]);
 
-        $nativeContext = (new HookNativeContextBuilder())->buildGenerateNativeContext('useless', new Context($hookOption), []);
+        $nativeContext = (new HookNativeContextBuilder())->build('useless', new Context($hookOption), []);
 
         $this->assertSame([
             'hooks' => [
@@ -30,7 +30,7 @@ final class HookNativeContextBuilderTest extends TestCase
 
     public function testSkipOnMissingHookOption(): void
     {
-        $nativeContext = (new HookNativeContextBuilder())->buildGenerateNativeContext('useless', new Context(), []);
+        $nativeContext = (new HookNativeContextBuilder())->build('useless', new Context(), []);
 
         $this->assertSame([], $nativeContext);
     }

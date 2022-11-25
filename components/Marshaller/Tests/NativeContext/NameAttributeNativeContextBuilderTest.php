@@ -13,7 +13,7 @@ final class NameAttributeNativeContextBuilderTest extends TestCase
 {
     public function testAddPropertyNameToNativeContext(): void
     {
-        $nativeContext = (new NameAttributeNativeContextBuilder())->buildGenerateNativeContext(DummyWithNameAttributes::class, new Context(), []);
+        $nativeContext = (new NameAttributeNativeContextBuilder())->build(DummyWithNameAttributes::class, new Context(), []);
 
         $this->assertEquals([
             'symfony' => [
@@ -27,7 +27,7 @@ final class NameAttributeNativeContextBuilderTest extends TestCase
 
     public function testSkipOnInvalidClassName(): void
     {
-        $nativeContext = (new NameAttributeNativeContextBuilder())->buildGenerateNativeContext('int', new Context(), []);
+        $nativeContext = (new NameAttributeNativeContextBuilder())->build('int', new Context(), []);
 
         $this->assertSame([], $nativeContext);
     }

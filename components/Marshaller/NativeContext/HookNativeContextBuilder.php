@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 
-final class HookNativeContextBuilder implements GenerateNativeContextBuilderInterface
+final class HookNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
 {
-    public function buildGenerateNativeContext(string $type, Context $context, array $nativeContext): array
+    public function build(string $type, Context $context, array $nativeContext): array
     {
         /** @var HookOption|null $hookOption */
         $hookOption = $context->get(HookOption::class);

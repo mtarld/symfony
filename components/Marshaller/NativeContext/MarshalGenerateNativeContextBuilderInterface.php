@@ -6,12 +6,12 @@ namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 
-interface MarshalNativeContextBuilderInterface
+interface MarshalGenerateNativeContextBuilderInterface
 {
     /**
      * @param array<string, mixed> $nativeContext
      *
      * @return array<string, mixed>
      */
-    public function buildMarshalNativeContext(string $type, Context $context, array $nativeContext): array;
+    public function build(string $type, Context $context, array $nativeContext): array;
 }

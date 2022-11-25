@@ -27,13 +27,13 @@ final class TypeFormatterNativeContextBuilderTest extends TestCase
             ],
         ];
 
-        $this->assertSame($expectedNativeContext, $contextBuilder->buildGenerateNativeContext('useless', new Context($typeFormatterOption), []));
+        $this->assertSame($expectedNativeContext, $contextBuilder->build('useless', new Context($typeFormatterOption), []));
     }
 
     public function testSkipOnMissingTypeOption(): void
     {
         $contextBuilder = new TypeFormatterNativeContextBuilder();
 
-        $this->assertSame([], $contextBuilder->buildGenerateNativeContext('useless', new Context(), []));
+        $this->assertSame([], $contextBuilder->build('useless', new Context(), []));
     }
 }

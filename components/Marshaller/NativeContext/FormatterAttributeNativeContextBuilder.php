@@ -7,9 +7,9 @@ namespace Symfony\Component\Marshaller\NativeContext;
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
 
-final class FormatterAttributeNativeContextBuilder implements GenerateNativeContextBuilderInterface
+final class FormatterAttributeNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
 {
-    public function buildGenerateNativeContext(string $type, Context $context, array $nativeContext): array
+    public function build(string $type, Context $context, array $nativeContext): array
     {
         if (!class_exists($type)) {
             return $nativeContext;

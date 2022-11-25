@@ -13,7 +13,7 @@ final class FormatterAttributeNativeContextBuilderTest extends TestCase
 {
     public function testAddPropertyFormattersToNativeContext(): void
     {
-        $nativeContext = (new FormatterAttributeNativeContextBuilder())->buildGenerateNativeContext(DummyWithFormatterAttributes::class, new Context(), []);
+        $nativeContext = (new FormatterAttributeNativeContextBuilder())->build(DummyWithFormatterAttributes::class, new Context(), []);
 
         $this->assertEquals([
             'symfony' => [
@@ -27,7 +27,7 @@ final class FormatterAttributeNativeContextBuilderTest extends TestCase
 
     public function testSkipOnInvalidClassName(): void
     {
-        $nativeContext = (new FormatterAttributeNativeContextBuilder())->buildGenerateNativeContext('useless', new Context(), []);
+        $nativeContext = (new FormatterAttributeNativeContextBuilder())->build('useless', new Context(), []);
 
         $this->assertSame([], $nativeContext);
     }

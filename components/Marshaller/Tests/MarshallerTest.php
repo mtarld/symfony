@@ -7,7 +7,6 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Marshaller;
-use Symfony\Component\Marshaller\NativeContext\CacheDirNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
@@ -40,18 +39,11 @@ final class MarshallerTest extends TestCase
      */
     public function testGenerateTemplate(array $expectedLines, string $type, ?Context $context): void
     {
-        $cacheDirNativeContextBuilder = new CacheDirNativeContextBuilder($this->cacheDir);
-
-        $marshalContextBuilders = [
-            $cacheDirNativeContextBuilder,
-        ];
-
-        $generateContextBuilders = [
-            $cacheDirNativeContextBuilder,
+        $marshalGenerateContextBuilders = [
             new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
         ];
 
-        $lines = explode("\n", (new Marshaller($marshalContextBuilders, $generateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
+        $lines = explode("\n", (new Marshaller($marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
         array_pop($lines);
 
         $this->assertSame($expectedLines, $lines);
