@@ -62,4 +62,9 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
 
         return $nullablePrefix.$className;
     }
+
+    public function extractTemplateFromClass(\ReflectionClass $class): array
+    {
+        return [];
+    }
 }

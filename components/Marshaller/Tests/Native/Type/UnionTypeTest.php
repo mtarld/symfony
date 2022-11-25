@@ -54,9 +54,9 @@ final class UnionTypeTest extends TestCase
                 new Type(
                     'array',
                     isGeneric: true,
-                    genericTypes: [new Type('string'), new UnionType([new Type('string'), new Type('float')])],
+                    genericParameterTypes: [new Type('string'), new UnionType([new Type('string'), new Type('float')])],
                 ),
-                new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')]),
+                new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
             ]),
         ];
     }

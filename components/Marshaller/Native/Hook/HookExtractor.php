@@ -107,15 +107,6 @@ final class HookExtractor
             return $hookNames;
         }
 
-        if ($type->isScalar()) {
-            array_unshift($hookNames, $type->name(), 'scalar');
-            if ($type->isNullable()) {
-                array_unshift($hookNames, '?'.$type->name());
-            }
-
-            return $hookNames;
-        }
-
         if ($type->isObject()) {
             array_unshift($hookNames, $type->className(), 'object');
             if ($type->isNullable()) {
@@ -145,7 +136,12 @@ final class HookExtractor
             return $hookNames;
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type));
+        array_unshift($hookNames, $type->name(), 'scalar');
+        if ($type->isNullable()) {
+            array_unshift($hookNames, '?'.$type->name());
+        }
+
+        return $hookNames;
     }
 
     /**

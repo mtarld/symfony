@@ -36,7 +36,7 @@ final class ListTemplateGeneratorTest extends TemplateGeneratorTestCase
             }
         };
 
-        $type = new Type('array', isGeneric: true, genericTypes:[new Type('int'), new Type('int')]);
+        $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]);
         $template = $listTemplateGenerator->generate($type, '$accessor', $this->context());
 
         $this->assertSame([

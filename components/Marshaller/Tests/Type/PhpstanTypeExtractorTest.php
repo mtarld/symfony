@@ -42,21 +42,6 @@ final class PhpstanTypeExtractorTest extends TestCase
         $extractor->extractFromProperty($reflectionProperty);
     }
 
-    public function testCannotHandleNonArrayGenericProperty(): void
-    {
-        $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromProperty')->willReturn('FALLBACK');
-
-        $extractor = new PhpstanTypeExtractor($fallbackExtractor);
-
-        $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty('nonArrayGeneric');
-
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Unhandled "ArrayIterator<T>" generic type.');
-
-        $extractor->extractFromProperty($reflectionProperty);
-    }
-
     /**
      * @dataProvider typesDataProvider
      */
@@ -137,6 +122,8 @@ final class PhpstanTypeExtractorTest extends TestCase
         yield ['array<int, string>', 'squareBracketList'];
         yield ['array<string, int|string>', 'bracketList'];
         yield ['array<string, mixed>', 'emptyBracketList'];
+        yield ['ArrayIterator<Tk, Tv>', 'generic'];
+        yield ['Tv', 'genericParameter'];
         yield ['FALLBACK', 'undefined'];
     }
 }

@@ -50,11 +50,17 @@ final class PropertyHook
      */
     private function propertyType(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
     {
-        if (null !== $formatter = ($context['symfony']['property_formatter'][$propertyIdentifier] ?? null)) {
-            return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter));
+        $formatter = ($context['symfony']['property_formatter'][$propertyIdentifier] ?? null);
+
+        $type = null !== $formatter
+            ? $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter))
+            : $context['symfony']['type_extractor']->extractFromProperty($property);
+
+        if (isset($context['symfony']['generic_types'][$type])) {
+            $type = $context['symfony']['generic_types'][$type];
         }
 
-        return $context['symfony']['type_extractor']->extractFromProperty($property);
+        return $type;
     }
 
     /**

@@ -10,25 +10,25 @@ namespace Symfony\Component\Marshaller\Native\Type;
 final class Type implements \Stringable
 {
     /**
-     * @param list<self|UnionType> $genericDiamondTypes
+     * @param list<self|UnionType> $genericParameterTypes
      */
     public function __construct(
         private readonly string $name,
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
         private readonly bool $isGeneric = false,
-        private readonly array $genericTypes = [],
+        private readonly array $genericParameterTypes = [],
     ) {
         if ($this->isObject() && null === $this->className) {
             throw new \InvalidArgumentException('Missing className of "object" type.');
         }
 
-        if ($this->isGeneric && !$this->genericTypes) {
-            throw new \InvalidArgumentException(sprintf('Missing generic types of "%s" type.', $this->name));
+        if ($this->isGeneric && !$this->genericParameterTypes) {
+            throw new \InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
         }
 
-        if ('array' === $this->name && 2 !== \count($this->genericTypes)) {
-            throw new \InvalidArgumentException('Invalid generic types of "array" type.');
+        if ('array' === $this->name && 2 !== \count($this->genericParameterTypes)) {
+            throw new \InvalidArgumentException('Invalid generic parameter types of "array" type.');
         }
     }
 
@@ -111,14 +111,15 @@ final class Type implements \Stringable
 
         $results = [];
         if (\preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
+            $genericType = $results['type'];
+            $genericParameters = [];
+            $currentGenericParameter = '';
             $nestedLevel = 0;
-            $genericTypes = [];
-            $currentGenericType = '';
 
             foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
                 if (',' === $char && 0 === $nestedLevel) {
-                    $genericTypes[] = $currentGenericType;
-                    $currentGenericType = '';
+                    $genericParameters[] = $currentGenericParameter;
+                    $currentGenericParameter = '';
 
                     continue;
                 }
@@ -131,25 +132,25 @@ final class Type implements \Stringable
                     --$nestedLevel;
                 }
 
-                $currentGenericType .= $char;
+                $currentGenericParameter .= $char;
             }
 
-            $genericTypes[] = $currentGenericType;
+            $genericParameters[] = $currentGenericParameter;
 
             if (0 !== $nestedLevel) {
                 throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
             }
 
-            if ('array' === $results['type'] && 1 === \count($genericTypes)) {
-                array_unshift($genericTypes, 'int');
+            if ('array' === $genericType && 1 === \count($genericParameters)) {
+                array_unshift($genericParameters, 'int');
             }
 
-            $type = $results['type'];
+            $type = $genericType;
             $className = null;
 
-            if (class_exists($type)) {
-                $className = $type;
+            if (class_exists($genericType)) {
                 $type = 'object';
+                $className = $genericType;
             }
 
             return new Type(
@@ -157,15 +158,11 @@ final class Type implements \Stringable
                 isNullable: $isNullable,
                 isGeneric: true,
                 className: $className,
-                genericTypes: array_map(fn (string $t): self|UnionType => self::createFromString($t), $genericTypes),
+                genericParameterTypes: array_map(fn (string $t): self|UnionType => self::createFromString($t), $genericParameters),
             );
         }
 
-        if (class_exists($string)) {
-            return new Type('object', $isNullable, $string);
-        }
-
-        throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+        return new Type($string, $isNullable);
     }
 
     public function name(): string
@@ -190,9 +187,9 @@ final class Type implements \Stringable
     /**
      * @return list<self|UnionType>
      */
-    public function genericTypes(): array
+    public function genericParameterTypes(): array
     {
-        return $this->genericTypes;
+        return $this->genericParameterTypes;
     }
 
     public function isScalar(): bool
@@ -236,7 +233,7 @@ final class Type implements \Stringable
             throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->genericTypes[0];
+        return $this->genericParameterTypes[0];
     }
 
     public function collectionValueType(): Type|UnionType
@@ -245,7 +242,7 @@ final class Type implements \Stringable
             throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->genericTypes[1];
+        return $this->genericParameterTypes[1];
     }
 
     public function __toString(): string
@@ -262,7 +259,7 @@ final class Type implements \Stringable
         }
 
         if ($this->isGeneric()) {
-            $name .= sprintf('<%s>', implode(', ', $this->genericTypes));
+            $name .= sprintf('<%s>', implode(', ', $this->genericParameterTypes));
         }
 
         return $nullablePrefix.$name;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Type;
 
+use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeItemNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
@@ -22,11 +23,14 @@ use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 final class PhpstanTypeHelper
 {
     /**
-     * @param class-string $class
+     * @param class-string               $class
+     * @param list<TemplateTagValueNode> $templateNodes
      */
-    public function getType(TypeNode $node, string $class): string
+    public function getType(TypeNode $typeNode, string $class, array $templateNodes): string
     {
-        return $this->extractType($node, TypeNameResolver::createForClass($class));
+        $templateNodeNames = array_map(fn (TemplateTagValueNode $t): string => $t->name, $templateNodes);
+
+        return $this->extractType($typeNode, TypeNameResolver::createForClass($class, $templateNodeNames));
     }
 
     private function extractType(TypeNode $node, TypeNameResolver $nameResolver): string
@@ -64,18 +68,20 @@ final class PhpstanTypeHelper
 
     private function extractGenericType(GenericTypeNode $node, TypeNameResolver $nameResolver): string
     {
+        $genericParameters = array_map(fn (TypeNode $t): string => $this->extractType($t, $nameResolver), $node->genericTypes);
+
         if ('array' === $mainType = $this->extractType($node->type, $nameResolver)) {
             $keyType = 'int';
-            $valueType = $this->extractType($node->genericTypes[0], $nameResolver);
-            if (2 === \count($node->genericTypes)) {
+            $valueType = $genericParameters[0];
+            if (2 === \count($genericParameters)) {
                 $keyType = $valueType;
-                $valueType = $this->extractType($node->genericTypes[1], $nameResolver);
+                $valueType = $genericParameters[1];
             }
 
-            return sprintf('array<%s, %s>', $keyType, $valueType);
+            $genericParameters = [$keyType, $valueType];
         }
 
-        throw new \LogicException(sprintf('Unhandled "%s" generic type.', (string) $node));
+        return sprintf('%s<%s>', $mainType, implode(', ', $genericParameters));
     }
 
     private function extractArrayType(ArrayTypeNode|ArrayShapeNode $node, TypeNameResolver $nameResolver): string

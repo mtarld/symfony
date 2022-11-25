@@ -41,7 +41,7 @@ final class DictTemplateGeneratorTest extends TemplateGeneratorTestCase
             }
         };
 
-        $type = new Type('array', isGeneric: true, genericTypes:[new Type('string'), new Type('int')]);
+        $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]);
         $template = $dictTemplateGenerator->generate($type, '$accessor', $this->context());
 
         $this->assertSame([

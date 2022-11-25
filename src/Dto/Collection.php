@@ -7,23 +7,24 @@ namespace App\Dto;
 use Symfony\Component\Marshaller\Attribute\Name;
 
 /**
- * @template T of object
+ * @template Tk
+ * @template Tv
  */
 final class Collection
 {
     #[Name('hydra:member')]
-    /** @var list<T> */
+    /** @var array<Tk, Tv> */
     public array $collection;
 
-    #[Name('@type')]
-    public string $type = 'hydra:Collection';
-
-    #[Name('hydra:totalItems')]
-    public int $totalItems = 0;
-
-    public function __construct(...$collection)
-    {
-        $this->collection = $collection;
-        $this->totalItems = \count($collection);
-    }
+    // #[Name('@type')]
+    // public string $type = 'hydra:Collection';
+    //
+    // #[Name('hydra:totalItems')]
+    // public int $totalItems = 0;
+    //
+    // public function __construct(...$collection)
+    // {
+    //     $this->collection = $collection;
+    //     $this->totalItems = \count($collection);
+    // }
 }

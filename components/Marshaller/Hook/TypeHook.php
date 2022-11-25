@@ -9,6 +9,8 @@ namespace Symfony\Component\Marshaller\Hook;
  */
 final class TypeHook
 {
+    // TODO type_extractor from constructor instead
+
     /**
      * @param array<string, mixed> $context
      */
@@ -18,6 +20,7 @@ final class TypeHook
             throw new \RuntimeException('Missing "$context[\'symfony\'][\'type_extractor\']".');
         }
 
+        $context = $this->storeGenericTypes($type, $context);
         $accessor = $this->accessor($type, $accessor, $context);
         $accessorType = $this->type($type, $context);
 
@@ -26,14 +29,79 @@ final class TypeHook
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>
+     */
+    private function storeGenericTypes(string $type, array $context): array
+    {
+        $results = [];
+        if (!\preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $results)) {
+            return $context;
+        }
+
+        $genericType = $results['type'];
+        $genericParameters = [];
+        $currentGenericParameter = '';
+        $nestedLevel = 0;
+
+        foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
+            if (',' === $char && 0 === $nestedLevel) {
+                $genericParameters[] = $currentGenericParameter;
+                $currentGenericParameter = '';
+
+                continue;
+            }
+
+            if ('<' === $char) {
+                ++$nestedLevel;
+            }
+
+            if ('>' === $char) {
+                --$nestedLevel;
+            }
+
+            $currentGenericParameter .= $char;
+        }
+
+        $genericParameters[] = $currentGenericParameter;
+
+        if (0 !== $nestedLevel) {
+            throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $type));
+        }
+
+        if (!class_exists($genericType)) {
+            return $context;
+        }
+
+        $templates = $context['symfony']['type_extractor']->extractTemplateFromClass(new \ReflectionClass($genericType));
+
+        if (\count($templates) !== \count($genericParameters)) {
+            throw new \InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));
+        }
+
+        foreach ($genericParameters as $i => $genericParameter) {
+            $context['symfony']['generic_types'][$templates[$i]] = $genericParameter;
+        }
+
+        return $context;
+    }
+
+    /**
+     * @param array<string, mixed> $context
      */
     private function type(string $type, array $context): string
     {
-        if (null === $formatter = ($context['symfony']['type_formatter'][$type] ?? null)) {
-            return $type;
+        $formatter = $context['symfony']['type_formatter'][$type] ?? null;
+
+        $type = null !== $formatter
+            ? $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter))
+            : $type;
+
+        if (isset($context['symfony']['generic_types'][$type])) {
+            $type = $context['symfony']['generic_types'][$type];
         }
 
-        return $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter));
+        return $type;
     }
 
     /**

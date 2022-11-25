@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Tests\Fixtures;
 
 /**
- * @template T of object
+ * @template Tk of \Stringable
+ * @template Tv of object
  */
 final class PhpstanExtractableDummy extends AbstractDummy
 {
@@ -84,7 +85,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var int|string|null */
     public $nullableUnion;
 
-    /** @var list<T> */
+    /** @var list<string> */
     public $genericList;
 
     /** @var array<string> */
@@ -105,8 +106,11 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var int&string */
     public $intersection;
 
-    /** @var T */
-    public $nonArrayGeneric;
+    /** @var \ArrayIterator<Tk, Tv> */
+    public $generic;
+
+    /** @var Tv */
+    public $genericParameter;
 
     public $undefined;
 
@@ -302,10 +306,16 @@ final class PhpstanExtractableDummy extends AbstractDummy
         return $this->intersection;
     }
 
-    /** @return T */
-    public function nonArrayGeneric()
+    /** @return \ArrayIterator<Tk, Tv> */
+    public function generic()
     {
-        return $this->nonArrayGeneric;
+        return $this->generic;
+    }
+
+    /** @return Tv */
+    public function genericParameter()
+    {
+        return $this->genericParameter;
     }
 
     public function void(): void

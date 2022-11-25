@@ -52,14 +52,6 @@ final class HookExtractorTest extends TestCase
         $this->assertSame($expectedHook, (new HookExtractor())->extractFromType($type, ['hooks' => $hooks]));
     }
 
-    public function testExtractFromTypeThrowOnInvalidType(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown "foo" type.');
-
-        (new HookExtractor())->extractFromType(new Type('foo'), []);
-    }
-
     /**
      * @return iterable<array{0: ?callable, 1: array<string, callable>}, 2: Type>
      */
@@ -70,6 +62,8 @@ final class HookExtractorTest extends TestCase
 
         yield [null, [], new Type('int')];
         yield [null, ['other' => $createTypeHook()], new Type('int')];
+
+        yield [$hook = $createTypeHook(), ['foo' => $hook], new Type('foo')];
 
         $nullType = new Type('null');
 
@@ -97,7 +91,7 @@ final class HookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), [ClassicDummy::class => $hook, 'object' => $createTypeHook()], $objectType];
         yield [$hook = $createTypeHook(), ['object' => $hook, 'type' => $createTypeHook()], $objectType];
 
-        $listType = new Type('array', isNullable: true, isGeneric: true, genericTypes: [new Type('int'), new Type('int')]);
+        $listType = new Type('array', isNullable: true, isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]);
 
         yield [$hook = $createTypeHook(), ['?array' => $hook], $listType];
         yield [$hook = $createTypeHook(), ['array' => $hook], $listType];
@@ -109,7 +103,7 @@ final class HookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), ['list' => $hook, 'collection' => $createTypeHook()], $listType];
         yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $listType];
 
-        $dictType = new Type('array', isNullable: true, isGeneric: true, genericTypes: [new Type('string'), new Type('int')]);
+        $dictType = new Type('array', isNullable: true, isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]);
 
         yield [$hook = $createTypeHook(), ['?array' => $hook], $dictType];
         yield [$hook = $createTypeHook(), ['array' => $hook], $dictType];

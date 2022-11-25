@@ -37,22 +37,22 @@ final class TypeTest extends TestCase
         yield [new Type('object', isNullable: true, className: ClassicDummy::class), '?'.ClassicDummy::class];
 
         // generic types
-        yield [new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')]), ClassicDummy::class.'<int>'];
+        yield [new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]), ClassicDummy::class.'<int>'];
         yield [new Type(
             'object',
             className: ClassicDummy::class,
             isGeneric: true,
-            genericTypes: [new Type('int', isGeneric: true, genericTypes: [new Type('bool', isNullable: true)])],
+            genericParameterTypes: [new Type('int', isGeneric: true, genericParameterTypes: [new Type('bool', isNullable: true)])],
         ), ClassicDummy::class.'<int<?bool>>'];
 
         // collection types
-        yield [new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
-        yield [new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('float')]), 'array<float>'];
+        yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
+        yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')]), 'array<float>'];
         yield [
             new Type(
                 'array',
                 isGeneric: true,
-                genericTypes: [new Type('string'), new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')])],
+                genericParameterTypes: [new Type('string'), new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')])],
             ),
             'array<string, array<int, bool>>',
         ];
@@ -61,13 +61,13 @@ final class TypeTest extends TestCase
                 'array',
                 isNullable: true,
                 isGeneric: true,
-                genericTypes: [
+                genericParameterTypes: [
                     new Type('string', isNullable: true),
                     new Type(
                         'array',
                         isNullable: true,
                         isGeneric: true,
-                        genericTypes: [new Type('int', isNullable: true), new Type('bool', isNullable: true)],
+                        genericParameterTypes: [new Type('int', isNullable: true), new Type('bool', isNullable: true)],
                     ),
                 ]
             ),
@@ -83,12 +83,12 @@ final class TypeTest extends TestCase
                 new Type(
                     'array',
                     isGeneric: true,
-                    genericTypes: [new Type('string'), new UnionType([
-                        new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')]),
+                    genericParameterTypes: [new Type('string'), new UnionType([
+                        new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
                         new Type('float'),
                     ])],
                 ),
-                new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')]),
+                new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
             ]),
             sprintf('array<string, %s<int>|float>|array<int, bool>', ClassicDummy::class),
         ];
@@ -113,17 +113,9 @@ final class TypeTest extends TestCase
     public function testCreateThrowOnRawArray(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid "array" type.');
+        $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
 
         Type::createFromString('array');
-    }
-
-    public function testCreateThrowOnUnknownType(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid "foo" type.');
-
-        Type::createFromString('foo');
     }
 
     /**
@@ -152,28 +144,28 @@ final class TypeTest extends TestCase
         yield ['?'.ClassicDummy::class, new Type('object', isNullable: true, className: ClassicDummy::class)];
 
         // generic types
-        yield [ClassicDummy::class.'<int>', new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')])];
+        yield [ClassicDummy::class.'<int>', new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')])];
         yield [
             ClassicDummy::class.'<int<?bool>>',
             new Type(
                 'object',
                 className: ClassicDummy::class,
                 isGeneric: true,
-                genericTypes: [new Type('int', isGeneric: true, genericTypes: [new Type('bool', isNullable: true)])],
+                genericParameterTypes: [new Type('int', isGeneric: true, genericParameterTypes: [new Type('bool', isNullable: true)])],
             ),
         ];
 
         // collection types
-        yield ['array<int, int>', new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('int')])];
-        yield ['array<int, float>', new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('float')])];
+        yield ['array<int, int>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')])];
+        yield ['array<int, float>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')])];
         yield [
             'array<string, array<int, bool>>',
             new Type(
                 'array',
                 isGeneric: true,
-                genericTypes: [
+                genericParameterTypes: [
                     new Type('string'),
-                    new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')]),
+                    new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
                 ],
             ),
         ];
@@ -183,13 +175,13 @@ final class TypeTest extends TestCase
                 'array',
                 isNullable: true,
                 isGeneric: true,
-                genericTypes: [
+                genericParameterTypes: [
                     new Type('string', isNullable: true),
                     new Type(
                         'array',
                         isNullable: true,
                         isGeneric: true,
-                        genericTypes: [
+                        genericParameterTypes: [
                             new Type('int', isNullable: true),
                             new Type('bool', isNullable: true),
                         ],
@@ -223,8 +215,8 @@ final class TypeTest extends TestCase
         yield [sprintf('$accessor instanceof %s', ClassicDummy::class), new Type('object', className: ClassicDummy::class)];
 
         // collection types
-        yield ['is_array($accessor) && array_is_list($accessor)', new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('int')])];
-        yield ['is_array($accessor) && !array_is_list($accessor)', new Type('array', isGeneric: true, genericTypes: [new Type('string'), new Type('int')])];
+        yield ['is_array($accessor) && array_is_list($accessor)', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')])];
+        yield ['is_array($accessor) && !array_is_list($accessor)', new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')])];
     }
 
     public function testThrowOnUnavailableValidator(): void
@@ -246,17 +238,17 @@ final class TypeTest extends TestCase
     public function testCannotCreateWithTypeAndWithoutValue(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid generic types of "array" type.');
+        $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
 
-        new Type('array', isGeneric: true, genericTypes: [new Type('int')]);
+        new Type('array', isGeneric: true, genericParameterTypes: [new Type('int')]);
     }
 
     public function testCannotCreateGenericWithoutGenericTypes(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing generic types of "object" type');
+        $this->expectExceptionMessage('Missing generic parameter types of "object" type.');
 
-        new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: []);
+        new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: []);
     }
 
     public function testCannotGetClassNameOnNonObject(): void
@@ -318,7 +310,7 @@ final class TypeTest extends TestCase
             'generic' => false,
         ];
         yield [
-            'type' => new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')]),
+            'type' => new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
             'scalar' => false,
             'null' => false,
             'object' => true,
@@ -328,7 +320,7 @@ final class TypeTest extends TestCase
             'generic' => true,
         ];
         yield [
-            'type' => new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('int')]),
+            'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]),
             'scalar' => false,
             'null' => false,
             'object' => false,
@@ -338,7 +330,7 @@ final class TypeTest extends TestCase
             'generic' => true,
         ];
         yield [
-            'type' => new Type('array', isGeneric: true, genericTypes: [new Type('string'), new Type('int')]),
+            'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]),
             'scalar' => false,
             'null' => false,
             'object' => false,
