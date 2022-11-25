@@ -6,10 +6,8 @@ namespace Symfony\Component\Marshaller\Tests\Fixtures;
 
 use Symfony\Component\Marshaller\Attribute\Name;
 
-final class DummyWithNameAttributes
+final class DummyWithQuotes
 {
-    #[Name('@id')]
-    public int $id = 1;
-
-    public string $name = 'dummy';
+    #[Name('"name"')]
+    public string $name = '"quoted" dummy';
 }

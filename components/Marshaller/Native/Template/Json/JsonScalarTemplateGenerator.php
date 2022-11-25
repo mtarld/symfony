@@ -16,7 +16,7 @@ final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
     {
         if ('string' === $type->name()) {
             return $this->fwrite("'\"'", $context)
-                .$this->fwrite($accessor, $context)
+                .$this->fwrite("addslashes($accessor)", $context)
                 .$this->fwrite("'\"'", $context);
         }
 

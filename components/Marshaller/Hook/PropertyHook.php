@@ -39,7 +39,7 @@ final class PropertyHook
         $name = sprintf("'%s'", $property->getName());
 
         if (isset($context['symfony']['property_name'][$propertyIdentifier])) {
-            return sprintf("'%s'", $context['symfony']['property_name'][$propertyIdentifier]);
+            return sprintf("'%s'", addslashes($context['symfony']['property_name'][$propertyIdentifier]));
         }
 
         return $name;

@@ -19,7 +19,6 @@ final class NameAttributeNativeContextBuilderTest extends TestCase
             'symfony' => [
                 'property_name' => [
                     sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
-                    sprintf('%s::$enabled', DummyWithNameAttributes::class) => 'active',
                 ],
             ],
         ], $nativeContext);

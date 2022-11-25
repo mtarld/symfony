@@ -18,6 +18,7 @@ use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithQuotes;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
@@ -101,13 +102,8 @@ final class MarshallerTest extends TestCase
             '    \fwrite($resource, \'name\');',
             '    \fwrite($resource, \'":\');',
             '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, addslashes($object_0->name));',
             '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \',\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'active\');',
-            '    \fwrite($resource, \'":\');',
-            '    \fwrite($resource, $object_0->enabled ? \'true\' : \'false\');',
             '    \fwrite($resource, \'}\');',
             '};',
         ], DummyWithNameAttributes::class, null];
@@ -126,14 +122,14 @@ final class MarshallerTest extends TestCase
             '    \fwrite($resource, \'id\');',
             '    \fwrite($resource, \'":\');',
             '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context));',
+            '    \fwrite($resource, addslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context)));',
             '    \fwrite($resource, \'"\');',
             '    \fwrite($resource, \',\');',
             '    \fwrite($resource, \'"\');',
             '    \fwrite($resource, \'name\');',
             '    \fwrite($resource, \'":\');',
             '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, addslashes($object_0->name));',
             '    \fwrite($resource, \'"\');',
             '    \fwrite($resource, \'}\');',
             '};',
@@ -158,7 +154,7 @@ final class MarshallerTest extends TestCase
             '    \fwrite($resource, \'name\');',
             '    \fwrite($resource, \'":\');',
             '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, $object_0->name);',
+            '    \fwrite($resource, addslashes($object_0->name));',
             '    \fwrite($resource, \'"\');',
             '    \fwrite($resource, \'}\');',
             '};',
@@ -194,8 +190,9 @@ final class MarshallerTest extends TestCase
         yield [1, 1, null];
         yield ['1', 1, new Context(new TypeOption('string'))];
         yield [['id' => 1, 'name' => 'dummy'], new ClassicDummy(), null];
-        yield [['@id' => 1, 'name' => 'dummy', 'active' => true], new DummyWithNameAttributes(), null];
+        yield [['@id' => 1, 'name' => 'dummy'], new DummyWithNameAttributes(), null];
         yield [['id' => '2', 'name' => 'dummy'], new DummyWithFormatterAttributes(), null];
+        yield [['"name"' => '"quoted" dummy'], new DummyWithQuotes(), null];
         yield [['foo' => 'bar', 'name' => 'dummy'], new ClassicDummy(), new Context(new HookOption([
             sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
                 return '    \fwrite($resource, \'"foo": "bar"\');';
