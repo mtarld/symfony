@@ -22,6 +22,7 @@ final class Formatter
 
         $reflection = new \ReflectionFunction($this->formatter);
 
+        // TODO really needed? can be validated in the hook
         if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Callable of attribute "%s" must be not return "void" nor "never".', self::class));
         }

@@ -137,7 +137,6 @@ final class PhpstanTypeExtractorTest extends TestCase
         yield ['array<int, string>', 'squareBracketList'];
         yield ['array<string, int|string>', 'bracketList'];
         yield ['array<string, mixed>', 'emptyBracketList'];
-        yield [PhpstanExtractableDummy::class, 'this'];
         yield ['FALLBACK', 'undefined'];
     }
 }

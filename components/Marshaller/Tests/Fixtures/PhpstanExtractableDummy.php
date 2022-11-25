@@ -99,9 +99,6 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var array{} */
     public $emptyBracketList;
 
-    /** @var */
-    public $this;
-
     /** @var int&string */
     public $intersection;
 
@@ -294,12 +291,6 @@ final class PhpstanExtractableDummy extends AbstractDummy
     public function emptyBracketList()
     {
         return $this->emptyBracketList;
-    }
-
-    /** @return $this */
-    public function this()
-    {
-        return $this->this;
     }
 
     /** @return int&string */
