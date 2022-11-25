@@ -6,9 +6,13 @@ namespace App\Dto;
 
 use Symfony\Component\Marshaller\Attribute\Name;
 
-final class Collection implements \IteratorAggregate
+/**
+ * @template T of object
+ */
+final class Collection
 {
     #[Name('hydra:member')]
+    /** @var list<T> */
     public array $collection;
 
     #[Name('@type')]
@@ -21,10 +25,5 @@ final class Collection implements \IteratorAggregate
     {
         $this->collection = $collection;
         $this->totalItems = \count($collection);
-    }
-
-    public function getIterator(): \Traversable
-    {
-        return new \ArrayIterator($this->collection);
     }
 }

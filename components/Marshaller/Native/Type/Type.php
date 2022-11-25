@@ -9,19 +9,27 @@ namespace Symfony\Component\Marshaller\Native\Type;
  */
 final class Type implements \Stringable
 {
+    /**
+     * @param list<self|UnionType> $genericDiamondTypes
+     */
     public function __construct(
         private readonly string $name,
         private readonly bool $isNullable = false,
         private readonly ?string $className = null,
-        private readonly self|UnionType|null $collectionKeyType = null,
-        private readonly self|UnionType|null $collectionValueType = null
+        private readonly bool $isGeneric = false,
+        private readonly ?array $genericTypes = null,
     ) {
         if ($this->isObject() && null === $this->className) {
             throw new \InvalidArgumentException(sprintf('Missing className of "%s" type.', $this->name));
         }
 
-        if ($this->collectionKeyType xor $this->collectionValueType) {
-            throw new \InvalidArgumentException(sprintf('Missing either collectionKeyType or collectionValueType of "%s" type.', $this->name));
+        // TODO test
+        if ($this->isGeneric && !$this->genericTypes) {
+            throw new \InvalidArgumentException(sprintf('Missing generic types of "%s" type.', $this->name));
+        }
+
+        if ('array' === $this->name && 2 !== \count($this->genericTypes)) {
+            throw new \InvalidArgumentException(sprintf('Invalid generic types of "%s" type.', $this->name));
         }
     }
 
@@ -98,15 +106,21 @@ final class Type implements \Stringable
             return new Type($string, $isNullable);
         }
 
+        if (class_exists($string)) {
+            return new Type('object', $isNullable, $string);
+        }
+
         $results = [];
-        if (\preg_match('/^array<(?P<diamond>.+)>$/', $string, $results)) {
+        if (\preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
             $nestedLevel = 0;
-            $keyType = $valueType = '';
-            $isReadingKey = true;
+            $genericTypes = [];
+            $currentGenericType = '';
 
             foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
                 if (',' === $char && 0 === $nestedLevel) {
-                    $isReadingKey = false;
+                    $genericTypes[] = $currentGenericType;
+                    $currentGenericType = '';
+
                     continue;
                 }
 
@@ -118,27 +132,33 @@ final class Type implements \Stringable
                     --$nestedLevel;
                 }
 
-                if ($isReadingKey) {
-                    $keyType .= $char;
-                } else {
-                    $valueType .= $char;
-                }
+                $currentGenericType .= $char;
             }
 
-            if ('' === $valueType) {
-                $valueType = $keyType;
-                $keyType = 'int';
-            }
+            $genericTypes[] = $currentGenericType;
 
             if (0 !== $nestedLevel) {
                 throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
             }
 
+            if ('array' === $results['type'] && 1 === \count($genericTypes)) {
+                array_unshift($genericTypes, 'int');
+            }
+
+            $type = $results['type'];
+            $className = null;
+
+            if (class_exists($type)) {
+                $className = $type;
+                $type = 'object';
+            }
+
             return new Type(
-                name: 'array',
+                name: $type,
                 isNullable: $isNullable,
-                collectionKeyType: self::createFromString($keyType),
-                collectionValueType: self::createFromString($valueType),
+                isGeneric: true,
+                className: $className,
+                genericTypes: array_map(fn (string $t): self|UnionType => self::createFromString($t), $genericTypes),
             );
         }
 
@@ -168,6 +188,14 @@ final class Type implements \Stringable
         return $this->className;
     }
 
+    /**
+     * @return list<self|UnionType>
+     */
+    public function genericTypes(): array
+    {
+        return $this->genericTypes;
+    }
+
     public function isScalar(): bool
     {
         return in_array($this->name, ['int', 'float', 'string', 'bool'], true);
@@ -183,14 +211,19 @@ final class Type implements \Stringable
         return 'object' === $this->name;
     }
 
+    public function isGeneric(): bool
+    {
+        return $this->isGeneric;
+    }
+
     public function isCollection(): bool
     {
-        return null !== $this->collectionKeyType && null !== $this->collectionValueType;
+        return 'array' === $this->name;
     }
 
     public function isList(): bool
     {
-        return $this->isCollection() && 'int' === $this->collectionKeyType?->name();
+        return $this->isCollection() && 'int' === $this->collectionKeyType()->name();
     }
 
     public function isDict(): bool
@@ -204,7 +237,7 @@ final class Type implements \Stringable
             throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->collectionKeyType;
+        return $this->genericTypes[0];
     }
 
     public function collectionValueType(): Type|UnionType
@@ -213,7 +246,7 @@ final class Type implements \Stringable
             throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->collectionValueType;
+        return $this->genericTypes[1];
     }
 
     public function __toString(): string
@@ -224,18 +257,13 @@ final class Type implements \Stringable
 
         $nullablePrefix = $this->isNullable() ? '?' : '';
 
-        if ($this->isCollection()) {
-            $diamond = '';
-            if ($this->collectionKeyType && $this->collectionValueType) {
-                $diamond = sprintf('<%s, %s>', (string) $this->collectionKeyType, (string) $this->collectionValueType);
-            }
-
-            return $nullablePrefix.'array'.$diamond;
-        }
-
         $name = $this->name();
         if ($this->isObject()) {
             $name = $this->className();
+        }
+
+        if ($this->isGeneric()) {
+            $name .= sprintf('<%s>', implode(', ', (string) $this->genericTypes));
         }
 
         return $nullablePrefix.$name;

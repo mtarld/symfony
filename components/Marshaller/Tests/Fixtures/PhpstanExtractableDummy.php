@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Fixtures;
 
+/**
+ * @template T of object
+ */
 final class PhpstanExtractableDummy extends AbstractDummy
 {
     /** @var mixed */
@@ -81,7 +84,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var int|string|null */
     public $nullableUnion;
 
-    /** @var list<string> */
+    /** @var list<T> */
     public $genericList;
 
     /** @var array<string> */
@@ -102,7 +105,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var int&string */
     public $intersection;
 
-    /** @var ArrayIterator<T> */
+    /** @var T */
     public $nonArrayGeneric;
 
     public $undefined;
@@ -299,7 +302,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
         return $this->intersection;
     }
 
-    /** @return ArrayIterator<T> */
+    /** @return T */
     public function nonArrayGeneric()
     {
         return $this->nonArrayGeneric;

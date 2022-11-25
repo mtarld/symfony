@@ -36,14 +36,23 @@ final class TypeTest extends TestCase
         yield [new Type('object', className: ClassicDummy::class), ClassicDummy::class];
         yield [new Type('object', isNullable: true, className: ClassicDummy::class), '?'.ClassicDummy::class];
 
+        // generic types
+        yield [new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')]), ClassicDummy::class.'<int>'];
+        yield [new Type(
+            'object',
+            className: ClassicDummy::class,
+            isGeneric: true,
+            genericTypes: [new Type('int', isGeneric: true, genericTypes: [new Type('bool', isNullable: true)])],
+        ), ClassicDummy::class.'<int<?bool>>'];
+
         // collection types
-        yield [new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('int')), 'array<int, int>'];
-        yield [new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('float')), 'array<float>'];
+        yield [new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
+        yield [new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('float')]), 'array<float>'];
         yield [
             new Type(
                 'array',
-                collectionKeyType: new Type('string'),
-                collectionValueType: new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('bool')),
+                isGeneric: true,
+                genericTypes: [new Type('string'), new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')])],
             ),
             'array<string, array<int, bool>>',
         ];
@@ -51,13 +60,16 @@ final class TypeTest extends TestCase
             new Type(
                 'array',
                 isNullable: true,
-                collectionKeyType: new Type('string', isNullable: true),
-                collectionValueType: new Type(
-                    'array',
-                    isNullable: true,
-                    collectionKeyType: new Type('int', isNullable: true),
-                    collectionValueType: new Type('bool', isNullable: true),
-                ),
+                isGeneric: true,
+                genericTypes: [
+                    new Type('string', isNullable: true),
+                    new Type(
+                        'array',
+                        isNullable: true,
+                        isGeneric: true,
+                        genericTypes: [new Type('int', isNullable: true), new Type('bool', isNullable: true)],
+                    ),
+                ]
             ),
             '?array<?string, ?array<?int, ?bool>>',
         ];
@@ -70,12 +82,15 @@ final class TypeTest extends TestCase
             new UnionType([
                 new Type(
                     'array',
-                    collectionKeyType: new Type('string'),
-                    collectionValueType: new UnionType([new Type('string'), new Type('float')]),
+                    isGeneric: true,
+                    genericTypes: [new Type('string'), new UnionType([
+                        new Type('object', className: ClassicDummy::class, isGeneric: true, genericTypes: [new Type('int')]),
+                        new Type('float'),
+                    ])],
                 ),
-                new Type('array', collectionKeyType: new Type('int'), collectionValueType: new Type('bool')),
+                new Type('array', isGeneric: true, genericTypes: [new Type('int'), new Type('bool')]),
             ]),
-            'array<string, string|float>|array<int, bool>',
+            sprintf('array<string, %s<int>|float>|array<int, bool>', ClassicDummy::class),
         ];
     }
 
