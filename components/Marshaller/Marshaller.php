@@ -40,7 +40,7 @@ final class Marshaller implements MarshallerInterface
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        return marshal_generate($type, $format, $this->buildGenerateNativeContext($type, $format, $context));
+        return marshal_generate($type, $format, $this->buildGenerateNativeContext($type, $context));
     }
 
     /**
@@ -68,14 +68,16 @@ final class Marshaller implements MarshallerInterface
     private function buildGenerateNativeContext(string $type, ?Context $context): array
     {
         $context = $context ?? new Context();
-        $nativeContext = [];
+        $nativeContext = [
+            'hooks' => [
+                'property' => (new PropertyHook())(...),
+                'type' => (new TypeHook())(...),
+            ],
+        ];
 
         foreach ($this->generateNativeContextBuilders as $builder) {
             $nativeContext = $builder->buildGenerateNativeContext($type, $context, $nativeContext);
         }
-
-        $nativeContext['hooks']['property'] = (new PropertyHook())(...);
-        $nativeContext['hooks']['type'] = (new TypeHook())(...);
 
         return $nativeContext;
     }

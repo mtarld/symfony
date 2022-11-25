@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
-use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNotPublicProperty;
@@ -171,7 +170,7 @@ final class PropertyHookTest extends TestCase
     public function testThrowWhenTypeExtractorIsMissing(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('Missing "$context[\'symfony\'][\'type_extractor\']". Did you forget to run "%s"?', TypeExtractorNativeContextBuilder::class));
+        $this->expectExceptionMessage('Missing "$context[\'symfony\'][\'type_extractor\']".');
 
         (new PropertyHook())(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', []);
     }

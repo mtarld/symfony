@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Hook\TypeHook;
-use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -65,7 +64,7 @@ final class TypeHookTest extends TestCase
     public function testThrowWhenTypeExtractorIsMissing(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('Missing "$context[\'symfony\'][\'type_extractor\']". Did you forget to run "%s"?', TypeExtractorNativeContextBuilder::class));
+        $this->expectExceptionMessage('Missing "$context[\'symfony\'][\'type_extractor\']".');
 
         (new TypeHook())('type', '$accessor', 'format', []);
     }

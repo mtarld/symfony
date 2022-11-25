@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Hook;
 
-use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
-
 /**
  * @internal
  */
@@ -19,7 +17,7 @@ final class PropertyHook
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
         if (!isset($context['symfony']['type_extractor'])) {
-            throw new \RuntimeException(sprintf('Missing "$context[\'symfony\'][\'type_extractor\']". Did you forget to run "%s"?', TypeExtractorNativeContextBuilder::class));
+            throw new \RuntimeException('Missing "$context[\'symfony\'][\'type_extractor\']".');
         }
 
         if (!$property->isPublic()) {
