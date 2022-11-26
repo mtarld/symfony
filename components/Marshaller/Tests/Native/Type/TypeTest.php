@@ -102,7 +102,7 @@ final class TypeTest extends TestCase
         Type::createFromString('foo&bar');
     }
 
-    public function testCreateThrowOnInvalidArrayString(): void
+    public function testCreateThrowOnInvalidGenericString(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid "array<int, array<string, bool>" type.');

@@ -10,4 +10,6 @@ final class Item
 {
     #[Name('@id')]
     public int $id = 1;
+
+    public string $name = 'name';
 }

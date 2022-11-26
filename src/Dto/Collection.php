@@ -16,15 +16,15 @@ final class Collection
     /** @var array<Tk, Tv> */
     public array $collection;
 
-    // #[Name('@type')]
-    // public string $type = 'hydra:Collection';
-    //
-    // #[Name('hydra:totalItems')]
-    // public int $totalItems = 0;
-    //
-    // public function __construct(...$collection)
-    // {
-    //     $this->collection = $collection;
-    //     $this->totalItems = \count($collection);
-    // }
+    #[Name('@type')]
+    public string $type = 'hydra:Collection';
+
+    #[Name('hydra:totalItems')]
+    public int $totalItems = 0;
+
+    public function __construct(...$collection)
+    {
+        $this->collection = $collection;
+        $this->totalItems = \count($collection);
+    }
 }

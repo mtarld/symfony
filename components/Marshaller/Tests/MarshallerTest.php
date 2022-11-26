@@ -12,7 +12,6 @@ use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\TypeExtractorNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
@@ -50,15 +49,16 @@ final class MarshallerTest extends TestCase
      */
     public function testMarshalGenerate(array $expectedLines, string $type, ?Context $context): void
     {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+
         $marshalGenerateContextBuilders = [
-            new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
             new HookNativeContextBuilder(),
+            new TypeFormatterNativeContextBuilder(),
             new NameAttributeNativeContextBuilder(),
             new FormatterAttributeNativeContextBuilder(),
-            new TypeFormatterNativeContextBuilder(),
         ];
 
-        $lines = explode("\n", (new Marshaller($marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
+        $lines = explode("\n", (new Marshaller($typeExtractor, $marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
         array_pop($lines);
 
         $this->assertSame($expectedLines, $lines);
@@ -69,8 +69,6 @@ final class MarshallerTest extends TestCase
      */
     public function marshalGenerateDataProvider(): iterable
     {
-        $typeExtractorNativeContextBuilder = new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor()));
-
         yield [[
             '<?php',
             '',
@@ -168,15 +166,16 @@ final class MarshallerTest extends TestCase
      */
     public function testMarshal(mixed $expectedDecodedData, mixed $data, ?Context $context): void
     {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+
         $marshalGenerateContextBuilders = [
-            new TypeExtractorNativeContextBuilder(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
             new HookNativeContextBuilder(),
+            new TypeFormatterNativeContextBuilder(),
             new NameAttributeNativeContextBuilder(),
             new FormatterAttributeNativeContextBuilder(),
-            new TypeFormatterNativeContextBuilder(),
         ];
 
-        (new Marshaller($marshalGenerateContextBuilders, $this->cacheDir))->marshal($data, 'json', $output = new MemoryStreamOutput(), $context);
+        (new Marshaller($typeExtractor, $marshalGenerateContextBuilders, $this->cacheDir))->marshal($data, 'json', $output = new MemoryStreamOutput(), $context);
 
         $this->assertSame($expectedDecodedData, json_decode((string) $output, true));
     }

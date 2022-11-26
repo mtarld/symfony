@@ -7,9 +7,11 @@ namespace Symfony\Component\Marshaller;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\NativeContextBuilder\GenerateNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
+use Symfony\Component\Marshaller\Hook\ObjectHook;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
 use Symfony\Component\Marshaller\Hook\TypeHook;
 use Symfony\Component\Marshaller\Output\OutputInterface;
+use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 use function Symfony\Component\Marshaller\Native\marshal;
 use function Symfony\Component\Marshaller\Native\marshal_generate;
@@ -20,6 +22,9 @@ final class Marshaller implements MarshallerInterface
      * @param iterable<GenerateNativeContextBuilderInterface> $marshalGenerateNativeContextBuilders
      */
     public function __construct(
+        // TODO lazy
+        private readonly TypeExtractorInterface $typeExtractor,
+        // TODO lazy
         private readonly iterable $marshalGenerateNativeContextBuilders,
         private readonly string $cacheDir,
     ) {
@@ -60,8 +65,9 @@ final class Marshaller implements MarshallerInterface
 
         $nativeContext += [
             'hooks' => [
-                'property' => (new PropertyHook())(...),
-                'type' => (new TypeHook())(...),
+                'object' => (new ObjectHook($this->typeExtractor))(...),
+                'property' => (new PropertyHook($this->typeExtractor))(...),
+                'type' => (new TypeHook($this->typeExtractor))(...),
             ],
         ];
 

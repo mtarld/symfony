@@ -4,101 +4,50 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Hook;
 
+use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
+
 /**
  * @internal
  */
 final class TypeHook
 {
-    // TODO type_extractor from constructor instead
+    public function __construct(
+        private readonly TypeExtractorInterface $typeExtractor,
+    ) {
+    }
 
     /**
      * @param array<string, mixed> $context
      */
     public function __invoke(string $type, string $accessor, string $format, array $context): string
     {
-        if (!isset($context['symfony']['type_extractor'])) {
-            throw new \RuntimeException('Missing "$context[\'symfony\'][\'type_extractor\']".');
-        }
+        $typeFormatter = isset($context['symfony']['type_formatter'][$type]) ? new \ReflectionFunction($context['symfony']['type_formatter'][$type]) : null;
 
-        $context = $this->storeGenericTypes($type, $context);
-        $accessor = $this->accessor($type, $accessor, $context);
-        $accessorType = $this->type($type, $context);
+        $accessor = $this->accessor($type, $typeFormatter, $accessor, $context);
+        $accessorType = $this->type($type, $typeFormatter, $context);
 
         return $context['type_template_generator']($accessorType, $accessor, $context);
     }
 
     /**
      * @param array<string, mixed> $context
-     *
-     * @return array<string, mixed>
      */
-    private function storeGenericTypes(string $type, array $context): array
+    private function type(string $type, ?\ReflectionFunction $typeFormatter, array $context): string
     {
-        $results = [];
-        if (!\preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $results)) {
-            return $context;
-        }
+        $currentPropertyClass = $context['symfony']['current_property_class'] ?? null;
 
-        $genericType = $results['type'];
-        $genericParameters = [];
-        $currentGenericParameter = '';
-        $nestedLevel = 0;
+        if (null !== $typeFormatter) {
+            $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
+            $declaringClass = $typeFormatter instanceof \ReflectionMethod ? $typeFormatter->getDeclaringClass() : $typeFormatter->getClosureScopeClass();
 
-        foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
-            if (',' === $char && 0 === $nestedLevel) {
-                $genericParameters[] = $currentGenericParameter;
-                $currentGenericParameter = '';
-
-                continue;
+            // If method doesn't belong to the current class, ignore generic search
+            if ($declaringClass->getName() !== $currentPropertyClass) {
+                $currentPropertyClass = null;
             }
-
-            if ('<' === $char) {
-                ++$nestedLevel;
-            }
-
-            if ('>' === $char) {
-                --$nestedLevel;
-            }
-
-            $currentGenericParameter .= $char;
         }
 
-        $genericParameters[] = $currentGenericParameter;
-
-        if (0 !== $nestedLevel) {
-            throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $type));
-        }
-
-        if (!class_exists($genericType)) {
-            return $context;
-        }
-
-        $templates = $context['symfony']['type_extractor']->extractTemplateFromClass(new \ReflectionClass($genericType));
-
-        if (\count($templates) !== \count($genericParameters)) {
-            throw new \InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));
-        }
-
-        foreach ($genericParameters as $i => $genericParameter) {
-            $context['symfony']['generic_types'][$templates[$i]] = $genericParameter;
-        }
-
-        return $context;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function type(string $type, array $context): string
-    {
-        $formatter = $context['symfony']['type_formatter'][$type] ?? null;
-
-        $type = null !== $formatter
-            ? $context['symfony']['type_extractor']->extractFromReturnType(new \ReflectionFunction($formatter))
-            : $type;
-
-        if (isset($context['symfony']['generic_types'][$type])) {
-            $type = $context['symfony']['generic_types'][$type];
+        if (null !== $currentPropertyClass && isset($context['symfony']['generic_parameter_types'][$currentPropertyClass][$type])) {
+            $type = $context['symfony']['generic_parameter_types'][$currentPropertyClass][$type];
         }
 
         return $type;
@@ -107,27 +56,25 @@ final class TypeHook
     /**
      * @param array<string, mixed> $context
      */
-    private function accessor(string $type, string $accessor, array $context): string
+    private function accessor(string $type, ?\ReflectionFunction $typeFormatter, string $accessor, array $context): string
     {
-        if (null === $formatter = ($context['symfony']['type_formatter'][$type] ?? null)) {
+        if (null === $typeFormatter) {
             return $accessor;
         }
 
-        $formatterReflection = new \ReflectionFunction($formatter);
-
-        if (!$formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName()) || !$formatterReflection->isStatic()) {
+        if (!$typeFormatter->getClosureScopeClass()?->hasMethod($typeFormatter->getName()) || !$typeFormatter->isStatic()) {
             throw new \InvalidArgumentException(sprintf('Type formatter "%s" must be a static method.', $type));
         }
 
-        if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
+        if (($returnType = $typeFormatter->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
         }
 
-        if (2 !== \count($formatterReflection->getParameters())) {
+        if (2 !== \count($typeFormatter->getParameters())) {
             throw new \InvalidArgumentException(sprintf('Type formatter "%s" must have exactly two parameters.', $type));
         }
 
-        if (null !== ($contextParameter = $formatterReflection->getParameters()[1] ?? null)) {
+        if (null !== ($contextParameter = $typeFormatter->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
@@ -135,6 +82,6 @@ final class TypeHook
             }
         }
 
-        return sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $accessor);
+        return sprintf('%s::%s(%s, $context)', $typeFormatter->getClosureScopeClass()->getName(), $typeFormatter->getName(), $accessor);
     }
 }
