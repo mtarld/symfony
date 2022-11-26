@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\IfNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
 
@@ -12,7 +14,6 @@ use Symfony\Component\Marshaller\Native\Type\UnionType;
  */
 final class UnionTemplateGenerator
 {
-    use PhpWriterTrait;
     use VariableNameScoperTrait;
 
     public function __construct(
@@ -22,35 +23,32 @@ final class UnionTemplateGenerator
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    public function generate(UnionType $type, string $accessor, array $context): string
+    public function generate(UnionType $type, NodeInterface $accessor, array $context): array
     {
-        $template = '';
-
         $typesCount = count($type->types);
-        if (0 === $typesCount) {
-            return '';
+        if ($typesCount <= 0) {
+            return [];
         }
 
-        foreach ($this->sortTypesByPriority($type->types) as $i => $type) {
-            $ifStructure = sprintf('} elseif (%s) {', $type->validator($accessor));
-
-            if (0 === $i) {
-                $ifStructure = sprintf('if (%s) {', $type->validator($accessor));
-            } elseif ($typesCount - 1 === $i) {
-                $ifStructure = '} else {';
-            }
-
-            $template .= $this->writeLine($ifStructure, $context);
-            ++$context['indentation_level'];
-
-            $template .= $this->templateGenerator->generate($type, $accessor, $context);
-            --$context['indentation_level'];
+        if (1 === $typesCount) {
+            return $this->templateGenerator->generate($type, $accessor, $context);
         }
 
-        $template .= $this->writeLine('}', $context);
+        $types = $this->sortTypesByPriority($type->types);
 
-        return $template;
+        $ifType = array_shift($types);
+        $elseType = array_pop($types);
+        $elseIfTypes = array_map(fn (Type $t): array => ['condition' => $t->validator($accessor), 'body' => $this->templateGenerator->generate($t, $accessor, $context)], $types);
+
+        return [new IfNode(
+            $ifType->validator($accessor),
+            $this->templateGenerator->generate($ifType, $accessor, $context),
+            $this->templateGenerator->generate($elseType, $accessor, $context),
+            $elseIfTypes,
+        )];
     }
 
     /**

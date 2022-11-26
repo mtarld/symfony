@@ -32,14 +32,6 @@ final class MarshalGenerateTest extends TestCase
         ], $lines);
     }
 
-    public function testGenerateUnEnclosedTemplate(): void
-    {
-        $lines = explode("\n", marshal_generate('int', 'json', ['enclosed' => false]));
-        array_pop($lines);
-
-        $this->assertSame(['\fwrite($resource, $data);'], $lines);
-    }
-
     public function testGenerateTemplateWithCustomAccessor(): void
     {
         $lines = explode("\n", marshal_generate('int', 'json', ['accessor' => '$foo']));

@@ -23,7 +23,7 @@ class TestCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        dump($this->marshaller->generate(sprintf('%s<string, %s>', Collection::class, Item::class), 'json'));
+        dd($this->marshaller->generate(Collection::class.'<int, '.Item::class.'>', 'json'));
 
         return Command::SUCCESS;
     }

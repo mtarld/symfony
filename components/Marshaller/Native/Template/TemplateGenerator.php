@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Compiler;
+use Symfony\Component\Marshaller\Native\Ast\Node\BinaryNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\IfNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\RawNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
@@ -13,8 +19,6 @@ use Symfony\Component\Marshaller\Native\Type\UnionType;
  */
 abstract class TemplateGenerator implements TemplateGeneratorInterface
 {
-    use PhpWriterTrait;
-
     private readonly HookExtractor $hookExtractor;
 
     public function __construct(
@@ -34,74 +38,62 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
         return $this->format;
     }
 
-    public function generate(Type|UnionType $type, string $accessor, array $context): string
+    /**
+     * @return list<NodeInterface>
+     */
+    public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
-        $template = '';
+        $nodes = $this->generateTypeTemplate($type, $accessor, $context);
 
-        if ($type->isNullable()) {
-            $template .= $this->writeLine("if (null === $accessor) {", $context);
-
-            ++$context['indentation_level'];
-
-            $template .= $this->generateTypeTemplate(new Type('null'), 'NO_ACCESSOR', $context);
-
-            --$context['indentation_level'];
-            $template .= $this->writeLine('} else {', $context);
-
-            ++$context['indentation_level'];
+        if (!$type->isNullable()) {
+            return $nodes;
         }
 
-        $template .= $this->generateTypeTemplate($type, $accessor, $context);
-
-        if ($type->isNullable()) {
-            --$context['indentation_level'];
-            $template .= $this->writeLine('}', $context);
-        }
-
-        --$context['indentation_level'];
-
-        return $template;
+        return [
+            new IfNode(
+                new BinaryNode('===', new ScalarNode(null), $accessor),
+                $this->generateTypeTemplate(new Type('null'), new ScalarNode(null), $context),
+                $nodes,
+            ),
+        ];
     }
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    private function generateTypeTemplate(Type|UnionType $type, string $accessor, array $context): string
+    private function generateTypeTemplate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
+        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
+            $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
+
+            // TODO throw if missing
+            $type = Type::createFromString($hookResult['type']);
+            $accessor = new RawNode($hookResult['accessor']);
+            $context = $hookResult['context'];
+        }
+
         if ($type instanceof UnionType) {
             return $this->unionGenerator->generate($type, $accessor, $context);
         }
 
-        $typeTemplateGenerator = function (Type $type, string $accessor, array $context): string {
-            return match (true) {
-                $type->isNull() => $this->nullGenerator->generate($context),
-                $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
-                $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
-                $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
-                $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
-                default => throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type)),
-            };
+        return match (true) {
+            $type->isNull() => $this->nullGenerator->generate($context),
+            $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
+            $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
+            $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
+            $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
+            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type)),
         };
-
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $hookContext = $context + [
-                'type_template_generator' => static function (string $type, string $accessor, array $context) use ($typeTemplateGenerator): string {
-                    return $typeTemplateGenerator(Type::createFromString($type), $accessor, $context);
-                },
-            ];
-
-            if (null !== $hookResult = $hook((string) $type, $accessor, $this->format, $hookContext)) {
-                return $hookResult;
-            }
-        }
-
-        return $typeTemplateGenerator($type, $accessor, $context);
     }
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    private function generateObjectTemplate(Type $type, string $accessor, array $context): string
+    private function generateObjectTemplate(Type $type, NodeInterface $accessor, array $context): array
     {
         $className = $type->className();
 

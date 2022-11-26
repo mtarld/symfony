@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
@@ -11,7 +18,6 @@ use Symfony\Component\Marshaller\Native\Type\Type;
  */
 abstract class ListTemplateGenerator
 {
-    use PhpWriterTrait;
     use VariableNameScoperTrait;
 
     public function __construct(
@@ -19,35 +25,33 @@ abstract class ListTemplateGenerator
     ) {
     }
 
-    abstract protected function beforeValues(): string;
+    abstract protected function beforeItems(): string;
 
-    abstract protected function afterValues(): string;
+    abstract protected function afterItems(): string;
 
-    abstract protected function valueSeparator(): string;
+    abstract protected function itemSeparator(): string;
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, NodeInterface $accessor, array $context): array
     {
         $prefixName = $this->scopeVariableName('prefix', $context);
         $valueName = $this->scopeVariableName('value', $context);
 
-        $template = $this->fwrite(sprintf("'%s'", $this->beforeValues()), $context)
-            .$this->writeLine("$prefixName = '';", $context)
-            .$this->writeLine("foreach ($accessor as $valueName) {", $context);
+        return [
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforeItems())])),
+            new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
-        ++$context['indentation_level'];
+            new ForEachNode($accessor, null, $valueName, [
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
+                ...$this->templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),
+                new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode($this->itemSeparator()))),
+            ]),
 
-        $template .= $this->fwrite($prefixName, $context)
-            .$this->templateGenerator->generate($type->collectionValueType(), $valueName, $context)
-            .$this->writeLine(sprintf("$prefixName = '%s';", $this->valueSeparator()), $context);
-
-        --$context['indentation_level'];
-
-        $template .= $this->writeLine('}', $context)
-            .$this->fwrite(sprintf("'%s'", $this->afterValues()), $context);
-
-        return $template;
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterItems())])),
+        ];
     }
 }

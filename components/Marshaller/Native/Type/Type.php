@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Type;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\BinaryNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\UnaryNode;
+
 /**
  * @internal
  */
@@ -265,26 +271,26 @@ final class Type implements \Stringable
         return $nullablePrefix.$name;
     }
 
-    public function validator(string $accessor): string
+    public function validator(NodeInterface $accessor): NodeInterface
     {
         if ('null' === $this->name()) {
-            return sprintf('null === %s', $accessor);
+            return new BinaryNode('===', new ScalarNode(null), $accessor);
         }
 
         if ($this->isScalar()) {
-            return sprintf('is_%s(%s)', $this->name(), $accessor);
+            return new FunctionNode(sprintf('\is_%s', $this->name()), [$accessor]);
         }
 
         if ($this->isList()) {
-            return sprintf('is_array(%s) && array_is_list(%1$s)', $accessor);
+            return new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new FunctionNode('\array_is_list', [$accessor]));
         }
 
         if ($this->isDict()) {
-            return sprintf('is_array(%s) && !array_is_list(%1$s)', $accessor);
+            return new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new UnaryNode('!', new FunctionNode('\array_is_list', [$accessor])));
         }
 
         if ($this->isObject()) {
-            return sprintf('%s instanceof %s', $accessor, $this->className());
+            return new BinaryNode('instanceof', $accessor, new ScalarNode($this->className()));
         }
 
         throw new \LogicException(sprintf('Cannot find validator for "%s".', (string) $this));

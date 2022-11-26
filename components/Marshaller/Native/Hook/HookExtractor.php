@@ -27,8 +27,8 @@ final class HookExtractor
 
         $reflection = new \ReflectionFunction($hook);
 
-        if (4 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 4 arguments.', $hookName));
+        if (3 !== \count($reflection->getParameters())) {
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
         }
 
         $propertyParameterType = $reflection->getParameters()[0]->getType();
@@ -41,14 +41,9 @@ final class HookExtractor
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
         }
 
-        $formatParameterType = $reflection->getParameters()[2]->getType();
-        if (!$formatParameterType instanceof \ReflectionNamedType || 'string' !== $formatParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
-        }
-
-        $contextParameterType = $reflection->getParameters()[3]->getType();
+        $contextParameterType = $reflection->getParameters()[2]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fourth argument.', $hookName));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
         }
 
         return $hook;
@@ -67,8 +62,8 @@ final class HookExtractor
 
         $reflection = new \ReflectionFunction($hook);
 
-        if (4 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 4 arguments.', $hookName));
+        if (3 !== \count($reflection->getParameters())) {
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
         }
 
         $typeParameterType = $reflection->getParameters()[0]->getType();
@@ -81,14 +76,9 @@ final class HookExtractor
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
         }
 
-        $formatParameterType = $reflection->getParameters()[2]->getType();
-        if (!$formatParameterType instanceof \ReflectionNamedType || 'string' !== $formatParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
-        }
-
-        $contextParameterType = $reflection->getParameters()[3]->getType();
+        $contextParameterType = $reflection->getParameters()[2]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fourth argument.', $hookName));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
         }
 
         return $hook;

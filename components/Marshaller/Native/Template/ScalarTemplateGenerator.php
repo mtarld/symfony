@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
@@ -11,17 +12,19 @@ use Symfony\Component\Marshaller\Native\Type\Type;
  */
 abstract class ScalarTemplateGenerator
 {
-    use PhpWriterTrait;
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
+     */
+    abstract protected function scalar(Type $type, NodeInterface $accessor, array $context): array;
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    abstract protected function scalar(Type $type, string $accessor, array $context): string;
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, NodeInterface $accessor, array $context): array
     {
         return $this->scalar($type, $accessor, $context);
     }

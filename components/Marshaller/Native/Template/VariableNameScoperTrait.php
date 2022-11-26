@@ -15,7 +15,7 @@ trait VariableNameScoperTrait
             $context['variable_counters'][$prefix] = 0;
         }
 
-        $name = sprintf('$%s_%d', $prefix, $context['variable_counters'][$prefix]);
+        $name = sprintf('%s_%d', $prefix, $context['variable_counters'][$prefix]);
 
         ++$context['variable_counters'][$prefix];
 

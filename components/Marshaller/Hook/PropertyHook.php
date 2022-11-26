@@ -18,32 +18,31 @@ final class PropertyHook
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return array{name: string, type: string, accessor: string, context: array<string, mixed>}
      */
-    public function __invoke(\ReflectionProperty $property, string $accessor, string $format, array $context): string
+    public function __invoke(\ReflectionProperty $property, string $accessor, array $context): array
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-
-        if (!$property->isPublic()) {
-            throw new \RuntimeException(sprintf('"%s::$%s" must be public', $property->getDeclaringClass()->getName(), $property->getName()));
-        }
 
         $propertyFormatter = isset($context['symfony']['property_formatter'][$propertyIdentifier])
             ? new \ReflectionFunction($context['symfony']['property_formatter'][$propertyIdentifier])
             : null;
 
-        $name = $this->propertyName($property, $propertyIdentifier, $context);
-        $type = $this->propertyType($property, $propertyFormatter, $context);
-        $accessor = $this->propertyAccessor($propertyIdentifier, $propertyFormatter, $accessor, $context);
-
         $context['symfony']['current_property_class'] = $property->getDeclaringClass()->getName();
 
-        return $context['property_name_template_generator']($name, $context).$context['property_value_template_generator']($type, $accessor, $context);
+        return [
+            'name' => $this->name($property, $propertyIdentifier, $context),
+            'type' => $this->type($property, $propertyFormatter, $context),
+            'accessor' => $this->accessor($propertyIdentifier, $propertyFormatter, $accessor, $context),
+            'context' => $context,
+        ];
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyName(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
+    private function name(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
     {
         $name = $property->getName();
 
@@ -57,7 +56,7 @@ final class PropertyHook
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyType(\ReflectionProperty $property, ?\ReflectionFunction $propertyFormatter, array $context): string
+    private function type(\ReflectionProperty $property, ?\ReflectionFunction $propertyFormatter, array $context): string
     {
         return null !== $propertyFormatter
             ? $this->typeExtractor->extractFromReturnType($propertyFormatter)
@@ -67,7 +66,7 @@ final class PropertyHook
     /**
      * @param array<string, mixed> $context
      */
-    private function propertyAccessor(string $propertyIdentifier, ?\ReflectionFunction $propertyFormatter, string $accessor, array $context): string
+    private function accessor(string $propertyIdentifier, ?\ReflectionFunction $propertyFormatter, string $accessor, array $context): string
     {
         if (null === $propertyFormatter) {
             return $accessor;

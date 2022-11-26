@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native;
 
+use Symfony\Component\Marshaller\Native\Ast\Compiler;
+use Symfony\Component\Marshaller\Native\Ast\Node\ArgumentsNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ClosureNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
@@ -54,34 +60,28 @@ function marshal_generate(string $type, string $format, array $context = []): st
         throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format));
     }
 
+    $compiler = new Compiler();
     $type = Type::createFromString($type);
+    $accessor = new VariableNode('data');
+
     $context = $context + [
         'generated_classes' => [],
         'hooks' => [],
-        'accessor' => '$data',
-        'indentation_level' => 0,
         'variable_counters' => [],
-        'enclosed' => true,
     ];
 
-    $accessor = $context['accessor'];
+    $compiler->compile(new PhpDocNode([sprintf('@param %s $data', (string) $type), '@param resource $resource']));
+    $phpDoc = $compiler->source();
+    $compiler->reset();
 
-    if (!$context['enclosed']) {
-        return $templateGenerators[$format]->generate($type, $accessor, $context);
-    }
+    $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => null, 'context' => 'array']);
 
-    $template = '<?php'.PHP_EOL.PHP_EOL
-        .'/**'.PHP_EOL
-        .sprintf(' * @param %s %s', (string) $type, $accessor).PHP_EOL
-        .' * @param resource $resource'.PHP_EOL
-        .' */'.PHP_EOL
-        ."return static function (mixed $accessor, \$resource, array \$context): void {".PHP_EOL;
+    $compiler->indent();
+    $bodyNodes = $templateGenerators[$format]->generate($type, $accessor, $context);
+    $compiler->outdent();
 
-    ++$context['indentation_level'];
+    $compiler->compile(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes)));
+    $php = $compiler->source();
 
-    $template .= $templateGenerators[$format]->generate($type, $accessor, $context);
-
-    --$context['indentation_level'];
-
-    return $template .= '};'.PHP_EOL;
+    return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
 }

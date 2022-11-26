@@ -18,15 +18,18 @@ final class TypeHook
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return array{type: string, accessor: string, context: array<string, mixed>}
      */
-    public function __invoke(string $type, string $accessor, string $format, array $context): string
+    public function __invoke(string $type, string $accessor, array $context): array
     {
         $typeFormatter = isset($context['symfony']['type_formatter'][$type]) ? new \ReflectionFunction($context['symfony']['type_formatter'][$type]) : null;
 
-        $accessor = $this->accessor($type, $typeFormatter, $accessor, $context);
-        $accessorType = $this->type($type, $typeFormatter, $context);
-
-        return $context['type_template_generator']($accessorType, $accessor, $context);
+        return [
+            'type' => $this->type($type, $typeFormatter, $context),
+            'accessor' => $this->accessor($type, $typeFormatter, $accessor, $context),
+            'context' => $context,
+        ];
     }
 
     /**

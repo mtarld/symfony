@@ -18,12 +18,16 @@ final class ObjectHook
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return array{type: string, accessor: string, context: array<string, mixed>}
      */
-    public function __invoke(string $type, string $accessor, string $format, array $context): string
+    public function __invoke(string $type, string $accessor, array $context): array
     {
-        $context = $this->addGenericParameterTypes($type, $context);
-
-        return $context['type_template_generator']($type, $accessor, $context);
+        return [
+            'type' => $type,
+            'accessor' => $accessor,
+            'context' => $this->addGenericParameterTypes($type, $context),
+        ];
     }
 
     /**

@@ -11,17 +11,17 @@ use Symfony\Component\Marshaller\Native\Template\ListTemplateGenerator;
  */
 final class JsonListTemplateGenerator extends ListTemplateGenerator
 {
-    protected function beforeValues(): string
+    protected function beforeItems(): string
     {
         return '[';
     }
 
-    protected function afterValues(): string
+    protected function afterItems(): string
     {
         return ']';
     }
 
-    protected function valueSeparator(): string
+    protected function itemSeparator(): string
     {
         return ',';
     }

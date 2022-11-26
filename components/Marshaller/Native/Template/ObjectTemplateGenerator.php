@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Compiler;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\PropertyNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\RawNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
@@ -13,7 +22,6 @@ use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
  */
 abstract class ObjectTemplateGenerator
 {
-    use PhpWriterTrait;
     use VariableNameScoperTrait;
 
     private readonly HookExtractor $hookExtractor;
@@ -40,66 +48,53 @@ abstract class ObjectTemplateGenerator
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
      */
-    public function generate(Type $type, string $accessor, array $context): string
+    public function generate(Type $type, NodeInterface $accessor, array $context): array
     {
         $class = new \ReflectionClass($type->className());
-
         $objectName = $this->scopeVariableName('object', $context);
 
-        $template = $this->writeLine("$objectName = $accessor;", $context)
-            .$this->fwrite(sprintf("'%s'", $this->beforeProperties()), $context);
+        $nodes = [
+            new ExpressionNode(new AssignNode(new VariableNode($objectName), $accessor)),
+            new ExpressionNode(new FunctionNode('\fwrite', [new ScalarNode($this->beforeProperties())])),
+        ];
 
-        $properties = $class->getProperties();
         $propertySeparator = '';
 
-        foreach ($properties as $property) {
-            $propertyAccessor = sprintf('%s->%s', $objectName, $property->getName());
-
-            $template .= $this->fwrite(sprintf("'%s'", $propertySeparator), $context);
-
-            if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
-                $hookContext = $context + [
-                    'property_name_template_generator' => $this->generatePropertyName(...),
-                    'property_value_template_generator' => function (string $type, string $accessor, array $context): string {
-                        return $this->templateGenerator->generate(Type::createFromString($type), $accessor, $context);
-                    },
-                ];
-
-                if (null !== $hookResult = $hook($property, $propertyAccessor, $this->templateGenerator->format(), $hookContext)) {
-                    $template .= $hookResult;
-                    $propertySeparator = $this->propertySeparator();
-
-                    continue;
-                }
-            }
-
+        foreach ($class->getProperties() as $property) {
             if (!$property->isPublic()) {
                 throw new \RuntimeException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
             }
 
-            $template .= $this->generatePropertyName(sprintf("'%s'", $property->getName()), $context);
-            $template .= $this->templateGenerator->generate(
-                Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($property)),
-                $propertyAccessor,
-                $context,
+            $propertyName = $property->getName();
+            $propertyType = $this->reflectionTypeExtractor->extractFromProperty($property);
+            $propertyAccessor = new PropertyNode(new VariableNode($objectName), $property->getName());
+
+            if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
+                $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
+
+                $propertyName = $hookResult['name'];
+                $propertyType = $hookResult['type'];
+                $propertyAccessor = new RawNode($hookResult['accessor']);
+                $context = $hookResult['context'];
+            }
+
+            \array_push(
+                $nodes,
+                new ExpressionNode(new FunctionNode('\fwrite', [new ScalarNode($propertySeparator)])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforePropertyName())])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->escapeString($propertyName), escaped: false)])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterPropertyName())])),
+                ...$this->templateGenerator->generate(Type::createFromString($propertyType), $propertyAccessor, $context),
             );
 
             $propertySeparator = $this->propertySeparator();
         }
 
-        $template .= $this->fwrite(sprintf("'%s'", $this->afterProperties()), $context);
+        $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [new ScalarNode($this->afterProperties())]));
 
-        return $template;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function generatePropertyName(string $name, array $context): string
-    {
-        return $this->fwrite(sprintf("'%s'", $this->beforePropertyName()), $context)
-            .$this->fwrite($this->escapeString($name), $context)
-            .$this->fwrite(sprintf("'%s'", $this->afterPropertyName()), $context);
+        return $nodes;
     }
 }
