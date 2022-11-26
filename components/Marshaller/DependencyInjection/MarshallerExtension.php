@@ -15,10 +15,12 @@ use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\MarshalGenerateNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\TypeFormatterNativeContextBuilder;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class MarshallerExtension extends Extension
 {
@@ -39,29 +41,38 @@ final class MarshallerExtension extends Extension
         //
         // Type extractors
         //
-        $container->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class);
+        $container
+            ->register('marshaller.type_extractor.reflection', ReflectionTypeExtractor::class)
+            ->setLazy(true)
+            ->addTag('proxy', ['interface' => TypeExtractorInterface::class]);
+
         $container->setAlias('marshaller.type_extractor', 'marshaller.type_extractor.reflection');
 
         $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class)
             ->setDecoratedService('marshaller.type_extractor')
             ->setArguments([
                 new Reference('.inner'),
-            ]);
+            ])
+            ->addTag('proxy', ['interface' => TypeExtractorInterface::class]);
 
         //
         // Context builders
         //
         $container->register('marshaller.native_context_builder.hook', HookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128]);
+            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128])
+            ->addTag('proxy', ['interface' => MarshalGenerateNativeContextBuilderInterface::class]);
 
         $container->register('marshaller.native_context_builder.type_formatter', TypeFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128]);
+            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128])
+            ->addTag('proxy', ['interface' => MarshalGenerateNativeContextBuilderInterface::class]);
 
         $container->register('marshaller.native_context_builder.name_attribute', NameAttributeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128]);
+            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128])
+            ->addTag('proxy', ['interface' => MarshalGenerateNativeContextBuilderInterface::class]);
 
         $container->register('marshaller.native_context_builder.formatter_attribute', FormatterAttributeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128]);
+            ->addTag('marshaller.context.native_context_builder.marshal_generate', ['priority' => -128])
+            ->addTag('proxy', ['interface' => MarshalGenerateNativeContextBuilderInterface::class]);
 
         //
         // Cache
