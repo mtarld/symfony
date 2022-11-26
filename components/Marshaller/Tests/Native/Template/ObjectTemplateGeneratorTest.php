@@ -31,12 +31,12 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             '$object_0 = $accessor;',
             '\fwrite($resource, \'BEFORE_PROPERTIES\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, \'id\');',
+            '\fwrite($resource, ESCAPE(\'id\'));',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, \'name\');',
+            '\fwrite($resource, ESCAPE(\'name\'));',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'AFTER_PROPERTIES\');',
@@ -58,7 +58,7 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             '$object_0 = $accessor;',
             '\fwrite($resource, \'BEFORE_PROPERTIES\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, \'id\');',
+            '\fwrite($resource, ESCAPE(\'id\'));',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'AFTER_PROPERTIES\');',
@@ -124,12 +124,12 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             '$object_0 = $accessor;',
             '\fwrite($resource, \'BEFORE_PROPERTIES\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, \'id\');',
+            '\fwrite($resource, ESCAPE(\'id\'));',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
             '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, \'name\');',
+            '\fwrite($resource, ESCAPE(\'name\'));',
             '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
             'NESTED',
             '\fwrite($resource, \'AFTER_PROPERTIES\');',
@@ -193,7 +193,7 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
 
                     $this->assertSame([
                         '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-                        '\fwrite($resource, \'ID_NAME\');',
+                        '\fwrite($resource, ESCAPE(\'ID_NAME\'));',
                         '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
                     ], $this->lines($context['property_name_template_generator']("'ID_NAME'", $context)));
 
@@ -262,6 +262,11 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             protected function afterPropertyName(): string
             {
                 return 'AFTER_PROPERTY_NAME';
+            }
+
+            protected function escapeString(string $string): string
+            {
+                return sprintf('ESCAPE(%s)', $string);
             }
         };
     }

@@ -25,7 +25,7 @@ final class JsonScalarTemplateGeneratorTest extends TemplateGeneratorTestCase
 
         $this->assertSame([
             '\fwrite($resource, \'"\');',
-            '\fwrite($resource, addslashes($accessor));',
+            '\fwrite($resource, addcslashes($accessor, "\0\t\"\$\\\"));',
             '\fwrite($resource, \'"\');',
         ], $this->lines($template));
     }

@@ -36,7 +36,7 @@ abstract class DictTemplateGenerator
         $keyName = $this->scopeVariableName('key', $context);
         $valueName = $this->scopeVariableName('value', $context);
 
-        $template = $this->fwrite(sprintf("'%s'", addslashes($this->beforeValues())), $context)
+        $template = $this->fwrite(sprintf("'%s'", $this->beforeValues()), $context)
             .$this->writeLine("$prefixName = '';", $context)
             .$this->writeLine("foreach ($accessor as $keyName => $valueName) {", $context);
 
@@ -44,12 +44,12 @@ abstract class DictTemplateGenerator
 
         $template .= $this->fwrite(sprintf('%s.%s', $prefixName, $this->keyName($keyName)), $context)
             .$this->templateGenerator->generate($type->collectionValueType(), $valueName, $context)
-            .$this->writeLine(sprintf("$prefixName = '%s';", addslashes($this->valueSeparator())), $context);
+            .$this->writeLine(sprintf("$prefixName = '%s';", $this->valueSeparator()), $context);
 
         --$context['indentation_level'];
 
         $template .= $this->writeLine('}', $context)
-            .$this->fwrite(sprintf("'%s'", addslashes($this->afterValues())), $context);
+            .$this->fwrite(sprintf("'%s'", $this->afterValues()), $context);
 
         return $template;
     }

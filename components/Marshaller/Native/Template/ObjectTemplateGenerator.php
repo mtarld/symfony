@@ -36,6 +36,8 @@ abstract class ObjectTemplateGenerator
 
     abstract protected function afterPropertyName(): string;
 
+    abstract protected function escapeString(string $string): string;
+
     /**
      * @param array<string, mixed> $context
      */
@@ -97,7 +99,7 @@ abstract class ObjectTemplateGenerator
     private function generatePropertyName(string $name, array $context): string
     {
         return $this->fwrite(sprintf("'%s'", $this->beforePropertyName()), $context)
-            .$this->fwrite($name, $context)
+            .$this->fwrite($this->escapeString($name), $context)
             .$this->fwrite(sprintf("'%s'", $this->afterPropertyName()), $context);
     }
 }

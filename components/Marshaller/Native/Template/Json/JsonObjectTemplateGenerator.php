@@ -35,4 +35,9 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
     {
         return '":';
     }
+
+    protected function escapeString(string $string): string
+    {
+        return addcslashes($string, "\0\t\"\$\\");
+    }
 }
