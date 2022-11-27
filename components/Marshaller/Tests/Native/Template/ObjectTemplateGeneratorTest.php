@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\PropertyNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\RawNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\ObjectTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
@@ -11,7 +19,7 @@ use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\ConstructorPropertyPromotedDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNotPublicProperty;
 
-final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
+final class ObjectTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
@@ -20,27 +28,28 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
             ->expects($this->exactly(2))
             ->method('generate')
             ->withConsecutive(
-                [new Type('int'), '$object_0->id', ['indentation_level' => 0, 'variable_counters' => ['object' => 1]]],
-                [new Type('string'), '$object_0->name', ['indentation_level' => 0, 'variable_counters' => ['object' => 1]]],
+                [new Type('int'), new PropertyNode(new VariableNode('object_0'), 'id'), ['variable_counters' => ['object' => 1]]],
+                [new Type('string'), new PropertyNode(new VariableNode('object_0'), 'name'), ['variable_counters' => ['object' => 1]]],
             )
-            ->willReturn('NESTED'.PHP_EOL);
+            ->willReturn([new ScalarNode('NESTED')]);
 
-        $template = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $this->context());
+        $nodes = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), []);
 
-        $this->assertSame([
-            '$object_0 = $accessor;',
-            '\fwrite($resource, \'BEFORE_PROPERTIES\');',
-            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, ESCAPE(\'id\'));',
-            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-            'NESTED',
-            '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
-            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, ESCAPE(\'name\'));',
-            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-            'NESTED',
-            '\fwrite($resource, \'AFTER_PROPERTIES\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTIES')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTY_NAME')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('ESCAPE(id)')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTY_NAME')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('PROPERTY_SEPARATOR')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTY_NAME')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('ESCAPE(name)')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTY_NAME')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTIES')])),
+        ], $nodes);
     }
 
     public function testGenerateWithConstructorPropertyPromotion(): void
@@ -49,195 +58,156 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
         $templateGenerator
             ->expects($this->once())
             ->method('generate')
-            ->with(new Type('int'), '$object_0->id', ['indentation_level' => 0, 'variable_counters' => ['object' => 1]])
-            ->willReturn('NESTED'.PHP_EOL);
+            ->with(new Type('int'), new PropertyNode(new VariableNode('object_0'), 'id'), ['variable_counters' => ['object' => 1]])
+            ->willReturn([new ScalarNode('NESTED')]);
 
-        $template = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ConstructorPropertyPromotedDummy::class), '$accessor', $this->context());
+        $nodes = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ConstructorPropertyPromotedDummy::class), new VariableNode('accessor'), []);
 
-        $this->assertSame([
-            '$object_0 = $accessor;',
-            '\fwrite($resource, \'BEFORE_PROPERTIES\');',
-            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, ESCAPE(\'id\'));',
-            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-            'NESTED',
-            '\fwrite($resource, \'AFTER_PROPERTIES\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTIES')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTY_NAME')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('ESCAPE(id)')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTY_NAME')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTIES')])),
+        ], $nodes);
     }
 
     public function testThrowWhenPropertyIsNotPublic(): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage(sprintf('"%s::$name" must be public.', DummyWithNotPublicProperty::class));
 
-        $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: DummyWithNotPublicProperty::class), '$accessor', $this->context());
+        $this->createObjectGenerator()->generate(new Type('object', className: DummyWithNotPublicProperty::class), new VariableNode('accessor'), []);
     }
 
-    public function testReplaceContentWithPropertyHook(): void
+    /**
+     * @dataProvider throwWhenInvalidHookResultDataProvider
+     *
+     * @param array{type: string, accessor: string, context: array<string, mixed>} $hookResult
+     */
+    public function testThrowWhenInvalidHookResult(string $expectedExceptionMessage, array $hookResult): void
     {
-        $context = $this->context() + [
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage($expectedExceptionMessage);
+
+        $this->createObjectGenerator()->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), [
             'hooks' => [
-                'property' => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): ?string {
-                    return 'PROPERTY_HOOK'.PHP_EOL;
+                'property' => static function (\ReflectionProperty $property, string $accessor, array $context) use ($hookResult): array {
+                    return $hookResult;
+                },
+            ],
+        ]);
+    }
+
+    /**
+     * @return iterable<array{0: string, 1: array{type: string, accessor: string, context: array<string, mixed>}}>
+     */
+    public function throwWhenInvalidHookResultDataProvider(): iterable
+    {
+        yield ['Hook array result is missing "name".', ['type' => 'int', 'accessor' => '$accessor', 'context' => []]];
+        yield ['Hook array result\'s "name" must be a "string".', ['name' => 1, 'type' => 'int', 'accessor' => '$accessor', 'context' => []]];
+        yield ['Hook array result is missing "type".', ['name' => 'name', 'accessor' => '$accessor', 'context' => []]];
+        yield ['Hook array result\'s "type" must be a "string".', ['name' => 'name', 'type' => 1, 'accessor' => '$accessor', 'context' => []]];
+        yield ['Hook array result is missing "accessor".', ['name' => 'name', 'type' => 'int', 'context' => []]];
+        yield ['Hook array result\'s "accessor" must be a "string".', ['name' => 'name', 'type' => 'int', 'accessor' => 1, 'context' => []]];
+        yield ['Hook array result is missing "context".', ['name' => 'name', 'type' => 'int', 'accessor' => '$accessor']];
+        yield ['Hook array result\'s "context" must be an "array".', ['name' => 'name', 'type' => 'int', 'accessor' => '$accessor', 'context' => 1]];
+    }
+
+    public function testReplaceNameTypeAccessorAndContextWithHook(): void
+    {
+        $context = [
+            'hooks' => [
+                'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                    return [
+                        'name' => 'NAME',
+                        'type' => 'string',
+                        'accessor' => '$ACCESSOR',
+                        'context' => ['CONTEXT'],
+                    ];
                 },
             ],
         ];
 
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('format')->willReturn('FORMAT');
+        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator
+            ->expects($this->exactly(2))
+            ->method('generate')
+            ->with(new Type('string'), new RawNode('$ACCESSOR'), ['CONTEXT'])
+            ->willReturn([new ScalarNode('NESTED')]);
 
-        $template = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $context);
+        $nodes = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), $context);
 
-        $this->assertSame([
-            '$object_0 = $accessor;',
-            '\fwrite($resource, \'BEFORE_PROPERTIES\');',
-            'PROPERTY_HOOK',
-            '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
-            'PROPERTY_HOOK',
-            '\fwrite($resource, \'AFTER_PROPERTIES\');',
-        ], $this->lines($template));
-    }
-
-    public function testDoNotReplaceContentWithPropertyHookNullResult(): void
-    {
-        $hookCallCount = 0;
-
-        $context = $this->context() + [
-            'hooks' => [
-                'property' => static function (\ReflectionProperty $property, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
-                    ++$hookCallCount;
-
-                    return null;
-                },
-            ],
-        ];
-
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
-        $templateGenerator->method('format')->willReturn('FORMAT');
-
-        $template = $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $context);
-
-        $this->assertSame([
-            '$object_0 = $accessor;',
-            '\fwrite($resource, \'BEFORE_PROPERTIES\');',
-            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, ESCAPE(\'id\'));',
-            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-            'NESTED',
-            '\fwrite($resource, \'PROPERTY_SEPARATOR\');',
-            '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-            '\fwrite($resource, ESCAPE(\'name\'));',
-            '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-            'NESTED',
-            '\fwrite($resource, \'AFTER_PROPERTIES\');',
-        ], $this->lines($template));
-
-        $this->assertSame(2, $hookCallCount);
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTIES')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTY_NAME')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('ESCAPE(NAME)')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTY_NAME')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('PROPERTY_SEPARATOR')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_PROPERTY_NAME')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('ESCAPE(NAME)')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTY_NAME')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_PROPERTIES')])),
+        ], $nodes);
     }
 
     public function testPropertyHookArguments(): void
     {
         $hookCallCount = 0;
 
-        $context = $this->context() + [
+        $context = [
             'hooks' => [
-                sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
+                sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
                     ++$hookCallCount;
 
                     $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'id'), $property);
                     $this->assertSame('$object_0->id', $accessor);
-                    $this->assertSame('FORMAT', $format);
-                    $this->assertCount(5, $context);
-
-                    $this->assertSame(0, $context['indentation_level']);
+                    $this->assertCount(2, $context);
                     $this->assertSame(['object' => 1], $context['variable_counters']);
                     $this->assertArrayHasKey('hooks', $context);
-                    $this->assertIsCallable($context['property_name_template_generator']);
-                    $this->assertIsCallable($context['property_value_template_generator']);
 
-                    return 'ID_HOOK';
+                    return [
+                        'name' => 'name',
+                        'type' => 'type',
+                        'accessor' => 'accessor',
+                        'context' => [],
+                    ];
                 },
-                sprintf('%s::$name', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
+                sprintf('%s::$name', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
                     ++$hookCallCount;
 
                     $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'name'), $property);
                     $this->assertSame('$object_0->name', $accessor);
-                    $this->assertSame('FORMAT', $format);
-                    $this->assertCount(5, $context);
+                    $this->assertCount(2, $context);
+                    $this->assertSame(['object' => 1], $context['variable_counters']);
+                    $this->assertArrayHasKey('hooks', $context);
 
-                    return 'NAME_HOOK';
+                    return [
+                        'name' => 'name',
+                        'type' => 'type',
+                        'accessor' => 'accessor',
+                        'context' => [],
+                    ];
                 },
             ],
         ];
 
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
-        $templateGenerator->method('format')->willReturn('FORMAT');
-
-        $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $context);
+        $this->createObjectGenerator()->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), $context);
 
         $this->assertSame(2, $hookCallCount);
     }
 
-    public function testPropertyNameGenerator(): void
+    private function createObjectGenerator(TemplateGeneratorInterface $templateGenerator = null): ObjectTemplateGenerator
     {
-        $hookCallCount = 0;
+        $templateGenerator = $templateGenerator ?? $this->createStub(TemplateGeneratorInterface::class);
 
-        $context = $this->context() + [
-            'hooks' => [
-                sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
-                    ++$hookCallCount;
-
-                    $this->assertSame([
-                        '\fwrite($resource, \'BEFORE_PROPERTY_NAME\');',
-                        '\fwrite($resource, ESCAPE(\'ID_NAME\'));',
-                        '\fwrite($resource, \'AFTER_PROPERTY_NAME\');',
-                    ], $this->lines($context['property_name_template_generator']("'ID_NAME'", $context)));
-
-                    return 'ID_HOOK';
-                },
-            ],
-        ];
-
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
-        $templateGenerator->method('format')->willReturn('FORMAT');
-
-        $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $context);
-
-        $this->assertSame(1, $hookCallCount);
-    }
-
-    public function testPropertyValueGenerator(): void
-    {
-        $hookCallCount = 0;
-
-        $context = $this->context() + [
-            'hooks' => [
-                sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, string $format, array $context) use (&$hookCallCount): ?string {
-                    ++$hookCallCount;
-
-                    $this->assertSame(['NESTED'], $this->lines($context['property_value_template_generator']('int', '$object_0->id', $context)));
-
-                    return 'ID_HOOK';
-                },
-            ],
-        ];
-
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
-        $templateGenerator->method('format')->willReturn('FORMAT');
-
-        $this->createObjectGenerator($templateGenerator)->generate(new Type('object', className: ClassicDummy::class), '$accessor', $context);
-
-        $this->assertSame(1, $hookCallCount);
-    }
-
-    private function createObjectGenerator(TemplateGeneratorInterface $templateGenerator): ObjectTemplateGenerator
-    {
         return new class ($templateGenerator) extends ObjectTemplateGenerator {
             protected function beforeProperties(): string
             {

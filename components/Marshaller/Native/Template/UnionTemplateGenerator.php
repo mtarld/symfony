@@ -28,16 +28,15 @@ final class UnionTemplateGenerator
      */
     public function generate(UnionType $type, NodeInterface $accessor, array $context): array
     {
-        $typesCount = count($type->types);
-        if ($typesCount <= 0) {
+        if (\count($type->types) <= 0) {
             return [];
         }
 
-        if (1 === $typesCount) {
-            return $this->templateGenerator->generate($type, $accessor, $context);
-        }
-
         $types = $this->sortTypesByPriority($type->types);
+
+        if (1 === \count($types)) {
+            return $this->templateGenerator->generate($types[0], $accessor, $context);
+        }
 
         $ifType = array_shift($types);
         $elseType = array_pop($types);
@@ -101,7 +100,7 @@ final class UnionTemplateGenerator
             }
         }
 
-        return array_merge($regularTypes, $sortedObjectTypes);
+        return array_unique(array_merge($regularTypes, $sortedObjectTypes));
     }
 
     /**

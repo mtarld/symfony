@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Template\VariableNameScoperTrait;
 
-final class VariableNameScoperTest extends TemplateGeneratorTestCase
+final class VariableNameScoperTest extends TestCase
 {
     public function testScopeVariableName(): void
     {
@@ -23,8 +24,8 @@ final class VariableNameScoperTest extends TemplateGeneratorTestCase
 
         $context = [];
 
-        $this->assertSame('$foo_0', $templateGenerator->scopeVariableName('foo', $context));
-        $this->assertSame('$foo_1', $templateGenerator->scopeVariableName('foo', $context));
+        $this->assertSame('foo_0', $templateGenerator->scopeVariableName('foo', $context));
+        $this->assertSame('foo_1', $templateGenerator->scopeVariableName('foo', $context));
         $this->assertSame(['variable_counters' => ['foo' => 2]], $context);
     }
 }

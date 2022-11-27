@@ -32,24 +32,6 @@ final class MarshalGenerateTest extends TestCase
         ], $lines);
     }
 
-    public function testGenerateTemplateWithCustomAccessor(): void
-    {
-        $lines = explode("\n", marshal_generate('int', 'json', ['accessor' => '$foo']));
-        array_pop($lines);
-
-        $this->assertSame([
-            '<?php',
-            '',
-            '/**',
-            ' * @param int $foo',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $foo, $resource, array $context): void {',
-            '    \fwrite($resource, $foo);',
-            '};',
-        ], $lines);
-    }
-
     public function testThrowOnUnknownFormat(): void
     {
         $this->expectException(\InvalidArgumentException::class);

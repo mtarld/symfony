@@ -25,7 +25,7 @@ final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
                 new ExpressionNode(new FunctionNode('\fwrite', [
                     new VariableNode('resource'),
-                    new FunctionNode('\addcslashes', [$accessor, new ScalarNode('"\0\t\"\$\\\"', escaped: false)]),
+                    new FunctionNode('\addcslashes', [$accessor, new ScalarNode('"\\')]),
                 ])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
             ];
@@ -35,7 +35,7 @@ final class JsonScalarTemplateGenerator extends ScalarTemplateGenerator
             return [
                 new ExpressionNode(new FunctionNode('\fwrite', [
                     new VariableNode('resource'),
-                    new TernaryConditionNode($accessor, new ScalarNode(true), new ScalarNode(false)),
+                    new TernaryConditionNode($accessor, new ScalarNode('true'), new ScalarNode('false')),
                 ])),
             ];
         }

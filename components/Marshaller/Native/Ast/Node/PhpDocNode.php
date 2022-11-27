@@ -29,6 +29,6 @@ final class PhpDocNode implements NodeInterface
         foreach ($this->lines as $line) {
             $compiler->line(' * '.$line);
         }
-        $compiler->line('*/');
+        $compiler->line(' */');
     }
 }

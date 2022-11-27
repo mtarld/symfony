@@ -24,9 +24,14 @@ final class JsonDictTemplateGenerator extends DictTemplateGenerator
         return '}';
     }
 
-    protected function keyValueSeparator(): string
+    protected function beforeKey(): string
     {
-        return ':';
+        return '"';
+    }
+
+    protected function afterKey(): string
+    {
+        return '":';
     }
 
     protected function itemSeparator(): string
@@ -36,6 +41,6 @@ final class JsonDictTemplateGenerator extends DictTemplateGenerator
 
     protected function escapeKey(NodeInterface $key): NodeInterface
     {
-        return new FunctionNode('\addcslashes', [$key, new ScalarNode('"\0\t\"\$\\\"', escaped: false)]);
+        return new FunctionNode('\addcslashes', [$key, new ScalarNode('"\\')]);
     }
 }

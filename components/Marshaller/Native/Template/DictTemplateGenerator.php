@@ -31,7 +31,9 @@ abstract class DictTemplateGenerator
 
     abstract protected function itemSeparator(): string;
 
-    abstract protected function keyValueSeparator(): string;
+    abstract protected function beforeKey(): string;
+
+    abstract protected function afterKey(): string;
 
     abstract protected function escapeKey(NodeInterface $key): NodeInterface;
 
@@ -52,8 +54,9 @@ abstract class DictTemplateGenerator
 
             new ForEachNode($accessor, $keyName, $valueName, [
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforeKey())])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->escapeKey(new VariableNode($keyName))])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->keyValueSeparator())])), // TODO template string instead (for this line and the 2 before)
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterKey())])),
                 ...$this->templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),
                 new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode($this->itemSeparator()))),
             ]),

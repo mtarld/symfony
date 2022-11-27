@@ -65,17 +65,12 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
      */
     private function generateTypeTemplate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
-
-            // TODO throw if missing
-            $type = Type::createFromString($hookResult['type']);
-            $accessor = new RawNode($hookResult['accessor']);
-            $context = $hookResult['context'];
-        }
-
         if ($type instanceof UnionType) {
             return $this->unionGenerator->generate($type, $accessor, $context);
+        }
+
+        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
+            [$type, $accessor, $context] = $this->callTypeHook($hook, $type, $accessor, $context);
         }
 
         return match (true) {
@@ -86,6 +81,46 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
             $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type)),
         };
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array{0: Type, 1: NodeInterface, 2: array<string, mixed>}
+     */
+    private function callTypeHook(callable $hook, Type $type, NodeInterface $accessor, array $context): array
+    {
+        $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
+
+        if (!isset($hookResult['type'])) {
+            throw new \RuntimeException('Hook array result is missing "type".');
+        }
+
+        if (!is_string($hookResult['type'])) {
+            throw new \RuntimeException('Hook array result\'s "type" must be a "string".');
+        }
+
+        if (!isset($hookResult['accessor'])) {
+            throw new \RuntimeException('Hook array result is missing "accessor".');
+        }
+
+        if (!is_string($hookResult['accessor'])) {
+            throw new \RuntimeException('Hook array result\'s "accessor" must be a "string".');
+        }
+
+        if (!isset($hookResult['context'])) {
+            throw new \RuntimeException('Hook array result is missing "context".');
+        }
+
+        if (!is_array($hookResult['context'])) {
+            throw new \RuntimeException('Hook array result\'s "context" must be an "array".');
+        }
+
+        return [
+            Type::createFromString($hookResult['type']),
+            new RawNode($hookResult['accessor']),
+            $hookResult['context'],
+        ];
     }
 
     /**

@@ -18,7 +18,7 @@ final class JsonNullTemplateGenerator extends NullTemplateGenerator
     protected function null(array $context): array
     {
         return [
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(null)])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('null')])),
         ];
     }
 }

@@ -4,35 +4,41 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template\Json;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonObjectTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Native\Template\TemplateGeneratorTestCase;
 
-final class JsonObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
+final class JsonObjectTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
         $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
+        $templateGenerator->method('generate')->willReturn([new ScalarNode('NESTED')]);
 
         $type = new Type('object', className: ClassicDummy::class);
-        $template = (new JsonObjectTemplateGenerator($templateGenerator))->generate($type, '$accessor', $this->context());
+        $nodes = (new JsonObjectTemplateGenerator($templateGenerator))->generate($type, new VariableNode('accessor'), []);
 
-        $this->assertSame([
-            '$object_0 = $accessor;',
-            '\fwrite($resource, \'{\');',
-            '\fwrite($resource, \'"\');',
-            '\fwrite($resource, \'id\');',
-            '\fwrite($resource, \'":\');',
-            'NESTED',
-            '\fwrite($resource, \',\');',
-            '\fwrite($resource, \'"\');',
-            '\fwrite($resource, \'name\');',
-            '\fwrite($resource, \'":\');',
-            'NESTED',
-            '\fwrite($resource, \'}\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('id')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(',')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('name')])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
+            new ScalarNode('NESTED'),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('}')])),
+        ], $nodes);
     }
 }

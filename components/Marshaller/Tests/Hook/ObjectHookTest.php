@@ -22,20 +22,9 @@ final class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn($templates);
 
-        $hookGeneratedContext = [];
+        $hookResult = (new ObjectHook($typeExtractor))($type, '$accessor', []);
 
-        $context = [
-            'type_template_generator' => static function (string $type, string $accessor, array $context) use (&$hookGeneratedContext): string {
-                $hookGeneratedContext = $context;
-
-                return 'TYPE_TEMPLATE';
-            },
-        ];
-
-        $result = (new ObjectHook($typeExtractor))($type, '$accessor', 'format', $context);
-
-        $this->assertSame('TYPE_TEMPLATE', $result);
-        $this->assertSame($expectedGenericParameterTypes, $hookGeneratedContext['symfony']['generic_parameter_types'] ?? []);
+        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['symfony']['generic_parameter_types'] ?? []);
     }
 
     /**
@@ -56,7 +45,7 @@ final class ObjectHookTest extends TestCase
 
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
-        (new ObjectHook($typeExtractor))('Foo<int, Bar<string>', '$accessor', 'format', []);
+        (new ObjectHook($typeExtractor))('Foo<int, Bar<string>', '$accessor', []);
     }
 
     public function testThrowOnWrongGenericTypeCount(): void
@@ -67,6 +56,6 @@ final class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn(['Tk', 'Tv']);
 
-        (new ObjectHook($typeExtractor))(ClassicDummy::class.'<int>', '$accessor', 'format', []);
+        (new ObjectHook($typeExtractor))(ClassicDummy::class.'<int>', '$accessor', []);
     }
 }

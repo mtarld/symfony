@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template\Json;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonNullTemplateGenerator;
-use Symfony\Component\Marshaller\Tests\Native\Template\TemplateGeneratorTestCase;
 
-final class JsonNullGeneratorTest extends TemplateGeneratorTestCase
+final class JsonNullGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $template = (new JsonNullTemplateGenerator())->generate($this->context());
+        $nodes = (new JsonNullTemplateGenerator())->generate([]);
 
-        $this->assertSame([
-            '\fwrite($resource, \'null\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('null')])),
+        ], $nodes);
     }
 }

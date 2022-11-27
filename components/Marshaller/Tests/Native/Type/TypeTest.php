@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Tests\Native\Type;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\BinaryNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\UnaryNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
@@ -194,9 +200,9 @@ final class TypeTest extends TestCase
     /**
      * @dataProvider validatorDataProvider
      */
-    public function testValidator(string $expectedValidator, Type $type): void
+    public function testValidator(NodeInterface $expectedValidator, Type $type): void
     {
-        $this->assertSame($expectedValidator, $type->validator('$accessor'));
+        $this->assertEquals($expectedValidator, $type->validator(new VariableNode('accessor')));
     }
 
     /**
@@ -205,18 +211,24 @@ final class TypeTest extends TestCase
     public function validatorDataProvider(): iterable
     {
         // scalar types
-        yield ['null === $accessor', new Type('null')];
-        yield ['is_int($accessor)', new Type('int')];
-        yield ['is_string($accessor)', new Type('string')];
-        yield ['is_float($accessor)', new Type('float')];
-        yield ['is_bool($accessor)', new Type('bool')];
+        yield [new BinaryNode('===', new ScalarNode(null), new VariableNode('accessor')), new Type('null')];
+        yield [new FunctionNode('\is_int', [new VariableNode('accessor')]), new Type('int')];
+        yield [new FunctionNode('\is_string', [new VariableNode('accessor')]), new Type('string')];
+        yield [new FunctionNode('\is_float', [new VariableNode('accessor')]), new Type('float')];
+        yield [new FunctionNode('\is_bool', [new VariableNode('accessor')]), new Type('bool')];
 
         // object types
-        yield [sprintf('$accessor instanceof %s', ClassicDummy::class), new Type('object', className: ClassicDummy::class)];
+        yield [new BinaryNode('instanceof', new VariableNode('accessor'), new ScalarNode(ClassicDummy::class)), new Type('object', className: ClassicDummy::class)];
 
         // collection types
-        yield ['is_array($accessor) && array_is_list($accessor)', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')])];
-        yield ['is_array($accessor) && !array_is_list($accessor)', new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')])];
+        yield [
+            new BinaryNode('&&', new FunctionNode('\is_array', [new VariableNode('accessor')]), new FunctionNode('\array_is_list', [new VariableNode('accessor')])),
+            new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]),
+        ];
+        yield [
+            new BinaryNode('&&', new FunctionNode('\is_array', [new VariableNode('accessor')]), new UnaryNode('!', new FunctionNode('\array_is_list', [new VariableNode('accessor')]))),
+            new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]),
+        ];
     }
 
     public function testThrowOnUnavailableValidator(): void
@@ -224,7 +236,7 @@ final class TypeTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Cannot find validator for "foo"');
 
-        (new Type('foo'))->validator('$accessor');
+        (new Type('foo'))->validator(new VariableNode('accessor'));
     }
 
     public function testCannotCreateObjectWithoutClassName(): void

@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\ScalarTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
-final class ScalarTemplateGeneratorTest extends TemplateGeneratorTestCase
+final class ScalarTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
         $scalarTemplateGenerator = new class () extends ScalarTemplateGenerator {
-            protected function scalar(Type $type, string $accessor, array $context): string
+            protected function scalar(Type $type, NodeInterface $accessor, array $context): array
             {
-                return 'SCALAR'.PHP_EOL;
+                return [new ScalarNode('SCALAR')];
             }
         };
 
-        $template = $scalarTemplateGenerator->generate(new Type('int'), '$accessor', $this->context());
-
-        $this->assertSame([
-            'SCALAR',
-        ], $this->lines($template));
+        $this->assertEquals([new ScalarNode('SCALAR')], $scalarTemplateGenerator->generate(new Type('int'), new VariableNode('accessor'), []));
     }
 }

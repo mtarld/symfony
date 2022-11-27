@@ -13,135 +13,75 @@ use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 final class TypeHookTest extends TestCase
 {
     /**
-     * @dataProvider generateTemplateDataProvider
+     * @dataProvider updateTypeAndAccessorFromFormatterDataProvider
      *
-     * @param array<string, callable>                    $typeFormatters
-     * @param array<class-string, array<string, string>> $genericParameterTypes
+     * @param array<string, callable> $typeFormatters
      */
-    public function testGenerateTemplate(string $expectedType, string $expectedAccessor, string $type, array $typeFormatters, ?string $returnType, ?string $currentPropertyClass, array $genericParameterTypes): void
+    public function testUpdateTypeAndAccessorFromFormatter(string $expectedType, string $expectedAccessor, string $formatterReturnType, array $typeFormatters): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn($returnType ?? 'UNDEFINED');
+        $typeExtractor->method('extractFromReturnType')->willReturn($formatterReturnType);
 
         $context = [
             'symfony' => [
                 'type_formatter' => $typeFormatters,
-                'generic_parameter_types' => $genericParameterTypes,
             ],
-            'type_template_generator' => fn (string $type, string $accessor, array $context): string => sprintf('%s|%s', $type, $accessor),
         ];
 
-        if (null !== $currentPropertyClass) {
-            $context['symfony']['current_property_class'] = $currentPropertyClass;
-        }
+        $hookResult = (new TypeHook($typeExtractor))('int', '$accessor', $context);
 
-        $result = (new TypeHook($typeExtractor))($type, '$accessor', 'format', $context);
-        [$type, $accessor] = explode('|', $result);
-
-        $this->assertSame($expectedType, $type);
-        $this->assertSame($expectedAccessor, $accessor);
+        $this->assertSame($expectedType, $hookResult['type']);
+        $this->assertSame($expectedAccessor, $hookResult['accessor']);
     }
 
     /**
-     * @return iterable<array{0: string, 1: string, 2: array<string, callable>}>
+     * @return iterable<array{0: string, 1: string, 2: string, 3: array<string, callable>}
      */
-    public function generateTemplateDataProvider(): iterable
+    public function updateTypeAndAccessorFromFormatterDataProvider(): iterable
     {
-        yield [
-            'expectedType' => 'int',
-            'expectedAccessor' => '$accessor',
-            'type' => 'int',
-            'typeFormatters' => [],
-            'returnType' => null,
-            'currentPropertyClass' => null,
-            'genericParameterTypes' => [],
+        yield ['int', '$accessor', 'string', []];
+        yield ['int', '$accessor', 'string', ['string' => DummyWithMethods::doubleAndCastToString(...)]];
+        yield ['string', sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class), 'string', ['int' => DummyWithMethods::doubleAndCastToString(...)]];
+    }
+
+    public function testConvertGenericTypes(): void
+    {
+        $hook = new TypeHook($this->createStub(TypeExtractorInterface::class));
+
+        $context = [
+            'symfony' => [
+                'current_property_class' => ClassicDummy::class,
+                'generic_parameter_types' => [ClassicDummy::class => ['T' => 'string']],
+            ],
         ];
 
-        yield [
-            'expectedType' => 'int',
-            'expectedAccessor' => '$accessor',
-            'type' => 'int',
-            'typeFormatters' => ['string' => DummyWithMethods::doubleAndCastToString(...)],
-            'returnType' => null,
-            'currentPropertyClass' => null,
-            'genericParameterTypes' => [],
-        ];
+        $this->assertSame('string', $hook('T', '$accessor', $context)['type']);
 
-        yield [
-            'expectedType' => 'string',
-            'expectedAccessor' => sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
-            'type' => 'int',
-            'typeFormatters' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
-            'returnType' => 'string',
-            'currentPropertyClass' => null,
-            'genericParameterTypes' => [],
-        ];
+        $context['symfony']['current_property_class'] = DummyWithMethods::class;
+        $this->assertSame('T', $hook('T', '$accessor', $context)['type']);
+    }
 
-        yield [
-            'expectedType' => 'string',
-            'expectedAccessor' => '$accessor',
-            'type' => 'T',
-            'typeFormatters' => [],
-            'returnType' => null,
-            'currentPropertyClass' => ClassicDummy::class,
-            'genericParameterTypes' => [ClassicDummy::class => ['T' => 'string']],
-        ];
+    public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromReturnType')->willReturn('T');
 
-        yield [
-            'expectedType' => 'T',
-            'expectedAccessor' => '$accessor',
-            'type' => 'T',
-            'typeFormatters' => [],
-            'returnType' => null,
-            'currentPropertyClass' => null,
-            'genericParameterTypes' => [ClassicDummy::class => ['T' => 'string']],
+        $context = [
+            'symfony' => [
+                'type_formatter' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
+                'current_property_class' => DummyWithMethods::class,
+                'generic_parameter_types' => [DummyWithMethods::class => ['T' => 'string']],
+            ],
         ];
+        $this->assertSame('string', (new TypeHook($typeExtractor))('int', '$accessor', $context)['type']);
 
-        yield [
-            'expectedType' => 'T',
-            'expectedAccessor' => '$accessor',
-            'type' => 'T',
-            'typeFormatters' => [],
-            'returnType' => null,
-            'currentPropertyClass' => ClassicDummy::class,
-            'genericParameterTypes' => [DummyWithMethods::class => ['T' => 'string']],
-        ];
-
-        yield [
-            'expectedType' => 'T',
-            'expectedAccessor' => '$accessor',
-            'type' => 'T',
-            'typeFormatters' => [],
-            'returnType' => null,
-            'currentPropertyClass' => ClassicDummy::class,
-            'genericParameterTypes' => [DummyWithMethods::class => ['T' => 'string']],
-        ];
-
-        yield [
-            'expectedType' => 'T',
-            'expectedAccessor' => sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
-            'type' => 'int',
-            'typeFormatters' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
-            'returnType' => 'T',
-            'currentPropertyClass' => ClassicDummy::class,
-            'genericParameterTypes' => [DummyWithMethods::class => ['T' => 'string']],
-        ];
-
-        yield [
-            'expectedType' => 'string',
-            'expectedAccessor' => sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
-            'type' => 'int',
-            'typeFormatters' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
-            'returnType' => 'T',
-            'currentPropertyClass' => DummyWithMethods::class,
-            'genericParameterTypes' => [DummyWithMethods::class => ['T' => 'string']],
-        ];
+        $context['symfony']['current_property_class'] = ClassicDummy::class;
+        $this->assertSame('T', (new TypeHook($typeExtractor))('T', '$accessor', $context)['type']);
     }
 
     public function testThrowWhenInvalidTypeFormatterParametersCount(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $typeFormatters = [
             'int' => DummyWithMethods::tooManyParameters(...),
@@ -156,13 +96,12 @@ final class TypeHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Type formatter "int" must have exactly two parameters.');
 
-        (new TypeHook($typeExtractor))('int', '$accessor', 'format', $context);
+        (new TypeHook($typeExtractor))('int', '$accessor', $context);
     }
 
     public function testThrowWhenInvalidTypeFormatterContextTypeParameter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $typeFormatters = [
             'int' => DummyWithMethods::invalidContextType(...),
@@ -177,13 +116,12 @@ final class TypeHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Second argument of type formatter "int" must be an array.');
 
-        (new TypeHook($typeExtractor))('int', '$accessor', 'format', $context);
+        (new TypeHook($typeExtractor))('int', '$accessor', $context);
     }
 
     public function testThrowWhenNonStaticMethodTypeFormatter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $context = [
             'symfony' => [
@@ -196,13 +134,12 @@ final class TypeHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Type formatter "int" must be a static method.');
 
-        (new TypeHook($typeExtractor))('int', '$accessor', 'format', $context);
+        (new TypeHook($typeExtractor))('int', '$accessor', $context);
     }
 
     public function testThrowWhenVoidMethodTypeFormatter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $context = [
             'symfony' => [
@@ -215,6 +152,6 @@ final class TypeHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Return type of type formatter "int" must not be "void" nor "never".');
 
-        (new TypeHook($typeExtractor))('int', '$accessor', 'format', $context);
+        (new TypeHook($typeExtractor))('int', '$accessor', $context);
     }
 }

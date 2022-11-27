@@ -4,30 +4,36 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template\Json;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonListTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
-use Symfony\Component\Marshaller\Tests\Native\Template\TemplateGeneratorTestCase;
 
-final class JsonListTemplateGeneratorTest extends TemplateGeneratorTestCase
+final class JsonListTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
         $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
-        $templateGenerator->method('generate')->willReturn('NESTED'.PHP_EOL);
+        $templateGenerator->method('generate')->willReturn([new ScalarNode('NESTED')]);
 
         $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]);
-        $template = (new JsonListTemplateGenerator($templateGenerator))->generate($type, '$accessor', $this->context());
+        $nodes = (new JsonListTemplateGenerator($templateGenerator))->generate($type, new VariableNode('accessor'), []);
 
-        $this->assertSame([
-            '\fwrite($resource, \'[\');',
-            '$prefix_0 = \'\';',
-            'foreach ($accessor as $value_0) {',
-            '    \fwrite($resource, $prefix_0);',
-            'NESTED',
-            '    $prefix_0 = \',\';',
-            '}',
-            '\fwrite($resource, \']\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('[')])),
+            new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(''))),
+            new ForEachNode(new VariableNode('accessor'), null, 'value_0', [
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode('prefix_0')])),
+                new ScalarNode('NESTED'),
+                new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(','))),
+            ]),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(']')])),
+        ], $nodes);
     }
 }

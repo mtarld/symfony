@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\DictTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
-final class DictTemplateGeneratorTest extends TemplateGeneratorTestCase
+final class DictTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
@@ -16,43 +24,56 @@ final class DictTemplateGeneratorTest extends TemplateGeneratorTestCase
         $templateGenerator
             ->expects($this->once())
             ->method('generate')
-            ->with(new Type('int'), '$value_0', ['indentation_level' => 1, 'variable_counters' => ['prefix' => 1, 'key' => 1, 'value' => 1]])
-            ->willReturn('NESTED'.PHP_EOL);
+            ->with(new Type('int'), new VariableNode('value_0'), ['variable_counters' => ['prefix' => 1, 'key' => 1, 'value' => 1]])
+            ->willReturn([new ScalarNode('NESTED')]);
 
         $dictTemplateGenerator = new class ($templateGenerator) extends DictTemplateGenerator {
-            protected function beforeValues(): string
+            protected function beforeItems(): string
             {
-                return 'BEFORE_VALUES';
+                return 'BEFORE_ITEMS';
             }
 
-            protected function afterValues(): string
+            protected function afterItems(): string
             {
-                return 'AFTER_VALUES';
+                return 'AFTER_ITEMS';
             }
 
-            protected function valueSeparator(): string
+            protected function itemSeparator(): string
             {
-                return 'VALUE_SEPARATOR';
+                return 'ITEM_SEPARATOR';
             }
 
-            protected function keyName(string $name): string
+            protected function beforeKey(): string
             {
-                return "KEY($name)";
+                return 'BEFORE_KEY';
+            }
+
+            protected function afterKey(): string
+            {
+                return 'AFTER_KEY';
+            }
+
+            protected function escapeKey(NodeInterface $key): NodeInterface
+            {
+                return new FunctionNode('KEY', [$key]);
             }
         };
 
         $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]);
-        $template = $dictTemplateGenerator->generate($type, '$accessor', $this->context());
+        $nodes = $dictTemplateGenerator->generate($type, new VariableNode('accessor'), []);
 
-        $this->assertSame([
-            '\fwrite($resource, \'BEFORE_VALUES\');',
-            '$prefix_0 = \'\';',
-            'foreach ($accessor as $key_0 => $value_0) {',
-            '    \fwrite($resource, $prefix_0.KEY($key_0));',
-            'NESTED',
-            '    $prefix_0 = \'VALUE_SEPARATOR\';',
-            '}',
-            '\fwrite($resource, \'AFTER_VALUES\');',
-        ], $this->lines($template));
+        $this->assertEquals([
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_ITEMS')])),
+            new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(''))),
+            new ForEachNode(new VariableNode('accessor'), 'key_0', 'value_0', [
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode('prefix_0')])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_KEY')])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new FunctionNode('KEY', [new VariableNode('key_0')])])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_KEY')])),
+                new ScalarNode('NESTED'),
+                new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode('ITEM_SEPARATOR'))),
+            ]),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_ITEMS')])),
+        ], $nodes);
     }
 }

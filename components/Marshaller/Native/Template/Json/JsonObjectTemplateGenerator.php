@@ -38,6 +38,6 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
 
     protected function escapeString(string $string): string
     {
-        return addcslashes($string, "\0\t\"\$\\");
+        return addcslashes($string, '\"\\');
     }
 }

@@ -89,20 +89,21 @@ final class MarshallerTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, \'{\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'@id\');',
-            '    \fwrite($resource, \'":\');',
+            '    $object_0 = ($data);',
+            '    \fwrite($resource, "{");',
+            '    \fwrite($resource, "");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "@id");',
+            '    \fwrite($resource, "\":");',
             '    \fwrite($resource, $object_0->id);',
-            '    \fwrite($resource, \',\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'name\');',
-            '    \fwrite($resource, \'":\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, addcslashes($object_0->name, "\0\t\"\$\\\"));',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'}\');',
+            '    \fwrite($resource, ",");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "name");',
+            '    \fwrite($resource, "\":");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "}");',
             '};',
         ], DummyWithNameAttributes::class, null];
 
@@ -114,49 +115,25 @@ final class MarshallerTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, \'{\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'id\');',
-            '    \fwrite($resource, \'":\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context), "\0\t\"\$\\\"));',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \',\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'name\');',
-            '    \fwrite($resource, \'":\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, addcslashes($object_0->name, "\0\t\"\$\\\"));',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'}\');',
+            '    $object_0 = ($data);',
+            '    \fwrite($resource, "{");',
+            '    \fwrite($resource, "");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "id");',
+            '    \fwrite($resource, "\":");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, \addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context), "\\"\\\\"));',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, ",");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "name");',
+            '    \fwrite($resource, "\":");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, "}");',
             '};',
         ], DummyWithFormatterAttributes::class, null];
-
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, \'{\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'id\');',
-            '    \fwrite($resource, \'":\');',
-            '    HOOK',
-            '    \fwrite($resource, \',\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'name\');',
-            '    \fwrite($resource, \'":\');',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, addcslashes($object_0->name, "\0\t\"\$\\\"));',
-            '    \fwrite($resource, \'"\');',
-            '    \fwrite($resource, \'}\');',
-            '};',
-        ], ClassicDummy::class, new Context(new HookOption(['int' => fn (string $type, string $accessor, string $format, array $context): string => '    HOOK'.PHP_EOL]))];
     }
 
     /**
@@ -192,9 +169,14 @@ final class MarshallerTest extends TestCase
         yield [['@id' => 1, 'name' => 'dummy'], new DummyWithNameAttributes(), null];
         yield [['id' => '2', 'name' => 'dummy'], new DummyWithFormatterAttributes(), null];
         yield [['"name"' => '"quoted" dummy'], new DummyWithQuotes(), null];
-        yield [['foo' => 'bar', 'name' => 'dummy'], new ClassicDummy(), new Context(new HookOption([
-            sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, string $format, array $context): string {
-                return '    \fwrite($resource, \'"foo": "bar"\');';
+        yield [['foo' => '1', 'name' => 'dummy'], new ClassicDummy(), new Context(new HookOption([
+            sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                return [
+                    'name' => 'foo',
+                    'type' => 'string',
+                    'accessor' => $accessor,
+                    'context' => $context,
+                ];
             },
         ]))];
     }

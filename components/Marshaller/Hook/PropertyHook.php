@@ -50,7 +50,7 @@ final class PropertyHook
             $name = $context['symfony']['property_name'][$propertyIdentifier];
         }
 
-        return sprintf("'%s'", $name);
+        return $name;
     }
 
     /**

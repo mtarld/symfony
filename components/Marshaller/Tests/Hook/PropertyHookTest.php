@@ -8,18 +8,16 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNotPublicProperty;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class PropertyHookTest extends TestCase
 {
     /**
-     * @dataProvider generateNameTemplatePartDataProvider
+     * @dataProvider updateNameDataProvider
      *
-     * @param array<string, string>   $propertyNames
-     * @param array<string, callable> $propertyNameFormatters
+     * @param array<string, string> $propertyNames
      */
-    public function testGenerateNameTemplatePart(string $expectedName, array $propertyNames): void
+    public function testUpdateName(string $expectedName, array $propertyNames): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
@@ -27,66 +25,51 @@ final class PropertyHookTest extends TestCase
             'symfony' => [
                 'property_name' => $propertyNames,
             ],
-            'property_name_template_generator' => fn (string $name): string => $name,
-            'property_value_template_generator' => fn (): string => '|PROPERTY_VALUE',
         ];
 
-        $result = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
-        [$propertyName, $propertyValue] = explode('|', $result);
+        $hookResult = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
 
-        $this->assertSame($expectedName, $propertyName);
-        $this->assertSame('PROPERTY_VALUE', $propertyValue);
+        $this->assertSame($expectedName, $hookResult['name']);
     }
 
     /**
-     * @return iterable<array{0: string, 1: array<string, string>, 2: array<string, callable>}>
+     * @return iterable<array{0: string, 1: array<string, string>}>
      */
-    public function generateNameTemplatePartDataProvider(): iterable
+    public function updateNameDataProvider(): iterable
     {
-        yield ['\'id\'', []];
-        yield ['\'id\'', [sprintf('%s::$name', ClassicDummy::class) => 'identifier']];
-        yield ['\'identifier\'', [sprintf('%s::$id', ClassicDummy::class) => 'identifier']];
+        yield ['id', []];
+        yield ['id', [sprintf('%s::$name', ClassicDummy::class) => 'identifier']];
+        yield ['identifier', [sprintf('%s::$id', ClassicDummy::class) => 'identifier']];
     }
 
     /**
-     * @dataProvider generateValueTemplatePartDataProvider
+     * @dataProvider updateTypeAccessorAndContextFromFormatterDataProvider
      *
      * @param array<string, callable> $propertyFormatters
-     * @param array<string, string>   $propertyTypes
      */
-    public function testGenerateValueTemplatePart(string $expectedType, string $expectedAccessor, array $propertyFormatters): void
+    public function testUpdateTypeAccessorAndContextFromFormatter(string $expectedType, string $expectedAccessor, array $propertyFormatters): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromProperty')->willReturnCallback(fn (\ReflectionProperty $c): string => $c->getType()->getName());
-        $typeExtractor->method('extractFromReturnType')->willReturnCallback(fn (\ReflectionFunctionAbstract $c): string => $c->getReturnType()->getName());
-
-        $hookGeneratedContext = [];
+        $typeExtractor->method('extractFromProperty')->willReturn('int');
+        $typeExtractor->method('extractFromReturnType')->willReturn('string');
 
         $context = [
             'symfony' => [
                 'property_formatter' => $propertyFormatters,
             ],
-            'property_name_template_generator' => fn (): string => 'PROPERTY_NAME|',
-            'property_value_template_generator' => static function (string $type, string $accessor, array $context) use (&$hookGeneratedContext): string {
-                $hookGeneratedContext = $context;
-
-                return sprintf('%s|%s', $type, $accessor);
-            },
         ];
 
-        $result = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
-        [$propertyName, $type, $accessor] = explode('|', $result);
+        $hookResult = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
 
-        $this->assertSame('PROPERTY_NAME', $propertyName);
-        $this->assertSame($expectedType, $type);
-        $this->assertSame($expectedAccessor, $accessor);
-        $this->assertSame(ClassicDummy::class, $hookGeneratedContext['symfony']['current_property_class']);
+        $this->assertSame($expectedType, $hookResult['type']);
+        $this->assertSame($expectedAccessor, $hookResult['accessor']);
+        $this->assertSame(ClassicDummy::class, $hookResult['context']['symfony']['current_property_class']);
     }
 
     /**
-     * @return iterable<array{0: string, 1: array<string, string>, 2: array<string, callable>}>
+     * @return iterable<array{0: string, 1: array<string, callable>}>
      */
-    public function generateValueTemplatePartDataProvider(): iterable
+    public function updateTypeAccessorAndContextFromFormatterDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
         yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)]];
@@ -95,16 +78,6 @@ final class PropertyHookTest extends TestCase
             sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
             [sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)],
         ];
-    }
-
-    public function testThrowWhenPropertyIsNotPublic(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('"%s::$name" must be public', DummyWithNotPublicProperty::class));
-
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(DummyWithNotPublicProperty::class, 'name'), '$accessor', 'format', []);
     }
 
     public function testThrowWhenInvalidPropertyFormatterParametersCount(): void
@@ -122,7 +95,7 @@ final class PropertyHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must have exactly two parameters.', ClassicDummy::class));
 
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
     }
 
     public function testThrowWhenInvalidPropertyFormatterContextTypeParameter(): void
@@ -140,7 +113,7 @@ final class PropertyHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class));
 
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
     }
 
     public function testThrowWhenNonStaticMethodTypeFormatter(): void
@@ -158,7 +131,7 @@ final class PropertyHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be a static method.', ClassicDummy::class));
 
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
     }
 
     public function testThrowWhenVoidMethodTypeFormatter(): void
@@ -176,6 +149,6 @@ final class PropertyHookTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Return type of property formatter "%s::$id" must not be "void" nor "never".', ClassicDummy::class));
 
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', 'format', $context);
+        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
     }
 }
