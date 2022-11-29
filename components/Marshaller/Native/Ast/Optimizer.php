@@ -16,18 +16,15 @@ use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 final class Optimizer
 {
     /**
-     * @param list<NodeInterface> $nodes
+     * @template T of NodeInterface|list<NodeInterface>
      *
-     * @return list<NodeInterface>
+     * @param T $subject
+     *
+     * @return T
      */
-    public function optimize(array $nodes): array
+    public function optimize(NodeInterface|array $subject): NodeInterface|array
     {
-        $nodes = $this->mergeStringResourceFwrites($nodes);
-
-        // TODO optimize wherever possible
-        // TODO template string?
-
-        return $nodes;
+        return $subject instanceof NodeInterface ? $subject->optimize($this) : $this->optimizeNodeCollection($subject);
     }
 
     /**
@@ -35,21 +32,31 @@ final class Optimizer
      *
      * @return list<NodeInterface>
      */
-    private function mergeStringResourceFwrites(array $nodes): array
+    public function optimizeNodeCollection(array $nodes): array
     {
-        $stringContent = '';
-        $optimizedNodes = [];
+        return $this->mergeResourceStringFwrites($nodes);
+    }
 
+    /**
+     * @param list<NodeInterface> $nodes
+     *
+     * @return list<NodeInterface>
+     */
+    public function mergeResourceStringFwrites(array $nodes): array
+    {
         $createFwriteExpression = fn (string $content) => new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($content)]));
+
+        $stringContent = '';
+        $mergedNodes = [];
 
         foreach ($nodes as $node) {
             if (!$this->isStringResourceFwrite($node)) {
                 if ('' !== $stringContent) {
-                    $optimizedNodes[] = $createFwriteExpression($stringContent);
+                    $mergedNodes[] = $createFwriteExpression($stringContent);
                     $stringContent = '';
                 }
 
-                $optimizedNodes[] = $node;
+                $mergedNodes[] = $node;
 
                 continue;
             }
@@ -58,24 +65,13 @@ final class Optimizer
         }
 
         if ('' !== $stringContent) {
-            $optimizedNodes[] = $createFwriteExpression($stringContent);
+            $mergedNodes[] = $createFwriteExpression($stringContent);
         }
 
-        return $optimizedNodes;
+        return array_map($this->optimize(...), $mergedNodes);
     }
 
     private function isStringResourceFwrite(NodeInterface $node): bool
-    {
-        if (!$this->isResourceFwrite($node)) {
-            return false;
-        }
-
-        $dataParameter = $node->node->parameters[1] ?? null;
-
-        return $dataParameter instanceof ScalarNode && is_string($dataParameter->value);
-    }
-
-    private function isResourceFwrite(NodeInterface $node): bool
     {
         if (!$node instanceof ExpressionNode) {
             return false;
@@ -88,7 +84,9 @@ final class Optimizer
         }
 
         $resourceParameter = $currentNode->parameters[0] ?? null;
+        $dataParameter = $node->node->parameters[1] ?? null;
 
-        return $resourceParameter instanceof VariableNode && 'resource' === $resourceParameter->name;
+        return $resourceParameter instanceof VariableNode && 'resource' === $resourceParameter->name
+            && $dataParameter instanceof ScalarNode && is_string($dataParameter->value);
     }
 }

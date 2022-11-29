@@ -10,6 +10,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\TemplateStringNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonDictTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
@@ -29,8 +30,7 @@ final class JsonDictTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
             new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(''))),
             new ForEachNode(new VariableNode('accessor'), 'key_0', 'value_0', [
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode('prefix_0')])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(new VariableNode('prefix_0'), '"')])),
                 new ExpressionNode(new FunctionNode('\fwrite', [
                     new VariableNode('resource'),
                     new FunctionNode('\addcslashes', [new VariableNode('key_0'), new ScalarNode('"\\')]),

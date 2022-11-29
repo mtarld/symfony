@@ -17,8 +17,13 @@ final class VariableNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler->raw('$'.$this->name);
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return $this;
     }
 }

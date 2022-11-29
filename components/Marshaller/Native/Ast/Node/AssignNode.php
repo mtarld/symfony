@@ -18,12 +18,16 @@ final class AssignNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
             ->compile($this->left)
-            ->raw(' = (')
-            ->compile($this->right)
-            ->raw(')');
+            ->raw(' = ')
+            ->compile($this->right);
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($optimizer->optimize($this->left), $optimizer->optimize($this->right));
     }
 }

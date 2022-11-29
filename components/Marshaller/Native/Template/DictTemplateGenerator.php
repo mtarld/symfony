@@ -10,6 +10,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\TemplateStringNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
@@ -53,8 +54,10 @@ abstract class DictTemplateGenerator
             new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
             new ForEachNode($accessor, $keyName, $valueName, [
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforeKey())])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
+                    new VariableNode($prefixName),
+                    $this->beforeKey(),
+                )])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->escapeKey(new VariableNode($keyName))])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterKey())])),
                 ...$this->templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),

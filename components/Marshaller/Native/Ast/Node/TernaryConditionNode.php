@@ -19,15 +19,18 @@ final class TernaryConditionNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
-            ->raw('(')
             ->compile($this->condition)
-            ->raw(') ? (')
+            ->raw(' ? ')
             ->compile($this->onTrue)
-            ->raw(') : (')
-            ->compile($this->onFalse)
-            ->raw(')');
+            ->raw(' : ')
+            ->compile($this->onFalse);
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($optimizer->optimize($this->condition), $optimizer->optimize($this->onTrue), $optimizer->optimize($this->onFalse));
     }
 }

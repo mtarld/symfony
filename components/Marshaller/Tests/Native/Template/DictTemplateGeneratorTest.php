@@ -11,6 +11,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ForEachNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\TemplateStringNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\DictTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
@@ -66,8 +67,7 @@ final class DictTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_ITEMS')])),
             new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(''))),
             new ForEachNode(new VariableNode('accessor'), 'key_0', 'value_0', [
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode('prefix_0')])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('BEFORE_KEY')])),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(new VariableNode('prefix_0'), 'BEFORE_KEY')])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new FunctionNode('KEY', [new VariableNode('key_0')])])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('AFTER_KEY')])),
                 new ScalarNode('NESTED'),

@@ -25,13 +25,13 @@ final class IfNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
             ->line(sprintf('if (%s) {', $compiler->subcompile($this->condition)))
             ->indent();
 
-        foreach ($compiler->optimize($this->onIf) as $ifBodyNode) {
+        foreach ($this->onIf as $ifBodyNode) {
             $compiler->compile($ifBodyNode);
         }
 
@@ -42,7 +42,7 @@ final class IfNode implements NodeInterface
                 ->line(sprintf('} elseif (%s) {', $compiler->subcompile($elseIf['condition'])))
                 ->indent();
 
-            foreach ($optimizer->optimize($elseIf['body']) as $elseIfBodyNode) {
+            foreach ($elseIf['body'] as $elseIfBodyNode) {
                 $compiler->compile($elseIfBodyNode);
             }
 
@@ -54,7 +54,7 @@ final class IfNode implements NodeInterface
                 ->line('} else {')
                 ->indent();
 
-            foreach ($optimizer->optimize($this->onElse) as $elseBodyNode) {
+            foreach ($this->onElse as $elseBodyNode) {
                 $compiler->compile($elseBodyNode);
             }
 
@@ -62,5 +62,18 @@ final class IfNode implements NodeInterface
         }
 
         $compiler->line('}');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self(
+            $optimizer->optimize($this->condition),
+            $optimizer->optimize($this->onIf),
+            $optimizer->optimize($this->onElse),
+            array_map(fn (array $e): array => [
+                'condition' => $optimizer->optimize($e['condition']),
+                'body' => $optimizer->optimize($e['body']),
+            ], $this->elseIfs),
+        );
     }
 }

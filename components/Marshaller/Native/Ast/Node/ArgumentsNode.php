@@ -13,14 +13,14 @@ use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 final class ArgumentsNode implements NodeInterface
 {
     /**
-     * @param list<ArgumentNode> $arguments
+     * @param list<array<string, string>> $arguments
      */
     public function __construct(
         public readonly array $arguments,
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $argumentSources = [];
         foreach ($this->arguments as $name => $type) {
@@ -31,5 +31,10 @@ final class ArgumentsNode implements NodeInterface
         }
 
         $compiler->raw(implode(', ', $argumentSources));
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return $this;
     }
 }

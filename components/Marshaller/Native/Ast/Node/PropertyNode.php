@@ -18,10 +18,15 @@ final class PropertyNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
             ->compile($this->object)
             ->raw(sprintf('->%s', $this->property));
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($optimizer->optimize($this->object), $this->property);
     }
 }

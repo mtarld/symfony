@@ -30,7 +30,7 @@ final class BinaryNode implements NodeInterface
         }
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
             ->raw('(')
@@ -38,5 +38,10 @@ final class BinaryNode implements NodeInterface
             ->raw(') '.$this->operator.' (')
             ->compile($this->right)
             ->raw(')');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($this->operator, $optimizer->optimize($this->left), $optimizer->optimize($this->right));
     }
 }

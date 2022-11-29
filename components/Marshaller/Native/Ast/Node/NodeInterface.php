@@ -12,5 +12,7 @@ use Symfony\Component\Marshaller\Native\Ast\Optimizer;
  */
 interface NodeInterface
 {
-    public function compile(Compiler $compiler, Optimizer $optimizer): void;
+    public function compile(Compiler $compiler): void;
+
+    public function optimize(Optimizer $optimizer): static;
 }

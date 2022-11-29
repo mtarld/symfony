@@ -20,7 +20,7 @@ final class PhpDocNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         if ([] === $this->lines) {
             return;
@@ -31,5 +31,10 @@ final class PhpDocNode implements NodeInterface
             $compiler->line(' * '.$line);
         }
         $compiler->line(' */');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return $this;
     }
 }

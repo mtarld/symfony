@@ -47,7 +47,7 @@ final class MarshallerTest extends TestCase
      *
      * @param list<string> $expectedLines
      */
-    public function testMarshalGenerate(array $expectedLines, string $type, ?Context $context): void
+    public function testarshalGenerate(array $expectedLines, string $type, ?Context $context): void
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
@@ -69,6 +69,7 @@ final class MarshallerTest extends TestCase
      */
     public function marshalGenerateDataProvider(): iterable
     {
+        // TODO move me in native test
         yield [[
             '<?php',
             '',
@@ -81,6 +82,31 @@ final class MarshallerTest extends TestCase
             '};',
         ], 'int', null];
 
+        // TODO move me in native test
+        // TODO test marshal quoted dict
+        yield [[
+            '<?php',
+            '',
+            '/**',
+            ' * @param array<string, int> $data',
+            ' * @param resource $resource',
+            ' */',
+            'return static function (mixed $data, $resource, array $context): void {',
+            '    \fwrite($resource, "{");',
+            '    $prefix_0 = "";',
+            '    foreach ($data as $key_0 => $value_0) {',
+            '        \fwrite($resource, "{$prefix_0}\"");',
+            '        \fwrite($resource, \addcslashes($key_0, "\"\\\\"));',
+            '        \fwrite($resource, "\":");',
+            '        \fwrite($resource, $value_0);',
+            '        $prefix_0 = ",";',
+            '    }',
+            '    \fwrite($resource, "}");',
+            '};',
+        ], 'array<string, int>', null];
+
+        // TODO other tests (like list)
+
         yield [[
             '<?php',
             '',
@@ -89,7 +115,7 @@ final class MarshallerTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = ($data);',
+            '    $object_0 = $data;',
             '    \fwrite($resource, "{\"@id\":");',
             '    \fwrite($resource, $object_0->id);',
             '    \fwrite($resource, ",\"name\":\"");',
@@ -106,7 +132,7 @@ final class MarshallerTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = ($data);',
+            '    $object_0 = $data;',
             '    \fwrite($resource, "{\"id\":\"");',
             '    \fwrite($resource, \addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context), "\\"\\\\"));',
             '    \fwrite($resource, "\",\"name\":\"");',
@@ -123,6 +149,7 @@ final class MarshallerTest extends TestCase
      */
     public function testMarshal(mixed $expectedDecodedData, mixed $data, ?Context $context): void
     {
+        // TODO move basics in native test
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $marshalGenerateContextBuilders = [
@@ -145,6 +172,7 @@ final class MarshallerTest extends TestCase
         yield [null, null, null];
         yield [1, 1, null];
         yield ['1', 1, new Context(new TypeOption('string'))];
+        yield [['"quoted_key"' => '"quoted value"'], ['"quoted_key"' => '"quoted value"'], new Context(new TypeOption('array<string, string>'))];
         yield [['id' => 1, 'name' => 'dummy'], new ClassicDummy(), null];
         yield [['@id' => 1, 'name' => 'dummy'], new DummyWithNameAttributes(), null];
         yield [['id' => '2', 'name' => 'dummy'], new DummyWithFormatterAttributes(), null];

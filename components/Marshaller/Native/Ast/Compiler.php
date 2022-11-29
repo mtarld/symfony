@@ -35,7 +35,7 @@ final class Compiler
 
     public function compile(NodeInterface $node): static
     {
-        $node->compile($this, $this->optimizer);
+        $this->optimizer->optimize($node)->compile($this);
 
         return $this;
     }

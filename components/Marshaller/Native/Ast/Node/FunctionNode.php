@@ -21,10 +21,15 @@ final class FunctionNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $parameters = implode(', ', array_map(fn (NodeInterface $v): string => $compiler->subcompile($v), $this->parameters));
 
         $compiler->raw(sprintf('%s(%s)', $this->name, $parameters));
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($this->name, $optimizer->optimize($this->parameters));
     }
 }

@@ -25,11 +25,15 @@ final class UnaryNode implements NodeInterface
         }
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $compiler
-            ->raw('('.$this->operator)
-            ->compile($this->node)
-            ->raw(')');
+            ->raw($this->operator)
+            ->compile($this->node);
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($this->operator, $optimizer->optimize($this->node));
     }
 }

@@ -17,7 +17,7 @@ final class ScalarNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         if (null === $this->value) {
             $compiler->raw('null');
@@ -52,5 +52,10 @@ final class ScalarNode implements NodeInterface
         }
 
         throw new \RuntimeException('TODO');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return $this;
     }
 }

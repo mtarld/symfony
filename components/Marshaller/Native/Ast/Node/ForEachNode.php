@@ -23,7 +23,7 @@ final class ForEachNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         if (null === $this->keyName) {
             $compiler->line(sprintf(
@@ -42,12 +42,17 @@ final class ForEachNode implements NodeInterface
 
         $compiler->indent();
 
-        foreach ($optimizer->optimize($this->body) as $bodyNode) {
+        foreach ($this->body as $bodyNode) {
             $compiler->compile($bodyNode);
         }
 
         $compiler
             ->outdent()
             ->line('}');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self($optimizer->optimize($this->collection), $this->keyName, $this->valueName, $optimizer->optimize($this->body));
     }
 }

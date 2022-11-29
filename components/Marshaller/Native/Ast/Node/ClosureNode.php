@@ -23,7 +23,7 @@ final class ClosureNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler, Optimizer $optimizer): void
+    public function compile(Compiler $compiler): void
     {
         $staticSource = $this->static ? 'static ' : '';
         $argumentsSource = $compiler->subcompile($this->arguments);
@@ -33,12 +33,22 @@ final class ClosureNode implements NodeInterface
             ->raw(sprintf('%sfunction (%s)%s {', $staticSource, $argumentsSource, $returnTypeSource).PHP_EOL)
             ->indent();
 
-        foreach ($optimizer->optimize($this->body) as $bodyNode) {
+        foreach ($this->body as $bodyNode) {
             $compiler->compile($bodyNode);
         }
 
         $compiler
             ->outdent()
             ->raw('}');
+    }
+
+    public function optimize(Optimizer $optimizer): static
+    {
+        return new self(
+            $optimizer->optimize($this->arguments),
+            $this->returnType,
+            $this->static,
+            $optimizer->optimize($this->body),
+        );
     }
 }
