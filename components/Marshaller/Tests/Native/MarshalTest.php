@@ -6,6 +6,7 @@ namespace Symfony\Component\Marshaller\Tests\Native;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithQuotes;
 
 use function Symfony\Component\Marshaller\Native\marshal;
 
@@ -49,12 +50,14 @@ final class MarshalTest extends TestCase
         yield [.01];
         yield [false, 'bool'];
         yield [new ClassicDummy()];
+        yield [new DummyWithQuotes()];
         yield [[1, 2, 3], 'array<int, int>'];
-        yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
         yield [[1, 2, 3.12], 'array<int, int|float>'];
+        yield [[false, null], 'array<int, ?bool>'];
         yield [['a' => 'b', 'c' => 'd'], 'array<string, string>'];
         yield [['a' => false, 'b' => 'd'], 'array<string, string|bool>'];
-        yield [[false, null], 'array<int, ?bool>'];
+        yield [['"a"' => '"b"'], 'array<string, string>'];
+        yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
     }
 
     public function testOverrideMarshalledDataType(): void

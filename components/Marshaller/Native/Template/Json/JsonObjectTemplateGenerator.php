@@ -36,7 +36,6 @@ final class JsonObjectTemplateGenerator extends ObjectTemplateGenerator
         return '":';
     }
 
-    // TODO remove?
     protected function escapeString(string $string): string
     {
         return addcslashes($string, '\"\\');

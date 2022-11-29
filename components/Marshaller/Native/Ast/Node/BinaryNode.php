@@ -17,7 +17,6 @@ final class BinaryNode implements NodeInterface
         '||',
         '===',
         'instanceof',
-        '.',
     ];
 
     public function __construct(

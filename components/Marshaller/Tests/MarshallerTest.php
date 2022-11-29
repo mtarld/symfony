@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
+use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
@@ -16,10 +17,11 @@ use Symfony\Component\Marshaller\NativeContext\TypeFormatterNativeContextBuilder
 use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithQuotes;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
+use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class MarshallerTest extends TestCase
 {
@@ -43,11 +45,11 @@ final class MarshallerTest extends TestCase
     }
 
     /**
-     * @dataProvider marshalGenerateDataProvider
+     * @dataProvider marshalJsonGenerateDataProvider
      *
      * @param list<string> $expectedLines
      */
-    public function testarshalGenerate(array $expectedLines, string $type, ?Context $context): void
+    public function testMarshalJsonGenerate(array $expectedLines, string $type, ?Context $context): void
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
@@ -67,9 +69,8 @@ final class MarshallerTest extends TestCase
     /**
      * @return iterable<array{0: list<string>, 1: string, 2: Context}
      */
-    public function marshalGenerateDataProvider(): iterable
+    public function marshalJsonGenerateDataProvider(): iterable
     {
-        // TODO move me in native test
         yield [[
             '<?php',
             '',
@@ -78,34 +79,59 @@ final class MarshallerTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, $data);',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, \addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString($data, $context), "\"\\\\"));',
+            '    \fwrite($resource, "\"");',
             '};',
-        ], 'int', null];
+        ], 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)]))];
 
-        // TODO move me in native test
-        // TODO test marshal quoted dict
         yield [[
             '<?php',
             '',
             '/**',
-            ' * @param array<string, int> $data',
+            ' * @param int $data',
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "{");',
-            '    $prefix_0 = "";',
-            '    foreach ($data as $key_0 => $value_0) {',
-            '        \fwrite($resource, "{$prefix_0}\"");',
-            '        \fwrite($resource, \addcslashes($key_0, "\"\\\\"));',
-            '        \fwrite($resource, "\":");',
-            '        \fwrite($resource, $value_0);',
-            '        $prefix_0 = ",";',
-            '    }',
-            '    \fwrite($resource, "}");',
+            '    \fwrite($resource, "\"");',
+            '    \fwrite($resource, \addcslashes($foo, "\"\\\\"));',
+            '    \fwrite($resource, "\"");',
             '};',
-        ], 'array<string, int>', null];
+        ], 'int', new Context(new HookOption([
+            'int' => static function (string $type, string $accessor, array $context): array {
+                return [
+                    'type' => 'string',
+                    'accessor' => '$foo',
+                    'context' => $context,
+                ];
+            },
+        ]))];
 
-        // TODO other tests (like list)
+        yield [[
+            '<?php',
+            '',
+            '/**',
+            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
+            ' * @param resource $resource',
+            ' */',
+            'return static function (mixed $data, $resource, array $context): void {',
+            '    $object_0 = $data;',
+            '    \fwrite($resource, "{\"foo\":\"");',
+            '    \fwrite($resource, \addcslashes($bar, "\\"\\\\"));',
+            '    \fwrite($resource, "\",\"foo\":\"");',
+            '    \fwrite($resource, \addcslashes($bar, "\\"\\\\"));',
+            '    \fwrite($resource, "\"}");',
+            '};',
+        ], ClassicDummy::class, new Context(new HookOption([
+            'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                return [
+                    'name' => 'foo',
+                    'type' => 'string',
+                    'accessor' => '$bar',
+                    'context' => $context,
+                ];
+            },
+        ]))];
 
         yield [[
             '<?php',
@@ -142,50 +168,14 @@ final class MarshallerTest extends TestCase
         ], DummyWithFormatterAttributes::class, null];
     }
 
-    /**
-     * @dataProvider marshalDataProvider
-     *
-     * @param list<string> $expectedLines
-     */
-    public function testMarshal(mixed $expectedDecodedData, mixed $data, ?Context $context): void
+    public function testJsonMarshal(): void
     {
-        // TODO move basics in native test
-        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), [], $this->cacheDir);
 
-        $marshalGenerateContextBuilders = [
-            new HookNativeContextBuilder(),
-            new TypeFormatterNativeContextBuilder(),
-            new NameAttributeNativeContextBuilder(),
-            new FormatterAttributeNativeContextBuilder(),
-        ];
+        $marshaller->marshal(1, 'json', $output = new MemoryStreamOutput());
+        $this->assertSame('1', (string) $output);
 
-        (new Marshaller($typeExtractor, $marshalGenerateContextBuilders, $this->cacheDir))->marshal($data, 'json', $output = new MemoryStreamOutput(), $context);
-
-        $this->assertSame($expectedDecodedData, json_decode((string) $output, true));
-    }
-
-    /**
-     * @return iterable<array{0: array<string, mixed>, 1: mixed, 2: Context}
-     */
-    public function marshalDataProvider(): iterable
-    {
-        yield [null, null, null];
-        yield [1, 1, null];
-        yield ['1', 1, new Context(new TypeOption('string'))];
-        yield [['"quoted_key"' => '"quoted value"'], ['"quoted_key"' => '"quoted value"'], new Context(new TypeOption('array<string, string>'))];
-        yield [['id' => 1, 'name' => 'dummy'], new ClassicDummy(), null];
-        yield [['@id' => 1, 'name' => 'dummy'], new DummyWithNameAttributes(), null];
-        yield [['id' => '2', 'name' => 'dummy'], new DummyWithFormatterAttributes(), null];
-        yield [['"name"' => '"quoted" dummy'], new DummyWithQuotes(), null];
-        yield [['foo' => '1', 'name' => 'dummy'], new ClassicDummy(), new Context(new HookOption([
-            sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                return [
-                    'name' => 'foo',
-                    'type' => 'string',
-                    'accessor' => $accessor,
-                    'context' => $context,
-                ];
-            },
-        ]))];
+        $marshaller->marshal(1, 'json', $output = new MemoryStreamOutput(), new Context(new TypeOption('string')));
+        $this->assertSame('"1"', (string) $output);
     }
 }
