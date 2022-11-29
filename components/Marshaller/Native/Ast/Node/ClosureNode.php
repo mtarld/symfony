@@ -33,13 +33,7 @@ final class ClosureNode implements NodeInterface
             ->raw(sprintf('%sfunction (%s)%s {', $staticSource, $argumentsSource, $returnTypeSource).PHP_EOL)
             ->indent();
 
-        $body = $this->body;
-
-        if (null !== $optimizer) {
-            $body = $optimizer->optimize($body);
-        }
-
-        foreach ($body as $bodyNode) {
+        foreach ($optimizer->optimize($this->body) as $bodyNode) {
             $compiler->compile($bodyNode);
         }
 

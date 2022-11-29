@@ -31,7 +31,7 @@ final class IfNode implements NodeInterface
             ->line(sprintf('if (%s) {', $compiler->subcompile($this->condition)))
             ->indent();
 
-        foreach ($this->onIf as $ifBodyNode) {
+        foreach ($compiler->optimize($this->onIf) as $ifBodyNode) {
             $compiler->compile($ifBodyNode);
         }
 
@@ -42,7 +42,7 @@ final class IfNode implements NodeInterface
                 ->line(sprintf('} elseif (%s) {', $compiler->subcompile($elseIf['condition'])))
                 ->indent();
 
-            foreach ($elseIf['body'] as $elseIfBodyNode) {
+            foreach ($optimizer->optimize($elseIf['body']) as $elseIfBodyNode) {
                 $compiler->compile($elseIfBodyNode);
             }
 
@@ -54,7 +54,7 @@ final class IfNode implements NodeInterface
                 ->line('} else {')
                 ->indent();
 
-            foreach ($this->onElse as $elseBodyNode) {
+            foreach ($optimizer->optimize($this->onElse) as $elseBodyNode) {
                 $compiler->compile($elseBodyNode);
             }
 

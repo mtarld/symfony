@@ -42,7 +42,7 @@ final class ForEachNode implements NodeInterface
 
         $compiler->indent();
 
-        foreach ($this->body as $bodyNode) {
+        foreach ($optimizer->optimize($this->body) as $bodyNode) {
             $compiler->compile($bodyNode);
         }
 
