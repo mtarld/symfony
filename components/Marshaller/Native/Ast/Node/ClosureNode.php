@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Native\Ast\Node;
 
 use Symfony\Component\Marshaller\Native\Ast\Compiler;
+use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 
 /**
  * @internal
@@ -22,7 +23,7 @@ final class ClosureNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler): void
+    public function compile(Compiler $compiler, Optimizer $optimizer): void
     {
         $staticSource = $this->static ? 'static ' : '';
         $argumentsSource = $compiler->subcompile($this->arguments);
@@ -32,7 +33,13 @@ final class ClosureNode implements NodeInterface
             ->raw(sprintf('%sfunction (%s)%s {', $staticSource, $argumentsSource, $returnTypeSource).PHP_EOL)
             ->indent();
 
-        foreach ($this->body as $bodyNode) {
+        $body = $this->body;
+
+        if (null !== $optimizer) {
+            $body = $optimizer->optimize($body);
+        }
+
+        foreach ($body as $bodyNode) {
             $compiler->compile($bodyNode);
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Native\Ast\Node;
 
 use Symfony\Component\Marshaller\Native\Ast\Compiler;
+use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 
 /**
  * @internal
@@ -20,7 +21,7 @@ final class FunctionNode implements NodeInterface
     ) {
     }
 
-    public function compile(Compiler $compiler): void
+    public function compile(Compiler $compiler, Optimizer $optimizer): void
     {
         $parameters = implode(', ', array_map(fn (NodeInterface $v): string => $compiler->subcompile($v), $this->parameters));
 

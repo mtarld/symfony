@@ -11,8 +11,14 @@ use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
  */
 final class Compiler
 {
+    private readonly Optimizer $optimizer;
     private string $source = '';
     private int $indentationLevel = 0;
+
+    public function __construct()
+    {
+        $this->optimizer = new Optimizer();
+    }
 
     public function reset(): static
     {
@@ -29,7 +35,7 @@ final class Compiler
 
     public function compile(NodeInterface $node): static
     {
-        $node->compile($this);
+        $node->compile($this, $this->optimizer);
 
         return $this;
     }
@@ -39,7 +45,7 @@ final class Compiler
         $mainSource = $this->source;
         $this->source = '';
 
-        $node->compile($this);
+        $node->compile($this, $this->optimizer);
         $subCompiledSource = $this->source;
 
         $this->source = $mainSource;
