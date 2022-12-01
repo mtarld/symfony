@@ -28,6 +28,12 @@ final class PhpDocNode implements NodeInterface
 
         $compiler->line('/**');
         foreach ($this->lines as $line) {
+            if ('' === $line) {
+                $compiler->line(' *');
+
+                continue;
+            }
+
             $compiler->line(' * '.$line);
         }
         $compiler->line(' */');

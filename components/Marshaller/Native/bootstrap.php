@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Native;
 use Symfony\Component\Marshaller\Native\Ast\Compiler;
 use Symfony\Component\Marshaller\Native\Ast\Node\ArgumentsNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ClosureNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
@@ -18,17 +19,7 @@ use Symfony\Component\Marshaller\Native\Type\Type;
  */
 function marshal(mixed $data, $resource, string $format, array $context = []): void
 {
-    if (isset($context['type'])) {
-        $type = $context['type'];
-    } else {
-        $builtinType = strtolower(gettype($data));
-
-        $type = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
-        if (is_object($data)) {
-            $type = $data::class;
-        }
-    }
-
+    $type = isset($context['type']) ? $context['type'] : get_debug_type($data);
     $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
     $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, md5($type), $format);
 
@@ -80,7 +71,7 @@ function marshal_generate(string $type, string $format, array $context = []): st
     $bodyNodes = $templateGenerators[$format]->generate($type, $accessor, $context);
     $compiler->outdent();
 
-    $compiler->compile(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes)));
+    $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));
     $php = $compiler->source();
 
     return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;

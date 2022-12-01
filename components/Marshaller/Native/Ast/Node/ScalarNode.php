@@ -26,15 +26,7 @@ final class ScalarNode implements NodeInterface
         }
 
         if (\is_int($this->value) || \is_float($this->value)) {
-            if (false !== $locale = setlocale(\LC_NUMERIC, 0)) {
-                setlocale(\LC_NUMERIC, 'C');
-            }
-
-            $compiler->raw($this->value);
-
-            if (false !== $locale) {
-                setlocale(\LC_NUMERIC, $locale);
-            }
+            $compiler->raw((string) $this->value);
 
             return;
         }
@@ -51,7 +43,7 @@ final class ScalarNode implements NodeInterface
             return;
         }
 
-        throw new \RuntimeException('TODO');
+        throw new \InvalidArgumentException(sprintf('Given value is not a scalar. Got "%s"', get_debug_type($this->value)));
     }
 
     public function optimize(Optimizer $optimizer): static

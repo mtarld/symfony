@@ -172,7 +172,7 @@ final class MarshalGenerateTest extends TestCase
             ' * @param resource $resource',
             ' */',
             'return static function (mixed $data, $resource, array $context): void {',
-            '    if ((null) === ($data)) {',
+            '    if (null === $data) {',
             '        \fwrite($resource, "null");',
             '    } else {',
             '        \fwrite($resource, $data);',

@@ -19,7 +19,7 @@ final class ReturnNode implements NodeInterface
 
     public function compile(Compiler $compiler): void
     {
-        $compiler->line(sprintf('return %s;', $compiler->subcompile($this->node)));
+        $compiler->raw(sprintf('return %s', $compiler->subcompile($this->node)));
     }
 
     public function optimize(Optimizer $optimizer): static

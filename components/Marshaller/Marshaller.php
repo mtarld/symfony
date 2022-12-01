@@ -32,7 +32,7 @@ final class Marshaller implements MarshallerInterface
     {
         $nativeContext = ['cache_dir' => $this->cacheDir];
 
-        $type = $this->getTypeFromData($data);
+        $type = get_debug_type($data);
 
         /** @var TypeOption|null $typeOption */
         if ($typeOption = $context?->get(TypeOption::class)) {

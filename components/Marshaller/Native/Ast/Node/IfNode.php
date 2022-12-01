@@ -49,7 +49,7 @@ final class IfNode implements NodeInterface
             $compiler->outdent();
         }
 
-        if (null !== $this->onElse) {
+        if ([] !== $this->onElse) {
             $compiler
                 ->line('} else {')
                 ->indent();

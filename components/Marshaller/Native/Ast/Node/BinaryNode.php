@@ -32,11 +32,9 @@ final class BinaryNode implements NodeInterface
     public function compile(Compiler $compiler): void
     {
         $compiler
-            ->raw('(')
             ->compile($this->left)
-            ->raw(') '.$this->operator.' (')
-            ->compile($this->right)
-            ->raw(')');
+            ->raw(' '.$this->operator.' ')
+            ->compile($this->right);
     }
 
     public function optimize(Optimizer $optimizer): static

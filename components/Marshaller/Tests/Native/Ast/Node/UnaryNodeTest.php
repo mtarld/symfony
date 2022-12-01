@@ -6,15 +6,15 @@ namespace Symfony\Component\Marshaller\Tests\Native;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Ast\Compiler;
-use Symfony\Component\Marshaller\Native\Ast\Node\BinaryNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\UnaryNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 
-final class BinaryNodeTest extends TestCase
+final class UnaryNodeTest extends TestCase
 {
     public function testCompile(): void
     {
-        (new BinaryNode('&&', new VariableNode('foo'), new VariableNode('bar')))->compile($compiler = new Compiler());
-        $this->assertSame('$foo && $bar', $compiler->source());
+        (new UnaryNode('!', new VariableNode('foo')))->compile($compiler = new Compiler());
+        $this->assertSame('!$foo', $compiler->source());
     }
 
     public function testThrowOnInvalidOperator(): void
@@ -22,6 +22,6 @@ final class BinaryNodeTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid "invalid" operator.');
 
-        new BinaryNode('invalid', new VariableNode('foo'), new VariableNode('bar'));
+        new UnaryNode('invalid', new VariableNode('foo'));
     }
 }
