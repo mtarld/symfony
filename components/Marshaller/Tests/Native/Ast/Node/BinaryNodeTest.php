@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Tests\Native;
+namespace Symfony\Component\Marshaller\Tests\Native\Ast\Node;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Ast\Compiler;

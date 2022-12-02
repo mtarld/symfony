@@ -35,7 +35,7 @@ final class Optimizer
      *
      * @return list<NodeInterface>
      */
-    public function optimizeNodeCollection(array $nodes): array
+    private function optimizeNodeCollection(array $nodes): array
     {
         return $this->mergeResourceStringFwrites($nodes);
     }
@@ -45,7 +45,7 @@ final class Optimizer
      *
      * @return list<NodeInterface>
      */
-    public function mergeResourceStringFwrites(array $nodes): array
+    private function mergeResourceStringFwrites(array $nodes): array
     {
         $createFwriteExpression = fn (string $content) => new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($content)]));
 
