@@ -7,6 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
+use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
@@ -77,7 +78,7 @@ final class MarshallerTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString(\$data, \$context)));
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString(\$data, \$context), \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])), ];
@@ -91,7 +92,7 @@ final class MarshallerTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$foo));
+                \\fwrite(\$resource, \json_encode(\$foo, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'int', new Context(new HookOption([
@@ -115,9 +116,9 @@ final class MarshallerTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
@@ -143,9 +144,9 @@ final class MarshallerTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"@id\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->id));
+                \\fwrite(\$resource, \json_encode(\$object_0->id, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
@@ -162,9 +163,9 @@ final class MarshallerTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"id\":");
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context)));
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context), \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
@@ -180,7 +181,10 @@ final class MarshallerTest extends TestCase
 
         $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], $this->cacheDir);
 
-        $marshaller->marshal(1, 'json', $output = new MemoryStreamOutput());
+        $marshaller->marshal('1', 'json', $output = new MemoryStreamOutput());
+        $this->assertSame('"1"', (string) $output);
+
+        $marshaller->marshal('1', 'json', $output = new MemoryStreamOutput(), new Context(new JsonEncodeFlagsOption(JSON_NUMERIC_CHECK)));
         $this->assertSame('1', (string) $output);
 
         $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStreamOutput(), new Context(new TypeOption('array<int, string>')));

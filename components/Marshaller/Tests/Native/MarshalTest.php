@@ -61,6 +61,12 @@ final class MarshalTest extends TestCase
         yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
     }
 
+    public function testMarshalContentWithJsonEncodeFlags(): void
+    {
+        $this->assertSame('"123"', $this->marshalAsString('123', 'json'));
+        $this->assertSame('123', $this->marshalAsString('123', 'json', ['json_encode_flags' => JSON_NUMERIC_CHECK]));
+    }
+
     public function testCreateCacheFile(): void
     {
         $cacheFileCount = \count(glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));

@@ -1,7 +1,6 @@
 # TODO
 
 ## Marshal
-- allow json encode flags (define flags at the very beginning of the template)
 - json AST describing the structure instead
 
 - test AST compiler and optimizer

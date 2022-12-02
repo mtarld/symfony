@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template\Json;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\ArrayAccessNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\DictTemplateGenerator;
 
 /**
@@ -40,6 +44,9 @@ final class JsonDictTemplateGenerator extends DictTemplateGenerator
 
     protected function escapeKey(NodeInterface $key): NodeInterface
     {
-        return new FunctionNode('\json_encode', [$key]);
+        return new FunctionNode('\json_encode', [
+            $key,
+            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+        ]);
     }
 }

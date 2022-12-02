@@ -52,7 +52,7 @@ final class MarshalGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$data));
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'int', [], ];
@@ -66,7 +66,7 @@ final class MarshalGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$data));
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'string', [], ];
@@ -80,7 +80,7 @@ final class MarshalGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$data));
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'bool', [], ];
@@ -98,7 +98,7 @@ final class MarshalGenerateTest extends TestCase
                 \$prefix_0 = "";
                 foreach (\$data as \$value_0) {
                     \\fwrite(\$resource, \$prefix_0);
-                    \\fwrite(\$resource, \json_encode(\$value_0));
+                    \\fwrite(\$resource, \json_encode(\$value_0, \$context["json_encode_flags"] ?? 0));
                     \$prefix_0 = ",";
                 }
                 \\fwrite(\$resource, "]");
@@ -118,9 +118,9 @@ final class MarshalGenerateTest extends TestCase
                 \\fwrite(\$resource, "{");
                 \$prefix_0 = "";
                 foreach (\$data as \$key_0 => \$value_0) {
-                    \$key_0 = \json_encode(\$key_0);
+                    \$key_0 = \json_encode(\$key_0, \$context["json_encode_flags"] ?? 0);
                     \\fwrite(\$resource, "{\$prefix_0}{\$key_0}:");
-                    \\fwrite(\$resource, \json_encode(\$value_0));
+                    \\fwrite(\$resource, \json_encode(\$value_0, \$context["json_encode_flags"] ?? 0));
                     \$prefix_0 = ",";
                 }
                 \\fwrite(\$resource, "}");
@@ -139,9 +139,9 @@ final class MarshalGenerateTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"id\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->id));
+                \\fwrite(\$resource, \json_encode(\$object_0->id, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
@@ -162,9 +162,9 @@ final class MarshalGenerateTest extends TestCase
                     \\fwrite(\$resource, \$prefix_0);
                     \$object_0 = \$value_0;
                     \\fwrite(\$resource, "{\"id\":");
-                    \\fwrite(\$resource, \json_encode(\$object_0->id));
+                    \\fwrite(\$resource, \json_encode(\$object_0->id, \$context["json_encode_flags"] ?? 0));
                     \\fwrite(\$resource, ",\"name\":");
-                    \\fwrite(\$resource, \json_encode(\$object_0->name));
+                    \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                     \\fwrite(\$resource, "}");
                     \$prefix_0 = ",";
                 }
@@ -185,7 +185,7 @@ final class MarshalGenerateTest extends TestCase
                 if (null === \$data) {
                     \\fwrite(\$resource, "null");
                 } else {
-                    \\fwrite(\$resource, \json_encode(\$data));
+                    \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
                 }
             };
 
@@ -200,7 +200,7 @@ final class MarshalGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$foo));
+                \\fwrite(\$resource, \json_encode(\$foo, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'int', [
@@ -226,9 +226,9 @@ final class MarshalGenerateTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
@@ -256,9 +256,9 @@ final class MarshalGenerateTest extends TestCase
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$foo));
+                \\fwrite(\$resource, \json_encode(\$foo, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");
             };
 
