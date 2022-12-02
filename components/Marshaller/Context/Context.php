@@ -10,7 +10,7 @@ namespace Symfony\Component\Marshaller\Context;
 final class Context implements \IteratorAggregate
 {
     /**
-     * @var array<class-string, object>
+     * @var array<class-string<object>, object>
      */
     private readonly array $optionMap;
 
@@ -55,7 +55,10 @@ final class Context implements \IteratorAggregate
      */
     public function get(string $optionClass): ?object
     {
-        return $this->optionMap[$optionClass] ?? null;
+        /** @var T $option */
+        $option = $this->optionMap[$optionClass] ?? null;
+
+        return $option;
     }
 
     /**

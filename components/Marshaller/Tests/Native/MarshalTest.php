@@ -40,15 +40,16 @@ final class MarshalTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: mixed, 1: string}>
+     * @return iterable<array{0: mixed, 1: string?}>
      */
     public function marshalContentDataProvider(): iterable
     {
         yield [1];
+        yield ['1'];
         yield ['foo'];
         yield [null];
         yield [.01];
-        yield [false, 'bool'];
+        yield [false];
         yield [new ClassicDummy()];
         yield [new DummyWithQuotes()];
         yield [[1, 2, 3], 'array<int, int>'];
@@ -58,12 +59,6 @@ final class MarshalTest extends TestCase
         yield [['a' => false, 'b' => 'd'], 'array<string, string|bool>'];
         yield [['"a"' => '"b"'], 'array<string, string>'];
         yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
-    }
-
-    public function testOverrideMarshalledDataType(): void
-    {
-        $this->assertSame('1', $this->marshalAsString(1, 'json'));
-        $this->assertSame('"1"', $this->marshalAsString(1, 'json', ['type' => 'string']));
     }
 
     public function testCreateCacheFile(): void
@@ -109,7 +104,9 @@ final class MarshalTest extends TestCase
      */
     private function marshalAsString(mixed $data, string $format, array $context = []): string
     {
-        marshal($data, $resource = fopen('php://temp', 'wb'), 'json', $context);
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'wb');
+        marshal($data, $resource, 'json', $context);
 
         rewind($resource);
         $string = stream_get_contents($resource);

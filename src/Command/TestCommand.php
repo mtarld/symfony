@@ -10,6 +10,8 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\MarshallerInterface;
 
 #[AsCommand(name: 'test')]

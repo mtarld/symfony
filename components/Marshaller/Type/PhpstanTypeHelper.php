@@ -67,8 +67,7 @@ final class PhpstanTypeHelper
             throw new \LogicException('Cannot handle intersection types.');
         }
 
-        // TODO test me
-        throw new \InvalidArgumentException(sprintf('Unhandled "%s" node.', get_class($node)));
+        throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', (string) $node));
     }
 
     private function extractIdentifierType(IdentifierTypeNode $node, TypeNameResolver $nameResolver): string

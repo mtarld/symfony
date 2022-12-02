@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\NativeContext;
+namespace Symfony\Component\Marshaller\NativeContext\Generation;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
+use Symfony\Component\Marshaller\NativeContext\GenerationNativeContextBuilderInterface;
 
-final class TypeFormatterNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
+final class TypeFormatterNativeContextBuilder implements GenerationNativeContextBuilderInterface
 {
     public function build(string $type, Context $context, array $nativeContext): array
     {

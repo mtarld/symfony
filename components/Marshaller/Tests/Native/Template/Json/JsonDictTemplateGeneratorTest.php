@@ -30,12 +30,13 @@ final class JsonDictTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
             new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(''))),
             new ForEachNode(new VariableNode('accessor'), 'key_0', 'value_0', [
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(new VariableNode('prefix_0'), '"')])),
-                new ExpressionNode(new FunctionNode('\fwrite', [
-                    new VariableNode('resource'),
-                    new FunctionNode('\addcslashes', [new VariableNode('key_0'), new ScalarNode('"\\')]),
-                ])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
+                new ExpressionNode(new AssignNode(new VariableNode('key_0'), new FunctionNode('\json_encode', [new VariableNode('key_0')]))),
+                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
+                    new VariableNode('prefix_0'),
+                    '',
+                    new VariableNode('key_0'),
+                    ':',
+                )])),
                 new ScalarNode('NESTED'),
                 new ExpressionNode(new AssignNode(new VariableNode('prefix_0'), new ScalarNode(','))),
             ]),

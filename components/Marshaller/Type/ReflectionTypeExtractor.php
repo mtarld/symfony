@@ -17,7 +17,12 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
 
     public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
     {
+        /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+
+        if (null === $declaringClass) {
+            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+        }
 
         if (null === $type = $function->getReturnType()) {
             throw new \InvalidArgumentException(sprintf('Return type of "%s::%s()" has not been defined.', $declaringClass->getName(), $function->getName()));
@@ -31,8 +36,6 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
      */
     private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
     {
-        $nullablePrefix = $reflection->allowsNull() ? '?' : '';
-
         if ($reflection instanceof \ReflectionIntersectionType) {
             throw new \LogicException('Cannot handle intersection types.');
         }
@@ -42,9 +45,10 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         }
 
         if (!$reflection instanceof \ReflectionNamedType) {
-            throw new \InvalidArgumentException('TODO');
+            throw new \InvalidArgumentException(sprintf('Unexpected "%s" type reflection.', $reflection::class));
         }
 
+        $nullablePrefix = $reflection->allowsNull() ? '?' : '';
         $phpTypeOrClass = $reflection->getName();
 
         if ('never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {

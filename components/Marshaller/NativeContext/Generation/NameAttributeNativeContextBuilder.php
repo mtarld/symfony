@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\NativeContext;
+namespace Symfony\Component\Marshaller\NativeContext\Generation;
 
-use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\NativeContext\GenerationNativeContextBuilderInterface;
 
-final class FormatterAttributeNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
+final class NameAttributeNativeContextBuilder implements GenerationNativeContextBuilderInterface
 {
     public function build(string $type, Context $context, array $nativeContext): array
     {
@@ -17,12 +18,15 @@ final class FormatterAttributeNativeContextBuilder implements MarshalGenerateNat
 
         foreach ((new \ReflectionClass($type))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
+                if (Name::class !== $attribute->getName()) {
                     continue;
                 }
 
+                /** @var Name $attributeInstance */
+                $attributeInstance = $attribute->newInstance();
+
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $nativeContext['symfony']['property_formatter'][$propertyIdentifier] = $attribute->newInstance()->formatter;
+                $nativeContext['symfony']['property_name'][$propertyIdentifier] = $attributeInstance->name;
 
                 break;
             }

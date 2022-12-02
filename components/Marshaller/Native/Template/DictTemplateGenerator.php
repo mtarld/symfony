@@ -54,12 +54,13 @@ abstract class DictTemplateGenerator
             new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
             new ForEachNode($accessor, $keyName, $valueName, [
+                new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->escapeKey(new VariableNode($keyName)))),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
                     new VariableNode($prefixName),
                     $this->beforeKey(),
+                    new VariableNode($keyName),
+                    $this->afterKey(),
                 )])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->escapeKey(new VariableNode($keyName))])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterKey())])),
                 ...$this->templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),
                 new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode($this->itemSeparator()))),
             ]),

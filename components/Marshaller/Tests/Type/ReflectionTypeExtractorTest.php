@@ -97,12 +97,38 @@ final class ReflectionTypeExtractorTest extends TestCase
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
 
+    public function testThrowIfCannotFindDeclaringClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot find class related to "foo()".');
+
+        $reflectionMethod = $this->createStub(\ReflectionFunction::class);
+        $reflectionMethod->method('getName')->willReturn('foo');
+
+        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+    }
+
     public function testThrowIfCannotFindReturnType(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Return type of "%s::undefined()" has not been defined.', ReflectionExtractableDummy::class));
 
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined');
+
+        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+    }
+
+    public function testThrowIfWrongReflectionType(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/^Unexpected "[^"]+" type reflection\.$/');
+
+        $reflection = new class () extends \ReflectionType {
+        };
+
+        $reflectionMethod = $this->createStub(\ReflectionFunction::class);
+        $reflectionMethod->method('getClosureScopeClass')->willReturn($this->createStub(\ReflectionClass::class));
+        $reflectionMethod->method('getReturnType')->willReturn($reflection);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }

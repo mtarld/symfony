@@ -43,7 +43,7 @@ final class TypeHook
             $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
 
             // If method doesn't belong to the current class, ignore generic search
-            if ($typeFormatter->getClosureScopeClass()->getName() !== $currentPropertyClass) {
+            if ($typeFormatter->getClosureScopeClass()?->getName() !== $currentPropertyClass) {
                 $currentPropertyClass = null;
             }
         }

@@ -30,7 +30,6 @@ final class PhpstanTypeExtractorTest extends TestCase
     public function testCannotHandleIntersectionProperty(): void
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromProperty')->willReturn('FALLBACK');
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
 
@@ -38,6 +37,19 @@ final class PhpstanTypeExtractorTest extends TestCase
 
         $this->expectException(\LogicException::class);
         $this->expectErrorMessage('Cannot handle intersection types.');
+
+        $extractor->extractFromProperty($reflectionProperty);
+    }
+
+    public function testCannotHandleUnknownNode(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectErrorMessage('Unhandled "array[foo]" type.');
+
+        $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
+
+        $extractor = new PhpstanTypeExtractor($fallbackExtractor);
+        $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty('unknown');
 
         $extractor->extractFromProperty($reflectionProperty);
     }

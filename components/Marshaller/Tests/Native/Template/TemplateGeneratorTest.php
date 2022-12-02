@@ -71,7 +71,7 @@ final class TemplateGeneratorTest extends TestCase
     /**
      * @dataProvider throwWhenInvalidHookResultDataProvider
      *
-     * @param array{type: string, accessor: string, context: array<string, mixed>} $hookResult
+     * @param array{type?: mixed, accessor?: mixed, context?: mixed} $hookResult
      */
     public function testThrowWhenInvalidHookResult(string $expectedExceptionMessage, array $hookResult): void
     {
@@ -88,7 +88,7 @@ final class TemplateGeneratorTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: string, 1: array{type: string, accessor: string, context: array<string, mixed>}}>
+     * @return iterable<array{0: string, 1: array{type?: mixed, accessor?: mixed, context?: mixed}}>
      */
     public function throwWhenInvalidHookResultDataProvider(): iterable
     {

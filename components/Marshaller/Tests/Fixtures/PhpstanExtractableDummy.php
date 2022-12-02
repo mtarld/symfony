@@ -112,6 +112,9 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var Tv */
     public $genericParameter;
 
+    /** @var array[foo] */
+    public $unknown;
+
     public $undefined;
 
     /** @return mixed */
@@ -316,6 +319,12 @@ final class PhpstanExtractableDummy extends AbstractDummy
     public function genericParameter()
     {
         return $this->genericParameter;
+    }
+
+    /** @return array[foo] */
+    public function unknown()
+    {
+        return $this->unknown;
     }
 
     public function void(): void

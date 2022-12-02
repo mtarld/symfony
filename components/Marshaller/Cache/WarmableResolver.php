@@ -22,18 +22,20 @@ final class WarmableResolver
     public function resolve(): \Generator
     {
         foreach ($this->fromPaths($this->paths) as $class) {
-            $attribute = null;
+            $attributeInstance = null;
+
             foreach ($class->getAttributes() as $attribute) {
                 if (Warmable::class === $attribute->getName()) {
-                    $attribute = $attribute->newInstance();
+                    $attributeInstance = $attribute->newInstance();
                 }
             }
 
-            if (null === $attribute) {
+            /** @var Warmable|null $attributeInstance */
+            if (null === $attributeInstance) {
                 continue;
             }
 
-            yield $class->getName() => $attribute;
+            yield $class->getName() => $attributeInstance;
         }
     }
 

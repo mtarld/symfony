@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Tests\NativeContext;
+namespace Symfony\Component\Marshaller\Tests\NativeContext\Generation;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
-use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\HookNativeContextBuilder;
 
 final class HookNativeContextBuilderTest extends TestCase
 {

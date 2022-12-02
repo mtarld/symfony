@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Tests\NativeContext;
+namespace Symfony\Component\Marshaller\Tests\NativeContext\Generation;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\FormatterAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
 
 final class FormatterAttributeNativeContextBuilderTest extends TestCase

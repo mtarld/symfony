@@ -38,8 +38,13 @@ final class UnionTemplateGenerator
             return $this->templateGenerator->generate($types[0], $accessor, $context);
         }
 
+        /** @var Type $ifType */
         $ifType = array_shift($types);
+
+        /** @var Type $elseType */
         $elseType = array_pop($types);
+
+        /** @var list<array{condition: NodeInterface, body: list<NodeInterface>}> $elseIfTypes */
         $elseIfTypes = array_map(fn (Type $t): array => ['condition' => $t->validator($accessor), 'body' => $this->templateGenerator->generate($t, $accessor, $context)], $types);
 
         return [new IfNode(
@@ -64,6 +69,7 @@ final class UnionTemplateGenerator
             $objectTypes[$objectType->className()] = $objectType;
         }
 
+        /** @var array<class-string, array{class: class-string, parent?: class-string|false}> $classes */
         $classes = [];
         $previousClass = null;
         foreach (array_keys($objectTypes) as $class) {
@@ -104,10 +110,10 @@ final class UnionTemplateGenerator
     }
 
     /**
-     * @param array<string, array{class: class-string, parent?: class-string|false}> $classes
-     * @param class-string|false                                                     $parentClass
+     * @param array<class-string, array{class: class-string, parent?: class-string|false}> $classes
+     * @param class-string|false                                                           $parentClass
      *
-     * @return array<string, array{class: class-string, children: array<string, mixed>}>
+     * @return array<class-string, array{class: class-string, parent?: class-string|false, children?: array<string, mixed>}>
      */
     private function buildClassTree(array $classes, string|false $parentClass): array
     {

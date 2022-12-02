@@ -34,17 +34,27 @@ final class TypeNameResolver
         $context = (new ContextFactory())->createFromReflector($reflection);
 
         $namespace = $context->getNamespace();
+
+        /** @var array<string, class-string> $uses */
         $uses = $context->getNamespaceAliases();
+
+        /** @var class-string $className */
         $className = str_replace($namespace.'\\', '', $reflection->getName());
 
         return new self($className, $namespace, $uses, $templateNames);
     }
 
+    /**
+     * @return class-string
+     */
     public function resolveRootClass(): string
     {
         return $this->resolve($this->className);
     }
 
+    /**
+     * @return class-string
+     */
     public function resolveParentClass(): string
     {
         $rootClass = $this->resolveRootClass();
@@ -53,11 +63,19 @@ final class TypeNameResolver
             throw new \LogicException(sprintf('"%s" class do not extend any class.', $rootClass));
         }
 
+        /** @var class-string $parentClassName */
         $parentClassName = str_replace($this->namespace.'\\', '', $parentReflection->getName());
 
         return $this->resolve($parentClassName);
     }
 
+    /**
+     * @template T of string|class-string
+     *
+     * @param T $name
+     *
+     * @return T
+     */
     public function resolve(string $name): string
     {
         if (in_array($name, $this->templateNames)) {
@@ -65,22 +83,34 @@ final class TypeNameResolver
         }
 
         if (str_starts_with($name, '\\')) {
-            return ltrim($name, '\\');
+            /** @var T $name */
+            $name = ltrim($name, '\\');
+
+            return $name;
         }
 
         $nameParts = explode('\\', $name);
         $usedPart = $nameParts[0];
 
         if (!isset($this->uses[$usedPart])) {
-            return sprintf('%s\\%s', $this->namespace, $name);
+            /** @var T $name */
+            $name = sprintf('%s\\%s', $this->namespace, $name);
+
+            return $name;
         }
 
         if (1 === \count($nameParts)) {
-            return $this->uses[$usedPart];
+            /** @var T $name */
+            $name = $this->uses[$usedPart];
+
+            return $name;
         }
 
         array_shift($nameParts);
 
-        return sprintf('%s\\%s', $this->uses[$usedPart], implode('\\', $nameParts));
+        /** @var T $name */
+        $name = sprintf('%s\\%s', $this->uses[$usedPart], implode('\\', $nameParts));
+
+        return $name;
     }
 }

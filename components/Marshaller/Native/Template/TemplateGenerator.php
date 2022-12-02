@@ -74,6 +74,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
         }
 
         return match (true) {
+            $type instanceof UnionType => $this->unionGenerator->generate($type, $accessor, $context),
             $type->isNull() => $this->nullGenerator->generate($context),
             $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
             $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
@@ -86,7 +87,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
     /**
      * @param array<string, mixed> $context
      *
-     * @return array{0: Type, 1: NodeInterface, 2: array<string, mixed>}
+     * @return array{0: Type|UnionType, 1: NodeInterface, 2: array<string, mixed>}
      */
     private function callTypeHook(callable $hook, Type $type, NodeInterface $accessor, array $context): array
     {

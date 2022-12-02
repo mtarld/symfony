@@ -10,10 +10,12 @@ use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
-use Symfony\Component\Marshaller\NativeContext\FormatterAttributeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\HookNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\NameAttributeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\TypeFormatterNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\FormatterAttributeNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\HookNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\NameAttributeNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Generation\TypeFormatterNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Marshal\JsonEncodeFlagsNativeContextBuilder;
+use Symfony\Component\Marshaller\NativeContext\Marshal\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
@@ -46,10 +48,8 @@ final class MarshallerTest extends TestCase
 
     /**
      * @dataProvider marshalJsonGenerateDataProvider
-     *
-     * @param list<string> $expectedLines
      */
-    public function testMarshalJsonGenerate(array $expectedLines, string $type, ?Context $context): void
+    public function testMarshalJsonGenerate(string $expectedSource, string $type, ?Context $context): void
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
@@ -60,122 +60,130 @@ final class MarshallerTest extends TestCase
             new FormatterAttributeNativeContextBuilder(),
         ];
 
-        $lines = explode("\n", (new Marshaller($typeExtractor, $marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
-        array_pop($lines);
-
-        $this->assertSame($expectedLines, $lines);
+        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
     }
 
     /**
-     * @return iterable<array{0: list<string>, 1: string, 2: Context}
+     * @return iterable<array{0: string, 1: string, 2: Context}>
      */
     public function marshalJsonGenerateDataProvider(): iterable
     {
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param int $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "\"");',
-            '    \fwrite($resource, \addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString($data, $context), "\"\\\\"));',
-            '    \fwrite($resource, "\"");',
-            '};',
-        ], 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)]))];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param int $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "\"");',
-            '    \fwrite($resource, \addcslashes($foo, "\"\\\\"));',
-            '    \fwrite($resource, "\"");',
-            '};',
-        ], 'int', new Context(new HookOption([
-            'int' => static function (string $type, string $accessor, array $context): array {
-                return [
-                    'type' => 'string',
-                    'accessor' => '$foo',
-                    'context' => $context,
-                ];
-            },
-        ]))];
+            /**
+             * @param int \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString(\$data, \$context)));
+            };
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"foo\":\"");',
-            '    \fwrite($resource, \addcslashes($bar, "\\"\\\\"));',
-            '    \fwrite($resource, "\",\"foo\":\"");',
-            '    \fwrite($resource, \addcslashes($bar, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], ClassicDummy::class, new Context(new HookOption([
-            'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                return [
-                    'name' => 'foo',
-                    'type' => 'string',
-                    'accessor' => '$bar',
-                    'context' => $context,
-                ];
-            },
-        ]))];
+            PHP, 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])), ];
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"@id\":");',
-            '    \fwrite($resource, $object_0->id);',
-            '    \fwrite($resource, ",\"name\":\"");',
-            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], DummyWithNameAttributes::class, null];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"id\":\"");',
-            '    \fwrite($resource, \addcslashes(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString($object_0->id, $context), "\\"\\\\"));',
-            '    \fwrite($resource, "\",\"name\":\"");',
-            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], DummyWithFormatterAttributes::class, null];
+            /**
+             * @param int \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$foo));
+            };
+
+            PHP, 'int', new Context(new HookOption([
+                'int' => static function (string $type, string $accessor, array $context): array {
+                    return [
+                        'type' => 'string',
+                        'accessor' => '$foo',
+                        'context' => $context,
+                    ];
+                },
+            ])), ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"foo\":");
+                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, ",\"foo\":");
+                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, ClassicDummy::class, new Context(new HookOption([
+                'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                    return [
+                        'name' => 'foo',
+                        'type' => 'string',
+                        'accessor' => '$bar',
+                        'context' => $context,
+                    ];
+                },
+            ])), ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"@id\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->id));
+                \\fwrite(\$resource, ",\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, DummyWithNameAttributes::class, null, ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"id\":");
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context)));
+                \\fwrite(\$resource, ",\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, DummyWithFormatterAttributes::class, null, ];
     }
 
     public function testJsonMarshal(): void
     {
-        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), [], $this->cacheDir);
+        $marshalContextBuilders = [
+            new TypeNativeContextBuilder(),
+            new JsonEncodeFlagsNativeContextBuilder(),
+        ];
+
+        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], $this->cacheDir);
 
         $marshaller->marshal(1, 'json', $output = new MemoryStreamOutput());
         $this->assertSame('1', (string) $output);
 
-        $marshaller->marshal(1, 'json', $output = new MemoryStreamOutput(), new Context(new TypeOption('string')));
-        $this->assertSame('"1"', (string) $output);
+        $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStreamOutput(), new Context(new TypeOption('array<int, string>')));
+        $this->assertSame('["bar"]', (string) $output);
     }
 }

@@ -47,6 +47,9 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         }
 
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+        if (null === $declaringClass) {
+            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+        }
 
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
     }
@@ -68,7 +71,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         /** @var VarTagValueNode|ReturnTagValueNode|InvalidTagValueNode|null $tagValue */
         $tagValue = $tag?->value;
 
-        if (null === $tagValue || $tag->value instanceof InvalidTagValueNode) {
+        if (null === $tagValue || $tagValue instanceof InvalidTagValueNode) {
             return null;
         }
 

@@ -6,12 +6,13 @@ namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 
-interface MarshalGenerateNativeContextBuilderInterface
+// TODO marshal and generate folders?
+interface MarshalNativeContextBuilderInterface
 {
     /**
      * @param array<string, mixed> $nativeContext
      *
      * @return array<string, mixed>
      */
-    public function build(string $type, Context $context, array $nativeContext): array;
+    public function build(Context $context, array $nativeContext): array;
 }

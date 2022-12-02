@@ -24,7 +24,10 @@ final class Optimizer
      */
     public function optimize(NodeInterface|array $subject): NodeInterface|array
     {
-        return $subject instanceof NodeInterface ? $subject->optimize($this) : $this->optimizeNodeCollection($subject);
+        /** @var T $optimized */
+        $optimized = $subject instanceof NodeInterface ? $subject->optimize($this) : $this->optimizeNodeCollection($subject);
+
+        return $optimized;
     }
 
     /**
@@ -69,7 +72,10 @@ final class Optimizer
             $mergedNodes[] = $createFwriteExpression($stringContent);
         }
 
-        return array_map($this->optimize(...), $mergedNodes);
+        /** @var list<NodeInterface> $optimizedNodes */
+        $optimizedNodes = array_map($this->optimize(...), $mergedNodes);
+
+        return $optimizedNodes;
     }
 
     private function isStringResourceFwrite(NodeInterface $node): bool

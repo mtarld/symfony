@@ -17,255 +17,270 @@ final class MarshalGenerateTest extends TestCase
     /**
      * @dataProvider generateJsonTemplateDataProvider
      *
-     * @param list<string>         $expectedLines
      * @param array<string, mixed> $context
      */
-    public function testGenerateJsonTemplate(array $expectedLines, string $type, array $context): void
+    public function testGenerateJsonTemplate(string $expectedSource, string $type, array $context): void
     {
-        $lines = explode("\n", marshal_generate($type, 'json', $context));
-        array_pop($lines);
-
-        $this->assertSame($expectedLines, $lines);
+        $this->assertSame($expectedSource, marshal_generate($type, 'json', $context));
     }
 
     /**
-     * @return iterable<array{0: list<string>, 1: string, 2: array<string, mixed>}
+     * @return iterable<array{0: string, 1: string, 2: array<string, mixed>}>
      */
     public function generateJsonTemplateDataProvider(): iterable
     {
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param null $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "null");',
-            '};',
-        ], 'null', []];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param int $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, $data);',
-            '};',
-        ], 'int', []];
+            /**
+             * @param null \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "null");
+            };
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param string $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "\"");',
-            '    \fwrite($resource, \addcslashes($data, "\"\\\\"));',
-            '    \fwrite($resource, "\"");',
-            '};',
-        ], 'string', []];
+            PHP, 'null', [], ];
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param bool $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, $data ? "true" : "false");',
-            '};',
-        ], 'bool', []];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param array<int, int> $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "[");',
-            '    $prefix_0 = "";',
-            '    foreach ($data as $value_0) {',
-            '        \fwrite($resource, $prefix_0);',
-            '        \fwrite($resource, $value_0);',
-            '        $prefix_0 = ",";',
-            '    }',
-            '    \fwrite($resource, "]");',
-            '};',
-        ], 'array<int, int>', []];
+            /**
+             * @param int \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data));
+            };
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param array<string, int> $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "{");',
-            '    $prefix_0 = "";',
-            '    foreach ($data as $key_0 => $value_0) {',
-            '        \fwrite($resource, "{$prefix_0}\"");',
-            '        \fwrite($resource, \addcslashes($key_0, "\"\\\\"));',
-            '        \fwrite($resource, "\":");',
-            '        \fwrite($resource, $value_0);',
-            '        $prefix_0 = ",";',
-            '    }',
-            '    \fwrite($resource, "}");',
-            '};',
-        ], 'array<string, int>', []];
+            PHP, 'int', [], ];
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"id\":");',
-            '    \fwrite($resource, $object_0->id);',
-            '    \fwrite($resource, ",\"name\":\"");',
-            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], ClassicDummy::class, []];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param array<int, Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy> $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "[");',
-            '    $prefix_0 = "";',
-            '    foreach ($data as $value_0) {',
-            '        \fwrite($resource, $prefix_0);',
-            '        $object_0 = $value_0;',
-            '        \fwrite($resource, "{\"id\":");',
-            '        \fwrite($resource, $object_0->id);',
-            '        \fwrite($resource, ",\"name\":\"");',
-            '        \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '        \fwrite($resource, "\"}");',
-            '        $prefix_0 = ",";',
-            '    }',
-            '    \fwrite($resource, "]");',
-            '};',
-        ], sprintf('array<int, %s>', ClassicDummy::class), []];
+            /**
+             * @param string \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data));
+            };
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param ?int $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    if (null === $data) {',
-            '        \fwrite($resource, "null");',
-            '    } else {',
-            '        \fwrite($resource, $data);',
-            '    }',
-            '};',
-        ], '?int', []];
+            PHP, 'string', [], ];
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param int $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    \fwrite($resource, "\"");',
-            '    \fwrite($resource, \addcslashes($foo, "\"\\\\"));',
-            '    \fwrite($resource, "\"");',
-            '};',
-        ], 'int', [
-            'hooks' => [
-                'int' => static function (string $type, string $accessor, array $context): array {
-                    return [
-                        'type' => 'string',
-                        'accessor' => '$foo',
-                        'context' => $context,
-                    ];
-                },
-            ],
-        ]];
+        yield [
+            <<<PHP
+            <?php
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"foo\":\"");',
-            '    \fwrite($resource, \addcslashes($bar, "\\"\\\\"));',
-            '    \fwrite($resource, "\",\"name\":\"");',
-            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], ClassicDummy::class, [
-            'hooks' => [
-                sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                    return [
-                        'name' => 'foo',
-                        'type' => 'string',
-                        'accessor' => '$bar',
-                        'context' => $context,
-                    ];
-                },
-            ],
-        ]];
+            /**
+             * @param bool \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data));
+            };
 
-        yield [[
-            '<?php',
-            '',
-            '/**',
-            ' * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy $data',
-            ' * @param resource $resource',
-            ' */',
-            'return static function (mixed $data, $resource, array $context): void {',
-            '    $object_0 = $data;',
-            '    \fwrite($resource, "{\"foo\":");',
-            '    \fwrite($resource, $foo ? "true" : "false");',
-            '    \fwrite($resource, ",\"name\":\"");',
-            '    \fwrite($resource, \addcslashes($object_0->name, "\\"\\\\"));',
-            '    \fwrite($resource, "\"}");',
-            '};',
-        ], ClassicDummy::class, [
-            'hooks' => [
-                'int' => static function (string $type, string $accessor, array $context): array {
-                    return [
-                        'type' => 'bool',
-                        'accessor' => '$foo',
-                        'context' => $context,
-                    ];
-                },
-                sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                    return [
-                        'name' => 'foo',
-                        'type' => 'int',
-                        'accessor' => '$bar',
-                        'context' => $context,
-                    ];
-                },
-            ],
-        ]];
+            PHP, 'bool', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<int, int> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "[");
+                \$prefix_0 = "";
+                foreach (\$data as \$value_0) {
+                    \\fwrite(\$resource, \$prefix_0);
+                    \\fwrite(\$resource, \json_encode(\$value_0));
+                    \$prefix_0 = ",";
+                }
+                \\fwrite(\$resource, "]");
+            };
+
+            PHP, 'array<int, int>', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<string, int> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "{");
+                \$prefix_0 = "";
+                foreach (\$data as \$key_0 => \$value_0) {
+                    \$key_0 = \json_encode(\$key_0);
+                    \\fwrite(\$resource, "{\$prefix_0}{\$key_0}:");
+                    \\fwrite(\$resource, \json_encode(\$value_0));
+                    \$prefix_0 = ",";
+                }
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, 'array<string, int>', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"id\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->id));
+                \\fwrite(\$resource, ",\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, ClassicDummy::class, [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<int, Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "[");
+                \$prefix_0 = "";
+                foreach (\$data as \$value_0) {
+                    \\fwrite(\$resource, \$prefix_0);
+                    \$object_0 = \$value_0;
+                    \\fwrite(\$resource, "{\"id\":");
+                    \\fwrite(\$resource, \json_encode(\$object_0->id));
+                    \\fwrite(\$resource, ",\"name\":");
+                    \\fwrite(\$resource, \json_encode(\$object_0->name));
+                    \\fwrite(\$resource, "}");
+                    \$prefix_0 = ",";
+                }
+                \\fwrite(\$resource, "]");
+            };
+
+            PHP, sprintf('array<int, %s>', ClassicDummy::class), [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param ?int \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                if (null === \$data) {
+                    \\fwrite(\$resource, "null");
+                } else {
+                    \\fwrite(\$resource, \json_encode(\$data));
+                }
+            };
+
+            PHP, '?int', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param int \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$foo));
+            };
+
+            PHP, 'int', [
+                'hooks' => [
+                    'int' => static function (string $type, string $accessor, array $context): array {
+                        return [
+                            'type' => 'string',
+                            'accessor' => '$foo',
+                            'context' => $context,
+                        ];
+                    },
+                ],
+            ], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"foo\":");
+                \\fwrite(\$resource, \json_encode(\$bar));
+                \\fwrite(\$resource, ",\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, ClassicDummy::class, [
+                'hooks' => [
+                    sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                        return [
+                            'name' => 'foo',
+                            'type' => 'string',
+                            'accessor' => '$bar',
+                            'context' => $context,
+                        ];
+                    },
+                ],
+            ], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"foo\":");
+                \\fwrite(\$resource, \json_encode(\$foo));
+                \\fwrite(\$resource, ",\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, ClassicDummy::class, [
+                'hooks' => [
+                    'int' => static function (string $type, string $accessor, array $context): array {
+                        return [
+                            'type' => 'bool',
+                            'accessor' => '$foo',
+                            'context' => $context,
+                        ];
+                    },
+                    sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                        return [
+                            'name' => 'foo',
+                            'type' => 'int',
+                            'accessor' => '$bar',
+                            'context' => $context,
+                        ];
+                    },
+                ],
+            ], ];
     }
 
     public function testThrowOnUnknownFormat(): void

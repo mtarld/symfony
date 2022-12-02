@@ -21,11 +21,13 @@ final class HookExtractor
             'property',
         ];
 
-        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
+        if (null === $findHookResult = $this->findHook($hookNames, $context)) {
             return null;
         }
 
-        $reflection = new \ReflectionFunction($hook);
+        [$hookName, $hook] = $findHookResult;
+
+        $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
         if (3 !== \count($reflection->getParameters())) {
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
@@ -56,11 +58,13 @@ final class HookExtractor
     {
         $hookNames = $this->typeHookNames($type);
 
-        if (null === [$hookName, $hook] = $this->findHook($hookNames, $context)) {
+        if (null === $findHookResult = $this->findHook($hookNames, $context)) {
             return null;
         }
 
-        $reflection = new \ReflectionFunction($hook);
+        [$hookName, $hook] = $findHookResult;
+
+        $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
         if (3 !== \count($reflection->getParameters())) {
             throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
@@ -138,7 +142,7 @@ final class HookExtractor
      * @param list<string>         $hookNames
      * @param array<string, mixed> $context
      *
-     * @return array{0: string, 1: callable}
+     * @return array{0: string, 1: callable}|null
      */
     private function findHook(array $hookNames, array $context): ?array
     {

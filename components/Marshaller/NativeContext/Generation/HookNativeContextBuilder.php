@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\NativeContext;
+namespace Symfony\Component\Marshaller\NativeContext\Generation;
 
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
+use Symfony\Component\Marshaller\NativeContext\GenerationNativeContextBuilderInterface;
 
-final class HookNativeContextBuilder implements MarshalGenerateNativeContextBuilderInterface
+final class HookNativeContextBuilder implements GenerationNativeContextBuilderInterface
 {
     public function build(string $type, Context $context, array $nativeContext): array
     {

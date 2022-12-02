@@ -16,6 +16,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\UnaryNode;
 final class Type implements \Stringable
 {
     /**
+     * @param class-string|null    $className
      * @param list<self|UnionType> $genericParameterTypes
      */
     public function __construct(
@@ -71,6 +72,7 @@ final class Type implements \Stringable
 
         if (\count($typeStrings) > 1) {
             $nullable = false;
+
             $types = [];
 
             foreach ($typeStrings as $typeString) {
@@ -85,7 +87,9 @@ final class Type implements \Stringable
                     continue;
                 }
 
-                $types[] = self::createFromString($typeString);
+                /** @var self $type */
+                $type = self::createFromString($typeString);
+                $types[] = $type;
             }
 
             if ($nullable) {
@@ -181,13 +185,19 @@ final class Type implements \Stringable
         return $this->isNullable;
     }
 
+    /**
+     * @return class-string
+     */
     public function className(): string
     {
         if (!$this->isObject()) {
             throw new \RuntimeException(sprintf('Cannot get class on "%s" type as it\'s not an object.', $this->name));
         }
 
-        return $this->className;
+        /** @var class-string $className */
+        $className = $this->className;
+
+        return $className;
     }
 
     /**
@@ -225,7 +235,16 @@ final class Type implements \Stringable
 
     public function isList(): bool
     {
-        return $this->isCollection() && 'int' === $this->collectionKeyType()->name();
+        if (!$this->isCollection()) {
+            return false;
+        }
+
+        $collectionKeyType = $this->collectionKeyType();
+        if (!$collectionKeyType instanceof self) {
+            return false;
+        }
+
+        return 'int' === $collectionKeyType->name();
     }
 
     public function isDict(): bool

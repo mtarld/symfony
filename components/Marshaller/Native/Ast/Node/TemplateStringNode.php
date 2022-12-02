@@ -17,9 +17,9 @@ final class TemplateStringNode implements NodeInterface
      */
     public readonly array $parts;
 
-    public function __construct(VariableNode|string ...$parts)
+    public function __construct(string|VariableNode ...$parts)
     {
-        $this->parts = $parts;
+        $this->parts = array_values($parts);
     }
 
     public function compile(Compiler $compiler): void
