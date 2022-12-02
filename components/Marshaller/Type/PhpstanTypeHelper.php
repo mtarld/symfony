@@ -35,16 +35,40 @@ final class PhpstanTypeHelper
 
     private function extractType(TypeNode $node, TypeNameResolver $nameResolver): string
     {
-        return match (get_class($node)) {
-            UnionTypeNode::class => implode('|', array_map(fn (TypeNode $t): string => $this->extractType($t, $nameResolver), $node->types)),
-            IdentifierTypeNode::class => $this->extractIdentifierType($node, $nameResolver),
-            GenericTypeNode::class => $this->extractGenericType($node, $nameResolver),
-            ArrayTypeNode::class, ArrayShapeNode::class => $this->extractArrayType($node, $nameResolver),
-            NullableTypeNode::class => sprintf('?%s', $this->extractType($node->type, $nameResolver)),
-            ThisTypeNode::class => $nameResolver->resolveRootClass(),
-            CallableTypeNode::class => 'callable',
-            IntersectionTypeNode::class => throw new \LogicException('Cannot handle intersection types.'),
-        };
+        if ($node instanceof UnionTypeNode) {
+            return implode('|', array_map(fn (TypeNode $t): string => $this->extractType($t, $nameResolver), $node->types));
+        }
+
+        if ($node instanceof NullableTypeNode) {
+            return sprintf('?%s', $this->extractType($node->type, $nameResolver));
+        }
+
+        if ($node instanceof IdentifierTypeNode) {
+            return $this->extractIdentifierType($node, $nameResolver);
+        }
+
+        if ($node instanceof GenericTypeNode) {
+            return $this->extractGenericType($node, $nameResolver);
+        }
+
+        if ($node instanceof ArrayTypeNode || $node instanceof ArrayShapeNode) {
+            return $this->extractArrayType($node, $nameResolver);
+        }
+
+        if ($node instanceof ThisTypeNode) {
+            return $nameResolver->resolveRootClass();
+        }
+
+        if ($node instanceof CallableTypeNode) {
+            return 'callable';
+        }
+
+        if ($node instanceof IntersectionTypeNode) {
+            throw new \LogicException('Cannot handle intersection types.');
+        }
+
+        // TODO test me
+        throw new \InvalidArgumentException(sprintf('Unhandled "%s" node.', get_class($node)));
     }
 
     private function extractIdentifierType(IdentifierTypeNode $node, TypeNameResolver $nameResolver): string

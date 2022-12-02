@@ -61,6 +61,7 @@ final class Optimizer
                 continue;
             }
 
+            /** @var ExpressionNode<FunctionNode<array{0: VariableNode, 1: ScalarNode}>> $node */
             $stringContent = $stringContent.$node->node->parameters[1]->value;
         }
 

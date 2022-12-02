@@ -13,7 +13,7 @@ use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 final class ArgumentsNode implements NodeInterface
 {
     /**
-     * @param list<array<string, string>> $arguments
+     * @param array<string, string> $arguments
      */
     public function __construct(
         public readonly array $arguments,

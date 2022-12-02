@@ -26,7 +26,10 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $declaringClass);
     }
 
-    private function extractFromReflection(\ReflectionNamedType|\ReflectionUnionType|\ReflectionIntersectionType $reflection, ?\ReflectionClass $declaringClass): string
+    /**
+     * @param \ReflectionClass<object>|null $declaringClass
+     */
+    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
     {
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';
 
@@ -36,6 +39,10 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
 
         if ($reflection instanceof \ReflectionUnionType) {
             return implode('|', array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes()));
+        }
+
+        if (!$reflection instanceof \ReflectionNamedType) {
+            throw new \InvalidArgumentException('TODO');
         }
 
         $phpTypeOrClass = $reflection->getName();

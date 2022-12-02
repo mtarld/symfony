@@ -66,7 +66,5 @@ abstract class DictTemplateGenerator
 
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterItems())])),
         ];
-
-        return $template;
     }
 }

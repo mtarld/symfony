@@ -11,6 +11,8 @@ interface TypeExtractorInterface
     public function extractFromReturnType(\ReflectionFunctionAbstract $function): string;
 
     /**
+     * @param \ReflectionClass<object> $class
+     *
      * @return list<string>
      */
     public function extractTemplateFromClass(\ReflectionClass $class): array;

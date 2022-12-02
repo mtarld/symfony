@@ -9,11 +9,13 @@ use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 
 /**
  * @internal
+ *
+ * @template T of list<NodeInterface>
  */
 final class FunctionNode implements NodeInterface
 {
     /**
-     * @param list<NodeInterface> $parameters
+     * @param T $parameters
      */
     public function __construct(
         public readonly string $name,

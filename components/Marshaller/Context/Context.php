@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Context;
 
+/**
+ * @implements \IteratorAggregate<object>
+ */
 final class Context implements \IteratorAggregate
 {
     /**
@@ -44,7 +47,11 @@ final class Context implements \IteratorAggregate
     }
 
     /**
-     * @param class-string $optionClass
+     * @template T of object
+     *
+     * @param class-string<T> $optionClass
+     *
+     * @return T|null
      */
     public function get(string $optionClass): ?object
     {
@@ -52,7 +59,7 @@ final class Context implements \IteratorAggregate
     }
 
     /**
-     * @return list<object>
+     * @return \Traversable<object>
      */
     public function getIterator(): \Traversable
     {

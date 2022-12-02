@@ -45,7 +45,7 @@ final class Compiler
         $mainSource = $this->source;
         $this->source = '';
 
-        $node->compile($this, $this->optimizer);
+        $node->compile($this);
         $subCompiledSource = $this->source;
 
         $this->source = $mainSource;

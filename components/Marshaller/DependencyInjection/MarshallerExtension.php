@@ -24,6 +24,9 @@ use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class MarshallerExtension extends Extension
 {
+    /**
+     * @param array<string, mixed> $configs
+     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         //

@@ -9,6 +9,9 @@ namespace Symfony\Component\Marshaller\Native\Template;
  */
 trait VariableNameScoperTrait
 {
+    /**
+     * @param array<string, mixed> $context
+     */
     protected function scopeVariableName(string $prefix, array &$context): string
     {
         if (!isset($context['variable_counters'][$prefix])) {

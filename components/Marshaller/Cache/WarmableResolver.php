@@ -38,7 +38,9 @@ final class WarmableResolver
     }
 
     /**
-     * @return Generator<ReflectionClass>
+     * @param list<string> $paths
+     *
+     * @return \Generator<\ReflectionClass<object>>
      */
     private function fromPaths(array $paths): \Generator
     {

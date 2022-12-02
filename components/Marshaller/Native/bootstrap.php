@@ -11,6 +11,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**

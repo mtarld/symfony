@@ -34,7 +34,6 @@ final class Marshaller implements MarshallerInterface
 
         $type = get_debug_type($data);
 
-        /** @var TypeOption|null $typeOption */
         if ($typeOption = $context?->get(TypeOption::class)) {
             $type = $nativeContext['type'] = $typeOption->type;
         }
@@ -74,17 +73,5 @@ final class Marshaller implements MarshallerInterface
         }
 
         return $nativeContext;
-    }
-
-    private function getTypeFromData(mixed $data): string
-    {
-        if (is_object($data)) {
-            return $data::class;
-        }
-
-        $builtinType = strtolower(gettype($data));
-        $builtinType = ['integer' => 'int', 'boolean' => 'bool', 'double' => 'float'][$builtinType] ?? $builtinType;
-
-        return $builtinType;
     }
 }

@@ -7,7 +7,9 @@ namespace Symfony\Component\Marshaller\Type;
 use PHPStan\PhpDocParser\Ast\PhpDoc\InvalidTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPStan\PhpDocParser\Parser\ConstExprParser;
@@ -60,16 +62,22 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         $tokens->consumeTokenType(Lexer::TOKEN_END);
 
         $tagName = $reflection instanceof \ReflectionProperty ? '@var' : '@return';
+
         $tag = $docNode->getTagsByName($tagName)[0] ?? null;
 
-        if (null === $tag || $tag->value instanceof InvalidTagValueNode) {
+        /** @var VarTagValueNode|ReturnTagValueNode|InvalidTagValueNode|null $tagValue */
+        $tagValue = $tag?->value;
+
+        if (null === $tagValue || $tag->value instanceof InvalidTagValueNode) {
             return null;
         }
 
-        return $tag->value->type;
+        return $tagValue->type;
     }
 
     /**
+     * @param \ReflectionClass<object> $reflection
+     *
      * @return list<TemplateTagValueNode>
      */
     private function getTemplateNodes(\ReflectionClass $reflection): array

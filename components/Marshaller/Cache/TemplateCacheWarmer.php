@@ -22,13 +22,15 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
     ) {
     }
 
-    public function warmUp(string $cacheDir): void
+    public function warmUp(string $cacheDir): array
     {
         foreach ($this->warmableResolver->resolve() as $class => $attribute) {
             foreach ($this->formats as $format) {
                 $this->warmClass($class, $attribute, $format);
             }
         }
+
+        return [];
     }
 
     public function isOptional(): bool

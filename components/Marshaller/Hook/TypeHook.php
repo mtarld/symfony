@@ -41,10 +41,9 @@ final class TypeHook
 
         if (null !== $typeFormatter) {
             $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
-            $declaringClass = $typeFormatter instanceof \ReflectionMethod ? $typeFormatter->getDeclaringClass() : $typeFormatter->getClosureScopeClass();
 
             // If method doesn't belong to the current class, ignore generic search
-            if ($declaringClass->getName() !== $currentPropertyClass) {
+            if ($typeFormatter->getClosureScopeClass()->getName() !== $currentPropertyClass) {
                 $currentPropertyClass = null;
             }
         }

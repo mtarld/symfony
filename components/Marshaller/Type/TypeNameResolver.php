@@ -25,7 +25,7 @@ final class TypeNameResolver
     }
 
     /**
-     * @param class-string $fqcn
+     * @param class-string $className
      * @param list<string> $templateNames
      */
     public static function createForClass(string $className, array $templateNames): self
@@ -72,7 +72,7 @@ final class TypeNameResolver
         $usedPart = $nameParts[0];
 
         if (!isset($this->uses[$usedPart])) {
-            return null !== $this->namespace ? sprintf('%s\\%s', $this->namespace, $name) : $name;
+            return sprintf('%s\\%s', $this->namespace, $name);
         }
 
         if (1 === \count($nameParts)) {

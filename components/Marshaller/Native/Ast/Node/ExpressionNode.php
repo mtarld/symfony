@@ -9,9 +9,14 @@ use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 
 /**
  * @internal
+ *
+ * @template T of NodeInterface
  */
 final class ExpressionNode implements NodeInterface
 {
+    /**
+     * @param T $node
+     */
     public function __construct(
         public readonly NodeInterface $node,
     ) {

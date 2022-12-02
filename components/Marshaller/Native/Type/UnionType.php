@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Native\Type;
 final class UnionType implements \Stringable
 {
     /**
-     * @param list<Type> $ypes
+     * @param list<Type> $types
      */
     public function __construct(
         public readonly array $types,

@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Ast\Node\IfNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
@@ -68,7 +67,7 @@ final class UnionTemplateGeneratorTest extends TestCase
         $nodes = (new UnionTemplateGenerator($templateGenerator))->generate(new UnionType($types), new VariableNode('accessor'), []);
 
         if (\count($expectedOrder) <= 1) {
-            $this->assertSame(array_map(fn (NodeInterface $t) => str_replace('NESTED_', '', $t->value), $nodes), $expectedOrder);
+            $this->assertSame(array_map(fn (ScalarNode $t) => str_replace('NESTED_', '', $t->value), $nodes), $expectedOrder);
 
             return;
         }

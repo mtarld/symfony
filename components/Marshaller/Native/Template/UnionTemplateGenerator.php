@@ -104,10 +104,10 @@ final class UnionTemplateGenerator
     }
 
     /**
-     * @param array<string, array{class: class-string, parent: class-string|false}> $classes
-     * @param class-string|false                                                    $parentClass
+     * @param array<string, array{class: class-string, parent?: class-string|false}> $classes
+     * @param class-string|false                                                     $parentClass
      *
-     * @return array<string, array{children: array}>
+     * @return array<string, array{class: class-string, children: array<string, mixed>}>
      */
     private function buildClassTree(array $classes, string|false $parentClass): array
     {
@@ -127,8 +127,8 @@ final class UnionTemplateGenerator
     }
 
     /**
-     * @param class-string                          $class
-     * @param array<string, array{children: array}> $classTree
+     * @param class-string                                                               $class
+     * @param array<string, array{class: class-string, children?: array<string, mixed>}> $classTree
      */
     private function depth(string $class, array $classTree, int $depth = 0): int
     {

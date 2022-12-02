@@ -95,9 +95,10 @@ abstract class ObjectTemplateGenerator
     }
 
     /**
-     * @param array<string, mixed> $context
+     * @param callable(\ReflectionProperty, string, array<string, mixed>): array{name?: string, type?: string, accessor?: string, context?: array<string, mixed>} $hook
+     * @param array<string, mixed>                                                                                                                                $context
      *
-     * @return array{0: string, 1: Type, 2: NodeInterface, 3: array<string, mixed>}
+     * @return array{0: string, 1: string, 2: RawNode, 3: array<string, mixed>}
      */
     private function callPropertyHook(callable $hook, \ReflectionProperty $property, NodeInterface $accessor, array $context): array
     {
