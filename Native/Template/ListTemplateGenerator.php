@@ -16,42 +16,38 @@ use Symfony\Component\Marshaller\Native\Type\Type;
 /**
  * @internal
  */
-abstract class ListTemplateGenerator
+final class ListTemplateGenerator
 {
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGenerator $templateGenerator,
+        private readonly string $beforeItems,
+        private readonly string $afterItems,
+        private readonly string $itemSeparator,
     ) {
     }
-
-    abstract protected function beforeItems(): string;
-
-    abstract protected function afterItems(): string;
-
-    abstract protected function itemSeparator(): string;
 
     /**
      * @param array<string, mixed> $context
      *
      * @return list<NodeInterface>
      */
-    public function generate(Type $type, NodeInterface $accessor, array $context): array
+    public function generate(Type $type, NodeInterface $accessor, array $context, TemplateGenerator $templateGenerator): array
     {
         $prefixName = $this->scopeVariableName('prefix', $context);
         $valueName = $this->scopeVariableName('value', $context);
 
         return [
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforeItems())])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforeItems)])),
             new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
             new ForEachNode($accessor, null, $valueName, [
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
-                ...$this->templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),
-                new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode($this->itemSeparator()))),
+                ...$templateGenerator->generate($type->collectionValueType(), new VariableNode($valueName), $context),
+                new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode($this->itemSeparator))),
             ]),
 
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterItems())])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterItems)])),
         ];
     }
 }

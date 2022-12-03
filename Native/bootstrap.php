@@ -12,6 +12,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
+use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
@@ -41,11 +42,9 @@ function marshal(mixed $data, $resource, string $format, array $context = []): v
  */
 function marshal_generate(string $type, string $format, array $context = []): string
 {
-    $jsonTemplateGenerator = new Template\Json\JsonTemplateGenerator();
-
     /** @var array<string, TemplateGenerator> $templateGenerators */
     $templateGenerators = [
-        $jsonTemplateGenerator->format() => $jsonTemplateGenerator,
+        'json' => TemplateGeneratorFactory::createJson(),
     ];
 
     if (!isset($templateGenerators[$format])) {
@@ -76,29 +75,4 @@ function marshal_generate(string $type, string $format, array $context = []): st
     $php = $compiler->source();
 
     return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
-}
-
-/**
- * @param resource $resource
- */
-function unmarshal($resource, string $type, string $format, array $context = []): mixed
-{
-    $jsonParser = new Parser\Json\JsonParser();
-
-    /** @var array<string, Parser> $parsers */
-    $parsers = [
-        $jsonParser->format() => $jsonParser,
-    ];
-
-    if (!isset($parsers[$format])) {
-        throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format));
-    }
-
-    $type = Type::createFromString($type);
-
-        // TODO must be constructed depending on type
-        $listener = new ListListener(new ScalarListener());
-
-        $this->parsers[$format]->parse($resource, $listener);
-    return 'ok';
 }

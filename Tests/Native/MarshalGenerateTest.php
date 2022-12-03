@@ -38,7 +38,7 @@ final class MarshalGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, "null");
+                \\fwrite(\$resource, \\json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'null', [], ];
@@ -183,7 +183,7 @@ final class MarshalGenerateTest extends TestCase
              */
             return static function (mixed \$data, \$resource, array \$context): void {
                 if (null === \$data) {
-                    \\fwrite(\$resource, "null");
+                    \\fwrite(\$resource, \\json_encode(null, \$context["json_encode_flags"] ?? 0));
                 } else {
                     \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
                 }

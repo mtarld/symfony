@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Native\Template;
 
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 /**
  * @internal
  */
-abstract class ScalarTemplateGenerator
+final class ScalarTemplateGenerator
 {
     /**
-     * @param array<string, mixed> $context
-     *
-     * @return list<NodeInterface>
+     * @param \Closure(NodeInterface): NodeInterface $valueEscaper
      */
-    abstract protected function scalar(Type $type, NodeInterface $accessor, array $context): array;
+    public function __construct(
+        private readonly \Closure $valueEscaper,
+    ) {
+    }
 
     /**
      * @param array<string, mixed> $context
@@ -26,6 +30,8 @@ abstract class ScalarTemplateGenerator
      */
     public function generate(Type $type, NodeInterface $accessor, array $context): array
     {
-        return $this->scalar($type, $accessor, $context);
+        return [
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), ($this->valueEscaper)($accessor)])),
+        ];
     }
 }

@@ -17,28 +17,24 @@ use Symfony\Component\Marshaller\Native\Type\UnionType;
 /**
  * @internal
  */
-abstract class TemplateGenerator
+final class TemplateGenerator
 {
     private readonly HookExtractor $hookExtractor;
+    private readonly UnionTemplateGenerator $unionGenerator;
 
     public function __construct(
         private readonly ScalarTemplateGenerator $scalarGenerator,
-        private readonly NullTemplateGenerator $nullGenerator,
         private readonly ObjectTemplateGenerator $objectGenerator,
         private readonly ListTemplateGenerator $listGenerator,
         private readonly DictTemplateGenerator $dictGenerator,
-        private readonly UnionTemplateGenerator $unionGenerator,
-        private readonly string $format,
     ) {
         $this->hookExtractor = new HookExtractor();
-    }
-
-    public function format(): string
-    {
-        return $this->format;
+        $this->unionGenerator = new UnionTemplateGenerator($this);
     }
 
     /**
+     * @param array<string, mixed> $context
+     *
      * @return list<NodeInterface>
      */
     public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
@@ -75,11 +71,10 @@ abstract class TemplateGenerator
 
         return match (true) {
             $type instanceof UnionType => $this->unionGenerator->generate($type, $accessor, $context),
-            $type->isNull() => $this->nullGenerator->generate($context),
-            $type->isScalar() => $this->scalarGenerator->generate($type, $accessor, $context),
+            $type->isScalar(), $type->isNull() => $this->scalarGenerator->generate($type, $accessor, $context),
             $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
-            $type->isList() => $this->listGenerator->generate($type, $accessor, $context),
-            $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context),
+            $type->isList() => $this->listGenerator->generate($type, $accessor, $context, $this),
+            $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context, $this),
             default => throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type)),
         };
     }
@@ -139,6 +134,6 @@ abstract class TemplateGenerator
 
         $context['generated_classes'][$className] = true;
 
-        return $this->objectGenerator->generate($type, $accessor, $context);
+        return $this->objectGenerator->generate($type, $accessor, $context, $this);
     }
 }

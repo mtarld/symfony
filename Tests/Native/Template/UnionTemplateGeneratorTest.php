@@ -4,53 +4,50 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Tests\Native\Template;
 
-use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Native\Ast\Node\AssignNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\IfNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
+use Symfony\Component\Marshaller\Native\Ast\Node\NodeInterface;
+use Symfony\Component\Marshaller\Native\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\UnionTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
 
-final class UnionTemplateGeneratorTest extends TestCase
+final class UnionTemplateGeneratorTest extends TemplateGeneratorTestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createMock(TemplateGenerator::class);
-        $templateGenerator
-            ->expects($this->exactly(5))
-            ->method('generate')
-            ->withConsecutive(
-                [new Type('int'), new VariableNode('accessor'), []],
-                [new Type('string'), new VariableNode('accessor'), []],
-                [new Type('string'), new VariableNode('accessor'), []],
-                [new Type('int'), new VariableNode('accessor'), []],
-                [new Type('float'), new VariableNode('accessor'), []],
-            )
-            ->willReturnCallback(fn (Type $t): array => [new ScalarNode('NESTED_'.strtoupper((string) $t))]);
+        $context = [
+            'hooks' => [
+                'type' => static function (string $type, string $accessor, array $context): array {
+                    return ['type' => $type, 'accessor' => $type, 'context' => $context];
+                },
+            ],
+        ];
 
-        $unionTemplateGenerator = new UnionTemplateGenerator($templateGenerator);
+        $unionTemplateGenerator = new UnionTemplateGenerator(self::createTemplateGeneratorStub());
 
         $this->assertEquals([
             new IfNode(
                 (new Type('int'))->validator(new VariableNode('accessor')),
-                [new ScalarNode('NESTED_INT')],
-                [new ScalarNode('NESTED_STRING')],
+                [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new RawNode('int')]))],
+                [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new RawNode('string')]))],
             ),
-        ], $unionTemplateGenerator->generate(new UnionType([new Type('int'), new Type('string')]), new VariableNode('accessor'), []));
+        ], $unionTemplateGenerator->generate(new UnionType([new Type('int'), new Type('string')]), new VariableNode('accessor'), $context));
 
         $this->assertEquals([
             new IfNode(
                 (new Type('int'))->validator(new VariableNode('accessor')),
-                [new ScalarNode('NESTED_INT')],
-                [new ScalarNode('NESTED_FLOAT')],
+                [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new RawNode('int')]))],
+                [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new RawNode('float')]))],
                 [[
                     'condition' => (new Type('string'))->validator(new VariableNode('accessor')),
-                    'body' => [new ScalarNode('NESTED_STRING')],
+                    'body' => [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new RawNode('string')]))],
                 ]]
             ),
-        ], $unionTemplateGenerator->generate(new UnionType([new Type('int'), new Type('string'), new Type('float')]), new VariableNode('accessor'), []));
+        ], $unionTemplateGenerator->generate(new UnionType([new Type('int'), new Type('string'), new Type('float')]), new VariableNode('accessor'), $context));
     }
 
     /**
@@ -61,25 +58,55 @@ final class UnionTemplateGeneratorTest extends TestCase
      */
     public function testSortTypes(array $expectedOrder, array $types): void
     {
-        $templateGenerator = $this->createStub(TemplateGenerator::class);
-        $templateGenerator->method('generate')->willReturnCallback(fn (Type $t): array => [new ScalarNode('NESTED_'.$t)]);
+        $context = [
+            'hooks' => [
+                'type' => static function (string $type, string $accessor, array $context): array {
+                    return ['type' => $type, 'accessor' => $type, 'context' => $context];
+                },
+            ],
+        ];
 
-        $nodes = (new UnionTemplateGenerator($templateGenerator))->generate(new UnionType($types), new VariableNode('accessor'), []);
+        $nodes = (new UnionTemplateGenerator(self::createTemplateGeneratorStub()))->generate(new UnionType($types), new VariableNode('accessor'), $context);
 
         if (\count($expectedOrder) <= 1) {
-            $this->assertSame(array_map(fn (ScalarNode $t) => str_replace('NESTED_', '', $t->value), $nodes), $expectedOrder);
+            $this->assertSame(array_map(fn (ExpressionNode $n): string => $n->node->parameters[1]->source, $nodes), $expectedOrder);
 
             return;
         }
 
-        $sortedTypes = array_map(
-            fn (string $t) => str_replace('NESTED_', '', $t),
-            [
-                $nodes[0]->onIf[0]->value,
-                ...array_map(fn (array $e): string => $e['body'][0]->value, $nodes[0]->elseIfs),
-                $nodes[0]->onElse[0]->value,
-            ],
-        );
+        $extractType = static function (array $nodes): string {
+            $filteredNodes = array_filter($nodes, static function (NodeInterface $n): bool {
+                if (!$n instanceof ExpressionNode) {
+                    return false;
+                }
+
+                $n = $n->node;
+
+                if ($n instanceof FunctionNode) {
+                    return '\fwrite' === $n->name && $n->parameters[1] instanceof RawNode;
+                }
+
+                if ($n instanceof AssignNode) {
+                    return $n->right instanceof RawNode;
+                }
+
+                return false;
+            });
+
+            return array_map(static function (ExpressionNode $n): string {
+                if ($n->node instanceof FunctionNode) {
+                    return $n->node->parameters[1]->source;
+                }
+
+                return $n->node->right->source;
+            }, $filteredNodes)[0];
+        };
+
+        $sortedTypes = [
+            $extractType($nodes[0]->onIf),
+            ...array_map(fn (array $e): string => $extractType($e['body']), $nodes[0]->elseIfs),
+            $extractType($nodes[0]->onElse),
+        ];
 
         $this->assertSame($expectedOrder, $sortedTypes);
     }
@@ -92,6 +119,8 @@ final class UnionTemplateGeneratorTest extends TestCase
         yield [['int', 'string'], [new Type('int'), new Type('string')]];
         yield [['int'], [new Type('int'), new Type('int')]];
         yield [['int', Leaf::class], [new Type('object', className: Leaf::class), new Type('int')]];
+
+        return;
         yield [[Leaf::class], [new Type('object', className: Leaf::class), new Type('object', className: Leaf::class)]];
         yield [
             [Leaf::class, Branch::class, Root::class],
@@ -114,13 +143,11 @@ final class UnionTemplateGeneratorTest extends TestCase
      */
     public function testThrowIfSameHierarchicalLevel(bool $expectException, array $types): void
     {
-        $templateGenerator = $this->createStub(TemplateGenerator::class);
-
         if ($expectException) {
             $this->expectException(\RuntimeException::class);
         }
 
-        (new UnionTemplateGenerator($templateGenerator))->generate(new UnionType($types), new VariableNode('accessor'), []);
+        (new UnionTemplateGenerator(self::createTemplateGeneratorStub()))->generate(new UnionType($types), new VariableNode('accessor'), []);
 
         $this->addToAssertionCount(1);
     }

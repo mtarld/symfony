@@ -9,7 +9,7 @@ use Symfony\Component\Marshaller\Native\Ast\Compiler;
 use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 
-final class CompilerNodeTest extends TestCase
+final class CompilerTest extends TestCase
 {
     public function testRaw(): void
     {

@@ -12,7 +12,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Ast\Optimizer;
 
-final class OptimizerNodeTest extends TestCase
+final class OptimizerTest extends TestCase
 {
     /**
      * @dataProvider mergeStringFwritesDataProvider
