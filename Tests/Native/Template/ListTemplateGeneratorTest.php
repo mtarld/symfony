@@ -12,14 +12,14 @@ use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\ListTemplateGenerator;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 final class ListTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createMock(TemplateGenerator::class);
         $templateGenerator
             ->expects($this->once())
             ->method('generate')

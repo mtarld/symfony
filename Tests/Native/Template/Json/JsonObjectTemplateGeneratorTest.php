@@ -11,7 +11,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonObjectTemplateGenerator;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 
@@ -19,7 +19,7 @@ final class JsonObjectTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createStub(TemplateGenerator::class);
         $templateGenerator->method('generate')->willReturn([new ScalarNode('NESTED')]);
 
         $type = new Type('object', className: ClassicDummy::class);

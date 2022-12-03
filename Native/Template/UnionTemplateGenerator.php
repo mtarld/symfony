@@ -17,7 +17,7 @@ final class UnionTemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGeneratorInterface $templateGenerator,
+        private readonly TemplateGenerator $templateGenerator,
     ) {
     }
 

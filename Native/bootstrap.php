@@ -77,3 +77,28 @@ function marshal_generate(string $type, string $format, array $context = []): st
 
     return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
 }
+
+/**
+ * @param resource $resource
+ */
+function unmarshal($resource, string $type, string $format, array $context = []): mixed
+{
+    $jsonParser = new Parser\Json\JsonParser();
+
+    /** @var array<string, Parser> $parsers */
+    $parsers = [
+        $jsonParser->format() => $jsonParser,
+    ];
+
+    if (!isset($parsers[$format])) {
+        throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format));
+    }
+
+    $type = Type::createFromString($type);
+
+        // TODO must be constructed depending on type
+        $listener = new ListListener(new ScalarListener());
+
+        $this->parsers[$format]->parse($resource, $listener);
+    return 'ok';
+}

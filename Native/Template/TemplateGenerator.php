@@ -17,7 +17,7 @@ use Symfony\Component\Marshaller\Native\Type\UnionType;
 /**
  * @internal
  */
-abstract class TemplateGenerator implements TemplateGeneratorInterface
+abstract class TemplateGenerator
 {
     private readonly HookExtractor $hookExtractor;
 

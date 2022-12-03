@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Native\Ast\Node\IfNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\UnionTemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Native\Type\UnionType;
@@ -17,7 +17,7 @@ final class UnionTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createMock(TemplateGenerator::class);
         $templateGenerator
             ->expects($this->exactly(5))
             ->method('generate')
@@ -61,7 +61,7 @@ final class UnionTemplateGeneratorTest extends TestCase
      */
     public function testSortTypes(array $expectedOrder, array $types): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createStub(TemplateGenerator::class);
         $templateGenerator->method('generate')->willReturnCallback(fn (Type $t): array => [new ScalarNode('NESTED_'.$t)]);
 
         $nodes = (new UnionTemplateGenerator($templateGenerator))->generate(new UnionType($types), new VariableNode('accessor'), []);
@@ -114,7 +114,7 @@ final class UnionTemplateGeneratorTest extends TestCase
      */
     public function testThrowIfSameHierarchicalLevel(bool $expectException, array $types): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createStub(TemplateGenerator::class);
 
         if ($expectException) {
             $this->expectException(\RuntimeException::class);

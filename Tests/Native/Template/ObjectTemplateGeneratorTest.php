@@ -13,7 +13,7 @@ use Symfony\Component\Marshaller\Native\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\ObjectTemplateGenerator;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\ConstructorPropertyPromotedDummy;
@@ -23,7 +23,7 @@ final class ObjectTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createMock(TemplateGenerator::class);
         $templateGenerator
             ->expects($this->exactly(2))
             ->method('generate')
@@ -54,7 +54,7 @@ final class ObjectTemplateGeneratorTest extends TestCase
 
     public function testGenerateWithConstructorPropertyPromotion(): void
     {
-        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createMock(TemplateGenerator::class);
         $templateGenerator
             ->expects($this->once())
             ->method('generate')
@@ -132,7 +132,7 @@ final class ObjectTemplateGeneratorTest extends TestCase
             ],
         ];
 
-        $templateGenerator = $this->createMock(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createMock(TemplateGenerator::class);
         $templateGenerator
             ->expects($this->exactly(2))
             ->method('generate')
@@ -204,9 +204,9 @@ final class ObjectTemplateGeneratorTest extends TestCase
         $this->assertSame(2, $hookCallCount);
     }
 
-    private function createObjectGenerator(TemplateGeneratorInterface $templateGenerator = null): ObjectTemplateGenerator
+    private function createObjectGenerator(TemplateGenerator $templateGenerator = null): ObjectTemplateGenerator
     {
-        $templateGenerator = $templateGenerator ?? $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $templateGenerator ?? $this->createStub(TemplateGenerator::class);
 
         return new class ($templateGenerator) extends ObjectTemplateGenerator {
             protected function beforeProperties(): string

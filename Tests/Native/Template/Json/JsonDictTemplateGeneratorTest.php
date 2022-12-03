@@ -15,14 +15,14 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\TemplateStringNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonDictTemplateGenerator;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 final class JsonDictTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createStub(TemplateGenerator::class);
         $templateGenerator->method('generate')->willReturn([new ScalarNode('NESTED')]);
 
         $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]);

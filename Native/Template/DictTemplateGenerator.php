@@ -22,7 +22,7 @@ abstract class DictTemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly TemplateGeneratorInterface $templateGenerator,
+        private readonly TemplateGenerator $templateGenerator,
     ) {
     }
 

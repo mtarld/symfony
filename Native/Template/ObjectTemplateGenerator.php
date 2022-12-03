@@ -28,7 +28,7 @@ abstract class ObjectTemplateGenerator
     private readonly ReflectionTypeExtractor $reflectionTypeExtractor;
 
     public function __construct(
-        private readonly TemplateGeneratorInterface $templateGenerator,
+        private readonly TemplateGenerator $templateGenerator,
     ) {
         $this->hookExtractor = new HookExtractor();
         $this->reflectionTypeExtractor = new ReflectionTypeExtractor();

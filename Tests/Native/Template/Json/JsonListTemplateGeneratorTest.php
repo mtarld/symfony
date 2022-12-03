@@ -12,14 +12,14 @@ use Symfony\Component\Marshaller\Native\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Native\Template\Json\JsonListTemplateGenerator;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorInterface;
+use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
 final class JsonListTemplateGeneratorTest extends TestCase
 {
     public function testGenerate(): void
     {
-        $templateGenerator = $this->createStub(TemplateGeneratorInterface::class);
+        $templateGenerator = $this->createStub(TemplateGenerator::class);
         $templateGenerator->method('generate')->willReturn([new ScalarNode('NESTED')]);
 
         $type = new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]);
