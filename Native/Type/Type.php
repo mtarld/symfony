@@ -34,8 +34,8 @@ final class Type implements \Stringable
             throw new \InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
         }
 
-        if ('array' === $this->name && 2 !== \count($this->genericParameterTypes)) {
-            throw new \InvalidArgumentException('Invalid generic parameter types of "array" type.');
+        if ($this->isCollection() && 2 !== \count($this->genericParameterTypes)) {
+            throw new \InvalidArgumentException(sprintf('Invalid generic parameter types of "%s" type.', $this->name));
         }
     }
 
@@ -115,7 +115,7 @@ final class Type implements \Stringable
             return new Type($string, $isNullable);
         }
 
-        if (class_exists($string)) {
+        if (class_exists($string) || interface_exists($string)) {
             return new Type('object', $isNullable, $string);
         }
 
@@ -151,7 +151,7 @@ final class Type implements \Stringable
                 throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
             }
 
-            if ('array' === $genericType && 1 === \count($genericParameters)) {
+            if (\in_array($genericType, ['array', 'iterable'], true) && 1 === \count($genericParameters)) {
                 array_unshift($genericParameters, 'int');
             }
 
@@ -230,7 +230,12 @@ final class Type implements \Stringable
 
     public function isCollection(): bool
     {
-        return 'array' === $this->name;
+        return \in_array($this->name, ['array', 'iterable'], true);
+    }
+
+    public function isIterable(): bool
+    {
+        return 'iterable' === $this->name;
     }
 
     public function isList(): bool

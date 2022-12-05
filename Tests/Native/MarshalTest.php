@@ -54,10 +54,12 @@ final class MarshalTest extends TestCase
         yield [new DummyWithQuotes()];
         yield [[1, 2, 3], 'array<int, int>'];
         yield [[1, 2, 3.12], 'array<int, int|float>'];
+        yield [[true, false, true], 'iterable<int, bool>'];
         yield [[false, null], 'array<int, ?bool>'];
         yield [['a' => 'b', 'c' => 'd'], 'array<string, string>'];
         yield [['a' => false, 'b' => 'd'], 'array<string, string|bool>'];
         yield [['"a"' => '"b"'], 'array<string, string>'];
+        yield [['a' => 1, 'b' => null], 'iterable<string, ?string>'];
         yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
     }
 

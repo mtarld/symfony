@@ -133,6 +133,49 @@ final class MarshalGenerateTest extends TestCase
             <?php
 
             /**
+             * @param iterable<int, int> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "[");
+                \$prefix_0 = "";
+                foreach (\$data as \$value_0) {
+                    \\fwrite(\$resource, \$prefix_0);
+                    \\fwrite(\$resource, \json_encode(\$value_0, \$context["json_encode_flags"] ?? 0));
+                    \$prefix_0 = ",";
+                }
+                \\fwrite(\$resource, "]");
+            };
+
+            PHP, 'iterable<int, int>', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param iterable<string, int> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, \$resource, array \$context): void {
+                \\fwrite(\$resource, "{");
+                \$prefix_0 = "";
+                foreach (\$data as \$key_0 => \$value_0) {
+                    \$key_0 = \json_encode(\$key_0, \$context["json_encode_flags"] ?? 0);
+                    \\fwrite(\$resource, "{\$prefix_0}{\$key_0}:");
+                    \\fwrite(\$resource, \json_encode(\$value_0, \$context["json_encode_flags"] ?? 0));
+                    \$prefix_0 = ",";
+                }
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, 'iterable<string, int>', [], ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
              * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
              * @param resource \$resource
              */

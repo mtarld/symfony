@@ -79,6 +79,15 @@ final class TypeTest extends TestCase
             ),
             '?array<?string, ?array<?int, ?bool>>',
         ];
+        yield [new Type('iterable', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]), 'iterable<int, int>'];
+        yield [
+            new Type(
+                'iterable',
+                isGeneric: true,
+                genericParameterTypes: [new Type('string'), new Type('iterable', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')])],
+            ),
+            'iterable<string, iterable<bool>>',
+        ];
 
         // union types
         yield [new UnionType([new Type('int'), new Type('string')]), 'int|string'];
