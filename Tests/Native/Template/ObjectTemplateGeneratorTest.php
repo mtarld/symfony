@@ -71,40 +71,6 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
         );
     }
 
-    /**
-     * @dataProvider throwWhenInvalidHookResultDataProvider
-     *
-     * @param array{type: string, accessor: string, context: array<string, mixed>} $hookResult
-     */
-    public function testThrowWhenInvalidHookResult(string $expectedExceptionMessage, array $hookResult): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage($expectedExceptionMessage);
-
-        self::createObjectTemplateGenerator()->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), [
-            'hooks' => [
-                'property' => static function (\ReflectionProperty $property, string $accessor, array $context) use ($hookResult): array {
-                    return $hookResult;
-                },
-            ],
-        ], self::createTemplateGeneratorStub());
-    }
-
-    /**
-     * @return iterable<array{0: string, 1: array{type: string, accessor: string, context: array<string, mixed>}}>
-     */
-    public function throwWhenInvalidHookResultDataProvider(): iterable
-    {
-        yield ['Hook array result is missing "name".', ['type' => 'int', 'accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result\'s "name" must be a "string".', ['name' => 1, 'type' => 'int', 'accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result is missing "type".', ['name' => 'name', 'accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result\'s "type" must be a "string".', ['name' => 'name', 'type' => 1, 'accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result is missing "accessor".', ['name' => 'name', 'type' => 'int', 'context' => []]];
-        yield ['Hook array result\'s "accessor" must be a "string".', ['name' => 'name', 'type' => 'int', 'accessor' => 1, 'context' => []]];
-        yield ['Hook array result is missing "context".', ['name' => 'name', 'type' => 'int', 'accessor' => '$accessor']];
-        yield ['Hook array result\'s "context" must be an "array".', ['name' => 'name', 'type' => 'int', 'accessor' => '$accessor', 'context' => 1]];
-    }
-
     public function testReplaceNameTypeAccessorAndContextWithHook(): void
     {
         $context = [

@@ -37,38 +37,6 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
         ], $nodes);
     }
 
-    /**
-     * @dataProvider throwWhenInvalidHookResultDataProvider
-     *
-     * @param array{type?: mixed, accessor?: mixed, context?: mixed} $hookResult
-     */
-    public function testThrowWhenInvalidHookResult(string $expectedExceptionMessage, array $hookResult): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage($expectedExceptionMessage);
-
-        self::createTemplateGeneratorStub()->generate(new Type('int'), new VariableNode('accessor'), [
-            'hooks' => [
-                'type' => static function (string $type, string $accessor, array $context) use ($hookResult): array {
-                    return $hookResult;
-                },
-            ],
-        ]);
-    }
-
-    /**
-     * @return iterable<array{0: string, 1: array{type?: mixed, accessor?: mixed, context?: mixed}}>
-     */
-    public function throwWhenInvalidHookResultDataProvider(): iterable
-    {
-        yield ['Hook array result is missing "type".', ['accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result\'s "type" must be a "string".', ['type' => 1, 'accessor' => '$accessor', 'context' => []]];
-        yield ['Hook array result is missing "accessor".', ['type' => 'int', 'context' => []]];
-        yield ['Hook array result\'s "accessor" must be a "string".', ['type' => 'int', 'accessor' => 1, 'context' => []]];
-        yield ['Hook array result is missing "context".', ['type' => 'int', 'accessor' => '$accessor']];
-        yield ['Hook array result\'s "context" must be an "array".', ['type' => 'int', 'accessor' => '$accessor', 'context' => 1]];
-    }
-
     public function testReplaceTypeAccessorAndContextWithHook(): void
     {
         $context = [

@@ -14,16 +14,11 @@ use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 
 abstract class TemplateGeneratorTestCase extends TestCase
 {
-    // TODO reset?
-    protected static function createTemplateGeneratorStub(
-        ScalarTemplateGenerator $scalarTemplateGenerator = null,
-        ObjectTemplateGenerator $objectTemplateGenerator = null,
-        ListTemplateGenerator $listTemplateGenerator = null,
-        DictTemplateGenerator $dictTemplateGenerator = null,
-    ): TemplateGenerator {
-        $scalarTemplateGenerator ??= new ScalarTemplateGenerator(fn (NodeInterface $n) => $n);
+    protected static function createTemplateGeneratorStub(): TemplateGenerator
+    {
+        $scalarTemplateGenerator = new ScalarTemplateGenerator(fn (NodeInterface $n) => $n);
 
-        $objectTemplateGenerator ??= new ObjectTemplateGenerator(
+        $objectTemplateGenerator = new ObjectTemplateGenerator(
             'BEFORE_PROPERTIES',
             'AFTER_PROPERTIES',
             'PROPERTY_SEPARATOR',
@@ -32,13 +27,13 @@ abstract class TemplateGeneratorTestCase extends TestCase
             fn (string $s) => sprintf('ESCAPE(%s)', $s),
         );
 
-        $listTemplateGenerator ??= new ListTemplateGenerator(
+        $listTemplateGenerator = new ListTemplateGenerator(
             'BEFORE_ITEMS',
             'AFTER_ITEMS',
             'ITEM_SEPARATOR',
         );
 
-        $dictTemplateGenerator ??= new DictTemplateGenerator(
+        $dictTemplateGenerator = new DictTemplateGenerator(
             'BEFORE_ITEMS',
             'AFTER_ITEMS',
             'ITEM_SEPARATOR',

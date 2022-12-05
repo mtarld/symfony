@@ -70,7 +70,12 @@ final class ObjectTemplateGenerator
             $propertyContext = $context;
 
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
-                [$propertyName, $propertyType, $propertyAccessor, $propertyContext] = $this->callPropertyHook($hook, $property, $propertyAccessor, $context);
+                $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
+
+                $propertyName = isset($hookResult['name']) ? $hookResult['name'] : $propertyName;
+                $propertyType = isset($hookResult['type']) ? $hookResult['type'] : $propertyType;
+                $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $propertyAccessor;
+                $propertyContext = isset($hookResult['context']) ? $hookResult['context'] : $propertyContext;
             }
 
             \array_push(
@@ -88,55 +93,5 @@ final class ObjectTemplateGenerator
         $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterProperties)]));
 
         return $nodes;
-    }
-
-    /**
-     * @param callable(\ReflectionProperty, string, array<string, mixed>): array{name?: string, type?: string, accessor?: string, context?: array<string, mixed>} $hook
-     * @param array<string, mixed>                                                                                                                                $context
-     *
-     * @return array{0: string, 1: string, 2: RawNode, 3: array<string, mixed>}
-     */
-    private function callPropertyHook(callable $hook, \ReflectionProperty $property, NodeInterface $accessor, array $context): array
-    {
-        $hookResult = $hook($property, (new Compiler())->compile($accessor)->source(), $context);
-
-        if (!isset($hookResult['name'])) {
-            throw new \RuntimeException('Hook array result is missing "name".');
-        }
-
-        if (!is_string($hookResult['name'])) {
-            throw new \RuntimeException('Hook array result\'s "name" must be a "string".');
-        }
-
-        if (!isset($hookResult['type'])) {
-            throw new \RuntimeException('Hook array result is missing "type".');
-        }
-
-        if (!is_string($hookResult['type'])) {
-            throw new \RuntimeException('Hook array result\'s "type" must be a "string".');
-        }
-
-        if (!isset($hookResult['accessor'])) {
-            throw new \RuntimeException('Hook array result is missing "accessor".');
-        }
-
-        if (!is_string($hookResult['accessor'])) {
-            throw new \RuntimeException('Hook array result\'s "accessor" must be a "string".');
-        }
-
-        if (!isset($hookResult['context'])) {
-            throw new \RuntimeException('Hook array result is missing "context".');
-        }
-
-        if (!is_array($hookResult['context'])) {
-            throw new \RuntimeException('Hook array result\'s "context" must be an "array".');
-        }
-
-        return [
-            $hookResult['name'],
-            $hookResult['type'],
-            new RawNode($hookResult['accessor']),
-            $hookResult['context'],
-        ];
     }
 }

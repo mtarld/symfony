@@ -6,7 +6,6 @@ namespace Symfony\Component\Marshaller\NativeContext;
 
 use Symfony\Component\Marshaller\Context\Context;
 
-// TODO marshal and generate folders?
 interface MarshalNativeContextBuilderInterface
 {
     /**
