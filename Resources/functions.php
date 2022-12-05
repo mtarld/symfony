@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Native;
+namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Native\Ast\Compiler;
 use Symfony\Component\Marshaller\Native\Ast\Node\ArgumentsNode;
@@ -66,3 +66,4 @@ function marshal_generate(string $type, string $format, array $context = []): st
 
     return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
 }
+

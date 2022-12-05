@@ -10,7 +10,7 @@ use Symfony\Component\Marshaller\Tests\Fixtures\CircularReferencingDummyRight;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\SelfReferencingDummy;
 
-use function Symfony\Component\Marshaller\Native\marshal_generate;
+use function Symfony\Component\Marshaller\marshal_generate;
 
 final class MarshalGenerateTest extends TestCase
 {

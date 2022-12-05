@@ -13,8 +13,8 @@ use Symfony\Component\Marshaller\NativeContext\MarshalNativeContextBuilderInterf
 use Symfony\Component\Marshaller\Output\OutputInterface;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
-use function Symfony\Component\Marshaller\Native\marshal;
-use function Symfony\Component\Marshaller\Native\marshal_generate;
+use function Symfony\Component\Marshaller\marshal;
+use function Symfony\Component\Marshaller\marshal_generate;
 
 final class Marshaller implements MarshallerInterface
 {

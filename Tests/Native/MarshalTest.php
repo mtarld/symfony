@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithQuotes;
 
-use function Symfony\Component\Marshaller\Native\marshal;
+use function Symfony\Component\Marshaller\marshal;
 
 final class MarshalTest extends TestCase
 {
