@@ -26,7 +26,7 @@ final class NameAttributeNativeContextBuilder implements GenerationNativeContext
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $nativeContext['symfony']['property_name'][$propertyIdentifier] = $attributeInstance->name;
+                $nativeContext['symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
 
                 break;
             }

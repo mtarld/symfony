@@ -17,8 +17,10 @@ final class NameAttributeNativeContextBuilderTest extends TestCase
 
         $this->assertEquals([
             'symfony' => [
-                'property_name' => [
-                    sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
+                'marshal' => [
+                    'property_name' => [
+                        sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
+                    ],
                 ],
             ],
         ], $nativeContext);

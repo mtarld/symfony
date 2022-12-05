@@ -23,7 +23,9 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_name' => $propertyNames,
+                'marshal' => [
+                    'property_name' => $propertyNames,
+                ],
             ],
         ];
 
@@ -55,7 +57,9 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_formatter' => $propertyFormatters,
+                'marshal' => [
+                    'property_formatter' => $propertyFormatters,
+                ],
             ],
         ];
 
@@ -63,7 +67,7 @@ final class PropertyHookTest extends TestCase
 
         $this->assertSame($expectedType, $hookResult['type']);
         $this->assertSame($expectedAccessor, $hookResult['accessor']);
-        $this->assertSame(ClassicDummy::class, $hookResult['context']['symfony']['current_property_class']);
+        $this->assertSame(ClassicDummy::class, $hookResult['context']['symfony']['marshal']['current_property_class']);
     }
 
     /**
@@ -86,8 +90,10 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::tooManyParameters(...),
+                'marshal' => [
+                    'property_formatter' => [
+                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::tooManyParameters(...),
+                    ],
                 ],
             ],
         ];
@@ -104,8 +110,10 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::invalidContextType(...),
+                'marshal' => [
+                    'property_formatter' => [
+                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::invalidContextType(...),
+                    ],
                 ],
             ],
         ];
@@ -122,8 +130,10 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->nonStatic(...),
+                'marshal' => [
+                    'property_formatter' => [
+                        sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->nonStatic(...),
+                    ],
                 ],
             ],
         ];
@@ -140,8 +150,10 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::void(...),
+                'marshal' => [
+                    'property_formatter' => [
+                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::void(...),
+                    ],
                 ],
             ],
         ];

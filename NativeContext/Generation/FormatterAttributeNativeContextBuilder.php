@@ -26,7 +26,7 @@ final class FormatterAttributeNativeContextBuilder implements GenerationNativeCo
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $nativeContext['symfony']['property_formatter'][$propertyIdentifier] = $attributeInstance->formatter;
+                $nativeContext['symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->formatter;
 
                 break;
             }

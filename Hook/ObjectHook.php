@@ -83,7 +83,7 @@ final class ObjectHook
         }
 
         foreach ($genericParameters as $i => $genericParameter) {
-            $context['symfony']['generic_parameter_types'][$genericType][$templates[$i]] = $genericParameter;
+            $context['symfony']['marshal']['generic_parameter_types'][$genericType][$templates[$i]] = $genericParameter;
         }
 
         return $context;

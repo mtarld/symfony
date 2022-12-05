@@ -21,8 +21,10 @@ final class TypeFormatterNativeContextBuilderTest extends TestCase
 
         $expectedNativeContext = [
             'symfony' => [
-                'type_formatter' => [
-                    'int' => $idFormatter,
+                'marshal' => [
+                    'type_formatter' => [
+                        'int' => $idFormatter,
+                    ],
                 ],
             ],
         ];

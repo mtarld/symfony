@@ -25,11 +25,11 @@ final class PropertyHook
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
-        $propertyFormatter = isset($context['symfony']['property_formatter'][$propertyIdentifier])
-            ? new \ReflectionFunction($context['symfony']['property_formatter'][$propertyIdentifier])
+        $propertyFormatter = isset($context['symfony']['marshal']['property_formatter'][$propertyIdentifier])
+            ? new \ReflectionFunction($context['symfony']['marshal']['property_formatter'][$propertyIdentifier])
             : null;
 
-        $context['symfony']['current_property_class'] = $property->getDeclaringClass()->getName();
+        $context['symfony']['marshal']['current_property_class'] = $property->getDeclaringClass()->getName();
 
         return [
             'name' => $this->name($property, $propertyIdentifier, $context),
@@ -46,8 +46,8 @@ final class PropertyHook
     {
         $name = $property->getName();
 
-        if (isset($context['symfony']['property_name'][$propertyIdentifier])) {
-            $name = $context['symfony']['property_name'][$propertyIdentifier];
+        if (isset($context['symfony']['marshal']['property_name'][$propertyIdentifier])) {
+            $name = $context['symfony']['marshal']['property_name'][$propertyIdentifier];
         }
 
         return $name;

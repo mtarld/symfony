@@ -19,7 +19,7 @@ final class TypeFormatterNativeContextBuilder implements GenerationNativeContext
         }
 
         foreach ($typeFormatterOption->formatters as $formatterName => $formatter) {
-            $nativeContext['symfony']['type_formatter'][$formatterName] = $formatter;
+            $nativeContext['symfony']['marshal']['type_formatter'][$formatterName] = $formatter;
         }
 
         return $nativeContext;

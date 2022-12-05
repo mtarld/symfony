@@ -24,7 +24,9 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => $typeFormatters,
+                'marshal' => [
+                    'type_formatter' => $typeFormatters,
+                ],
             ],
         ];
 
@@ -50,14 +52,16 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'current_property_class' => ClassicDummy::class,
-                'generic_parameter_types' => [ClassicDummy::class => ['T' => 'string']],
+                'marshal' => [
+                    'current_property_class' => ClassicDummy::class,
+                    'generic_parameter_types' => [ClassicDummy::class => ['T' => 'string']],
+                ],
             ],
         ];
 
         $this->assertSame('string', $hook('T', '$accessor', $context)['type']);
 
-        $context['symfony']['current_property_class'] = DummyWithMethods::class;
+        $context['symfony']['marshal']['current_property_class'] = DummyWithMethods::class;
         $this->assertSame('T', $hook('T', '$accessor', $context)['type']);
     }
 
@@ -68,14 +72,16 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
-                'current_property_class' => DummyWithMethods::class,
-                'generic_parameter_types' => [DummyWithMethods::class => ['T' => 'string']],
+                'marshal' => [
+                    'type_formatter' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
+                    'current_property_class' => DummyWithMethods::class,
+                    'generic_parameter_types' => [DummyWithMethods::class => ['T' => 'string']],
+                ],
             ],
         ];
         $this->assertSame('string', (new TypeHook($typeExtractor))('int', '$accessor', $context)['type']);
 
-        $context['symfony']['current_property_class'] = ClassicDummy::class;
+        $context['symfony']['marshal']['current_property_class'] = ClassicDummy::class;
         $this->assertSame('T', (new TypeHook($typeExtractor))('T', '$accessor', $context)['type']);
     }
 
@@ -89,7 +95,9 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => $typeFormatters,
+                'marshal' => [
+                    'type_formatter' => $typeFormatters,
+                ],
             ],
         ];
 
@@ -109,7 +117,9 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => $typeFormatters,
+                'marshal' => [
+                    'type_formatter' => $typeFormatters,
+                ],
             ],
         ];
 
@@ -125,8 +135,10 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => [
-                    'int' => (new DummyWithMethods())->nonStatic(...),
+                'marshal' => [
+                    'type_formatter' => [
+                        'int' => (new DummyWithMethods())->nonStatic(...),
+                    ],
                 ],
             ],
         ];
@@ -143,8 +155,10 @@ final class TypeHookTest extends TestCase
 
         $context = [
             'symfony' => [
-                'type_formatter' => [
-                    'int' => DummyWithMethods::void(...),
+                'marshal' => [
+                    'type_formatter' => [
+                        'int' => DummyWithMethods::void(...),
+                    ],
                 ],
             ],
         ];

@@ -23,7 +23,7 @@ final class TypeHook
      */
     public function __invoke(string $type, string $accessor, array $context): array
     {
-        $typeFormatter = isset($context['symfony']['type_formatter'][$type]) ? new \ReflectionFunction($context['symfony']['type_formatter'][$type]) : null;
+        $typeFormatter = isset($context['symfony']['marshal']['type_formatter'][$type]) ? new \ReflectionFunction($context['symfony']['marshal']['type_formatter'][$type]) : null;
 
         return [
             'type' => $this->type($type, $typeFormatter, $context),
@@ -37,7 +37,7 @@ final class TypeHook
      */
     private function type(string $type, ?\ReflectionFunction $typeFormatter, array $context): string
     {
-        $currentPropertyClass = $context['symfony']['current_property_class'] ?? null;
+        $currentPropertyClass = $context['symfony']['marshal']['current_property_class'] ?? null;
 
         if (null !== $typeFormatter) {
             $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
@@ -48,8 +48,8 @@ final class TypeHook
             }
         }
 
-        if (null !== $currentPropertyClass && isset($context['symfony']['generic_parameter_types'][$currentPropertyClass][$type])) {
-            $type = $context['symfony']['generic_parameter_types'][$currentPropertyClass][$type];
+        if (null !== $currentPropertyClass && isset($context['symfony']['marshal']['generic_parameter_types'][$currentPropertyClass][$type])) {
+            $type = $context['symfony']['marshal']['generic_parameter_types'][$currentPropertyClass][$type];
         }
 
         return $type;
