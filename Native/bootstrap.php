@@ -11,7 +11,6 @@ use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Native\Template\TemplateGenerator;
 use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Native\Type\Type;
 
@@ -42,15 +41,6 @@ function marshal(mixed $data, $resource, string $format, array $context = []): v
  */
 function marshal_generate(string $type, string $format, array $context = []): string
 {
-    /** @var array<string, TemplateGenerator> $templateGenerators */
-    $templateGenerators = [
-        'json' => TemplateGeneratorFactory::createJson(),
-    ];
-
-    if (!isset($templateGenerators[$format])) {
-        throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format));
-    }
-
     $compiler = new Compiler();
     $type = Type::createFromString($type);
     $accessor = new VariableNode('data');
@@ -68,7 +58,7 @@ function marshal_generate(string $type, string $format, array $context = []): st
     $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => null, 'context' => 'array']);
 
     $compiler->indent();
-    $bodyNodes = $templateGenerators[$format]->generate($type, $accessor, $context);
+    $bodyNodes = TemplateGeneratorFactory::create($format)->generate($type, $accessor, $context);
     $compiler->outdent();
 
     $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

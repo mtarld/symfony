@@ -17,7 +17,15 @@ final class TemplateGeneratorFactory
     {
     }
 
-    public static function createJson(): TemplateGenerator
+    public static function create(string $format): TemplateGenerator
+    {
+        return match ($format) {
+            'json' => self::createJson(),
+            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format)),
+        };
+    }
+
+    private static function createJson(): TemplateGenerator
     {
         $scalarTemplateGenerator = new ScalarTemplateGenerator(
             valueEscaper: static function (NodeInterface $accessor): NodeInterface {
