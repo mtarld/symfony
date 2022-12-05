@@ -6,17 +6,17 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\Generation\FormatterAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\Generation\HookContextBuilder;
+use Symfony\Component\Marshaller\Context\Generation\NameAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\Generation\TypeFormatterContextBuilder;
+use Symfony\Component\Marshaller\Context\Marshal\JsonEncodeFlagsContextBuilder;
+use Symfony\Component\Marshaller\Context\Marshal\TypeContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
-use Symfony\Component\Marshaller\NativeContext\Generation\FormatterAttributeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\Generation\HookNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\Generation\NameAttributeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\Generation\TypeFormatterNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\Marshal\JsonEncodeFlagsNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\Marshal\TypeNativeContextBuilder;
 use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
@@ -55,10 +55,10 @@ final class MarshallerTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $marshalGenerateContextBuilders = [
-            new HookNativeContextBuilder(),
-            new TypeFormatterNativeContextBuilder(),
-            new NameAttributeNativeContextBuilder(),
-            new FormatterAttributeNativeContextBuilder(),
+            new HookContextBuilder(),
+            new TypeFormatterContextBuilder(),
+            new NameAttributeContextBuilder(),
+            new FormatterAttributeContextBuilder(),
         ];
 
         $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
@@ -175,8 +175,8 @@ final class MarshallerTest extends TestCase
     public function testJsonMarshal(): void
     {
         $marshalContextBuilders = [
-            new TypeNativeContextBuilder(),
-            new JsonEncodeFlagsNativeContextBuilder(),
+            new TypeContextBuilder(),
+            new JsonEncodeFlagsContextBuilder(),
         ];
 
         $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], $this->cacheDir);

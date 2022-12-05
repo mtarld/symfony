@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller;
 
-use Symfony\Component\Marshaller\Native\Ast\Compiler;
-use Symfony\Component\Marshaller\Native\Ast\Node\ArgumentsNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\ClosureNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\ExpressionNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\PhpDocNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\ReturnNode;
-use Symfony\Component\Marshaller\Native\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Native\Template\TemplateGeneratorFactory;
-use Symfony\Component\Marshaller\Native\Type\Type;
+use Symfony\Component\Marshaller\Internal\Ast\Compiler;
+use Symfony\Component\Marshaller\Internal\Ast\Node\ArgumentsNode;
+use Symfony\Component\Marshaller\Internal\Ast\Node\ClosureNode;
+use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
+use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
+use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
+use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
+use Symfony\Component\Marshaller\Internal\Type\Type;
 
 /**
  * @param array<string, mixed> $context
@@ -66,4 +66,3 @@ function marshal_generate(string $type, string $format, array $context = []): st
 
     return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
 }
-

@@ -5,74 +5,71 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\MarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ObjectHook;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
 use Symfony\Component\Marshaller\Hook\TypeHook;
-use Symfony\Component\Marshaller\NativeContext\GenerationNativeContextBuilderInterface;
-use Symfony\Component\Marshaller\NativeContext\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Output\OutputInterface;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
-
-use function Symfony\Component\Marshaller\marshal;
-use function Symfony\Component\Marshaller\marshal_generate;
 
 final class Marshaller implements MarshallerInterface
 {
     /**
-     * @param iterable<MarshalNativeContextBuilderInterface>    $marshalNativeContextBuilders
-     * @param iterable<GenerationNativeContextBuilderInterface> $generationNativeContextBuilders
+     * @param iterable<MarshalContextBuilderInterface>    $marshalContextBuilders
+     * @param iterable<GenerationContextBuilderInterface> $generationContextBuilders
      */
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
-        private readonly iterable $marshalNativeContextBuilders,
-        private readonly iterable $generationNativeContextBuilders,
+        private readonly iterable $marshalContextBuilders,
+        private readonly iterable $generationContextBuilders,
         private readonly string $cacheDir,
     ) {
     }
 
     public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
     {
-        $nativeContext = $this->buildMarshalNativeContext($context);
-        $type = $nativeContext['type'] ?? get_debug_type($data);
+        $rawContext = $this->buildMarshalContext($context);
+        $type = $rawContext['type'] ?? get_debug_type($data);
 
-        // if template does not exist, it'll be generated therefore native context must be filled accordingly
+        // if template does not exist, it'll be generated therefore raw context must be filled accordingly
         if (!file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))) {
-            $nativeContext = $this->buildGenerateNativeContext($type, $context, $nativeContext);
+            $rawContext = $this->buildGenerateContext($type, $context, $rawContext);
         }
 
-        marshal($data, $output->stream(), $format, $nativeContext);
+        marshal($data, $output->stream(), $format, $rawContext);
     }
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        return marshal_generate($type, $format, $this->buildGenerateNativeContext($type, $context));
+        return marshal_generate($type, $format, $this->buildGenerateContext($type, $context));
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function buildMarshalNativeContext(?Context $context): array
+    private function buildMarshalContext(?Context $context): array
     {
         $context = $context ?? new Context();
-        $nativeContext = ['cache_dir' => $this->cacheDir];
+        $rawContext = ['cache_dir' => $this->cacheDir];
 
-        foreach ($this->marshalNativeContextBuilders as $builder) {
-            $nativeContext = $builder->build($context, $nativeContext);
+        foreach ($this->marshalContextBuilders as $builder) {
+            $rawContext = $builder->build($context, $rawContext);
         }
 
-        return $nativeContext;
+        return $rawContext;
     }
 
     /**
-     * @param array<string, mixed> $nativeContext
+     * @param array<string, mixed> $rawContext
      *
      * @return array<string, mixed>
      */
-    private function buildGenerateNativeContext(string $type, ?Context $context, array $nativeContext = []): array
+    private function buildGenerateContext(string $type, ?Context $context, array $rawContext = []): array
     {
         $context = $context ?? new Context();
 
-        $nativeContext += [
+        $rawContext += [
             'hooks' => [
                 'object' => (new ObjectHook($this->typeExtractor))(...),
                 'property' => (new PropertyHook($this->typeExtractor))(...),
@@ -80,10 +77,10 @@ final class Marshaller implements MarshallerInterface
             ],
         ];
 
-        foreach ($this->generationNativeContextBuilders as $builder) {
-            $nativeContext = $builder->build($type, $context, $nativeContext);
+        foreach ($this->generationContextBuilders as $builder) {
+            $rawContext = $builder->build($type, $context, $rawContext);
         }
 
-        return $nativeContext;
+        return $rawContext;
     }
 }

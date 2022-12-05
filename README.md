@@ -2,7 +2,6 @@
 
 ## Marshal
 - create dedicated exceptions and wrap native ones
-- native -> internal 
 - find another name for OutputInterface/StreamOutput -> Resource? (conflict with Console)
 
 ## Unmarshal
