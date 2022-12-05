@@ -13,7 +13,7 @@ final class DummyWithFormatterAttributes
 
     public string $name = 'dummy';
 
-    public static function doubleAndCastToString(int $value, array $context): string
+    public static function doubleAndCastToString(int $value): string
     {
         return (string) (2 * $value);
     }

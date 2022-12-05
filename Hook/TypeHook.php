@@ -42,7 +42,7 @@ final class TypeHook
         if (null !== $typeFormatter) {
             $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
 
-            // If method doesn't belong to the current class, ignore generic search
+            // if method doesn't belong to the current class, ignore generic search
             if ($typeFormatter->getClosureScopeClass()?->getName() !== $currentPropertyClass) {
                 $currentPropertyClass = null;
             }
@@ -70,10 +70,6 @@ final class TypeHook
 
         if (($returnType = $typeFormatter->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
             throw new \InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
-        }
-
-        if (2 !== \count($typeFormatter->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Type formatter "%s" must have exactly two parameters.', $type));
         }
 
         if (null !== ($contextParameter = $typeFormatter->getParameters()[1] ?? null)) {

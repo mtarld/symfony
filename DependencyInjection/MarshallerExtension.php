@@ -17,10 +17,8 @@ use Symfony\Component\Marshaller\NativeContext\Generation\FormatterAttributeNati
 use Symfony\Component\Marshaller\NativeContext\Generation\HookNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\Generation\NameAttributeNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\Generation\TypeFormatterNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\GenerationNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\NativeContext\Marshal\JsonEncodeFlagsNativeContextBuilder;
 use Symfony\Component\Marshaller\NativeContext\Marshal\TypeNativeContextBuilder;
-use Symfony\Component\Marshaller\NativeContext\MarshalNativeContextBuilderInterface;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -66,31 +64,25 @@ final class MarshallerExtension extends Extension
         // Generation context builders
         //
         $container->register('marshaller.native_context_builder.generation.hook', HookNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128])
-            ->addTag('proxy', ['interface' => GenerationNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128]);
 
         $container->register('marshaller.native_context_builder.generation.type_formatter', TypeFormatterNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128])
-            ->addTag('proxy', ['interface' => GenerationNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128]);
 
         $container->register('marshaller.native_context_builder.generation.name_attribute', NameAttributeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128])
-            ->addTag('proxy', ['interface' => GenerationNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128]);
 
         $container->register('marshaller.native_context_builder.generation.formatter_attribute', FormatterAttributeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128])
-            ->addTag('proxy', ['interface' => GenerationNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.generation', ['priority' => -128]);
 
         //
         // Marshal context builders
         //
         $container->register('marshaller.native_context_builder.marshal.type', TypeNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => -128])
-            ->addTag('proxy', ['interface' => MarshalNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => -128]);
 
         $container->register('marshaller.native_context_builder.marshal.json_encode_flags', JsonEncodeFlagsNativeContextBuilder::class)
-            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => -128])
-            ->addTag('proxy', ['interface' => MarshalNativeContextBuilderInterface::class]);
+            ->addTag('marshaller.context.native_context_builder.marshal', ['priority' => -128]);
 
         //
         // Cache

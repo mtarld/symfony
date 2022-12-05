@@ -80,10 +80,6 @@ final class PropertyHook
             throw new \InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
         }
 
-        if (2 !== \count($propertyFormatter->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must have exactly two parameters.', $propertyIdentifier));
-        }
-
         if (null !== ($contextParameter = $propertyFormatter->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 

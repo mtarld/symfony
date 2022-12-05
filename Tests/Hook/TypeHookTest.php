@@ -85,28 +85,6 @@ final class TypeHookTest extends TestCase
         $this->assertSame('T', (new TypeHook($typeExtractor))('T', '$accessor', $context)['type']);
     }
 
-    public function testThrowWhenInvalidTypeFormatterParametersCount(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $typeFormatters = [
-            'int' => DummyWithMethods::tooManyParameters(...),
-        ];
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'type_formatter' => $typeFormatters,
-                ],
-            ],
-        ];
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Type formatter "int" must have exactly two parameters.');
-
-        (new TypeHook($typeExtractor))('int', '$accessor', $context);
-    }
-
     public function testThrowWhenInvalidTypeFormatterContextTypeParameter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);

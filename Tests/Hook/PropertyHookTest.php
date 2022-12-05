@@ -84,26 +84,6 @@ final class PropertyHookTest extends TestCase
         ];
     }
 
-    public function testThrowWhenInvalidPropertyFormatterParametersCount(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::tooManyParameters(...),
-                    ],
-                ],
-            ],
-        ];
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must have exactly two parameters.', ClassicDummy::class));
-
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
-    }
-
     public function testThrowWhenInvalidPropertyFormatterContextTypeParameter(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
