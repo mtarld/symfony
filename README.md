@@ -2,10 +2,8 @@
 
 ## Marshal
 - create dedicated exceptions and wrap native ones
-- find another name for OutputInterface/StreamOutput -> Resource? (conflict with Console)
 
 ## Unmarshal
-- Input object -> Resource object instead
 - if constructor -> newInstanceWithoutConstructor but set defaults
 - else classic new instance
 

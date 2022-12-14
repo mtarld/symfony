@@ -11,9 +11,10 @@ final class FormatterTest extends TestCase
 {
     public function testCanCreateWithValidFunction(): void
     {
-        new Formatter('strtoupper');
+        new Formatter(marshal: 'strtoupper');
+        new Formatter(unmarshal: 'strtoupper');
 
-        $this->addToAssertionCount(1);
+        $this->addToAssertionCount(2);
     }
 
     public function testCanCreateWithValidMethod(): void
@@ -32,17 +33,28 @@ final class FormatterTest extends TestCase
             }
         };
 
-        new Formatter([$objectWithoutContext::class, 'toUpper']);
-        new Formatter([$objectWithContext::class, 'toUpper']);
+        new Formatter(marshal: [$objectWithoutContext::class, 'toUpper']);
+        new Formatter(marshal: [$objectWithContext::class, 'toUpper']);
 
-        $this->addToAssertionCount(2);
+        new Formatter(unmarshal: [$objectWithoutContext::class, 'toUpper']);
+        new Formatter(unmarshal: [$objectWithContext::class, 'toUpper']);
+
+        $this->addToAssertionCount(4);
     }
 
-    public function testCannotCreateWithInvalidCallable(): void
+    public function testCannotCreateWithInvalidMarshalCallable(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Parameter "$callable" of attribute "%s" must be a valid callable.', Formatter::class));
+        $this->expectExceptionMessage(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', Formatter::class));
 
-        new Formatter([]);
+        new Formatter(marshal: []);
+    }
+
+    public function testCannotCreateWithInvalidUnmarshalCallable(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', Formatter::class));
+
+        new Formatter(unmarshal: []);
     }
 }

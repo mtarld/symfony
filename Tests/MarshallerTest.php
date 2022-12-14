@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Tests\Hook;
+namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
@@ -17,7 +17,7 @@ use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
-use Symfony\Component\Marshaller\Output\MemoryStreamOutput;
+use Symfony\Component\Marshaller\Stream\MemoryStream;
 use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
 use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
@@ -61,7 +61,7 @@ final class MarshallerTest extends TestCase
             new FormatterAttributeContextBuilder(),
         ];
 
-        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerateContextBuilders, $this->cacheDir))->generate($type, 'json', $context));
+        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerateContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
     }
 
     /**
@@ -179,15 +179,15 @@ final class MarshallerTest extends TestCase
             new JsonEncodeFlagsContextBuilder(),
         ];
 
-        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], $this->cacheDir);
+        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], [], $this->cacheDir);
 
-        $marshaller->marshal('1', 'json', $output = new MemoryStreamOutput());
+        $marshaller->marshal('1', 'json', $output = new MemoryStream());
         $this->assertSame('"1"', (string) $output);
 
-        $marshaller->marshal('1', 'json', $output = new MemoryStreamOutput(), new Context(new JsonEncodeFlagsOption(JSON_NUMERIC_CHECK)));
+        $marshaller->marshal('1', 'json', $output = new MemoryStream(), new Context(new JsonEncodeFlagsOption(JSON_NUMERIC_CHECK)));
         $this->assertSame('1', (string) $output);
 
-        $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStreamOutput(), new Context(new TypeOption('array<int, string>')));
+        $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStream(), new Context(new TypeOption('array<int, string>')));
         $this->assertSame('["bar"]', (string) $output);
     }
 }

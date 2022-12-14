@@ -12,6 +12,8 @@ final class MarshallerPass implements CompilerPassInterface
 {
     use PriorityTaggedServiceTrait;
 
+    // TODO fixme
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition('marshaller')) {

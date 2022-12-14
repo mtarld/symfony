@@ -2,17 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Output;
+namespace Symfony\Component\Marshaller\Stream;
 
-abstract class StreamOutput implements OutputInterface
+abstract class Stream implements StreamInterface
 {
     /**
      * @var resource
      */
     protected $stream;
 
-    public function __construct(
+    protected function __construct(
         protected readonly string $filename,
+        protected bool $readable,
+        protected bool $writable,
     ) {
     }
 
@@ -22,7 +24,9 @@ abstract class StreamOutput implements OutputInterface
             return $this->stream;
         }
 
-        if (false === $stream = fopen($this->filename, 'wb')) {
+        $mode = sprintf('%s%sb', $this->readable ? 'r' : '', $this->writable ? 'w' : '');
+
+        if (false === $stream = fopen($this->filename, $mode)) {
             throw new \RuntimeException(sprintf('Cannot open "%s" stream', $this->filename));
         }
 

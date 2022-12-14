@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Output;
+namespace Symfony\Component\Marshaller\Stream;
 
-interface OutputInterface extends \Stringable
+interface StreamInterface extends \Stringable
 {
     /**
      * @return resource

@@ -7,10 +7,11 @@ namespace Symfony\Component\Marshaller;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\MarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\ObjectHook;
 use Symfony\Component\Marshaller\Hook\PropertyHook;
 use Symfony\Component\Marshaller\Hook\TypeHook;
-use Symfony\Component\Marshaller\Output\OutputInterface;
+use Symfony\Component\Marshaller\Stream\StreamInterface;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class Marshaller implements MarshallerInterface
@@ -18,16 +19,18 @@ final class Marshaller implements MarshallerInterface
     /**
      * @param iterable<MarshalContextBuilderInterface>    $marshalContextBuilders
      * @param iterable<GenerationContextBuilderInterface> $generationContextBuilders
+     * @param iterable<UnmarshalContextBuilderInterface>  $unmarshalContextBuilders
      */
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
         private readonly iterable $marshalContextBuilders,
         private readonly iterable $generationContextBuilders,
+        private readonly iterable $unmarshalContextBuilders,
         private readonly string $cacheDir,
     ) {
     }
 
-    public function marshal(mixed $data, string $format, OutputInterface $output, Context $context = null): void
+    public function marshal(mixed $data, string $format, StreamInterface $output, Context $context = null): void
     {
         $rawContext = $this->buildMarshalContext($context);
         $type = $rawContext['type'] ?? get_debug_type($data);
@@ -43,6 +46,11 @@ final class Marshaller implements MarshallerInterface
     public function generate(string $type, string $format, Context $context = null): string
     {
         return marshal_generate($type, $format, $this->buildGenerateContext($type, $context));
+    }
+
+    public function unmarshal(StreamInterface $input, string $type, string $format, Context $context = null): mixed
+    {
+        return unmarshal($input->stream(), $type, $format, $this->buildUnmarshalContext($type, $context));
     }
 
     /**
@@ -78,6 +86,21 @@ final class Marshaller implements MarshallerInterface
         ];
 
         foreach ($this->generationContextBuilders as $builder) {
+            $rawContext = $builder->build($type, $context, $rawContext);
+        }
+
+        return $rawContext;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildUnmarshalContext(string $type, ?Context $context): array
+    {
+        $context = $context ?? new Context();
+        $rawContext = [];
+
+        foreach ($this->unmarshalContextBuilders as $builder) {
             $rawContext = $builder->build($type, $context, $rawContext);
         }
 

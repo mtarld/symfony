@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Marshaller\Context\Generation;
+namespace Symfony\Component\Marshaller\Context\Unmarshal;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
 
-final class FormatterAttributeContextBuilder implements GenerationContextBuilderInterface
+final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderInterface
 {
     public function build(string $type, Context $context, array $rawContext): array
     {
@@ -26,7 +26,7 @@ final class FormatterAttributeContextBuilder implements GenerationContextBuilder
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshalFormatter;
+                $rawContext['symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshalFormatter;
 
                 break;
             }
