@@ -12,17 +12,16 @@ final class MarshallerPass implements CompilerPassInterface
 {
     use PriorityTaggedServiceTrait;
 
-    // TODO fixme
-
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition('marshaller')) {
             return;
         }
 
-        // TODO fixme
-
         $marshallerDefinition = $container->getDefinition('marshaller');
-        $marshallerDefinition->replaceArgument(1, $this->findAndSortTaggedServices('marshaller.context.context_builder.marshal_generate', $container));
+
+        $marshallerDefinition->replaceArgument(1, $this->findAndSortTaggedServices('marshaller.context.builder.marshal', $container));
+        $marshallerDefinition->replaceArgument(2, $this->findAndSortTaggedServices('marshaller.context.builder.generation', $container));
+        $marshallerDefinition->replaceArgument(3, $this->findAndSortTaggedServices('marshaller.context.builder.unmarshal', $container));
     }
 }
