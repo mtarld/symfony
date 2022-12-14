@@ -13,8 +13,7 @@ abstract class Stream implements StreamInterface
 
     protected function __construct(
         protected readonly string $filename,
-        protected bool $readable,
-        protected bool $writable,
+        protected readonly string $mode,
     ) {
     }
 
@@ -24,9 +23,7 @@ abstract class Stream implements StreamInterface
             return $this->stream;
         }
 
-        $mode = sprintf('%s%sb', $this->readable ? 'r' : '', $this->writable ? 'w' : '');
-
-        if (false === $stream = fopen($this->filename, $mode)) {
+        if (false === $stream = fopen($this->filename, $this->mode)) {
             throw new \RuntimeException(sprintf('Cannot open "%s" stream', $this->filename));
         }
 

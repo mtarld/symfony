@@ -14,7 +14,7 @@ final class StreamTest extends TestCase
         $stream = new class () extends Stream {
             public function __construct()
             {
-                parent::__construct('php://memory', readable: true, writable: true);
+                parent::__construct('php://memory', 'w+b');
             }
         };
 
@@ -29,7 +29,7 @@ final class StreamTest extends TestCase
         $stream = new class () extends Stream {
             public function __construct()
             {
-                parent::__construct('php://memory', readable: true, writable: true);
+                parent::__construct('php://memory', 'w+b');
             }
         };
 

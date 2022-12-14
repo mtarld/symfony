@@ -6,8 +6,8 @@ namespace Symfony\Component\Marshaller\Stream;
 
 final class TempStream extends Stream
 {
-    public function __construct(int $memoryThreshold = 2048)
+    public function __construct(int $memoryThreshold = 2048, string $mode = 'w+b')
     {
-        parent::__construct(sprintf('php://temp/maxmemory:%d', $memoryThreshold), readable: true, writable: true);
+        parent::__construct(sprintf('php://temp/maxmemory:%d', $memoryThreshold), $mode);
     }
 }

@@ -8,6 +8,6 @@ final class OutputStream extends Stream
 {
     public function __construct()
     {
-        parent::__construct('php://output', readable: true, writable: false);
+        parent::__construct('php://output', 'placeholder');
     }
 }

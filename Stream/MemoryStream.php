@@ -6,8 +6,8 @@ namespace Symfony\Component\Marshaller\Stream;
 
 final class MemoryStream extends Stream
 {
-    public function __construct()
+    public function __construct(string $mode = 'w+b')
     {
-        parent::__construct('php://memory', readable: true, writable: true);
+        parent::__construct('php://memory', $mode);
     }
 }
