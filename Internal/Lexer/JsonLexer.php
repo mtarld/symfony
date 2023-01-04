@@ -6,45 +6,113 @@ namespace Symfony\Component\Marshaller\Internal\Lexer;
 
 final class JsonLexer implements LexerInterface
 {
-    public function tokens(mixed $resource): \Iterator
+    private const DICT_START = 1;
+    private const DICT_END = 2;
+
+    private const LIST_START = 4;
+    private const LIST_END = 8;
+
+    private const KEY = 16;
+    private const COLUMN = 32;
+    private const COMMA = 64;
+
+    private const SCALAR = 128;
+
+    private const END = 256;
+
+    private const VALUE = self::DICT_START | self::LIST_START | self::SCALAR;
+
+    public function tokens(mixed $resource, array $context): \Generator
     {
-        return (new \IteratorIterator($this->tokenize($resource)))->getInnerIterator();
+        $expectedType = self::VALUE;
+        $structureStack = new \SplStack();
+
+        foreach ($this->tokenize($resource) as [$type, $token]) {
+            if ('' === $token) {
+                continue;
+            }
+
+            if (!($type & $expectedType)) {
+                throw new \RuntimeException('Invalid JSON.');
+            }
+
+            if (self::SCALAR === $type) {
+                json_decode($token, flags: $context['json_decode_flags'] ?? 0);
+
+                if (JSON_ERROR_NONE !== json_last_error()) {
+                    throw new \RuntimeException('Invalid JSON.');
+                }
+            }
+
+            if (self::KEY === $type && !(str_starts_with($token, '"') && str_ends_with($token, '"'))) {
+                throw new \RuntimeException('Invalid JSON.');
+            }
+
+            yield $token;
+
+            if (self::DICT_START === $type) {
+                $structureStack->push('dict');
+            } elseif (self::LIST_START === $type) {
+                $structureStack->push('list');
+            } elseif ($type & (self::DICT_END | self::LIST_END)) {
+                $structureStack->pop();
+            }
+
+            $currentStructure = !$structureStack->isEmpty() ? $structureStack->top() : null;
+
+            $expectedType = match (true) {
+                self::DICT_START === $type => self::KEY | self::DICT_END,
+                self::LIST_START === $type => self::VALUE | self::LIST_END,
+
+                self::KEY === $type => self::COLUMN,
+                self::COLUMN === $type => self::VALUE,
+
+                self::COMMA === $type && 'dict' === $currentStructure => self::KEY,
+                self::COMMA === $type && 'list' === $currentStructure => self::VALUE,
+
+                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'dict' === $currentStructure => self::COMMA | self::DICT_END,
+                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'list' === $currentStructure => self::COMMA | self::LIST_END,
+                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) => self::END,
+
+                default => throw new \RuntimeException('Invalid JSON.'),
+            };
+        }
+
+        if (self::END !== $expectedType) {
+            throw new \RuntimeException('Invalid JSON.');
+        }
     }
 
     /**
      * @param resource $resource
      *
-     * @return \Traversable<string>
+     * @return \Generator<array{int, string}>
      */
-    private function tokenize(mixed $resource): \Traversable
+    private function tokenize(mixed $resource): \Generator
     {
-        $structureBoundaries = ['{' => true, '}' => true, '[' => true, ']' => true, ':' => true, ',' => true];
-
-        $buffer = '';
+        $token = '';
         $inString = false;
         $escaping = false;
 
         while (!feof($resource)) {
-            if (false === $line = stream_get_line($resource, 4096, "\n")) {
-                yield $buffer;
-
-                return;
+            if (false === $buffer = stream_get_contents($resource, 4096)) {
+                throw new \RuntimeException('Cannot read JSON resource.');
             }
 
-            $length = \strlen($line);
+            $length = \strlen($buffer);
 
             for ($i = 0; $i < $length; ++$i) {
-                $byte = $line[$i];
+                $byte = $buffer[$i];
 
                 if ($escaping) {
                     $escaping = false;
-                    $buffer .= $byte;
+                    $token .= $byte;
 
                     continue;
                 }
 
                 if ($inString) {
-                    $buffer .= $byte;
+                    $token .= $byte;
 
                     if ('"' === $byte) {
                         $inString = false;
@@ -56,32 +124,76 @@ final class JsonLexer implements LexerInterface
                 }
 
                 if ('"' === $byte) {
-                    $buffer .= $byte;
+                    $token .= $byte;
                     $inString = true;
 
                     continue;
                 }
 
-                if (isset($structureBoundaries[$byte])) {
-                    if ('' !== $buffer) {
-                        yield $buffer;
-                        $buffer = '';
-                    }
+                if (',' === $byte) {
+                    yield [self::SCALAR, $token];
+                    yield [self::COMMA, $byte];
 
-                    yield $byte;
+                    $token = '';
 
                     continue;
                 }
 
-                // TODO other kind of spaces
-                if (' ' === $byte) {
+                if (':' === $byte) {
+                    yield [self::KEY, $token];
+                    yield [self::COLUMN, $byte];
+
+                    $token = '';
+
                     continue;
                 }
 
-                $buffer .= $byte;
+                if ('{' === $byte) {
+                    yield [self::SCALAR, $token];
+                    yield [self::DICT_START, $byte];
+
+                    $token = '';
+
+                    continue;
+                }
+
+                if ('[' === $byte) {
+                    yield [self::SCALAR, $token];
+                    yield [self::LIST_START, $byte];
+
+                    $token = '';
+
+                    continue;
+                }
+
+                if ('}' === $byte) {
+                    yield [self::SCALAR, $token];
+                    yield [self::DICT_END, $byte];
+
+                    $token = '';
+
+                    continue;
+                }
+
+                if (']' === $byte) {
+                    yield [self::SCALAR, $token];
+                    yield [self::LIST_END, $byte];
+
+                    $token = '';
+
+                    continue;
+                }
+
+                if ('' === $token && in_array($byte, [' ', "\r", "\t", "\n"], true)) {
+                    continue;
+                }
+
+                $token .= $byte;
             }
         }
 
-        yield $buffer;
+        if (!$inString && !$escaping) {
+            yield [self::SCALAR, $token];
+        }
     }
 }

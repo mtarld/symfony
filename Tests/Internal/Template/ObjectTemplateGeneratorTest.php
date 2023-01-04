@@ -13,9 +13,9 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Internal\Template\ObjectTemplateGenerator;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\ConstructorPropertyPromotedDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNotPublicProperty;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ConstructorPropertyPromotedDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNotPublicProperty;
 
 final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
 {

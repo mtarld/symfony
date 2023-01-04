@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Tests\Fixtures\AbstractDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\PhpstanExtractableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AbstractDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\PhpstanExtractableDummy;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -124,7 +124,7 @@ final class PhpstanTypeExtractorTest extends TestCase
         yield [PhpstanExtractableDummy::class, 'self'];
         yield [PhpstanExtractableDummy::class, 'static'];
         yield [AbstractDummy::class, 'parent'];
-        yield ['Symfony\\Component\\Marshaller\\Tests\\Fixtures\\scoped', 'scoped'];
+        yield ['Symfony\\Component\\Marshaller\\Tests\\Fixtures\\Dto\\scoped', 'scoped'];
         yield ['int|string', 'union'];
         yield ['?int', 'nullable'];
         yield ['int|string|null', 'nullableUnion'];

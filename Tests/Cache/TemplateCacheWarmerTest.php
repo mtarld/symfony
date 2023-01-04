@@ -8,9 +8,9 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Tests\Fixtures\WarmableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\WarmableNotNullableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\WarmableNullableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableNotNullableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableNullableDummy;
 
 final class TemplateCacheWarmerTest extends TestCase
 {

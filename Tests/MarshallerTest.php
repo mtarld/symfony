@@ -18,10 +18,10 @@ use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\Stream\MemoryStream;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -54,14 +54,14 @@ final class MarshallerTest extends TestCase
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
-        $marshalGenerateContextBuilders = [
+        $marshalGenerationContextBuilders = [
             new HookContextBuilder(),
             new TypeFormatterContextBuilder(),
             new NameAttributeContextBuilder(),
             new FormatterAttributeContextBuilder(),
         ];
 
-        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerateContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
+        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerationContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
     }
 
     /**
@@ -78,7 +78,7 @@ final class MarshallerTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithMethods::doubleAndCastToString(\$data, \$context), \$context["json_encode_flags"] ?? 0));
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods::doubleAndCastToString(\$data, \$context), \$context["json_encode_flags"] ?? 0));
             };
 
             PHP, 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])), ];
@@ -110,7 +110,7 @@ final class MarshallerTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
@@ -138,7 +138,7 @@ final class MarshallerTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
@@ -157,13 +157,13 @@ final class MarshallerTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"id\":");
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context), \$context["json_encode_flags"] ?? 0));
+                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context), \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, ",\"name\":");
                 \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
                 \\fwrite(\$resource, "}");

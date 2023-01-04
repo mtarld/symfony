@@ -80,6 +80,8 @@ if (!\function_exists('unmarshal')) {
      */
     function unmarshal($resource, string $type, string $format, array $context = []): mixed
     {
-        return ParserFactory::create($format)->parse(LexerFactory::create($format)->tokens($resource), Type::createFromString($type), $context);
+        $tokens = LexerFactory::create($format)->tokens($resource, $context);
+
+        return ParserFactory::create($format)->parse($tokens, Type::createFromString($type), $context);
     }
 }

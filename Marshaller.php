@@ -37,7 +37,7 @@ final class Marshaller implements MarshallerInterface
 
         // if template does not exist, it'll be generated therefore raw context must be filled accordingly
         if (!file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))) {
-            $rawContext = $this->buildGenerateContext($type, $context, $rawContext);
+            $rawContext = $this->buildGenerationContext($type, $context, $rawContext);
         }
 
         marshal($data, $output->stream(), $format, $rawContext);
@@ -45,7 +45,7 @@ final class Marshaller implements MarshallerInterface
 
     public function generate(string $type, string $format, Context $context = null): string
     {
-        return marshal_generate($type, $format, $this->buildGenerateContext($type, $context));
+        return marshal_generate($type, $format, $this->buildGenerationContext($type, $context));
     }
 
     public function unmarshal(StreamInterface $input, string $type, string $format, Context $context = null): mixed
@@ -73,7 +73,7 @@ final class Marshaller implements MarshallerInterface
      *
      * @return array<string, mixed>
      */
-    private function buildGenerateContext(string $type, ?Context $context, array $rawContext = []): array
+    private function buildGenerationContext(string $type, ?Context $context, array $rawContext = []): array
     {
         $context = $context ?? new Context();
 

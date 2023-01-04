@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Context\Generation;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Generation\FormatterAttributeContextBuilder;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithFormatterAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 
 final class FormatterAttributeContextBuilderTest extends TestCase
 {

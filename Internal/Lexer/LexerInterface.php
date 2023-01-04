@@ -7,9 +7,10 @@ namespace Symfony\Component\Marshaller\Internal\Lexer;
 interface LexerInterface
 {
     /**
-     * @param resource $resource
+     * @param resource             $resource
+     * @param array<string, mixed> $context
      *
-     * @return \Iterator<string>
+     * @return \Generator<string>
      */
-    public function tokens(mixed $resource): \Iterator;
+    public function tokens(mixed $resource, array $context): \Generator;
 }

@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Internal\Hook;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 
 final class HookExtractorTest extends TestCase
 {

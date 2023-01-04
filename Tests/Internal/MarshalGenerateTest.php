@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Tests\Fixtures\CircularReferencingDummyLeft;
-use Symfony\Component\Marshaller\Tests\Fixtures\CircularReferencingDummyRight;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\SelfReferencingDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\CircularReferencingDummyLeft;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\CircularReferencingDummyRight;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\SelfReferencingDummy;
 
 use function Symfony\Component\Marshaller\marshal_generate;
 
@@ -176,7 +176,7 @@ final class MarshalGenerateTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
@@ -195,7 +195,7 @@ final class MarshalGenerateTest extends TestCase
             <?php
 
             /**
-             * @param array<int, Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy> \$data
+             * @param array<int, Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy> \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
@@ -263,7 +263,7 @@ final class MarshalGenerateTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {
@@ -293,7 +293,7 @@ final class MarshalGenerateTest extends TestCase
             <?php
 
             /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy \$data
+             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, \$resource, array \$context): void {

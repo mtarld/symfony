@@ -12,7 +12,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 
 final class TemplateGeneratorTest extends TemplateGeneratorTestCase
 {

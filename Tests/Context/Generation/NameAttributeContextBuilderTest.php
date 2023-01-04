@@ -7,7 +7,7 @@ namespace Symfony\Component\Marshaller\Tests\Context\Generation;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Generation\NameAttributeContextBuilder;
-use Symfony\Component\Marshaller\Tests\Fixtures\DummyWithNameAttributes;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
 final class NameAttributeContextBuilderTest extends TestCase
 {

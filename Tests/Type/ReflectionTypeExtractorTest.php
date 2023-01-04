@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Tests\Fixtures\AbstractDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\ReflectionExtractableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AbstractDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ReflectionExtractableDummy;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 final class ReflectionTypeExtractorTest extends TestCase

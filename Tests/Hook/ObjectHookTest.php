@@ -6,7 +6,7 @@ namespace Symfony\Component\Marshaller\Tests\Hook;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Hook\ObjectHook;
-use Symfony\Component\Marshaller\Tests\Fixtures\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class ObjectHookTest extends TestCase
