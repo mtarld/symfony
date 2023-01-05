@@ -7,7 +7,6 @@ namespace Symfony\Component\Marshaller\Internal\Parser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonDictParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonListParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonNullableParser;
-use Symfony\Component\Marshaller\Internal\Parser\Json\JsonObjectParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonScalarParser;
 
 final class ParserFactory
@@ -31,7 +30,6 @@ final class ParserFactory
             scalarParser: new JsonScalarParser(),
             listParser: new JsonListParser(),
             dictParser: new JsonDictParser(),
-            objectParser: new JsonObjectParser(),
         );
     }
 }

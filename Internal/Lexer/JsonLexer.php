@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Internal\Lexer;
 
+use Symfony\Component\Marshaller\Internal\Exception\InvalidJsonException;
+
 final class JsonLexer implements LexerInterface
 {
     private const DICT_START = 1;
@@ -22,7 +24,7 @@ final class JsonLexer implements LexerInterface
 
     private const VALUE = self::DICT_START | self::LIST_START | self::SCALAR;
 
-    public function tokens(mixed $resource, array $context): \Generator
+    public function tokens(mixed $resource, array $context): \Iterator
     {
         $expectedType = self::VALUE;
         $structureStack = new \SplStack();
@@ -33,19 +35,21 @@ final class JsonLexer implements LexerInterface
             }
 
             if (!($type & $expectedType)) {
-                throw new \RuntimeException('Invalid JSON.');
+                // TODO better message
+                throw new InvalidJsonException();
             }
 
             if (self::SCALAR === $type) {
+                // TODO maybe yield the result for performances?
                 json_decode($token, flags: $context['json_decode_flags'] ?? 0);
 
                 if (JSON_ERROR_NONE !== json_last_error()) {
-                    throw new \RuntimeException('Invalid JSON.');
+                    throw new InvalidJsonException();
                 }
             }
 
             if (self::KEY === $type && !(str_starts_with($token, '"') && str_ends_with($token, '"'))) {
-                throw new \RuntimeException('Invalid JSON.');
+                throw new InvalidJsonException();
             }
 
             yield $token;
@@ -74,12 +78,12 @@ final class JsonLexer implements LexerInterface
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'list' === $currentStructure => self::COMMA | self::LIST_END,
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) => self::END,
 
-                default => throw new \RuntimeException('Invalid JSON.'),
+                default => throw new InvalidJsonException(),
             };
         }
 
         if (self::END !== $expectedType) {
-            throw new \RuntimeException('Invalid JSON.');
+            throw new InvalidJsonException();
         }
     }
 

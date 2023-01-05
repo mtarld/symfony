@@ -10,7 +10,7 @@ interface LexerInterface
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @return \Generator<string>
+     * @return \Iterator<string>
      */
-    public function tokens(mixed $resource, array $context): \Generator;
+    public function tokens(mixed $resource, array $context): \Iterator;
 }

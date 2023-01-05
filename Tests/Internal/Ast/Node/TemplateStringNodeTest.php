@@ -23,7 +23,7 @@ final class TemplateStringNodeTest extends TestCase
     }
 
     /**
-     * @return iterable<string, list<string|VariableNode>>
+     * @return iterable<array{0: string, 1: list<string|VariableNode>}>
      */
     public function compileDataProvider(): iterable
     {

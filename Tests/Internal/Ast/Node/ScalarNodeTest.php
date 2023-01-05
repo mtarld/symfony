@@ -20,7 +20,7 @@ final class ScalarNodeTest extends TestCase
     }
 
     /**
-     * @return iterable<string, mixed>
+     * @return iterable<array{0: string, 1: mixed}>
      */
     public function compileDataProvider(): iterable
     {

@@ -4,76 +4,18 @@ declare(strict_types=1);
 
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
+use Symfony\Component\Marshaller\Internal\Exception\InvalidTokenException;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
-use Symfony\Component\Marshaller\Internal\Parser\Parser;
-use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
+/**
+ * @internal
+ */
 final class JsonDictParser implements DictParserInterface
 {
-    public function parse(\Iterator $tokens, Type|UnionType $valueType, array $context, Parser $parser): array
+    public function parse(\Iterator $tokens, array $context): \Iterator
     {
         if ('{' !== $tokens->current()) {
-            throw new \InvalidArgumentException('Invalid JSON.');
-        }
-
-        $buffer = [];
-        $result = [];
-        $level = 0;
-        $key = null;
-
-        $tokens->next();
-
-        while ($tokens->valid()) {
-            $token = $tokens->current();
-            $tokens->next();
-
-            // TODO check null key and null value
-            if (0 === $level && '}' === $token) {
-                if (null !== $key) {
-                    $result[$key] = $parser->parse(new \ArrayIterator($buffer), $valueType, $context);
-                }
-
-                return $result;
-            }
-
-            if (null === $key) {
-                // TODO flags
-
-                /** @var string $key */
-                $key = \json_decode($token);
-
-                continue;
-            }
-
-            if (':' === $token) {
-                continue;
-            }
-
-            if (0 === $level && ',' === $token) {
-                $result[$key] = $parser->parse(new \ArrayIterator($buffer), $valueType, $context);
-                $key = null;
-                $buffer = [];
-
-                continue;
-            }
-
-            $buffer[] = $token;
-
-            if ('{' === $token) {
-                ++$level;
-            } elseif ('}' === $token) {
-                --$level;
-            }
-        }
-
-        return $result;
-    }
-
-    public function parseIterable(\Iterator $tokens, Type|UnionType $valueType, array $context, Parser $parser): iterable
-    {
-        if ('{' !== $tokens->current()) {
-            throw new \InvalidArgumentException('Invalid JSON.');
+            throw new InvalidTokenException('{', $tokens->current());
         }
 
         $tokens->next();
@@ -89,20 +31,19 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (null === $key) {
-                // TODO flags
-                $key = \json_decode($token);
+                $key = \json_decode($token, flags: $context['json_decode_flags'] ?? 0);
                 $tokens->next();
 
                 continue;
             }
 
-            if (\in_array($token, [',', ':'], true)) {
+            if (',' === $token || ':' === $token) {
                 $tokens->next();
 
                 continue;
             }
 
-            yield $key => $parser->parse($tokens, $valueType, $context);
+            yield $key;
 
             $key = null;
         }

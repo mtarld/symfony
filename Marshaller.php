@@ -100,6 +100,13 @@ final class Marshaller implements MarshallerInterface
         $context = $context ?? new Context();
         $rawContext = [];
 
+        // TODO
+        // $rawContext += [
+        //     'hooks' => [
+        //         'property' => (new PropertyHook($this->typeExtractor))(...),
+        //     ],
+        // ];
+
         foreach ($this->unmarshalContextBuilders as $builder) {
             $rawContext = $builder->build($type, $context, $rawContext);
         }
