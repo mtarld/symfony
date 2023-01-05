@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Internal\Template;
 
@@ -18,6 +23,8 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
  * @internal
  */
 final class ObjectTemplateGenerator
@@ -72,13 +79,13 @@ final class ObjectTemplateGenerator
             if (null !== $hook = $this->hookExtractor->extractFromProperty($property, $context)) {
                 $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
 
-                $propertyName = isset($hookResult['name']) ? $hookResult['name'] : $propertyName;
-                $propertyType = isset($hookResult['type']) ? $hookResult['type'] : $propertyType;
+                $propertyName = $hookResult['name'] ?? $propertyName;
+                $propertyType = $hookResult['type'] ?? $propertyType;
                 $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $propertyAccessor;
-                $propertyContext = isset($hookResult['context']) ? $hookResult['context'] : $propertyContext;
+                $propertyContext = $hookResult['context'] ?? $propertyContext;
             }
 
-            \array_push(
+            array_push(
                 $nodes,
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($propertySeparator)])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforePropertyName)])),

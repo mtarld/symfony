@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Internal\Lexer;
 
@@ -18,7 +23,7 @@ final class JsonLexerTest extends TestCase
     public function testTokenize(array $expectedTokens, string $content): void
     {
         /** @var resource $resource */
-        $resource = fopen('php://memory', 'w+b');
+        $resource = fopen('php://memory', 'w+');
 
         fwrite($resource, $content);
         rewind($resource);
@@ -48,7 +53,7 @@ final class JsonLexerTest extends TestCase
      */
     public function testTokenizeValidJson(string $file): void
     {
-        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'rb'), []));
+        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'r'), []));
 
         $this->addToAssertionCount(1);
     }
@@ -72,7 +77,7 @@ final class JsonLexerTest extends TestCase
     {
         $this->expectException(InvalidJsonException::class);
 
-        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'rb'), []));
+        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'r'), []));
     }
 
     /**
@@ -90,7 +95,7 @@ final class JsonLexerTest extends TestCase
     public function testTokenizeOverflowingBuffer(): void
     {
         /** @var resource $resource */
-        $resource = fopen('php://memory', 'w+b');
+        $resource = fopen('php://memory', 'w+');
 
         $veryLongString = str_repeat('.', 8192);
 

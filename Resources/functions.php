@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller;
 
@@ -23,7 +28,7 @@ if (!\function_exists('marshal')) {
      */
     function marshal(mixed $data, $resource, string $format, array $context = []): void
     {
-        $type = isset($context['type']) ? $context['type'] : get_debug_type($data);
+        $type = $context['type'] ?? get_debug_type($data);
         $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
         $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, md5($type), $format);
 
@@ -69,7 +74,7 @@ if (!\function_exists('marshal_generate')) {
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));
         $php = $compiler->source();
 
-        return '<?php'.PHP_EOL.PHP_EOL.$phpDoc.$php;
+        return '<?php'.\PHP_EOL.\PHP_EOL.$phpDoc.$php;
     }
 }
 

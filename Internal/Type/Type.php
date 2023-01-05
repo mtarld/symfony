@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Internal\Type;
 
@@ -11,6 +16,8 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\UnaryNode;
 
 /**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
  * @internal
  */
 final class Type implements \Stringable
@@ -39,7 +46,7 @@ final class Type implements \Stringable
         }
     }
 
-    public static function createFromString(string $string): Type|UnionType
+    public static function createFromString(string $string): self|UnionType
     {
         $currentTypeString = '';
         $typeStrings = [];
@@ -100,7 +107,7 @@ final class Type implements \Stringable
         }
 
         if ('null' === $string) {
-            return new Type('null');
+            return new self('null');
         }
 
         if ($isNullable = str_starts_with($string, '?')) {
@@ -112,15 +119,15 @@ final class Type implements \Stringable
         }
 
         if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
-            return new Type($string, $isNullable);
+            return new self($string, $isNullable);
         }
 
         if (class_exists($string) || interface_exists($string)) {
-            return new Type('object', $isNullable, $string);
+            return new self('object', $isNullable, $string);
         }
 
         $results = [];
-        if (\preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
+        if (preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
             $genericType = $results['type'];
             $genericParameters = [];
             $currentGenericParameter = '';
@@ -163,7 +170,7 @@ final class Type implements \Stringable
                 $className = $genericType;
             }
 
-            return new Type(
+            return new self(
                 name: $type,
                 isNullable: $isNullable,
                 isGeneric: true,
@@ -172,7 +179,7 @@ final class Type implements \Stringable
             );
         }
 
-        return new Type($string, $isNullable);
+        return new self($string, $isNullable);
     }
 
     public function name(): string
@@ -210,7 +217,7 @@ final class Type implements \Stringable
 
     public function isScalar(): bool
     {
-        return in_array($this->name, ['int', 'float', 'string', 'bool'], true);
+        return \in_array($this->name, ['int', 'float', 'string', 'bool'], true);
     }
 
     public function isNull(): bool
@@ -257,7 +264,7 @@ final class Type implements \Stringable
         return $this->isCollection() && !$this->isList();
     }
 
-    public function collectionKeyType(): Type|UnionType
+    public function collectionKeyType(): self|UnionType
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
@@ -266,7 +273,7 @@ final class Type implements \Stringable
         return $this->genericParameterTypes[0];
     }
 
-    public function collectionValueType(): Type|UnionType
+    public function collectionValueType(): self|UnionType
     {
         if (!$this->isCollection()) {
             throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));

@@ -1,16 +1,22 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
+
+use function Symfony\Component\Marshaller\marshal_generate;
+
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\CircularReferencingDummyLeft;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\CircularReferencingDummyRight;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\SelfReferencingDummy;
-
-use function Symfony\Component\Marshaller\marshal_generate;
 
 final class MarshalGenerateTest extends TestCase
 {

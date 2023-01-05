@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Stream;
 
@@ -11,7 +16,7 @@ final class StreamTest extends TestCase
 {
     public function testCreateStream(): void
     {
-        $stream = new class () extends Stream {
+        $stream = new class() extends Stream {
             public function __construct()
             {
                 parent::__construct('php://memory', 'w+b');
@@ -26,7 +31,7 @@ final class StreamTest extends TestCase
 
     public function testToString(): void
     {
-        $stream = new class () extends Stream {
+        $stream = new class() extends Stream {
             public function __construct()
             {
                 parent::__construct('php://memory', 'w+b');

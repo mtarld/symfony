@@ -1,12 +1,19 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Internal\Ast;
 
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
 
 /**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
  * @internal
  */
 final class Compiler
@@ -62,7 +69,7 @@ final class Compiler
 
     public function line(string $line): static
     {
-        $this->source .= str_repeat(' ', 4 * $this->indentationLevel).$line.PHP_EOL;
+        $this->source .= str_repeat(' ', 4 * $this->indentationLevel).$line.\PHP_EOL;
 
         return $this;
     }

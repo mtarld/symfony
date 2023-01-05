@@ -1,14 +1,20 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
 
 use function Symfony\Component\Marshaller\marshal;
+
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
 
 final class MarshalTest extends TestCase
 {
@@ -34,7 +40,7 @@ final class MarshalTest extends TestCase
     /**
      * @dataProvider marshalContentDataProvider
      */
-    public function testMarshalContent(mixed $data, ?string $type = null): void
+    public function testMarshalContent(mixed $data, string $type = null): void
     {
         $this->assertSame(json_encode($data), $this->marshalAsString($data, 'json', (null !== $type) ? ['type' => $type] : []));
     }
@@ -66,7 +72,7 @@ final class MarshalTest extends TestCase
     public function testMarshalContentWithJsonEncodeFlags(): void
     {
         $this->assertSame('"123"', $this->marshalAsString('123', 'json'));
-        $this->assertSame('123', $this->marshalAsString('123', 'json', ['json_encode_flags' => JSON_NUMERIC_CHECK]));
+        $this->assertSame('123', $this->marshalAsString('123', 'json', ['json_encode_flags' => \JSON_NUMERIC_CHECK]));
     }
 
     public function testCreateCacheFile(): void
@@ -113,7 +119,7 @@ final class MarshalTest extends TestCase
     private function marshalAsString(mixed $data, string $format, array $context = []): string
     {
         /** @var resource $resource */
-        $resource = fopen('php://temp', 'wb');
+        $resource = fopen('php://temp', 'w');
         marshal($data, $resource, 'json', $context);
 
         rewind($resource);

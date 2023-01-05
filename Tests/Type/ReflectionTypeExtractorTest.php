@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Type;
 
@@ -123,7 +128,7 @@ final class ReflectionTypeExtractorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/^Unexpected "[^"]+" type reflection\.$/');
 
-        $reflection = new class () extends \ReflectionType {
+        $reflection = new class() extends \ReflectionType {
         };
 
         $reflectionMethod = $this->createStub(\ReflectionFunction::class);

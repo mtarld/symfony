@@ -1,11 +1,21 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Internal\Lexer;
 
 use Symfony\Component\Marshaller\Internal\Exception\InvalidJsonException;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 final class JsonLexer implements LexerInterface
 {
     private const DICT_START = 1;
@@ -43,7 +53,7 @@ final class JsonLexer implements LexerInterface
                 // TODO maybe yield the result for performances?
                 json_decode($token, flags: $context['json_decode_flags'] ?? 0);
 
-                if (JSON_ERROR_NONE !== json_last_error()) {
+                if (\JSON_ERROR_NONE !== json_last_error()) {
                     throw new InvalidJsonException();
                 }
             }
@@ -188,7 +198,7 @@ final class JsonLexer implements LexerInterface
                     continue;
                 }
 
-                if ('' === $token && in_array($byte, [' ', "\r", "\t", "\n"], true)) {
+                if ('' === $token && \in_array($byte, [' ', "\r", "\t", "\n"], true)) {
                     continue;
                 }
 

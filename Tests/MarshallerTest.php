@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests;
 
@@ -184,7 +189,7 @@ final class MarshallerTest extends TestCase
         $marshaller->marshal('1', 'json', $output = new MemoryStream());
         $this->assertSame('"1"', (string) $output);
 
-        $marshaller->marshal('1', 'json', $output = new MemoryStream(), new Context(new JsonEncodeFlagsOption(JSON_NUMERIC_CHECK)));
+        $marshaller->marshal('1', 'json', $output = new MemoryStream(), new Context(new JsonEncodeFlagsOption(\JSON_NUMERIC_CHECK)));
         $this->assertSame('1', (string) $output);
 
         $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStream(), new Context(new TypeOption('array<int, string>')));

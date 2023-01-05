@@ -1,12 +1,19 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Type;
 
 use phpDocumentor\Reflection\Types\ContextFactory;
 
 /**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
  * @internal
  */
 final class TypeNameResolver
@@ -78,7 +85,7 @@ final class TypeNameResolver
      */
     public function resolve(string $name): string
     {
-        if (in_array($name, $this->templateNames)) {
+        if (\in_array($name, $this->templateNames)) {
             return $name;
         }
 

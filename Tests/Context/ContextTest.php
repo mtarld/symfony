@@ -1,6 +1,11 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Symfony\Component\Marshaller\Tests\Context;
 
@@ -42,7 +47,7 @@ final class ContextTest extends TestCase
      */
     private function optionClasses(Context $context): array
     {
-        return array_map(fn ($o) => get_class($o), iterator_to_array($context));
+        return array_map(fn ($o) => $o::class, iterator_to_array($context));
     }
 }
 
