@@ -16,7 +16,7 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
  *
  * @internal
  */
-final class HookExtractor
+final class MarshalHookExtractor
 {
     /**
      * @param array<string, mixed> $context

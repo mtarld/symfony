@@ -15,7 +15,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\IfNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Internal\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
-use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
@@ -26,7 +26,7 @@ use Symfony\Component\Marshaller\Internal\Type\UnionType;
  */
 final class TemplateGenerator
 {
-    private readonly HookExtractor $hookExtractor;
+    private readonly MarshalHookExtractor $hookExtractor;
     private readonly UnionTemplateGenerator $unionGenerator;
 
     public function __construct(
@@ -35,7 +35,7 @@ final class TemplateGenerator
         private readonly ListTemplateGenerator $listGenerator,
         private readonly DictTemplateGenerator $dictGenerator,
     ) {
-        $this->hookExtractor = new HookExtractor();
+        $this->hookExtractor = new MarshalHookExtractor();
         $this->unionGenerator = new UnionTemplateGenerator($this);
     }
 

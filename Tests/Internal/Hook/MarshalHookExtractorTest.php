@@ -10,11 +10,11 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Hook;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 
-final class HookExtractorTest extends TestCase
+final class MarshalHookExtractorTest extends TestCase
 {
     /**
      * @dataProvider extractFromPropertyDataProvider
@@ -30,7 +30,7 @@ final class HookExtractorTest extends TestCase
         $property->method('getName')->willReturn('bar');
         $property->method('getDeclaringClass')->willReturn($class);
 
-        $this->assertSame($expectedHook, (new HookExtractor())->extractFromProperty($property, ['hooks' => $hooks]));
+        $this->assertSame($expectedHook, (new MarshalHookExtractor())->extractFromProperty($property, ['hooks' => $hooks]));
     }
 
     /**
@@ -54,7 +54,7 @@ final class HookExtractorTest extends TestCase
      */
     public function testExtractFromType(?callable $expectedHook, array $hooks, Type $type): void
     {
-        $this->assertSame($expectedHook, (new HookExtractor())->extractFromType($type, ['hooks' => $hooks]));
+        $this->assertSame($expectedHook, (new MarshalHookExtractor())->extractFromType($type, ['hooks' => $hooks]));
     }
 
     /**
@@ -138,7 +138,7 @@ final class HookExtractorTest extends TestCase
             $this->expectExceptionMessage($expectedExceptionMessage);
         }
 
-        (new HookExtractor())->extractFromProperty($property, ['hooks' => ['property' => $callable]]);
+        (new MarshalHookExtractor())->extractFromProperty($property, ['hooks' => ['property' => $callable]]);
 
         $this->addToAssertionCount(1);
     }
@@ -170,7 +170,7 @@ final class HookExtractorTest extends TestCase
             $this->expectExceptionMessage($expectedExceptionMessage);
         }
 
-        (new HookExtractor())->extractFromType(new Type('int'), ['hooks' => ['type' => $callable]]);
+        (new MarshalHookExtractor())->extractFromType(new Type('int'), ['hooks' => ['type' => $callable]]);
 
         $this->addToAssertionCount(1);
     }

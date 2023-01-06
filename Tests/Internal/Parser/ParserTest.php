@@ -17,6 +17,11 @@ use Symfony\Component\Marshaller\Internal\Parser\Parser;
 use Symfony\Component\Marshaller\Internal\Parser\ScalarParserInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithConstructorWithDefaultValues;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithConstructorWithNullableValues;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithConstructorWithRequiredValues;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithPrivateConstructor;
 
 final class ParserTest extends TestCase
 {
@@ -89,7 +94,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $parser = $this->createParser(nullableParser: $nullableParser, scalarParser: $scalarParser);
@@ -106,7 +111,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $parser = $this->createParser(scalarParser: $scalarParser);
@@ -123,7 +128,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->exactly(2))
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $listParser = $this->createMock(ListParserInterface::class);
@@ -147,7 +152,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $listParser = $this->createMock(ListParserInterface::class);
@@ -171,7 +176,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->exactly(2))
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $listParser = $this->createMock(ListParserInterface::class);
@@ -196,7 +201,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $listParser = $this->createMock(ListParserInterface::class);
@@ -227,7 +232,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->exactly(2))
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $dictParser = $this->createMock(DictParserInterface::class);
@@ -251,7 +256,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $dictParser = $this->createMock(DictParserInterface::class);
@@ -275,7 +280,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->exactly(2))
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $dictParser = $this->createMock(DictParserInterface::class);
@@ -300,7 +305,7 @@ final class ParserTest extends TestCase
         $scalarParser
             ->expects($this->once())
             ->method('parse')
-            ->with($tokens)
+            ->with($tokens, new Type('string'))
             ->willReturn('SCALAR');
 
         $dictParser = $this->createMock(DictParserInterface::class);
@@ -325,11 +330,117 @@ final class ParserTest extends TestCase
 
     public function testParseObject(): void
     {
-        // TODO test hooks
-        // TODO test hooks validation
-        // TODO test object instantiation
+        $object = new class() {
+            public string $foo = 'default';
+            public string $bar = 'default';
+            public string $baz = 'default';
+        };
 
-        $this->markTestSkipped();
+        $tokens = new \ArrayIterator();
+
+        $scalarParser = $this->createMock(ScalarParserInterface::class);
+        $scalarParser
+            ->expects($this->exactly(2))
+            ->method('parse')
+            ->with($tokens, new Type('string'))
+            ->willReturn('SCALAR');
+
+        $dictParser = $this->createMock(DictParserInterface::class);
+        $dictParser
+            ->expects($this->once())
+            ->method('parse')
+            ->with($tokens)
+            ->willReturn(new \ArrayIterator(['foo', 'bar']));
+
+        $parser = $this->createParser(scalarParser: $scalarParser, dictParser: $dictParser);
+        $value = $parser->parse($tokens, Type::createFromString($object::class), []);
+
+        $expectedObject = clone $object;
+        $expectedObject->foo = 'SCALAR';
+        $expectedObject->bar = 'SCALAR';
+
+        $this->assertEquals($expectedObject, $value);
+    }
+
+    public function testParseObjectWithHooks(): void
+    {
+        $object = new class() {
+            public string $foo = 'default';
+        };
+
+        $parsedValue = null;
+        $tokens = new \ArrayIterator();
+
+        $scalarParser = $this->createMock(ScalarParserInterface::class);
+        $scalarParser
+            ->expects($this->once())
+            ->method('parse')
+            ->with($tokens, new Type('string'))
+            ->willReturn('SCALAR');
+
+        $dictParser = $this->createMock(DictParserInterface::class);
+        $dictParser
+            ->expects($this->once())
+            ->method('parse')
+            ->with($tokens)
+            ->willReturn(new \ArrayIterator(['fooAlias']));
+
+        $parser = $this->createParser(scalarParser: $scalarParser, dictParser: $dictParser);
+        $value = $parser->parse($tokens, Type::createFromString($object::class), [
+            'hooks' => [
+                $object::class => [
+                    'fooAlias' => static function (\ReflectionClass $reflection, object $object, callable $value, array $context) use (&$parsedValue): void {
+                        $parsedValue = $value('string', $context);
+                        $object->foo = 'HOOK_VALUE';
+                    },
+                ],
+            ],
+        ]);
+
+        $expectedObject = clone $object;
+        $expectedObject->foo = 'HOOK_VALUE';
+
+        $this->assertSame('SCALAR', $parsedValue);
+        $this->assertEquals($expectedObject, $value);
+    }
+
+    public function testInstantiateObjectWithoutConstructor(): void
+    {
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(ClassicDummy::class), []);
+
+        $this->assertEquals(new ClassicDummy(), $value);
+    }
+
+    public function testInstantiateObjectWithPrivateConstructor(): void
+    {
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithPrivateConstructor::class), []);
+
+        $this->assertInstanceOf(DummyWithPrivateConstructor::class, $value);
+        $this->assertSame(1, $value->id);
+    }
+
+    public function testInstantiateObjectWithConstructorWithDefaultValues(): void
+    {
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithConstructorWithDefaultValues::class), []);
+
+        $this->assertInstanceOf(DummyWithConstructorWithDefaultValues::class, $value);
+        $this->assertSame(1, $value->id);
+    }
+
+    public function testInstantiateObjectWithConstructorWithNullableValues(): void
+    {
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithConstructorWithNullableValues::class), []);
+
+        $this->assertInstanceOf(DummyWithConstructorWithNullableValues::class, $value);
+        $this->assertNull($value->id);
+    }
+
+    public function testInstantiateObjectWithConstructorWithRequiredValues(): void
+    {
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithConstructorWithRequiredValues::class), []);
+
+        $this->assertInstanceOf(DummyWithConstructorWithRequiredValues::class, $value);
+        $this->assertSame(1, $value->id);
     }
 
     private function createParser(
@@ -350,12 +461,12 @@ final class ParserTest extends TestCase
 
         if (null === $listParser) {
             $listParser = $this->createStub(ListParserInterface::class);
-            $listParser->method('parse')->willReturn(new \ArrayIterator([null, null, null]));
+            $listParser->method('parse')->willReturn(new \ArrayIterator());
         }
 
         if (null === $dictParser) {
             $dictParser = $this->createStub(DictParserInterface::class);
-            $dictParser->method('parse')->willReturn(new \ArrayIterator(['foo', 'bar', 'baz']));
+            $dictParser->method('parse')->willReturn(new \ArrayIterator());
         }
 
         return new Parser($nullableParser, $scalarParser, $listParser, $dictParser);

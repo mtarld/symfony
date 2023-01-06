@@ -18,7 +18,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\PropertyNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
@@ -31,7 +31,7 @@ final class ObjectTemplateGenerator
 {
     use VariableNameScoperTrait;
 
-    private readonly HookExtractor $hookExtractor;
+    private readonly MarshalHookExtractor $hookExtractor;
     private readonly ReflectionTypeExtractor $reflectionTypeExtractor;
 
     /**
@@ -45,7 +45,7 @@ final class ObjectTemplateGenerator
         private readonly string $afterPropertyName,
         private readonly \Closure $propertyNameEscaper,
     ) {
-        $this->hookExtractor = new HookExtractor();
+        $this->hookExtractor = new MarshalHookExtractor();
         $this->reflectionTypeExtractor = new ReflectionTypeExtractor();
     }
 

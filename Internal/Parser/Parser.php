@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Symfony package.
  * (c) Fabien Potencier <fabien@symfony.com>
@@ -9,6 +11,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Internal\Hook\UnmarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
@@ -20,7 +23,8 @@ use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
  */
 final class Parser
 {
-    private readonly ReflectionTypeExtractor $reflectionTypeExtractor;
+    private UnmarshalHookExtractor|null $hookExtractor = null;
+    private ReflectionTypeExtractor|null $reflectionTypeExtractor = null;
 
     public function __construct(
         private readonly NullableParserInterface $nullableParser,
@@ -28,7 +32,6 @@ final class Parser
         private readonly ListParserInterface $listParser,
         private readonly DictParserInterface $dictParser,
     ) {
-        $this->reflectionTypeExtractor = new ReflectionTypeExtractor();
     }
 
     /**
@@ -111,12 +114,15 @@ final class Parser
      */
     private function parseObject(\Iterator $tokens, Type $type, array $context): object
     {
+        $this->hookExtractor = $this->hookExtractor ?? new UnmarshalHookExtractor();
+        $this->reflectionTypeExtractor = $this->reflectionTypeExtractor ?? new ReflectionTypeExtractor();
+
         $reflection = new \ReflectionClass($type->className());
-        $object = $reflection->newInstanceWithoutConstructor();
+        $object = $this->instantiateObject($reflection);
 
         foreach ($this->dictParser->parse($tokens, $context) as $key) {
-            if (null !== ($hook = $context['hooks'][$reflection->getName()][$key] ?? null)) {
-                $hook($reflection, $object, $context, fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context));
+            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
+                $hook($reflection, $object, fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context), $context);
 
                 continue;
             }
@@ -125,5 +131,43 @@ final class Parser
         }
 
         return $object;
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param \ReflectionClass<T> $reflection
+     *
+     * @return T
+     */
+    private function instantiateObject(\ReflectionClass $reflection): object
+    {
+        if (null === $constructor = $reflection->getConstructor()) {
+            return new ($reflection->getName())();
+        }
+
+        if (!$constructor->isPublic()) {
+            return $reflection->newInstanceWithoutConstructor();
+        }
+
+        $constructorParameters = [];
+
+        foreach ($constructor->getParameters() as $constructorParameter) {
+            if ($constructorParameter->isDefaultValueAvailable()) {
+                $constructorParameters[] = $constructorParameter->getDefaultValue();
+
+                continue;
+            }
+
+            if ($constructorParameter->hasType() && $constructorParameter->getType()?->allowsNull()) {
+                $constructorParameters[] = null;
+
+                continue;
+            }
+
+            return $reflection->newInstanceWithoutConstructor();
+        }
+
+        return $reflection->newInstanceArgs($constructorParameters);
     }
 }
