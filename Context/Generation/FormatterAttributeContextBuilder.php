@@ -32,6 +32,9 @@ final class FormatterAttributeContextBuilder implements GenerationContextBuilder
 
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
+                if (null === $attributeInstance->marshalFormatter) {
+                    break;
+                }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
                 $rawContext['symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshalFormatter;

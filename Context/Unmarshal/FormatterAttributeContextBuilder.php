@@ -32,6 +32,9 @@ final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderI
 
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
+                if (null === $attributeInstance->unmarshalFormatter) {
+                    break;
+                }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
                 $rawContext['symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshalFormatter;

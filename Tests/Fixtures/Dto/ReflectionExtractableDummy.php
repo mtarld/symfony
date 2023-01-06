@@ -39,72 +39,72 @@ final class ReflectionExtractableDummy extends AbstractDummy
 
     public $undefined;
 
-    public function mixed(): mixed
+    public function mixed(mixed $_): mixed
     {
         return $this->mixed;
     }
 
-    public function int(): int
+    public function int(int $_): int
     {
         return $this->int;
     }
 
-    public function string(): string
+    public function string(string $_): string
     {
         return $this->string;
     }
 
-    public function float(): float
+    public function float(float $_): float
     {
         return $this->float;
     }
 
-    public function bool(): bool
+    public function bool(bool $_): bool
     {
         return $this->bool;
     }
 
-    public function array(): array
+    public function array(array $_): array
     {
         return $this->array;
     }
 
-    public function self(): self
+    public function self(self $_): self
     {
         return $this->self;
     }
 
-    public function parent(): parent
+    public function parent(parent $_): parent
     {
         return $this->parent;
     }
 
-    public function class(): ClassicDummy
+    public function class(ClassicDummy $_): ClassicDummy
     {
         return $this->class;
     }
 
-    public function union(): string|int
+    public function union(string|int $_): string|int
     {
         return $this->union;
     }
 
-    public function intersection(): \Stringable&\Countable
+    public function intersection(\Stringable&\Countable $_): \Stringable&\Countable
     {
         return $this->intersection;
     }
 
-    public function nullableBuiltin(): ?int
+    public function nullableBuiltin(?int $_): ?int
     {
         return $this->nullableBuiltin;
     }
 
-    public function nullableClass(): ?ClassicDummy
+    public function nullableClass(?ClassicDummy $_): ?ClassicDummy
     {
         return $this->nullableClass;
     }
 
-    public function nullableUnion(): string|int|null
+    public function nullableUnion(string|int|null $_): string|int|null
     {
         return $this->nullableUnion;
     }
@@ -118,7 +118,7 @@ final class ReflectionExtractableDummy extends AbstractDummy
         exit;
     }
 
-    public function undefined()
+    public function undefined($_)
     {
     }
 }

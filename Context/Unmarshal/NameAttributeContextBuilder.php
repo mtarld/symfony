@@ -32,9 +32,7 @@ final class NameAttributeContextBuilder implements UnmarshalContextBuilderInterf
 
                 /** @var Name $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
-
-                $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['unmarshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
+                $rawContext['symfony']['unmarshal']['property_name'][$property->getDeclaringClass()->getName()][$attributeInstance->name] = $property->getName();
 
                 break;
             }

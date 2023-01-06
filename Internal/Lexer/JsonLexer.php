@@ -45,7 +45,6 @@ final class JsonLexer implements LexerInterface
             }
 
             if (!($type & $expectedType)) {
-                // TODO better message
                 throw new InvalidJsonException();
             }
 

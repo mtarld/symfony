@@ -128,7 +128,13 @@ final class Parser
 
         foreach ($this->dictParser->parse($tokens, $context) as $key) {
             if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
-                $hook($reflection, $object, fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context), $context);
+                $hook(
+                    $reflection,
+                    $object,
+                    $key,
+                    fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context),
+                    $context,
+                );
 
                 continue;
             }

@@ -18,6 +18,8 @@ interface TypeExtractorInterface
 
     public function extractFromReturnType(\ReflectionFunctionAbstract $function): string;
 
+    public function extractFromParameter(\ReflectionParameter $parameter): string;
+
     /**
      * @param \ReflectionClass<object> $class
      *

@@ -12,14 +12,14 @@ namespace Symfony\Component\Marshaller\Stream;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-abstract class Stream implements StreamInterface
+class Stream implements StreamInterface
 {
     /**
      * @var resource
      */
     protected $stream;
 
-    protected function __construct(
+    public function __construct(
         protected readonly string $filename,
         protected readonly string $mode,
     ) {

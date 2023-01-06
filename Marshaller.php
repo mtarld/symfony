@@ -13,9 +13,10 @@ use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\MarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Hook\ObjectHook;
-use Symfony\Component\Marshaller\Hook\PropertyHook;
-use Symfony\Component\Marshaller\Hook\TypeHook;
+use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook as MarshalObjectHook;
+use Symfony\Component\Marshaller\Hook\Marshal\PropertyHook as MarshalPropertyHook;
+use Symfony\Component\Marshaller\Hook\Marshal\TypeHook as MarshalTypeHook;
+use Symfony\Component\Marshaller\Hook\Unmarshal\PropertyHook as UnmarshalPropertyHook;
 use Symfony\Component\Marshaller\Stream\StreamInterface;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -87,9 +88,9 @@ final class Marshaller implements MarshallerInterface
 
         $rawContext += [
             'hooks' => [
-                'object' => (new ObjectHook($this->typeExtractor))(...),
-                'property' => (new PropertyHook($this->typeExtractor))(...),
-                'type' => (new TypeHook($this->typeExtractor))(...),
+                'object' => (new MarshalObjectHook($this->typeExtractor))(...),
+                'property' => (new MarshalPropertyHook($this->typeExtractor))(...),
+                'type' => (new MarshalTypeHook($this->typeExtractor))(...),
             ],
         ];
 
@@ -108,12 +109,11 @@ final class Marshaller implements MarshallerInterface
         $context = $context ?? new Context();
         $rawContext = [];
 
-        // TODO
-        // $rawContext += [
-        //     'hooks' => [
-        //         'property' => (new PropertyHook($this->typeExtractor))(...),
-        //     ],
-        // ];
+        $rawContext += [
+            'hooks' => [
+                'property' => (new UnmarshalPropertyHook($this->typeExtractor))(...),
+            ],
+        ];
 
         foreach ($this->unmarshalContextBuilders as $builder) {
             $rawContext = $builder->build($type, $context, $rawContext);

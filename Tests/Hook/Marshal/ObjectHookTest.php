@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Hook;
+namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Hook\ObjectHook;
+use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 

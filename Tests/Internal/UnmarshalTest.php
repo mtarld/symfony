@@ -77,10 +77,10 @@ final class UnmarshalTest extends TestCase
         $value = $this->unmarshalString('{"@id": 123, "name": "thename"}', ClassicDummy::class, context: [
             'hooks' => [
                 ClassicDummy::class => [
-                    '@id' => static function (\ReflectionClass $reflection, object $object, callable $value, array $context): void {
+                    '@id' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
                         $object->id = $value('int', $context);
                     },
-                    'name' => static function (\ReflectionClass $reflection, object $object, callable $value, array $context): void {
+                    'name' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
                         $object->name = 'HOOK_VALUE';
                     },
                 ],

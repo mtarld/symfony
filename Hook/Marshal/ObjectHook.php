@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Hook;
+namespace Symfony\Component\Marshaller\Hook\Marshal;
 
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 

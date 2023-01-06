@@ -22,36 +22,62 @@ final class UnmarshalHookExtractor
      */
     public function extractFromKey(string $className, string $key, array $context): ?callable
     {
-        if (null === ($hook = $context['hooks'][$className][$key] ?? null)) {
+        if (null === $findHookResult = $this->findHook($className, $key, $context)) {
             return null;
         }
 
+        [$hookName, $hook] = $findHookResult;
+
         $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
-        if (4 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" of "%s" must have exactly 4 arguments.', $key, $className));
+        if (5 !== \count($reflection->getParameters())) {
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 5 arguments.', $hookName));
         }
 
         $classParameterType = $reflection->getParameters()[0]->getType();
         if (!$classParameterType instanceof \ReflectionNamedType || \ReflectionClass::class !== $classParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" of "%s" must have a "%s" for first argument.', $key, $className, \ReflectionClass::class));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionClass::class));
         }
 
         $objectParameterType = $reflection->getParameters()[1]->getType();
         if (!$objectParameterType instanceof \ReflectionNamedType || 'object' !== $objectParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" of "%s" must have an "object" for second argument.', $key, $className));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "object" for second argument.', $hookName));
         }
 
-        $valueParameterType = $reflection->getParameters()[2]->getType();
+        $nameParameterType = $reflection->getParameters()[2]->getType();
+        if (!$nameParameterType instanceof \ReflectionNamedType || 'string' !== $nameParameterType->getName()) {
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
+        }
+
+        $valueParameterType = $reflection->getParameters()[3]->getType();
         if (!$valueParameterType instanceof \ReflectionNamedType || 'callable' !== $valueParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" of "%s" must have a "callable" for third argument.', $key, $className));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "callable" for fourth argument.', $hookName));
         }
 
-        $contextParameterType = $reflection->getParameters()[3]->getType();
+        $contextParameterType = $reflection->getParameters()[4]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" of "%s" must have an "array" for fourth argument.', $key, $className));
+            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fifth argument.', $hookName));
         }
 
         return $hook;
+    }
+
+    /**
+     * @param class-string         $className
+     * @param array<string, mixed> $context
+     *
+     * @return array{0: string, 1: callable}|null
+     */
+    private function findHook(string $className, string $key, array $context): ?array
+    {
+        if (null !== ($hook = $context['hooks'][$className][$key] ?? null)) {
+            return [sprintf('%s: %s', $className, $key), $hook];
+        }
+
+        if (null !== ($hook = $context['hooks']['property'] ?? null)) {
+            return ['property', $hook];
+        }
+
+        return null;
     }
 }

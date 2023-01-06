@@ -33,6 +33,11 @@ final class DummyWithMethods
         return (string) (3 * $value);
     }
 
+    public static function noArgument(): string
+    {
+        return 'string';
+    }
+
     public static function void(): void
     {
     }

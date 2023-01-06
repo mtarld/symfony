@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Type;
 
 use PHPStan\PhpDocParser\Ast\PhpDoc\InvalidTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
@@ -62,9 +63,26 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
     }
 
-    private function getTypeNode(\ReflectionProperty|\ReflectionFunctionAbstract $reflection): ?TypeNode
+    public function extractFromParameter(\ReflectionParameter $parameter): string
     {
-        if (null === $rawDocNode = $reflection->getDocComment() ?: null) {
+        if (null === $typeNode = $this->getTypeNode($parameter)) {
+            return $this->decoratedTypeExtractor->extractFromParameter($parameter);
+        }
+
+        $function = $parameter->getDeclaringFunction();
+        $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+
+        if (null === $declaringClass) {
+            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+        }
+
+        return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
+    }
+
+    private function getTypeNode(\ReflectionProperty|\ReflectionFunctionAbstract|\ReflectionParameter $reflection): ?TypeNode
+    {
+        $rawDocNode = $reflection instanceof \ReflectionParameter ? $reflection->getDeclaringFunction()->getDocComment() : $reflection->getDocComment();
+        if (!$rawDocNode) {
             return null;
         }
 
@@ -72,11 +90,16 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         $docNode = $this->phpstanDocParser->parse($tokens);
         $tokens->consumeTokenType(Lexer::TOKEN_END);
 
-        $tagName = $reflection instanceof \ReflectionProperty ? '@var' : '@return';
+        $tagName = match (true) {
+            $reflection instanceof \ReflectionProperty => '@var',
+            $reflection instanceof \ReflectionFunctionAbstract => '@return',
+            $reflection instanceof \ReflectionParameter => '@param',
+        };
 
-        $tag = $docNode->getTagsByName($tagName)[0] ?? null;
+        $tags = $docNode->getTagsByName($tagName);
+        $tag = reset($tags) ?: null;
 
-        /** @var VarTagValueNode|ReturnTagValueNode|InvalidTagValueNode|null $tagValue */
+        /** @var VarTagValueNode|ReturnTagValueNode|ParamTagValueNode|InvalidTagValueNode|null $tagValue */
         $tagValue = $tag?->value;
 
         if (null === $tagValue || $tagValue instanceof InvalidTagValueNode) {

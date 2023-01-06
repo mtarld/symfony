@@ -104,10 +104,40 @@ final class PhpstanTypeExtractorTest extends TestCase
     }
 
     /**
+     * @dataProvider typesDataProvider
+     */
+    public function testExtractFromParameter(string $expectedType, string $method): void
+    {
+        $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
+        $fallbackExtractor->method('extractFromParameter')->willReturn('FALLBACK');
+
+        $extractor = new PhpstanTypeExtractor($fallbackExtractor);
+
+        $reflectionParameter = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod($method)->getParameters()[0];
+
+        $this->assertSame($expectedType, $extractor->extractFromParameter($reflectionParameter));
+    }
+
+    public function testExtractClassTypeFromParameter(): void
+    {
+        $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
+        $fallbackExtractor->method('extractFromParameter')->willReturn('FALLBACK');
+
+        $extractor = new PhpstanTypeExtractor($fallbackExtractor);
+
+        /** @param self $_ */
+        $selfReflectionFunction = new \ReflectionFunction(function ($_) {
+        });
+
+        $this->assertSame(self::class, $extractor->extractFromParameter($selfReflectionFunction->getParameters()[0]));
+    }
+
+    /**
      * @return iterable<array{0: string, 1: string, 2: bool}>
      */
     public function typesDataProvider(): iterable
     {
+        yield ['mixed', 'mixed'];
         yield ['bool', 'bool'];
         yield ['bool', 'boolean'];
         yield ['bool', 'true'];

@@ -15,10 +15,13 @@ namespace Symfony\Component\Marshaller\Tests\Fixtures\Dto;
  */
 final class PhpstanExtractableDummy extends AbstractDummy
 {
+    /** @var mixed */
+    public $mixed;
+
     /** @var bool */
     public $bool;
 
-    /** @var bool */
+    /** @var boolean */
     public $boolean;
 
     /** @var true */
@@ -30,7 +33,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
     /** @var int */
     public $int;
 
-    /** @var int */
+    /** @var integer */
     public $integer;
 
     /** @var float */
@@ -119,206 +122,352 @@ final class PhpstanExtractableDummy extends AbstractDummy
 
     public $undefined;
 
-    /** @return bool */
-    public function bool()
+    /**
+     * @param mixed $_
+     *
+     * @return mixed
+     */
+    public function mixed($_)
+    {
+        return $this->mixed;
+    }
+
+    /**
+     * @param bool $_
+     *
+     * @return bool
+     */
+    public function bool($_)
     {
         return $this->bool;
     }
 
-    /** @return bool */
-    public function boolean()
+    /**
+     * @param boolean $_
+     *
+     * @return boolean
+     */
+    public function boolean($_)
     {
         return $this->boolean;
     }
 
-    /** @return true */
-    public function true()
+    /**
+     * @param true $_
+     *
+     * @return true
+     */
+    public function true($_)
     {
         return $this->true;
     }
 
-    /** @return false */
-    public function false()
+    /**
+     * @param false $_
+     *
+     * @return false
+     */
+    public function false($_)
     {
         return $this->false;
     }
 
-    /** @return int */
-    public function int()
+    /**
+     * @param int $_
+     *
+     * @return int
+     */
+    public function int($_)
     {
         return $this->int;
     }
 
-    /** @return int */
-    public function integer()
+    /**
+     * @param integer $_
+     *
+     * @return integer
+     */
+    public function integer($_)
     {
         return $this->integer;
     }
 
-    /** @return float */
-    public function float()
+    /**
+     * @param float $_
+     *
+     * @return float
+     */
+    public function float($_)
     {
         return $this->float;
     }
 
-    /** @return string */
-    public function string()
+    /**
+     * @param string $_
+     *
+     * @return string
+     */
+    public function string($_)
     {
         return $this->string;
     }
 
-    /** @return resource */
-    public function resource()
+    /**
+     * @param resource $_
+     *
+     * @return resource
+     */
+    public function resource($_)
     {
         return $this->resource;
     }
 
-    /** @return object */
-    public function object()
+    /**
+     * @param object $_
+     *
+     * @return object
+     */
+    public function object($_)
     {
         return $this->object;
     }
 
-    /** @return callable */
-    public function callable()
+    /**
+     * @param callable $_
+     *
+     * @return callable
+     */
+    public function callable($_)
     {
         return $this->callable;
     }
 
-    /** @return array */
-    public function array()
+    /**
+     * @param array $_
+     *
+     * @return array
+     */
+    public function array($_)
     {
         return $this->array;
     }
 
-    /** @return list */
-    public function list()
+    /**
+     * @param list $_
+     *
+     * @return list
+     */
+    public function list($_)
     {
         return $this->list;
     }
 
-    /** @return iterable */
-    public function iterable()
+    /**
+     * @param iterable $_
+     *
+     * @return iterable
+     */
+    public function iterable($_)
     {
         return $this->iterable;
     }
 
-    /** @return non-empty-array */
-    public function nonEmptyArray()
+    /**
+     * @param non-empty-array $_
+     *
+     * @return non-empty-array
+     */
+    public function nonEmptyArray($_)
     {
         return $this->nonEmptyArray;
     }
 
-    /** @return non-empty-list */
-    public function nonEmptyList()
+    /**
+     * @param non-empty-list $_
+     *
+     * @return non-empty-list
+     */
+    public function nonEmptyList($_)
     {
         return $this->nonEmptyList;
     }
 
-    /** @return null */
-    public function null()
+    /**
+     * @param null $_
+     *
+     * @return null
+     */
+    public function null($_)
     {
         return $this->null;
     }
 
-    /** @return self */
-    public function self()
+    /**
+     * @param self $_
+     *
+     * @return self
+     */
+    public function self($_)
     {
         return $this->self;
     }
 
-    /** @return static */
-    public function static()
+    /**
+     * @param static $_
+     *
+     * @return static
+     */
+    public function static($_)
     {
         return $this->static;
     }
 
-    /** @return parent */
-    public function parent()
+    /**
+     * @param parent $_
+     *
+     * @return parent
+     */
+    public function parent($_)
     {
         return $this->parent;
     }
 
-    /** @return scoped */
-    public function scoped()
+    /**
+     * @param scoped $_
+     *
+     * @return scoped
+     */
+    public function scoped($_)
     {
         return $this->scoped;
     }
 
-    /** @return int|string */
-    public function union()
+    /**
+     * @param int|string $_
+     *
+     * @return int|string
+     */
+    public function union($_)
     {
         return $this->union;
     }
 
-    /** @return ?int */
-    public function nullable()
+    /**
+     * @param ?int $_
+     *
+     * @return ?int
+     */
+    public function nullable($_)
     {
         return $this->nullable;
     }
 
-    /** @return int|string|null */
-    public function nullableUnion()
+    /**
+     * @param int|string|null $_
+     *
+     * @return int|string|null
+     */
+    public function nullableUnion($_)
     {
         return $this->nullableUnion;
     }
 
-    /** @return list<string> */
-    public function genericList()
+    /**
+     * @param list<string> $_
+     *
+     * @return list<string>
+     */
+    public function genericList($_)
     {
         return $this->genericList;
     }
 
-    /** @return array<string> */
-    public function genericArrayList()
+    /**
+     * @param array<string> $_
+     *
+     * @return array<string>
+     */
+    public function genericArrayList($_)
     {
         return $this->genericArrayList;
     }
 
-    /** @return array<string, string> */
-    public function genericDict()
+    /**
+     * @param array<string, string> $_
+     *
+     * @return array<string, string>
+     */
+    public function genericDict($_)
     {
         return $this->genericDict;
     }
 
-    /** @return string[] */
-    public function squareBracketList()
+    /**
+     * @param string[] $_
+     *
+     * @return string[]
+     */
+    public function squareBracketList($_)
     {
         return $this->squareBracketList;
     }
 
-    /** @return array{foo: int, bar: string} */
-    public function bracketList()
+    /**
+     * @param array{foo: int, bar: string} $_
+     *
+     * @return array{foo: int, bar: string}
+     */
+    public function bracketList($_)
     {
         return $this->bracketList;
     }
 
-    /** @return array{} */
-    public function emptyBracketList()
+    /**
+     * @param array{} $_
+     *
+     * @return array{}
+     */
+    public function emptyBracketList($_)
     {
         return $this->emptyBracketList;
     }
 
-    /** @return int&string */
-    public function intersection()
+    /**
+     * @param int&string $_
+     *
+     * @return int&string
+     */
+    public function intersection($_)
     {
         return $this->intersection;
     }
 
-    /** @return \ArrayIterator<Tk, Tv> */
-    public function generic()
+    /**
+     * @param \ArrayIterator<Tk, Tv> $_
+     *
+     * @return \ArrayIterator<Tk, Tv>
+     */
+    public function generic($_)
     {
         return $this->generic;
     }
 
-    /** @return Tv */
-    public function genericParameter()
+    /**
+     * @param Tv $_
+     *
+     * @return Tv
+     */
+    public function genericParameter($_)
     {
         return $this->genericParameter;
     }
 
-    /** @return array[foo] */
-    public function unknown()
+    /**
+     * @param array[foo] $_
+     *
+     * @return array[foo]
+     */
+    public function unknown($_)
     {
         return $this->unknown;
     }
@@ -332,7 +481,7 @@ final class PhpstanExtractableDummy extends AbstractDummy
         exit;
     }
 
-    public function undefined()
+    public function undefined($_)
     {
         return $this->undefined;
     }

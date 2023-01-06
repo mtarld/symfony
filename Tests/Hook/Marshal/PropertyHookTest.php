@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Hook;
+namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Hook\PropertyHook;
+use Symfony\Component\Marshaller\Hook\Marshal\PropertyHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -89,7 +89,10 @@ final class PropertyHookTest extends TestCase
         ];
     }
 
-    public function testThrowWhenInvalidPropertyFormatterContextTypeParameter(): void
+    /**
+     * @dataProvider throwWhenWrongFormatterDataProvider
+     */
+    public function testThrowWhenWrongFormatter(string $exceptionMessage, callable $formatter): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
@@ -97,55 +100,36 @@ final class PropertyHookTest extends TestCase
             'symfony' => [
                 'marshal' => [
                     'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::invalidContextType(...),
+                        sprintf('%s::$id', ClassicDummy::class) => $formatter,
                     ],
                 ],
             ],
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class));
+        $this->expectExceptionMessage($exceptionMessage);
 
         (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
     }
 
-    public function testThrowWhenNonStaticMethodTypeFormatter(): void
+    /**
+     * @return iterable<array{0: string, 1: callable}>
+     */
+    public function throwWhenWrongFormatterDataProvider(): iterable
     {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => (new DummyWithMethods())->nonStatic(...),
-                    ],
-                ],
-            ],
+        yield [
+            sprintf('Property formatter "%s::$id" must be a static method.', ClassicDummy::class),
+            (new DummyWithMethods())->nonStatic(...),
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Property formatter "%s::$id" must be a static method.', ClassicDummy::class));
-
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
-    }
-
-    public function testThrowWhenVoidMethodTypeFormatter(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::void(...),
-                    ],
-                ],
-            ],
+        yield [
+            sprintf('Return type of property formatter "%s::$id" must not be "void" nor "never".', ClassicDummy::class),
+            DummyWithMethods::void(...),
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Return type of property formatter "%s::$id" must not be "void" nor "never".', ClassicDummy::class));
-
-        (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
+        yield [
+            sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class),
+            DummyWithMethods::invalidContextType(...),
+        ];
     }
 }

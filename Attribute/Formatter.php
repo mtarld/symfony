@@ -15,8 +15,8 @@ namespace Symfony\Component\Marshaller\Attribute;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class Formatter
 {
-    public readonly \Closure $marshalFormatter;
-    public readonly \Closure $unmarshalFormatter;
+    public readonly ?\Closure $marshalFormatter;
+    public readonly ?\Closure $unmarshalFormatter;
 
     /**
      * @param string|array{0: string, 1: string} $marshal
@@ -30,16 +30,15 @@ final class Formatter
             if (!\is_callable($marshal)) {
                 throw new \InvalidArgumentException(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', self::class));
             }
-
-            $this->marshalFormatter = \Closure::fromCallable($marshal);
         }
 
         if (null !== $unmarshal) {
             if (!\is_callable($unmarshal)) {
                 throw new \InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
             }
-
-            $this->unmarshalFormatter = \Closure::fromCallable($unmarshal);
         }
+
+        $this->marshalFormatter = null !== $marshal ? \Closure::fromCallable($marshal) : null;
+        $this->unmarshalFormatter = null !== $unmarshal ? \Closure::fromCallable($unmarshal) : null;
     }
 }

@@ -102,7 +102,7 @@ final class ReflectionTypeExtractorTest extends TestCase
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
 
-    public function testThrowIfCannotFindDeclaringClass(): void
+    public function testThrowIfCannotFindFunctionDeclaringClass(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Cannot find class related to "foo()".');
@@ -136,6 +136,40 @@ final class ReflectionTypeExtractorTest extends TestCase
         $reflectionMethod->method('getReturnType')->willReturn($reflection);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+    }
+
+    /**
+     * @dataProvider typesDataProvider
+     */
+    public function testExtractFromParameter(string $expectedType, string $method): void
+    {
+        $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod($method)->getParameters()[0];
+
+        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter));
+    }
+
+    public function testThrowIfCannotFindParameterDeclaringClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot find class related to "foo()".');
+
+        $reflectionFunction = $this->createStub(\ReflectionFunctionAbstract::class);
+        $reflectionFunction->method('getName')->willReturn('foo');
+
+        $reflectionParameter = $this->createStub(\ReflectionParameter::class);
+        $reflectionParameter->method('getDeclaringFunction')->willReturn($reflectionFunction);
+
+        (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter);
+    }
+
+    public function testThrowIfCannotFindParameterType(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Type of parameter "_" of "%s::undefined()" has not been defined.', ReflectionExtractableDummy::class));
+
+        $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined')->getParameters()[0];
+
+        (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter);
     }
 
     /**

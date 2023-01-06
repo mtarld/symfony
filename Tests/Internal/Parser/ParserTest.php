@@ -390,7 +390,7 @@ final class ParserTest extends TestCase
         $value = $parser->parse($tokens, Type::createFromString($object::class), [
             'hooks' => [
                 $object::class => [
-                    'fooAlias' => static function (\ReflectionClass $reflection, object $object, callable $value, array $context) use (&$parsedValue): void {
+                    'fooAlias' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context) use (&$parsedValue): void {
                         $parsedValue = $value('string', $context);
                         $object->foo = 'HOOK_VALUE';
                     },

@@ -39,6 +39,24 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $declaringClass);
     }
 
+    public function extractFromParameter(\ReflectionParameter $parameter): string
+    {
+        $function = $parameter->getDeclaringFunction();
+
+        /** @var \ReflectionClass<object>|null $declaringClass */
+        $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
+
+        if (null === $declaringClass) {
+            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+        }
+
+        if (null === $type = $parameter->getType()) {
+            throw new \InvalidArgumentException(sprintf('Type of parameter "%s" of "%s::%s()" has not been defined.', $parameter->getName(), $declaringClass->getName(), $function->getName()));
+        }
+
+        return $this->extractFromReflection($type, $declaringClass);
+    }
+
     /**
      * @param \ReflectionClass<object>|null $declaringClass
      */

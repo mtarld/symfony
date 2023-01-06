@@ -24,7 +24,7 @@ final class FormatterAttributeContextBuilderTest extends TestCase
             'symfony' => [
                 'unmarshal' => [
                     'property_formatter' => [
-                        sprintf('%s::$id', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::divideAndCastToInt(...),
+                        sprintf('%s::$%s', DummyWithFormatterAttributes::class, 'id') => DummyWithFormatterAttributes::divideAndCastToInt(...),
                     ],
                 ],
             ],
