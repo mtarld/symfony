@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * This file is part of the Symfony package.
  * (c) Fabien Potencier <fabien@symfony.com>
@@ -56,7 +54,15 @@ final class Parser
         }
 
         if ($type->isScalar()) {
-            return $this->scalarParser->parse($tokens, $type, $context);
+            $result = $this->scalarParser->parse($tokens, $type, $context);
+
+            return match ($type->name()) {
+                'int' => (int) $result,
+                'float' => (float) $result,
+                'string' => (string) $result,
+                'bool' => (bool) $result,
+                default => throw new \LogicException(sprintf('Cannot cast value to "%s".', $type->name())),
+            };
         }
 
         if ($type->isList()) {

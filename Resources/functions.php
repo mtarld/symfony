@@ -57,7 +57,6 @@ if (!\function_exists('marshal_generate')) {
 
         $context = $context + [
             'generated_classes' => [],
-            'hooks' => [],
             'variable_counters' => [],
         ];
 

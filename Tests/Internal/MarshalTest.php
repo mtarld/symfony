@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
 
 use function Symfony\Component\Marshaller\marshal;
 
@@ -38,17 +39,17 @@ final class MarshalTest extends TestCase
     }
 
     /**
-     * @dataProvider marshalContentDataProvider
+     * @dataProvider marshalDataProvider
      */
-    public function testMarshalContent(mixed $data, string $type = null): void
+    public function testMarshal(mixed $data, string $type = null): void
     {
-        $this->assertSame(json_encode($data), $this->marshalAsString($data, 'json', (null !== $type) ? ['type' => $type] : []));
+        $this->assertSame(json_encode($data), $this->marshalAsString($data, context: (null !== $type) ? ['type' => $type] : []));
     }
 
     /**
      * @return iterable<array{0: mixed, 1: string?}>
      */
-    public function marshalContentDataProvider(): iterable
+    public function marshalDataProvider(): iterable
     {
         yield [1];
         yield ['1'];
@@ -69,16 +70,16 @@ final class MarshalTest extends TestCase
         yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
     }
 
-    public function testMarshalContentWithJsonEncodeFlags(): void
+    public function testMarshalWithJsonEncodeFlags(): void
     {
-        $this->assertSame('"123"', $this->marshalAsString('123', 'json'));
-        $this->assertSame('123', $this->marshalAsString('123', 'json', ['json_encode_flags' => \JSON_NUMERIC_CHECK]));
+        $this->assertSame('"123"', $this->marshalAsString('123'));
+        $this->assertSame('123', $this->marshalAsString('123', context: ['json_encode_flags' => \JSON_NUMERIC_CHECK]));
     }
 
     public function testCreateCacheFile(): void
     {
         $cacheFileCount = \count(glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
-        $this->marshalAsString(1, 'json');
+        $this->marshalAsString(1);
 
         $this->assertCount($cacheFileCount + 1, glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
     }
@@ -92,7 +93,7 @@ final class MarshalTest extends TestCase
             rmdir($cacheDir);
         }
 
-        $this->marshalAsString(1, 'json', ['cache_dir' => $cacheDir]);
+        $this->marshalAsString(1, context: ['cache_dir' => $cacheDir]);
 
         $this->assertFileExists($cacheDir);
         $this->assertCount(1, glob($cacheDir.\DIRECTORY_SEPARATOR.'*'));
@@ -110,22 +111,27 @@ final class MarshalTest extends TestCase
 
         file_put_contents($cacheFilename, '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED_FILE"); };');
 
-        $this->assertSame('CACHED_FILE', $this->marshalAsString(1, 'json'));
+        $this->assertSame('CACHED_FILE', $this->marshalAsString(1));
+    }
+
+    public function testThrowOnUnknownFormat(): void
+    {
+        $this->expectException(UnknownFormatException::class);
+
+        marshal(null, fopen('php://temp', 'w'), 'unknown', []);
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function marshalAsString(mixed $data, string $format, array $context = []): string
+    private function marshalAsString(mixed $data, string $format = 'json', array $context = []): string
     {
         /** @var resource $resource */
         $resource = fopen('php://temp', 'w');
-        marshal($data, $resource, 'json', $context);
+        marshal($data, $resource, $format, $context);
 
         rewind($resource);
-        $string = stream_get_contents($resource);
-        fclose($resource);
 
-        return $string;
+        return stream_get_contents($resource);
     }
 }

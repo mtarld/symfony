@@ -42,9 +42,9 @@ final class ParserTest extends TestCase
             ->method('parse');
 
         $parser = $this->createParser(scalarParser: $scalarParser, listParser: $listParser);
-        $value = $parser->parse(new \ArrayIterator(), new UnionType([new Type('int'), Type::createFromString('array<string, string>')]), [
+        $value = $parser->parse(new \ArrayIterator(), new UnionType([new Type('string'), Type::createFromString('array<string, string>')]), [
             'union_selector' => [
-                'int|array<string, string>' => 'int',
+                'string|array<string, string>' => 'string',
             ],
         ]);
 
@@ -218,6 +218,7 @@ final class ParserTest extends TestCase
 
         $result = [];
         foreach ($value as $v) {
+            $this->assertInstanceOf(\Generator::class, $v);
             $result[] = iterator_to_array($v);
         }
 

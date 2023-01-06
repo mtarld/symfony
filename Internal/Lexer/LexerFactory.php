@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Lexer;
 
+use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -24,7 +26,7 @@ final class LexerFactory
     {
         return match ($format) {
             'json' => new JsonLexer(),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format)),
+            default => throw new UnknownFormatException($format),
         };
     }
 }

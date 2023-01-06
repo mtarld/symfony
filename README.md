@@ -6,7 +6,7 @@
 ## Unmarshal
 - Unmarshal name and formatter hook (property hook)
 - UTF-8 BOM
-- tests (hooks, context generation, internal unmarshal, unmarshal)
+- tests (hooks, context generation, unmarshal)
 - create dedicated exceptions and wrap native ones
 
 ## Questions

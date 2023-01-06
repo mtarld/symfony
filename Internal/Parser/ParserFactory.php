@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonDictParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonListParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonNullableParser;
@@ -29,7 +30,7 @@ final class ParserFactory
     {
         return match ($format) {
             'json' => self::createJson(),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" format.', $format)),
+            default => throw new UnknownFormatException($format),
         };
     }
 

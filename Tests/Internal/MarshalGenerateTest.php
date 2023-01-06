@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
 
 use function Symfony\Component\Marshaller\marshal_generate;
 
@@ -332,14 +333,6 @@ final class MarshalGenerateTest extends TestCase
             ], ];
     }
 
-    public function testThrowOnUnknownFormat(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown "foo" format.');
-
-        marshal_generate('int', 'foo');
-    }
-
     /**
      * @dataProvider checkForCircularReferencesDataProvider
      */
@@ -379,5 +372,12 @@ final class MarshalGenerateTest extends TestCase
         yield [CircularReferencingDummyRight::class, sprintf('array<int, %s>', CircularReferencingDummyRight::class)];
         yield [CircularReferencingDummyRight::class, sprintf('array<string, %s>', CircularReferencingDummyRight::class)];
         yield [CircularReferencingDummyRight::class, sprintf('%s|%1$s', CircularReferencingDummyRight::class)];
+    }
+
+    public function testThrowOnUnknownFormat(): void
+    {
+        $this->expectException(UnknownFormatException::class);
+
+        marshal_generate('int', 'unknown', []);
     }
 }
