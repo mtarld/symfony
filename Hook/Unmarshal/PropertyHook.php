@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Hook\Unmarshal;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 /**
@@ -54,22 +55,22 @@ final class PropertyHook
     private function validateFormatter(\ReflectionFunction $reflection, string $propertyIdentifier): void
     {
         if (!$reflection->getClosureScopeClass()?->hasMethod($reflection->getName()) || !$reflection->isStatic()) {
-            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
         }
 
         if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
-            throw new \InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
         }
 
         if (\count($reflection->getParameters()) < 1) {
-            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must have at least one argument.', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Property formatter "%s" must have at least one argument.', $propertyIdentifier));
         }
 
         if (null !== ($contextParameter = $reflection->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
+                throw new InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
             }
         }
     }

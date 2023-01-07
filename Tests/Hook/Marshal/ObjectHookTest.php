@@ -10,6 +10,8 @@
 namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -45,17 +47,15 @@ final class ObjectHookTest extends TestCase
 
     public function testThrowOnInvalidGenericString(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid "Foo<int, Bar<string>" type.');
+        $this->expectException(InvalidTypeException::class);
 
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
         (new ObjectHook($typeExtractor))('Foo<int, Bar<string>', '$accessor', []);
     }
 
     public function testThrowOnWrongGenericTypeCount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf('Given 1 generic parameters in "%s<int>", but 2 templates are defined in "%1$s".', ClassicDummy::class));
 
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);

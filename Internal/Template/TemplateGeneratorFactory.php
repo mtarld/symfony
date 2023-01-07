@@ -9,13 +9,13 @@
 
 namespace Symfony\Component\Marshaller\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ArrayAccessNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,7 +32,7 @@ final class TemplateGeneratorFactory
     {
         return match ($format) {
             'json' => self::createJson(),
-            default => throw new UnknownFormatException($format),
+            default => throw new UnsupportedFormatException($format),
         };
     }
 

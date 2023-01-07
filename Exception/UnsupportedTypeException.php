@@ -7,17 +7,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Exception;
+namespace Symfony\Component\Marshaller\Exception;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-final class InvalidTokenException extends \InvalidArgumentException
+final class UnsupportedTypeException extends InvalidArgumentException
 {
-    public function __construct(string $expected, string $actual)
+    public function __construct(string $type)
     {
-        parent::__construct(sprintf('Expected "%s" token, got "%s".', $expected, $actual));
+        parent::__construct(sprintf('"%s" type is not supported.', $type));
     }
 }

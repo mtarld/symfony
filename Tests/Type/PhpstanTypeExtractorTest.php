@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AbstractDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\PhpstanExtractableDummy;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
@@ -26,7 +27,6 @@ final class PhpstanTypeExtractorTest extends TestCase
         $fallbackExtractor->method('extractFromProperty')->willReturn('FALLBACK');
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
-
         $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty($property);
 
         $this->assertSame($expectedType, $extractor->extractFromProperty($reflectionProperty));
@@ -37,24 +37,21 @@ final class PhpstanTypeExtractorTest extends TestCase
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
-
         $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty('intersection');
 
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Cannot handle intersection types.');
+        $this->expectException(UnsupportedTypeException::class);
 
         $extractor->extractFromProperty($reflectionProperty);
     }
 
     public function testCannotHandleUnknownNode(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectErrorMessage('Unhandled "array[foo]" type.');
-
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
         $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty('unknown');
+
+        $this->expectException(UnsupportedTypeException::class);
 
         $extractor->extractFromProperty($reflectionProperty);
     }
@@ -68,7 +65,6 @@ final class PhpstanTypeExtractorTest extends TestCase
         $fallbackExtractor->method('extractFromReturnType')->willReturn('FALLBACK');
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
-
         $reflectionMethod = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod($method);
 
         $this->assertSame($expectedType, $extractor->extractFromReturnType($reflectionMethod));

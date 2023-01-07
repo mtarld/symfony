@@ -22,6 +22,7 @@ use PHPStan\PhpDocParser\Parser\ConstExprParser;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -57,7 +58,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
 
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
         if (null === $declaringClass) {
-            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+            throw new UnexpectedValueException(sprintf('"%s()" does not have any declaring class.', $function->getName()));
         }
 
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
@@ -73,7 +74,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
 
         if (null === $declaringClass) {
-            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
+            throw new UnexpectedValueException(sprintf('"%s()" does not have any declaring class.', $function->getName()));
         }
 
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
@@ -136,7 +137,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
     {
         $templates = array_map(fn (TemplateTagValueNode $t): string => $t->name, $this->getTemplateNodes($class));
         if (!array_unique($templates)) {
-            throw new \InvalidArgumentException(sprintf('Templates defined in "%s" must be unique.', $class->getName()));
+            throw new UnexpectedValueException(sprintf('Templates defined in "%s" must be unique.', $class->getName()));
         }
 
         return $templates;

@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Attribute;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
@@ -28,13 +30,13 @@ final class Formatter
     ) {
         if (null !== $marshal) {
             if (!\is_callable($marshal)) {
-                throw new \InvalidArgumentException(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', self::class));
+                throw new InvalidArgumentException(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', self::class));
             }
         }
 
         if (null !== $unmarshal) {
             if (!\is_callable($unmarshal)) {
-                throw new \InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
+                throw new InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
             }
         }
 

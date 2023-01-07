@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Parser;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ListParserInterface;
 use Symfony\Component\Marshaller\Internal\Parser\NullableParserInterface;
@@ -53,7 +54,7 @@ final class ParserTest extends TestCase
 
     public function testCannotParUnionWithoutSelector(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(UnexpectedValueException::class);
         $this->expectExceptionMessage('Cannot guess type to use for "int|string", you may specify a type in "$context[\'union_selector\'][\'int|string\']".');
 
         $this->createParser()->parse(new \ArrayIterator(), new UnionType([new Type('int'), new Type('string')]), []);

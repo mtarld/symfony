@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Ast\Node;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Optimizer;
 
@@ -33,7 +34,7 @@ final class BinaryNode implements NodeInterface
         public readonly NodeInterface $right,
     ) {
         if (!\in_array($this->operator, self::OPERATORS)) {
-            throw new \InvalidArgumentException(sprintf('Invalid "%s" operator.', $this->operator));
+            throw new InvalidArgumentException(sprintf('Invalid "%s" operator.', $this->operator));
         }
     }
 

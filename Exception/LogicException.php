@@ -7,13 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Exception;
+namespace Symfony\Component\Marshaller\Exception;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-abstract class InvalidResourceException extends \InvalidArgumentException
+class LogicException extends \LogicException implements ExceptionInterface
 {
 }

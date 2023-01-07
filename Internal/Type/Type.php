@@ -9,6 +9,10 @@
 
 namespace Symfony\Component\Marshaller\Internal\Type;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
+use Symfony\Component\Marshaller\Exception\LogicException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
@@ -34,15 +38,15 @@ final class Type implements \Stringable
         private readonly array $genericParameterTypes = [],
     ) {
         if ($this->isObject() && null === $this->className) {
-            throw new \InvalidArgumentException('Missing className of "object" type.');
+            throw new InvalidArgumentException('Missing className of "object" type.');
         }
 
         if ($this->isGeneric && !$this->genericParameterTypes) {
-            throw new \InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
+            throw new InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
         }
 
         if ($this->isCollection() && 2 !== \count($this->genericParameterTypes)) {
-            throw new \InvalidArgumentException(sprintf('Invalid generic parameter types of "%s" type.', $this->name));
+            throw new InvalidArgumentException(sprintf('Invalid generic parameter types of "%s" type.', $this->name));
         }
     }
 
@@ -74,7 +78,7 @@ final class Type implements \Stringable
         $typeStrings[] = $currentTypeString;
 
         if (0 !== $nestedLevel) {
-            throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+            throw new InvalidTypeException($string);
         }
 
         if (\count($typeStrings) > 1) {
@@ -115,7 +119,7 @@ final class Type implements \Stringable
         }
 
         if (\count(explode('&', $string)) > 1) {
-            throw new \LogicException('Cannot handle intersection types.');
+            throw new UnsupportedTypeException($string);
         }
 
         if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
@@ -155,7 +159,7 @@ final class Type implements \Stringable
             $genericParameters[] = $currentGenericParameter;
 
             if (0 !== $nestedLevel) {
-                throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+                throw new InvalidTypeException($string);
             }
 
             if (\in_array($genericType, ['array', 'iterable'], true) && 1 === \count($genericParameters)) {
@@ -198,7 +202,7 @@ final class Type implements \Stringable
     public function className(): string
     {
         if (!$this->isObject()) {
-            throw new \RuntimeException(sprintf('Cannot get class on "%s" type as it\'s not an object.', $this->name));
+            throw new LogicException(sprintf('Cannot get class on "%s" type as it\'s not an object.', $this->name));
         }
 
         /** @var class-string $className */
@@ -267,7 +271,7 @@ final class Type implements \Stringable
     public function collectionKeyType(): self|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
+            throw new LogicException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
         }
 
         return $this->genericParameterTypes[0];
@@ -276,7 +280,7 @@ final class Type implements \Stringable
     public function collectionValueType(): self|UnionType
     {
         if (!$this->isCollection()) {
-            throw new \RuntimeException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
+            throw new LogicException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
         }
 
         return $this->genericParameterTypes[1];
@@ -324,6 +328,6 @@ final class Type implements \Stringable
             return new BinaryNode('instanceof', $accessor, new ScalarNode($this->className()));
         }
 
-        throw new \LogicException(sprintf('Cannot find validator for "%s".', (string) $this));
+        throw new LogicException(sprintf('Cannot find validator for "%s".', (string) $this));
     }
 }

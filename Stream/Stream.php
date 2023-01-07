@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Stream;
 
+use Symfony\Component\Marshaller\Exception\RuntimeException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
@@ -31,8 +33,8 @@ class Stream implements StreamInterface
             return $this->stream;
         }
 
-        if (false === $stream = fopen($this->filename, $this->mode)) {
-            throw new \RuntimeException(sprintf('Cannot open "%s" stream', $this->filename));
+        if (false === $stream = @fopen($this->filename, $this->mode)) {
+            throw new RuntimeException(sprintf('Cannot open "%s" stream', $this->filename));
         }
 
         return $this->stream = $stream;
@@ -43,7 +45,7 @@ class Stream implements StreamInterface
         rewind($this->stream());
 
         if (false === $content = stream_get_contents($this->stream())) {
-            throw new \RuntimeException(sprintf('Cannot read "%s" stream', $this->filename));
+            throw new RuntimeException(sprintf('Cannot read "%s" stream', $this->filename));
         }
 
         return $content;

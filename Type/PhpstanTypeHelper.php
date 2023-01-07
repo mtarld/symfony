@@ -16,11 +16,11 @@ use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\CallableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
-use PHPStan\PhpDocParser\Ast\Type\IntersectionTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\ThisTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -70,11 +70,7 @@ final class PhpstanTypeHelper
             return 'callable';
         }
 
-        if ($node instanceof IntersectionTypeNode) {
-            throw new \LogicException('Cannot handle intersection types.');
-        }
-
-        throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', (string) $node));
+        throw new UnsupportedTypeException((string) $node);
     }
 
     private function extractIdentifierType(IdentifierTypeNode $node, TypeNameResolver $nameResolver): string

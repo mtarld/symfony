@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Hook\Marshal;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 /**
@@ -80,18 +81,18 @@ final class PropertyHook
         }
 
         if (!$propertyFormatter->getClosureScopeClass()?->hasMethod($propertyFormatter->getName()) || !$propertyFormatter->isStatic()) {
-            throw new \InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
         }
 
         if (($returnType = $propertyFormatter->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
-            throw new \InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
         }
 
         if (null !== ($contextParameter = $propertyFormatter->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
+                throw new InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
             }
         }
 

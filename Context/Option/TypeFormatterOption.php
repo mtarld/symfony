@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Context\Option;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
@@ -28,7 +30,7 @@ final class TypeFormatterOption
 
         foreach ($typeFormatters as $typeName => $formatter) {
             if (!\is_callable($formatter)) {
-                throw new \InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $typeName, self::class));
+                throw new InvalidArgumentException(sprintf('Formatter "%s" of attribute "%s" is an invalid callable.', $typeName, self::class));
             }
 
             $formatters[$typeName] = \Closure::fromCallable($formatter);

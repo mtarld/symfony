@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Ast\Node;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Optimizer;
 
@@ -50,7 +51,7 @@ final class ScalarNode implements NodeInterface
             return;
         }
 
-        throw new \InvalidArgumentException(sprintf('Given value is not a scalar. Got "%s"', get_debug_type($this->value)));
+        throw new InvalidArgumentException(sprintf('Given value is not a scalar. Got "%s".', get_debug_type($this->value)));
     }
 
     public function optimize(Optimizer $optimizer): static

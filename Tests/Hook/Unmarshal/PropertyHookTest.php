@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Hook\Unmarshal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Hook\Unmarshal\PropertyHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
@@ -157,7 +158,7 @@ final class PropertyHookTest extends TestCase
         $object = new ClassicDummy();
         $value = fn () => 1000;
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage($exceptionMessage);
 
         (new PropertyHook($typeExtractor))(new \ReflectionClass($object), $object, 'id', $value, $context);

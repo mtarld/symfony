@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Hook\Marshal;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 /**
@@ -72,18 +73,18 @@ final class TypeHook
         }
 
         if (!$typeFormatter->getClosureScopeClass()?->hasMethod($typeFormatter->getName()) || !$typeFormatter->isStatic()) {
-            throw new \InvalidArgumentException(sprintf('Type formatter "%s" must be a static method.', $type));
+            throw new InvalidArgumentException(sprintf('Type formatter "%s" must be a static method.', $type));
         }
 
         if (($returnType = $typeFormatter->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
-            throw new \InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
+            throw new InvalidArgumentException(sprintf('Return type of type formatter "%s" must not be "void" nor "never".', $type));
         }
 
         if (null !== ($contextParameter = $typeFormatter->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new \InvalidArgumentException(sprintf('Second argument of type formatter "%s" must be an array.', $type));
+                throw new InvalidArgumentException(sprintf('Second argument of type formatter "%s" must be an array.', $type));
             }
         }
 

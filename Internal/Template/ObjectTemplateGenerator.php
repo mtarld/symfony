@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\AssignNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
@@ -68,7 +69,7 @@ final class ObjectTemplateGenerator
 
         foreach ($class->getProperties() as $property) {
             if (!$property->isPublic()) {
-                throw new \RuntimeException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
+                throw new LogicException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
             }
 
             $propertyName = $property->getName();

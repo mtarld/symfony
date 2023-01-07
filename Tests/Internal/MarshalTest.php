@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
+use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 
 use function Symfony\Component\Marshaller\marshal;
 
@@ -116,7 +116,7 @@ final class MarshalTest extends TestCase
 
     public function testThrowOnUnknownFormat(): void
     {
-        $this->expectException(UnknownFormatException::class);
+        $this->expectException(UnsupportedFormatException::class);
 
         marshal(null, fopen('php://temp', 'w'), 'unknown', []);
     }

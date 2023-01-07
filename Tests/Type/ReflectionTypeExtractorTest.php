@@ -10,6 +10,8 @@
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\MissingTypeException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AbstractDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ReflectionExtractableDummy;
@@ -31,18 +33,16 @@ final class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionProperty = (new \ReflectionClass(ReflectionExtractableDummy::class))->getProperty('intersection');
 
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Cannot handle intersection types.');
+        $this->expectException(UnsupportedTypeException::class);
 
         (new ReflectionTypeExtractor())->extractFromProperty($reflectionProperty);
     }
 
     public function testThrowIfCannotFindPropertyType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Type of "%s::$undefined" has not been defined.', ReflectionExtractableDummy::class));
-
         $reflectionProperty = (new \ReflectionClass(ReflectionExtractableDummy::class))->getProperty('undefined');
+
+        $this->expectException(MissingTypeException::class);
 
         (new ReflectionTypeExtractor())->extractFromProperty($reflectionProperty);
     }
@@ -76,8 +76,7 @@ final class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('intersection');
 
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Cannot handle intersection types.');
+        $this->expectException(UnsupportedTypeException::class);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
@@ -86,8 +85,7 @@ final class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('void');
 
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Unhandled "void" type.');
+        $this->expectException(UnsupportedTypeException::class);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
@@ -96,44 +94,16 @@ final class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('never');
 
-        $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Unhandled "never" type.');
-
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
-    }
-
-    public function testThrowIfCannotFindFunctionDeclaringClass(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot find class related to "foo()".');
-
-        $reflectionMethod = $this->createStub(\ReflectionFunction::class);
-        $reflectionMethod->method('getName')->willReturn('foo');
+        $this->expectException(UnsupportedTypeException::class);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
 
     public function testThrowIfCannotFindReturnType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Return type of "%s::undefined()" has not been defined.', ReflectionExtractableDummy::class));
+        $this->expectException(MissingTypeException::class);
 
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined');
-
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
-    }
-
-    public function testThrowIfWrongReflectionType(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches('/^Unexpected "[^"]+" type reflection\.$/');
-
-        $reflection = new class() extends \ReflectionType {
-        };
-
-        $reflectionMethod = $this->createStub(\ReflectionFunction::class);
-        $reflectionMethod->method('getClosureScopeClass')->willReturn($this->createStub(\ReflectionClass::class));
-        $reflectionMethod->method('getReturnType')->willReturn($reflection);
 
         (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
     }
@@ -148,24 +118,9 @@ final class ReflectionTypeExtractorTest extends TestCase
         $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter));
     }
 
-    public function testThrowIfCannotFindParameterDeclaringClass(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot find class related to "foo()".');
-
-        $reflectionFunction = $this->createStub(\ReflectionFunctionAbstract::class);
-        $reflectionFunction->method('getName')->willReturn('foo');
-
-        $reflectionParameter = $this->createStub(\ReflectionParameter::class);
-        $reflectionParameter->method('getDeclaringFunction')->willReturn($reflectionFunction);
-
-        (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter);
-    }
-
     public function testThrowIfCannotFindParameterType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Type of parameter "_" of "%s::undefined()" has not been defined.', ReflectionExtractableDummy::class));
+        $this->expectException(MissingTypeException::class);
 
         $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined')->getParameters()[0];
 

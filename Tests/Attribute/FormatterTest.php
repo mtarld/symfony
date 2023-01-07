@@ -11,6 +11,7 @@ namespace Symfony\Component\Marshaller\Tests\Attribute;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 
 final class FormatterTest extends TestCase
 {
@@ -49,16 +50,14 @@ final class FormatterTest extends TestCase
 
     public function testCannotCreateWithInvalidMarshalCallable(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', Formatter::class));
+        $this->expectException(InvalidArgumentException::class);
 
         new Formatter(marshal: []);
     }
 
     public function testCannotCreateWithInvalidUnmarshalCallable(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', Formatter::class));
+        $this->expectException(InvalidArgumentException::class);
 
         new Formatter(unmarshal: []);
     }

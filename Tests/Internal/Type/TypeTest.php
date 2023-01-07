@@ -10,6 +10,10 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Type;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
+use Symfony\Component\Marshaller\Exception\LogicException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
@@ -116,23 +120,21 @@ final class TypeTest extends TestCase
 
     public function testCreateThrowOnIntersectionTypes(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Cannot handle intersection types.');
+        $this->expectException(UnsupportedTypeException::class);
 
         Type::createFromString('foo&bar');
     }
 
     public function testCreateThrowOnInvalidGenericString(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid "array<int, array<string, bool>" type.');
+        $this->expectException(InvalidTypeException::class);
 
         Type::createFromString('array<int, array<string, bool>');
     }
 
     public function testCreateThrowOnRawArray(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
 
         Type::createFromString('array');
@@ -247,7 +249,7 @@ final class TypeTest extends TestCase
 
     public function testThrowOnUnavailableValidator(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot find validator for "foo"');
 
         (new Type('foo'))->validator(new VariableNode('accessor'));
@@ -255,7 +257,7 @@ final class TypeTest extends TestCase
 
     public function testCannotCreateObjectWithoutClassName(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing className of "object" type.');
 
         new Type('object');
@@ -263,7 +265,7 @@ final class TypeTest extends TestCase
 
     public function testCannotCreateWithTypeAndWithoutValue(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
 
         new Type('array', isGeneric: true, genericParameterTypes: [new Type('int')]);
@@ -271,7 +273,7 @@ final class TypeTest extends TestCase
 
     public function testCannotCreateGenericWithoutGenericTypes(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Missing generic parameter types of "object" type.');
 
         new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: []);
@@ -279,7 +281,7 @@ final class TypeTest extends TestCase
 
     public function testCannotGetClassNameOnNonObject(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot get class on "int" type as it\'s not an object.');
 
         (new Type('int'))->className();
@@ -287,7 +289,7 @@ final class TypeTest extends TestCase
 
     public function testCannotGetCollectionKeyTypeOnNonCollection(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot get collection key type on "int" type as it\'s not a collection.');
 
         (new Type('int'))->collectionKeyType();
@@ -295,7 +297,7 @@ final class TypeTest extends TestCase
 
     public function testCannotGetCollectionValueTypeOnNonCollection(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot get collection value type on "int" type as it\'s not a collection.');
 
         (new Type('int'))->collectionValueType();

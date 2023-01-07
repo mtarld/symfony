@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Hook;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -31,32 +33,32 @@ final class UnmarshalHookExtractor
         $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
         if (5 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 5 arguments.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have exactly 5 arguments.', $hookName));
         }
 
         $classParameterType = $reflection->getParameters()[0]->getType();
         if (!$classParameterType instanceof \ReflectionNamedType || \ReflectionClass::class !== $classParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionClass::class));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionClass::class));
         }
 
         $objectParameterType = $reflection->getParameters()[1]->getType();
         if (!$objectParameterType instanceof \ReflectionNamedType || 'object' !== $objectParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "object" for second argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have an "object" for second argument.', $hookName));
         }
 
         $nameParameterType = $reflection->getParameters()[2]->getType();
         if (!$nameParameterType instanceof \ReflectionNamedType || 'string' !== $nameParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "string" for third argument.', $hookName));
         }
 
         $valueParameterType = $reflection->getParameters()[3]->getType();
         if (!$valueParameterType instanceof \ReflectionNamedType || 'callable' !== $valueParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "callable" for fourth argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "callable" for fourth argument.', $hookName));
         }
 
         $contextParameterType = $reflection->getParameters()[4]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fifth argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have an "array" for fifth argument.', $hookName));
         }
 
         return $hook;

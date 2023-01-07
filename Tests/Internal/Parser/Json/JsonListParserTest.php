@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Parser\Json;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Exception\InvalidTokenException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTokenException;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonListParser;
 
 final class JsonListParserTest extends TestCase
@@ -50,7 +50,7 @@ final class JsonListParserTest extends TestCase
         $value = (new JsonListParser())->parse(new \ArrayIterator(['foo']), []);
         $this->addToAssertionCount(1);
 
-        $this->expectException(InvalidTokenException::class);
+        $this->expectException(UnexpectedTokenException::class);
         $this->expectExceptionMessage('Expected "[" token, got "foo".');
 
         $value = (new JsonListParser())->parse(new \ArrayIterator(['foo']), []);

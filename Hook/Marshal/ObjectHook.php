@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Hook\Marshal;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 /**
@@ -76,7 +78,7 @@ final class ObjectHook
         $genericParameters[] = $currentGenericParameter;
 
         if (0 !== $nestedLevel) {
-            throw new \InvalidArgumentException(sprintf('Invalid "%s" type.', $type));
+            throw new InvalidTypeException($type);
         }
 
         if (!class_exists($genericType)) {
@@ -86,7 +88,7 @@ final class ObjectHook
         $templates = $this->typeExtractor->extractTemplateFromClass(new \ReflectionClass($genericType));
 
         if (\count($templates) !== \count($genericParameters)) {
-            throw new \InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));
+            throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));
         }
 
         foreach ($genericParameters as $i => $genericParameter) {

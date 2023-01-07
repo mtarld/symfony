@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Hook\Marshal\TypeHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
@@ -90,65 +91,45 @@ final class TypeHookTest extends TestCase
         $this->assertSame('T', (new TypeHook($typeExtractor))('T', '$accessor', $context)['type']);
     }
 
-    public function testThrowWhenInvalidTypeFormatterContextTypeParameter(): void
+    /**
+     * @dataProvider throwWhenWrongFormatterDataProvider
+     */
+    public function testThrowWhenWrongFormatter(string $exceptionMessage, callable $formatter): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $typeFormatters = [
-            'int' => DummyWithMethods::invalidContextType(...),
-        ];
 
         $context = [
             'symfony' => [
                 'marshal' => [
-                    'type_formatter' => $typeFormatters,
+                    'type_formatter' => ['int' => $formatter],
                 ],
             ],
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Second argument of type formatter "int" must be an array.');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($exceptionMessage);
 
         (new TypeHook($typeExtractor))('int', '$accessor', $context);
     }
 
-    public function testThrowWhenNonStaticMethodTypeFormatter(): void
+    /**
+     * @return iterable<array{0: string, 1: callable}>
+     */
+    public function throwWhenWrongFormatterDataProvider(): iterable
     {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'type_formatter' => [
-                        'int' => (new DummyWithMethods())->nonStatic(...),
-                    ],
-                ],
-            ],
+        yield [
+            'Type formatter "int" must be a static method.',
+            (new DummyWithMethods())->nonStatic(...),
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Type formatter "int" must be a static method.');
-
-        (new TypeHook($typeExtractor))('int', '$accessor', $context);
-    }
-
-    public function testThrowWhenVoidMethodTypeFormatter(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'type_formatter' => [
-                        'int' => DummyWithMethods::void(...),
-                    ],
-                ],
-            ],
+        yield [
+            'Return type of type formatter "int" must not be "void" nor "never".',
+            DummyWithMethods::void(...),
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Return type of type formatter "int" must not be "void" nor "never".');
-
-        (new TypeHook($typeExtractor))('int', '$accessor', $context);
+        yield [
+            'Second argument of type formatter "int" must be an array.',
+            DummyWithMethods::invalidContextType(...),
+        ];
     }
 }

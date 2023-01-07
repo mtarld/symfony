@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\CircularReferenceException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\IfNode;
@@ -55,7 +57,7 @@ final class TemplateGenerator
         return [
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), $accessor),
-                $this->generateTypeTemplate(new Type('null'), new ScalarNode(null), $context),
+                $this->generateTypeTemplate(Type::createFromString('null'), new ScalarNode(null), $context),
                 $nodes,
             ),
         ];
@@ -86,7 +88,7 @@ final class TemplateGenerator
             $type->isObject() => $this->generateObjectTemplate($type, $accessor, $context),
             $type->isList() => $this->listGenerator->generate($type, $accessor, $context, $this),
             $type->isDict() => $this->dictGenerator->generate($type, $accessor, $context, $this),
-            default => throw new \InvalidArgumentException(sprintf('Unknown "%s" type.', (string) $type)),
+            default => throw new UnsupportedTypeException((string) $type),
         };
     }
 
@@ -100,7 +102,7 @@ final class TemplateGenerator
         $className = $type->className();
 
         if (isset($context['generated_classes'][$className])) {
-            throw new \RuntimeException(sprintf('Circular reference detected on "%s" detected.', $className));
+            throw new CircularReferenceException(sprintf('A circular reference has been detected on class "%s".', $className));
         }
 
         $context['generated_classes'][$className] = true;

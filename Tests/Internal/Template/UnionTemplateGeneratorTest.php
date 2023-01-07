@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Tests\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\AssignNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
@@ -149,7 +150,7 @@ final class UnionTemplateGeneratorTest extends TemplateGeneratorTestCase
     public function testThrowIfSameHierarchicalLevel(bool $expectException, array $types): void
     {
         if ($expectException) {
-            $this->expectException(\RuntimeException::class);
+            $this->expectException(LogicException::class);
         }
 
         (new UnionTemplateGenerator(self::createTemplateGeneratorStub()))->generate(new UnionType($types), new VariableNode('accessor'), []);

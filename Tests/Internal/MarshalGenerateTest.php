@@ -10,7 +10,8 @@
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Exception\UnknownFormatException;
+use Symfony\Component\Marshaller\Exception\CircularReferenceException;
+use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 
 use function Symfony\Component\Marshaller\marshal_generate;
 
@@ -339,8 +340,8 @@ final class MarshalGenerateTest extends TestCase
     public function testCheckForCircularReferences(?string $expectedCircularClassName, string $type): void
     {
         if (null !== $expectedCircularClassName) {
-            $this->expectException(\RuntimeException::class);
-            $this->expectExceptionMessage(sprintf('Circular reference detected on "%s"', $expectedCircularClassName));
+            $this->expectException(CircularReferenceException::class);
+            $this->expectExceptionMessage(sprintf('A circular reference has been detected on class "%s".', $expectedCircularClassName));
         }
 
         marshal_generate($type, 'json');
@@ -376,7 +377,7 @@ final class MarshalGenerateTest extends TestCase
 
     public function testThrowOnUnknownFormat(): void
     {
-        $this->expectException(UnknownFormatException::class);
+        $this->expectException(UnsupportedFormatException::class);
 
         marshal_generate('int', 'unknown', []);
     }

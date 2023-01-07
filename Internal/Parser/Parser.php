@@ -9,6 +9,9 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Hook\UnmarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
@@ -40,7 +43,7 @@ final class Parser
     {
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][(string) $type])) {
-                throw new \RuntimeException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
+                throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
             }
 
             /** @var Type $type */
@@ -61,7 +64,7 @@ final class Parser
                 'float' => (float) $result,
                 'string' => (string) $result,
                 'bool' => (bool) $result,
-                default => throw new \LogicException(sprintf('Cannot cast value to "%s".', $type->name())),
+                default => throw new LogicException(sprintf('Cannot cast value to "%s".', $type->name())),
             };
         }
 
@@ -81,7 +84,7 @@ final class Parser
             return $this->parseObject($tokens, $type, $context);
         }
 
-        throw new \RuntimeException(sprintf('Unhandled "%s" type', $type));
+        throw new UnsupportedTypeException($type);
     }
 
     /**
@@ -176,6 +179,8 @@ final class Parser
 
                 continue;
             }
+
+            // TODO throw or collect depending on context (like in AbstractNormalizer)
 
             return $reflection->newInstanceWithoutConstructor();
         }

@@ -7,17 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Exception;
+namespace Symfony\Component\Marshaller\Exception;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-final class UnknownFormatException extends \InvalidArgumentException
+class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
 {
-    public function __construct(string $format)
-    {
-        parent::__construct(sprintf('Unknown "%s" format.', $format));
-    }
 }

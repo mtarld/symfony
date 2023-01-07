@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Hook;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 
 /**
@@ -37,22 +38,22 @@ final class MarshalHookExtractor
         $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
         if (3 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
         }
 
         $propertyParameterType = $reflection->getParameters()[0]->getType();
         if (!$propertyParameterType instanceof \ReflectionNamedType || \ReflectionProperty::class !== $propertyParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionProperty::class));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "%s" for first argument.', $hookName, \ReflectionProperty::class));
         }
 
         $accessorParameterType = $reflection->getParameters()[1]->getType();
         if (!$accessorParameterType instanceof \ReflectionNamedType || 'string' !== $accessorParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
         }
 
         $contextParameterType = $reflection->getParameters()[2]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
         }
 
         return $hook;
@@ -74,22 +75,22 @@ final class MarshalHookExtractor
         $reflection = new \ReflectionFunction(\Closure::fromCallable($hook));
 
         if (3 !== \count($reflection->getParameters())) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have exactly 3 arguments.', $hookName));
         }
 
         $typeParameterType = $reflection->getParameters()[0]->getType();
         if (!$typeParameterType instanceof \ReflectionNamedType || 'string' !== $typeParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for first argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "string" for first argument.', $hookName));
         }
 
         $accessorParameterType = $reflection->getParameters()[1]->getType();
         if (!$accessorParameterType instanceof \ReflectionNamedType || 'string' !== $accessorParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have a "string" for second argument.', $hookName));
         }
 
         $contextParameterType = $reflection->getParameters()[2]->getType();
         if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-            throw new \InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
+            throw new InvalidArgumentException(sprintf('Hook "%s" must have an "array" for third argument.', $hookName));
         }
 
         return $hook;

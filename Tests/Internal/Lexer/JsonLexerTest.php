@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Lexer;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Exception\InvalidJsonException;
+use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Internal\Lexer\JsonLexer;
 
 final class JsonLexerTest extends TestCase
@@ -75,7 +75,7 @@ final class JsonLexerTest extends TestCase
      */
     public function testCannotTokenizeInvalidJson(string $file): void
     {
-        $this->expectException(InvalidJsonException::class);
+        $this->expectException(InvalidResourceException::class);
 
         iterator_to_array((new JsonLexer())->tokens(fopen($file, 'r'), []));
     }

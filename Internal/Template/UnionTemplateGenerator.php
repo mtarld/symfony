@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\IfNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
@@ -101,7 +102,7 @@ final class UnionTemplateGenerator
         }
 
         if (\count(array_unique($classDepths)) !== \count($classDepths)) {
-            throw new \RuntimeException('Found several classes at the same hierarchy level.');
+            throw new LogicException('Found several classes at the same hierarchy level.');
         }
 
         arsort($classDepths);

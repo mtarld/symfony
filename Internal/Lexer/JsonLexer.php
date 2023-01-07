@@ -9,7 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Lexer;
 
-use Symfony\Component\Marshaller\Internal\Exception\InvalidJsonException;
+use Symfony\Component\Marshaller\Exception\InvalidResourceException;
+use Symfony\Component\Marshaller\Exception\RuntimeException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -45,7 +46,7 @@ final class JsonLexer implements LexerInterface
             }
 
             if (!($type & $expectedType)) {
-                throw new InvalidJsonException();
+                throw new InvalidResourceException();
             }
 
             if (self::SCALAR === $type) {
@@ -53,12 +54,12 @@ final class JsonLexer implements LexerInterface
                 json_decode($token, flags: $context['json_decode_flags'] ?? 0);
 
                 if (\JSON_ERROR_NONE !== json_last_error()) {
-                    throw new InvalidJsonException();
+                    throw new InvalidResourceException();
                 }
             }
 
             if (self::KEY === $type && !(str_starts_with($token, '"') && str_ends_with($token, '"'))) {
-                throw new InvalidJsonException();
+                throw new InvalidResourceException();
             }
 
             yield $token;
@@ -87,12 +88,12 @@ final class JsonLexer implements LexerInterface
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'list' === $currentStructure => self::COMMA | self::LIST_END,
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) => self::END,
 
-                default => throw new InvalidJsonException(),
+                default => throw new InvalidResourceException(),
             };
         }
 
         if (self::END !== $expectedType) {
-            throw new InvalidJsonException();
+            throw new InvalidResourceException();
         }
     }
 
@@ -109,7 +110,7 @@ final class JsonLexer implements LexerInterface
 
         while (!feof($resource)) {
             if (false === $buffer = stream_get_contents($resource, 4096)) {
-                throw new \RuntimeException('Cannot read JSON resource.');
+                throw new RuntimeException('Cannot read JSON resource.');
             }
 
             $length = \strlen($buffer);

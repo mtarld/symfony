@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Tests\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\CircularReferenceException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
@@ -23,9 +25,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
 {
     public function testThrowOnInvalidType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown "foo" type.');
-
+        $this->expectException(UnsupportedTypeException::class);
         self::createTemplateGeneratorStub()->generate(new Type('foo'), new VariableNode('accessor'), []);
     }
 
@@ -112,8 +112,7 @@ final class TemplateGeneratorTest extends TemplateGeneratorTestCase
         $generator->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), []);
         $this->addToAssertionCount(1);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('Circular reference detected on "%s" detected.', ClassicDummy::class));
+        $this->expectException(CircularReferenceException::class);
 
         $generator->generate(new Type('object', className: ClassicDummy::class), new VariableNode('accessor'), ['generated_classes' => [ClassicDummy::class => true]]);
     }

@@ -7,6 +7,7 @@
 - create dedicated exceptions and wrap native ones
 
 ## Unmarshal
+- test that it never reaches the Internal namespace
 - UTF-8 BOM
 - Union selector attribute?
 - tests (unmarshal from component)

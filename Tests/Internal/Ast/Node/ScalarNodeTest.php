@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Ast\Node;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 
@@ -37,5 +38,13 @@ final class ScalarNodeTest extends TestCase
         yield ['"string"', 'string'];
         yield ['"\"string\""', '"string"'];
         yield ['"str\\\\ing"', 'str\ing'];
+    }
+
+    public function testCannotCompileNotScalar(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Given value is not a scalar. Got "array".');
+
+        (new ScalarNode(['foo']))->compile($compiler = new Compiler());
     }
 }

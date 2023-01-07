@@ -10,12 +10,14 @@
 namespace Symfony\Component\Marshaller\Type;
 
 use phpDocumentor\Reflection\Types\ContextFactory;
+use Symfony\Component\Marshaller\Exception\LogicException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
  */
+// TODO test
 final class TypeNameResolver
 {
     /**
@@ -67,7 +69,7 @@ final class TypeNameResolver
         $rootClass = $this->resolveRootClass();
 
         if (false === $parentReflection = (new \ReflectionClass($rootClass))->getParentClass()) {
-            throw new \LogicException(sprintf('"%s" class do not extend any class.', $rootClass));
+            throw new LogicException(sprintf('"%s" class do not extend any class.', $rootClass));
         }
 
         /** @var class-string $parentClassName */

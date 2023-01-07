@@ -9,6 +9,9 @@
 
 namespace Symfony\Component\Marshaller\Type;
 
+use Symfony\Component\Marshaller\Exception\MissingTypeException;
+use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
@@ -17,28 +20,26 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
     public function extractFromProperty(\ReflectionProperty $property): string
     {
         if (null === $type = $property->getType()) {
-            throw new \InvalidArgumentException(sprintf('Type of "%s::$%s" has not been defined.', $property->getDeclaringClass()->getName(), $property->getName()));
+            throw MissingTypeException::createForProperty($property);
         }
 
         return $this->extractFromReflection($type, $property->getDeclaringClass());
     }
 
+    // TODO FunctionReturn
     public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
     {
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
 
-        if (null === $declaringClass) {
-            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
-        }
-
         if (null === $type = $function->getReturnType()) {
-            throw new \InvalidArgumentException(sprintf('Return type of "%s::%s()" has not been defined.', $declaringClass->getName(), $function->getName()));
+            throw MissingTypeException::createForFunctionReturn($function);
         }
 
         return $this->extractFromReflection($type, $declaringClass);
     }
 
+    // TODO FunctionParameter
     public function extractFromParameter(\ReflectionParameter $parameter): string
     {
         $function = $parameter->getDeclaringFunction();
@@ -46,12 +47,8 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
 
-        if (null === $declaringClass) {
-            throw new \InvalidArgumentException(sprintf('Cannot find class related to "%s()".', $function->getName()));
-        }
-
         if (null === $type = $parameter->getType()) {
-            throw new \InvalidArgumentException(sprintf('Type of parameter "%s" of "%s::%s()" has not been defined.', $parameter->getName(), $declaringClass->getName(), $function->getName()));
+            throw MissingTypeException::createForFunctionParameter($parameter);
         }
 
         return $this->extractFromReflection($type, $declaringClass);
@@ -62,23 +59,19 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
      */
     private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
     {
-        if ($reflection instanceof \ReflectionIntersectionType) {
-            throw new \LogicException('Cannot handle intersection types.');
+        if (!($reflection instanceof \ReflectionUnionType || $reflection instanceof \ReflectionNamedType)) {
+            throw new UnsupportedTypeException((string) $reflection);
         }
 
         if ($reflection instanceof \ReflectionUnionType) {
             return implode('|', array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes()));
         }
 
-        if (!$reflection instanceof \ReflectionNamedType) {
-            throw new \InvalidArgumentException(sprintf('Unexpected "%s" type reflection.', $reflection::class));
-        }
-
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';
         $phpTypeOrClass = $reflection->getName();
 
         if ('never' === $phpTypeOrClass || 'void' === $phpTypeOrClass) {
-            throw new \InvalidArgumentException(sprintf('Unhandled "%s" type.', $phpTypeOrClass));
+            throw new UnsupportedTypeException($phpTypeOrClass);
         }
 
         if ('mixed' === $phpTypeOrClass || 'null' === $phpTypeOrClass) {

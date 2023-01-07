@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Context\Option;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
@@ -28,7 +30,7 @@ final class HookOption
 
         foreach ($hooks as $hookName => $hook) {
             if (!\is_callable($hook)) {
-                throw new \InvalidArgumentException(sprintf('Hook "%s" of attribute "%s" is an invalid callable.', $hookName, self::class));
+                throw new InvalidArgumentException(sprintf('Hook "%s" of attribute "%s" is an invalid callable.', $hookName, self::class));
             }
 
             $closures[$hookName] = \Closure::fromCallable($hook);

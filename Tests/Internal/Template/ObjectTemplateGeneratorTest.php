@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Tests\Internal\Template;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\AssignNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
@@ -65,7 +66,7 @@ final class ObjectTemplateGeneratorTest extends TemplateGeneratorTestCase
 
     public function testThrowWhenPropertyIsNotPublic(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(sprintf('"%s::$name" must be public.', DummyWithNotPublicProperty::class));
 
         self::createObjectTemplateGenerator()->generate(

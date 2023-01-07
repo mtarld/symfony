@@ -9,7 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
-use Symfony\Component\Marshaller\Internal\Exception\InvalidTokenException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTokenException;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
 
 /**
@@ -22,7 +22,7 @@ final class JsonDictParser implements DictParserInterface
     public function parse(\Iterator $tokens, array $context): \Iterator
     {
         if ('{' !== $tokens->current()) {
-            throw new InvalidTokenException('{', $tokens->current());
+            throw new UnexpectedTokenException('{', $tokens->current());
         }
 
         $tokens->next();

@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Hook;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Hook\UnmarshalHookExtractor;
 
 final class UnmarshalHookExtractorTest extends TestCase
@@ -56,7 +57,7 @@ final class UnmarshalHookExtractorTest extends TestCase
         ];
 
         if (null !== $expectedExceptionMessage) {
-            $this->expectException(\InvalidArgumentException::class);
+            $this->expectException(InvalidArgumentException::class);
             $this->expectExceptionMessage($expectedExceptionMessage);
         }
 
