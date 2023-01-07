@@ -40,13 +40,17 @@ final class JsonLexer implements LexerInterface
         $expectedType = self::VALUE;
         $structureStack = new \SplStack();
 
-        foreach ($this->tokenize($resource) as [$type, $token]) {
+        foreach ($this->tokenize($resource) as $i => [$type, $token]) {
             if ('' === $token) {
                 continue;
             }
 
+            if (0 === $i && "\xEF\xBB\xBF" === $token) {
+                continue;
+            }
+
             if (!($type & $expectedType)) {
-                throw new InvalidResourceException();
+                throw new InvalidResourceException($resource);
             }
 
             if (self::SCALAR === $type) {
@@ -54,12 +58,12 @@ final class JsonLexer implements LexerInterface
                 json_decode($token, flags: $context['json_decode_flags'] ?? 0);
 
                 if (\JSON_ERROR_NONE !== json_last_error()) {
-                    throw new InvalidResourceException();
+                    throw new InvalidResourceException($resource);
                 }
             }
 
             if (self::KEY === $type && !(str_starts_with($token, '"') && str_ends_with($token, '"'))) {
-                throw new InvalidResourceException();
+                throw new InvalidResourceException($resource);
             }
 
             yield $token;
@@ -88,12 +92,12 @@ final class JsonLexer implements LexerInterface
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'list' === $currentStructure => self::COMMA | self::LIST_END,
                 0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) => self::END,
 
-                default => throw new InvalidResourceException(),
+                default => throw new InvalidResourceException($resource),
             };
         }
 
         if (self::END !== $expectedType) {
-            throw new InvalidResourceException();
+            throw new InvalidResourceException($resource);
         }
     }
 

@@ -1,22 +1,18 @@
 # TODO
 
-- determine which services are internal
-- determine which classes are internal
-
 ## Marshal
-- create dedicated exceptions and wrap native ones
+- Better name for warmable
 
 ## Unmarshal
-- test that it never reaches the Internal namespace
-- UTF-8 BOM
-- Union selector attribute?
-- tests (unmarshal from component)
-- create dedicated exceptions and wrap native ones
 - try catch property assignment (to not have TypeError)
-- same for object construction (like in serializer)
-- collect errors mode (optional) -> throw at the end with errors and decoded
-  object
+    - same for object construction (like in serializer)
+    - then collect errors mode (optional) -> throw at the end with errors and decoded object
+    - option and context builder
 - bench in CI
+
+## Common
+- determine which services are internal
+- determine which classes are internal
 
 ## Questions
 - do we really phpstan? (we might implement it, reduced)

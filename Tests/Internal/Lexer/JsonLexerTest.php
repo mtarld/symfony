@@ -46,6 +46,8 @@ final class JsonLexerTest extends TestCase
 
         yield [['{', '}'], '{}'];
         yield [['{', '"foo"', ':', '{', '"bar"', ':', '"baz"', '}', '}'], '{"foo": {"bar": "baz"}}'];
+
+        yield [['{', '}'], "\xEF\xBB\xBF".'{}'];
     }
 
     /**

@@ -7,15 +7,18 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Exception;
+namespace Symfony\Component\Marshaller\Context\Option;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class CircularReferenceException extends UnexpectedValueException
+final class UnionSelectorOption
 {
-    public function __construct(string $className)
-    {
-        parent::__construct(sprintf('A circular reference has been detected on class "%s".', $className));
+    /**
+     * @param array<string, string> $unionSelector
+     */
+    public function __construct(
+        public readonly array $unionSelector,
+    ) {
     }
 }

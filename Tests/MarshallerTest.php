@@ -11,16 +11,14 @@ namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Generation\FormatterAttributeContextBuilder;
-use Symfony\Component\Marshaller\Context\Generation\HookContextBuilder;
-use Symfony\Component\Marshaller\Context\Generation\NameAttributeContextBuilder;
-use Symfony\Component\Marshaller\Context\Generation\TypeFormatterContextBuilder;
-use Symfony\Component\Marshaller\Context\Marshal\JsonEncodeFlagsContextBuilder;
-use Symfony\Component\Marshaller\Context\Marshal\TypeContextBuilder;
+use Symfony\Component\Marshaller\Context\Generation as GenerationContext;
+use Symfony\Component\Marshaller\Context\Marshal as MarshalContext;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
+use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
+use Symfony\Component\Marshaller\Context\Unmarshal as UnmarshalContext;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\Stream\MemoryStream;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
@@ -53,17 +51,17 @@ final class MarshallerTest extends TestCase
     }
 
     /**
-     * @dataProvider marshalJsonGenerateDataProvider
+     * @dataProvider marshalGenerateDataProvider
      */
-    public function testMarshalJsonGenerate(string $expectedSource, string $type, ?Context $context): void
+    public function testMarshalGenerate(string $expectedSource, string $type, ?Context $context): void
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $marshalGenerationContextBuilders = [
-            new HookContextBuilder(),
-            new TypeFormatterContextBuilder(),
-            new NameAttributeContextBuilder(),
-            new FormatterAttributeContextBuilder(),
+            new GenerationContext\HookContextBuilder(),
+            new GenerationContext\TypeFormatterContextBuilder(),
+            new GenerationContext\NameAttributeContextBuilder(),
+            new GenerationContext\FormatterAttributeContextBuilder(),
         ];
 
         $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerationContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
@@ -72,7 +70,7 @@ final class MarshallerTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string, 2: Context}>
      */
-    public function marshalJsonGenerateDataProvider(): iterable
+    public function marshalGenerateDataProvider(): iterable
     {
         yield [
             <<<PHP
@@ -177,22 +175,84 @@ final class MarshallerTest extends TestCase
             PHP, DummyWithFormatterAttributes::class, null, ];
     }
 
-    public function testJsonMarshal(): void
+    /**
+     * @dataProvider marshalDataProvider
+     */
+    public function testMarshal(string $expectedMarshalled, mixed $data, ?Context $context): void
     {
         $marshalContextBuilders = [
-            new TypeContextBuilder(),
-            new JsonEncodeFlagsContextBuilder(),
+            new MarshalContext\TypeContextBuilder(),
+            new MarshalContext\JsonEncodeFlagsContextBuilder(),
         ];
 
         $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], [], $this->cacheDir);
 
-        $marshaller->marshal('1', 'json', $output = new MemoryStream());
-        $this->assertSame('"1"', (string) $output);
+        $marshaller->marshal($data, 'json', $output = new MemoryStream(), $context);
+        $this->assertSame($expectedMarshalled, (string) $output);
+    }
 
-        $marshaller->marshal('1', 'json', $output = new MemoryStream(), new Context(new JsonEncodeFlagsOption(\JSON_NUMERIC_CHECK)));
-        $this->assertSame('1', (string) $output);
+    /**
+     * @return iterable<array{0: string, 1: mixed, 2: ?Context}>
+     */
+    public function marshalDataProvider(): iterable
+    {
+        yield ['"1"', '1', null];
+        yield ['1', '1', new Context(new JsonEncodeFlagsOption(\JSON_NUMERIC_CHECK))];
+        yield ['["bar"]', ['foo' => 'bar'], new Context(new TypeOption('array<int, string>'))];
+    }
 
-        $marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStream(), new Context(new TypeOption('array<int, string>')));
-        $this->assertSame('["bar"]', (string) $output);
+    /**
+     * @dataProvider unmarshalDataProvider
+     */
+    public function testUnmarshal(mixed $expectedUnmarshalled, string $content, string $type, ?Context $context): void
+    {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+
+        $unmarshalContextBuilders = [
+            new UnmarshalContext\HookContextBuilder(),
+            new UnmarshalContext\UnionSelectorContextBuilder(),
+            new UnmarshalContext\NameAttributeContextBuilder(),
+            new UnmarshalContext\FormatterAttributeContextBuilder(),
+        ];
+
+        $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
+
+        $input = new MemoryStream();
+        fwrite($input->stream(), $content);
+        rewind($input->stream());
+
+        $result = $marshaller->unmarshal($input, $type, 'json', $context);
+
+        $this->assertEquals($expectedUnmarshalled, $result);
+    }
+
+    /**
+     * @return iterable<array{0: mixed, 1: string, 2: string, 3: ?Context}>
+     */
+    public function unmarshalDataProvider(): iterable
+    {
+        yield [1, '1', 'int', null];
+        yield [1, '"1"', 'int|string', new Context(new UnionSelectorOption(['int|string' => 'int']))];
+
+        $dummy = new ClassicDummy();
+        $dummy->name = 'HOOK_RESULT';
+
+        yield [$dummy, '{"name": "the name"}', ClassicDummy::class, new Context(new HookOption([
+            'property' => static function (\ReflectionClass $class, object $object, string $key, callable $value, array $context): void {
+                if ('name' === $key) {
+                    $object->{$key} = 'HOOK_RESULT';
+                }
+            },
+        ]))];
+
+        $dummy = new DummyWithNameAttributes();
+        $dummy->id = 123;
+
+        yield [$dummy, '{"@id": 123}', DummyWithNameAttributes::class, null];
+
+        $dummy = new DummyWithFormatterAttributes();
+        $dummy->id = 10;
+
+        yield [$dummy, '{"id": 20}', DummyWithFormatterAttributes::class, null];
     }
 }

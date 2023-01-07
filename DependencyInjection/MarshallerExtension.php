@@ -16,9 +16,9 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\Cache\WarmableResolver;
-use Symfony\Component\Marshaller\Context\Generation;
-use Symfony\Component\Marshaller\Context\Marshal;
-use Symfony\Component\Marshaller\Context\Unmarshal;
+use Symfony\Component\Marshaller\Context\Generation as GenerationContext;
+use Symfony\Component\Marshaller\Context\Marshal as MarshalContext;
+use Symfony\Component\Marshaller\Context\Unmarshal as UnmarshalContext;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
@@ -69,34 +69,38 @@ final class MarshallerExtension extends Extension
         //
         // Generation context builders
         //
-        $container->register('.marshaller.builder.generation.hook', Generation\HookContextBuilder::class)
+        $container->register('.marshaller.builder.generation.hook', GenerationContext\HookContextBuilder::class)
             ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.type_formatter', Generation\TypeFormatterContextBuilder::class)
+        $container->register('.marshaller.builder.generation.type_formatter', GenerationContext\TypeFormatterContextBuilder::class)
             ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.name_attribute', Generation\NameAttributeContextBuilder::class)
+        $container->register('.marshaller.builder.generation.name_attribute', GenerationContext\NameAttributeContextBuilder::class)
             ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.formatter_attribute', Generation\FormatterAttributeContextBuilder::class)
+        $container->register('.marshaller.builder.generation.formatter_attribute', GenerationContext\FormatterAttributeContextBuilder::class)
             ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
 
         //
         // Marshal context builders
         //
-        $container->register('.marshaller.builder.marshal.type', Marshal\TypeContextBuilder::class)
+        $container->register('.marshaller.builder.marshal.type', MarshalContext\TypeContextBuilder::class)
             ->addTag('marshaller.context.builder.marshal', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.marshal.json_encode_flags', Marshal\JsonEncodeFlagsContextBuilder::class)
+        $container->register('.marshaller.builder.marshal.json_encode_flags', MarshalContext\JsonEncodeFlagsContextBuilder::class)
             ->addTag('marshaller.context.builder.marshal', ['priority' => -128]);
 
         //
         // Unmarshal context builders
         //
-        $container->register('.marshaller.builder.unmarshal.name_attribute', Unmarshal\NameAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -256]);
-        $container->register('.marshaller.builder.unmarshal.formatter_attribute', Unmarshal\FormatterAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]); // must be triggered after ".marshaller.builder.unmarshal.name_attribute"
+        $container->register('.marshaller.builder.unmarshal.hook', UnmarshalContext\HookContextBuilder::class)
+            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
+        $container->register('.marshaller.builder.unmarshal.union_selector', UnmarshalContext\UnionSelectorContextBuilder::class)
+            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
+        $container->register('.marshaller.builder.unmarshal.name_attribute', UnmarshalContext\NameAttributeContextBuilder::class)
+            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
+        $container->register('.marshaller.builder.unmarshal.formatter_attribute', UnmarshalContext\FormatterAttributeContextBuilder::class)
+            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -64]); // must be triggered after ".marshaller.builder.unmarshal.name_attribute"
 
         //
         // Cache

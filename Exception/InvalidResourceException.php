@@ -14,4 +14,11 @@ namespace Symfony\Component\Marshaller\Exception;
  */
 final class InvalidResourceException extends UnexpectedValueException
 {
+    /**
+     * @param resource $resource
+     */
+    public function __construct(mixed $resource)
+    {
+        parent::__construct(sprintf('Resource "%s" is not valid.', stream_get_meta_data($resource)['uri']));
+    }
 }

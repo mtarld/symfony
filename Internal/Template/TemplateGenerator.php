@@ -102,7 +102,7 @@ final class TemplateGenerator
         $className = $type->className();
 
         if (isset($context['generated_classes'][$className])) {
-            throw new CircularReferenceException(sprintf('A circular reference has been detected on class "%s".', $className));
+            throw new CircularReferenceException($className);
         }
 
         $context['generated_classes'][$className] = true;
