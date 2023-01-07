@@ -59,7 +59,7 @@ final class PropertyHookTest extends TestCase
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractFromProperty')->willReturn('int');
-        $typeExtractor->method('extractFromReturnType')->willReturn('string');
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn('string');
 
         $context = [
             'symfony' => [

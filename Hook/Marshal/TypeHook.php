@@ -48,7 +48,7 @@ final class TypeHook
         $currentPropertyClass = $context['symfony']['marshal']['current_property_class'] ?? null;
 
         if (null !== $typeFormatter) {
-            $type = $this->typeExtractor->extractFromReturnType($typeFormatter);
+            $type = $this->typeExtractor->extractFromFunctionReturn($typeFormatter);
 
             // if method doesn't belong to the current class, ignore generic search
             if ($typeFormatter->getClosureScopeClass()?->getName() !== $currentPropertyClass) {

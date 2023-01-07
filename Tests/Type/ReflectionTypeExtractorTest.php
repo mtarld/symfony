@@ -50,11 +50,11 @@ final class ReflectionTypeExtractorTest extends TestCase
     /**
      * @dataProvider typesDataProvider
      */
-    public function testExtractFromReturnType(string $expectedType, string $method): void
+    public function testExtractFromFunctionReturn(string $expectedType, string $method): void
     {
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod($method);
 
-        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod));
+        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod));
     }
 
     public function testExtractClassTypeFromFunctionReturnType(): void
@@ -63,13 +63,13 @@ final class ReflectionTypeExtractorTest extends TestCase
             return $this;
         });
 
-        $this->assertSame(self::class, (new ReflectionTypeExtractor())->extractFromReturnType($selfReflectionFunction));
+        $this->assertSame(self::class, (new ReflectionTypeExtractor())->extractFromFunctionReturn($selfReflectionFunction));
 
         $parentReflectionFunction = new \ReflectionFunction(function (): parent {
             return $this;
         });
 
-        $this->assertSame(parent::class, (new ReflectionTypeExtractor())->extractFromReturnType($parentReflectionFunction));
+        $this->assertSame(parent::class, (new ReflectionTypeExtractor())->extractFromFunctionReturn($parentReflectionFunction));
     }
 
     public function testCannotHandleIntersectionReturnType(): void
@@ -78,7 +78,7 @@ final class ReflectionTypeExtractorTest extends TestCase
 
         $this->expectException(UnsupportedTypeException::class);
 
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+        (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod);
     }
 
     public function testCannotHandleVoidReturnType(): void
@@ -87,7 +87,7 @@ final class ReflectionTypeExtractorTest extends TestCase
 
         $this->expectException(UnsupportedTypeException::class);
 
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+        (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod);
     }
 
     public function testCannotHandleNeverReturnType(): void
@@ -96,7 +96,7 @@ final class ReflectionTypeExtractorTest extends TestCase
 
         $this->expectException(UnsupportedTypeException::class);
 
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+        (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod);
     }
 
     public function testThrowIfCannotFindReturnType(): void
@@ -105,7 +105,7 @@ final class ReflectionTypeExtractorTest extends TestCase
 
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined');
 
-        (new ReflectionTypeExtractor())->extractFromReturnType($reflectionMethod);
+        (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod);
     }
 
     /**
@@ -115,7 +115,7 @@ final class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod($method)->getParameters()[0];
 
-        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter));
+        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromFunctionParameter($reflectionParameter));
     }
 
     public function testThrowIfCannotFindParameterType(): void
@@ -124,7 +124,7 @@ final class ReflectionTypeExtractorTest extends TestCase
 
         $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod('undefined')->getParameters()[0];
 
-        (new ReflectionTypeExtractor())->extractFromParameter($reflectionParameter);
+        (new ReflectionTypeExtractor())->extractFromFunctionParameter($reflectionParameter);
     }
 
     /**

@@ -26,7 +26,7 @@ final class TypeHookTest extends TestCase
     public function testUpdateTypeAndAccessorFromFormatter(string $expectedType, string $expectedAccessor, string $formatterReturnType, array $typeFormatters): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn($formatterReturnType);
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn($formatterReturnType);
 
         $context = [
             'symfony' => [
@@ -74,7 +74,7 @@ final class TypeHookTest extends TestCase
     public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromReturnType')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn('T');
 
         $context = [
             'symfony' => [

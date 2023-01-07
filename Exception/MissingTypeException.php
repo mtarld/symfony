@@ -24,8 +24,6 @@ final class MissingTypeException extends InvalidArgumentException
         return new self(sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName()), 'property');
     }
 
-    // TODO ReturnType -> FunctionReturn
-
     public static function createForFunctionReturn(\ReflectionFunctionAbstract $function): self
     {
         /** @var \ReflectionClass<object>|null $declaringClass */

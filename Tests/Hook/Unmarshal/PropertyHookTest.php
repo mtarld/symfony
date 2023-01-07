@@ -68,7 +68,7 @@ final class PropertyHookTest extends TestCase
     public function testFormatValue(): void
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromParameter')->willReturn('string');
+        $typeExtractor->method('extractFromFunctionParameter')->willReturn('string');
 
         $object = new class() {
             public string $foo;

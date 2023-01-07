@@ -67,7 +67,7 @@ final class PropertyHook
     private function type(\ReflectionProperty $property, ?\ReflectionFunction $propertyFormatter, array $context): string
     {
         return null !== $propertyFormatter
-            ? $this->typeExtractor->extractFromReturnType($propertyFormatter)
+            ? $this->typeExtractor->extractFromFunctionReturn($propertyFormatter)
             : $this->typeExtractor->extractFromProperty($property);
     }
 

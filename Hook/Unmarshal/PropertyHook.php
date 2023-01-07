@@ -39,7 +39,7 @@ final class PropertyHook
             $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
             $this->validateFormatter($propertyFormatterReflection, $propertyIdentifier);
 
-            $valueType = $this->typeExtractor->extractFromParameter($propertyFormatterReflection->getParameters()[0]);
+            $valueType = $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
         }
 
         $valueType ??= $this->typeExtractor->extractFromProperty(new \ReflectionProperty($object, $propertyName));

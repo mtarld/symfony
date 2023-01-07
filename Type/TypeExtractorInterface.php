@@ -16,9 +16,9 @@ interface TypeExtractorInterface
 {
     public function extractFromProperty(\ReflectionProperty $property): string;
 
-    public function extractFromReturnType(\ReflectionFunctionAbstract $function): string;
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string;
 
-    public function extractFromParameter(\ReflectionParameter $parameter): string;
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): string;
 
     /**
      * @param \ReflectionClass<object> $class

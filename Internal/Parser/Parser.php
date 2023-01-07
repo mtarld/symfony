@@ -180,8 +180,6 @@ final class Parser
                 continue;
             }
 
-            // TODO throw or collect depending on context (like in AbstractNormalizer)
-
             return $reflection->newInstanceWithoutConstructor();
         }
 

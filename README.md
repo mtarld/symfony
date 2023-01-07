@@ -13,9 +13,9 @@
 - tests (unmarshal from component)
 - create dedicated exceptions and wrap native ones
 - try catch property assignment (to not have TypeError)
+- same for object construction (like in serializer)
 - collect errors mode (optional) -> throw at the end with errors and decoded
   object
-- not internal exceptions (move it to public folder)
 - bench in CI
 
 ## Questions

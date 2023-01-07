@@ -50,10 +50,10 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         return $this->phpstanTypeHelper->getType($typeNode, $property->getDeclaringClass()->getName(), $this->getTemplateNodes($property->getDeclaringClass()));
     }
 
-    public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string
     {
         if (null === $typeNode = $this->getTypeNode($function)) {
-            return $this->decoratedTypeExtractor->extractFromReturnType($function);
+            return $this->decoratedTypeExtractor->extractFromFunctionReturn($function);
         }
 
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
@@ -64,10 +64,10 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
     }
 
-    public function extractFromParameter(\ReflectionParameter $parameter): string
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): string
     {
         if (null === $typeNode = $this->getTypeNode($parameter)) {
-            return $this->decoratedTypeExtractor->extractFromParameter($parameter);
+            return $this->decoratedTypeExtractor->extractFromFunctionParameter($parameter);
         }
 
         $function = $parameter->getDeclaringFunction();

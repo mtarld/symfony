@@ -26,8 +26,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $property->getDeclaringClass());
     }
 
-    // TODO FunctionReturn
-    public function extractFromReturnType(\ReflectionFunctionAbstract $function): string
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string
     {
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
@@ -39,8 +38,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $declaringClass);
     }
 
-    // TODO FunctionParameter
-    public function extractFromParameter(\ReflectionParameter $parameter): string
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): string
     {
         $function = $parameter->getDeclaringFunction();
 
