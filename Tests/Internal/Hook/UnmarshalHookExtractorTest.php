@@ -24,25 +24,25 @@ final class UnmarshalHookExtractorTest extends TestCase
 
         $contextWithProperty = [
             'hooks' => [
-                self::class => ['foo' => $fooHook],
+                'class[foo]' => $fooHook,
                 'property' => $barHook,
             ],
         ];
 
         $contextWithoutProperty = [
             'hooks' => [
-                self::class => ['foo' => $fooHook],
+                'class[foo]' => $fooHook,
             ],
         ];
 
         $hookExtractor = new UnmarshalHookExtractor();
 
         $this->assertSame($barHook, $hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithProperty));
-        $this->assertSame($barHook, $hookExtractor->extractFromKey(self::class, 'unexistingKey', $contextWithProperty));
-        $this->assertSame($fooHook, $hookExtractor->extractFromKey(self::class, 'foo', $contextWithProperty));
+        $this->assertSame($barHook, $hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithProperty));
+        $this->assertSame($fooHook, $hookExtractor->extractFromKey('class', 'foo', $contextWithProperty));
 
         $this->assertNull($hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithoutProperty));
-        $this->assertNull($hookExtractor->extractFromKey(self::class, 'unexistingKey', $contextWithoutProperty));
+        $this->assertNull($hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithoutProperty));
     }
 
     /**
@@ -51,9 +51,7 @@ final class UnmarshalHookExtractorTest extends TestCase
     public function testHookValidation(?string $expectedExceptionMessage, callable $hook): void
     {
         $context = [
-            'hooks' => [
-                'class' => ['key' => $hook],
-            ],
+            'hooks' => ['class[key]' => $hook],
         ];
 
         if (null !== $expectedExceptionMessage) {
@@ -73,17 +71,17 @@ final class UnmarshalHookExtractorTest extends TestCase
     {
         yield [null, static function (\ReflectionClass $class, object $object, string $key, callable $value, array $context) {
         }];
-        yield ['Hook "class: key" must have exactly 5 arguments.', static function () {
+        yield ['Hook "class[key]" must have exactly 5 arguments.', static function () {
         }];
-        yield ['Hook "class: key" must have a "ReflectionClass" for first argument.', static function (int $property, object $object, string $key, callable $value, array $context) {
+        yield ['Hook "class[key]" must have a "ReflectionClass" for first argument.', static function (int $property, object $object, string $key, callable $value, array $context) {
         }];
-        yield ['Hook "class: key" must have an "object" for second argument.', static function (\ReflectionClass $property, int $object, string $key, callable $value, array $context) {
+        yield ['Hook "class[key]" must have an "object" for second argument.', static function (\ReflectionClass $property, int $object, string $key, callable $value, array $context) {
         }];
-        yield ['Hook "class: key" must have a "string" for third argument.', static function (\ReflectionClass $property, object $object, int $key, callable $value, array $context) {
+        yield ['Hook "class[key]" must have a "string" for third argument.', static function (\ReflectionClass $property, object $object, int $key, callable $value, array $context) {
         }];
-        yield ['Hook "class: key" must have a "callable" for fourth argument.', static function (\ReflectionClass $property, object $object, string $key, int $value, array $context) {
+        yield ['Hook "class[key]" must have a "callable" for fourth argument.', static function (\ReflectionClass $property, object $object, string $key, int $value, array $context) {
         }];
-        yield ['Hook "class: key" must have an "array" for fifth argument.', static function (\ReflectionClass $property, object $object, string $key, callable $value, int $context) {
+        yield ['Hook "class[key]" must have an "array" for fifth argument.', static function (\ReflectionClass $property, object $object, string $key, callable $value, int $context) {
         }];
     }
 }

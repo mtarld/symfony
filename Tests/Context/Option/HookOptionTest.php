@@ -18,7 +18,7 @@ final class HookOptionTest extends TestCase
     public function testCannotCreateWithInvalidFormatter(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('Hook "hook" of attribute "%s" is an invalid callable.', HookOption::class));
+        $this->expectExceptionMessage('Hook "hook" is an invalid callable.');
 
         new HookOption(['hook' => true]);
     }

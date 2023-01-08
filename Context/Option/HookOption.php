@@ -30,7 +30,7 @@ final class HookOption
 
         foreach ($hooks as $hookName => $hook) {
             if (!\is_callable($hook)) {
-                throw new InvalidArgumentException(sprintf('Hook "%s" of attribute "%s" is an invalid callable.', $hookName, self::class));
+                throw new InvalidArgumentException(sprintf('Hook "%s" is an invalid callable.', $hookName));
             }
 
             $closures[$hookName] = \Closure::fromCallable($hook);

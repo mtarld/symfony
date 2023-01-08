@@ -10,6 +10,8 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Parser;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ListParserInterface;
@@ -390,12 +392,10 @@ final class ParserTest extends TestCase
         $parser = $this->createParser(scalarParser: $scalarParser, dictParser: $dictParser);
         $value = $parser->parse($tokens, Type::createFromString($object::class), [
             'hooks' => [
-                $object::class => [
-                    'fooAlias' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context) use (&$parsedValue): void {
-                        $parsedValue = $value('string', $context);
-                        $object->foo = 'HOOK_VALUE';
-                    },
-                ],
+                sprintf('%s[fooAlias]', $object::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context) use (&$parsedValue): void {
+                    $parsedValue = $value('string', $context);
+                    $object->foo = 'HOOK_VALUE';
+                },
             ],
         ]);
 
@@ -439,10 +439,78 @@ final class ParserTest extends TestCase
 
     public function testInstantiateObjectWithConstructorWithRequiredValues(): void
     {
+        $this->expectException(InvalidConstructorArgumentException::class);
         $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithConstructorWithRequiredValues::class), []);
 
         $this->assertInstanceOf(DummyWithConstructorWithRequiredValues::class, $value);
         $this->assertSame(1, $value->id);
+    }
+
+    public function testInstantiateObjectWithConstructorWithRequiredValuesAndErrorCollection(): void
+    {
+        $context = ['collect_errors' => true];
+
+        $errors = [];
+        $errors = &$context['collected_errors'];
+
+        $value = $this->createParser()->parse(new \ArrayIterator(), Type::createFromString(DummyWithConstructorWithRequiredValues::class), $context);
+
+        $this->assertInstanceOf(DummyWithConstructorWithRequiredValues::class, $value);
+        $this->assertSame(1, $value->id);
+
+        $this->assertCount(1, $errors);
+        $this->assertInstanceOf(InvalidConstructorArgumentException::class, $errors[0]);
+    }
+
+    public function testSetInvalidProperty(): void
+    {
+        $object = new class() {
+            public string $foo;
+        };
+
+        $dictParser = $this->createStub(DictParserInterface::class);
+        $dictParser->method('parse')->willReturn(new \ArrayIterator(['foo']));
+
+        $this->expectException(UnexpectedTypeException::class);
+
+        $parser = $this->createParser(dictParser: $dictParser);
+        $parser->parse(new \ArrayIterator(), Type::createFromString($object::class), [
+            'hooks' => [
+                sprintf('%s[foo]', $object::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                    $object->foo = new \stdClass();
+                },
+            ],
+        ]);
+    }
+
+    public function testSetInvalidPropertyAndErrorCollection(): void
+    {
+        $object = new class() {
+            public string $foo;
+        };
+
+        $dictParser = $this->createStub(DictParserInterface::class);
+        $dictParser->method('parse')->willReturn(new \ArrayIterator(['foo']));
+
+        $context = [
+            'collect_errors' => true,
+            'hooks' => [
+                sprintf('%s[foo]', $object::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                    $object->foo = new \stdClass();
+                },
+            ],
+        ];
+
+        $errors = [];
+        $errors = &$context['collected_errors'];
+
+        $parser = $this->createParser(dictParser: $dictParser);
+        $result = $parser->parse(new \ArrayIterator(), Type::createFromString($object::class), $context);
+
+        $this->assertEquals($result, $object);
+
+        $this->assertCount(1, $errors);
+        $this->assertInstanceOf(UnexpectedTypeException::class, $errors[0]);
     }
 
     private function createParser(

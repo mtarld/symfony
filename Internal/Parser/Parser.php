@@ -9,7 +9,9 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
 use Symfony\Component\Marshaller\Exception\LogicException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Hook\UnmarshalHookExtractor;
@@ -120,6 +122,8 @@ final class Parser
     /**
      * @param \Iterator<string>    $tokens
      * @param array<string, mixed> $context
+     *
+     * @throws UnexpectedTypeException
      */
     private function parseObject(\Iterator $tokens, Type $type, array $context): object
     {
@@ -127,22 +131,31 @@ final class Parser
         $this->reflectionTypeExtractor = $this->reflectionTypeExtractor ?? new ReflectionTypeExtractor();
 
         $reflection = new \ReflectionClass($type->className());
-        $object = $this->instantiateObject($reflection);
+        $object = $this->instantiateObject($reflection, $context);
 
         foreach ($this->dictParser->parse($tokens, $context) as $key) {
-            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
-                $hook(
-                    $reflection,
-                    $object,
-                    $key,
-                    fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context),
-                    $context,
-                );
+            try {
+                if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
+                    $hook(
+                        $reflection,
+                        $object,
+                        $key,
+                        fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context),
+                        $context,
+                    );
 
-                continue;
+                    continue;
+                }
+
+                $object->{$key} = $this->parse($tokens, Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key))), $context);
+            } catch (\TypeError $e) {
+                $exception = new UnexpectedTypeException($e->getMessage());
+                if (!($context['collect_errors'] ?? false)) {
+                    throw $exception;
+                }
+
+                $context['collected_errors'][] = $exception;
             }
-
-            $object->{$key} = $this->parse($tokens, Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key))), $context);
         }
 
         return $object;
@@ -151,38 +164,48 @@ final class Parser
     /**
      * @template T of object
      *
-     * @param \ReflectionClass<T> $reflection
+     * @param \ReflectionClass<T>  $class
+     * @param array<string, mixed> $context
      *
      * @return T
+     *
+     * @throws InvalidConstructorArgumentException
      */
-    private function instantiateObject(\ReflectionClass $reflection): object
+    private function instantiateObject(\ReflectionClass $class, array $context): object
     {
-        if (null === $constructor = $reflection->getConstructor()) {
-            return new ($reflection->getName())();
+        if (null === $constructor = $class->getConstructor()) {
+            return new ($class->getName())();
         }
 
         if (!$constructor->isPublic()) {
-            return $reflection->newInstanceWithoutConstructor();
+            return $class->newInstanceWithoutConstructor();
         }
 
-        $constructorParameters = [];
+        $parameters = [];
+        $validContructor = true;
 
-        foreach ($constructor->getParameters() as $constructorParameter) {
-            if ($constructorParameter->isDefaultValueAvailable()) {
-                $constructorParameters[] = $constructorParameter->getDefaultValue();
+        foreach ($constructor->getParameters() as $parameter) {
+            if ($parameter->isDefaultValueAvailable()) {
+                $parameters[] = $parameter->getDefaultValue();
 
                 continue;
             }
 
-            if ($constructorParameter->hasType() && $constructorParameter->getType()?->allowsNull()) {
-                $constructorParameters[] = null;
+            if ($parameter->getType()?->allowsNull()) {
+                $parameters[] = null;
 
                 continue;
             }
 
-            return $reflection->newInstanceWithoutConstructor();
+            $exception = InvalidConstructorArgumentException::createForReflectors($parameter, $class);
+            if (!($context['collect_errors'] ?? false)) {
+                throw $exception;
+            }
+
+            $context['collected_errors'][] = $exception;
+            $validContructor = false;
         }
 
-        return $reflection->newInstanceArgs($constructorParameters);
+        return $validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor();
     }
 }

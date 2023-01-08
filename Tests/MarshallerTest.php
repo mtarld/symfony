@@ -13,12 +13,15 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\Generation as GenerationContext;
 use Symfony\Component\Marshaller\Context\Marshal as MarshalContext;
+use Symfony\Component\Marshaller\Context\Option\CollectErrorsOption;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
 use Symfony\Component\Marshaller\Context\Unmarshal as UnmarshalContext;
+use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\Stream\MemoryStream;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
@@ -210,6 +213,7 @@ final class MarshallerTest extends TestCase
 
         $unmarshalContextBuilders = [
             new UnmarshalContext\HookContextBuilder(),
+            new UnmarshalContext\CollectErrorsContextBuilder(),
             new UnmarshalContext\UnionSelectorContextBuilder(),
             new UnmarshalContext\NameAttributeContextBuilder(),
             new UnmarshalContext\FormatterAttributeContextBuilder(),
@@ -254,5 +258,42 @@ final class MarshallerTest extends TestCase
         $dummy->id = 10;
 
         yield [$dummy, '{"id": 20}', DummyWithFormatterAttributes::class, null];
+    }
+
+    public function testPartiallyUnmarshal(): void
+    {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+
+        $unmarshalContextBuilders = [
+            new UnmarshalContext\HookContextBuilder(),
+            new UnmarshalContext\CollectErrorsContextBuilder(),
+        ];
+
+        $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
+
+        $input = new MemoryStream();
+        fwrite($input->stream(), '[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]');
+        rewind($input->stream());
+
+        try {
+            $marshaller->unmarshal($input, sprintf('array<int, %s>', ClassicDummy::class), 'json', new Context(new HookOption([
+                sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                    $name = $value('string', $context);
+                    $object->name = 'ok' === $name ? 'ok' : new \stdClass();
+                },
+            ]), new CollectErrorsOption()));
+
+            $this->fail(sprintf('"%s" has not been thrown.', PartialUnmarshalException::class));
+        } catch (PartialUnmarshalException $e) {
+            $okDummy = new ClassicDummy();
+            $okDummy->name = 'ok';
+
+            $koDummy = new ClassicDummy();
+
+            $this->assertEquals([$okDummy, $koDummy, $okDummy, $koDummy], $e->unmarshalled);
+
+            $this->assertCount(2, $e->errors);
+            $this->assertContainsOnlyInstancesOf(UnexpectedTypeException::class, $e->errors);
+        }
     }
 }

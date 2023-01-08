@@ -95,6 +95,8 @@ final class MarshallerExtension extends Extension
         //
         $container->register('.marshaller.builder.unmarshal.hook', UnmarshalContext\HookContextBuilder::class)
             ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
+        $container->register('.marshaller.builder.unmarshal.collect_errors', UnmarshalContext\CollectErrorsContextBuilder::class)
+            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
         $container->register('.marshaller.builder.unmarshal.union_selector', UnmarshalContext\UnionSelectorContextBuilder::class)
             ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
         $container->register('.marshaller.builder.unmarshal.name_attribute', UnmarshalContext\NameAttributeContextBuilder::class)

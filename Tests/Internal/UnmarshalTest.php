@@ -10,8 +10,12 @@
 namespace Symfony\Component\Marshaller\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
+use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
+use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithConstructorWithRequiredValues;
 
 use function Symfony\Component\Marshaller\unmarshal;
 
@@ -76,14 +80,12 @@ final class UnmarshalTest extends TestCase
 
         $value = $this->unmarshalString('{"@id": 123, "name": "thename"}', ClassicDummy::class, context: [
             'hooks' => [
-                ClassicDummy::class => [
-                    '@id' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
-                        $object->id = $value('int', $context);
-                    },
-                    'name' => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
-                        $object->name = 'HOOK_VALUE';
-                    },
-                ],
+                sprintf('%s[@id]', ClassicDummy::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                    $object->id = $value('int', $context);
+                },
+                sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                    $object->name = 'HOOK_VALUE';
+                },
             ],
         ]);
         $expectedObject->name = 'HOOK_VALUE';
@@ -102,6 +104,40 @@ final class UnmarshalTest extends TestCase
         $this->expectException(UnsupportedFormatException::class);
 
         unmarshal(fopen('php://memory', 'w+'), 'int', 'unknown', []);
+    }
+
+    public function testThrowWhenNotCollecting(): void
+    {
+        $this->expectException(InvalidConstructorArgumentException::class);
+
+        $this->unmarshalString('{}', DummyWithConstructorWithRequiredValues::class);
+    }
+
+    public function testThrowPartialWhenCollecting(): void
+    {
+        try {
+            $this->unmarshalString('[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]', sprintf('array<int, %s>', ClassicDummy::class), context: [
+                'collect_errors' => true,
+                'hooks' => [
+                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
+                        $name = $value('string', $context);
+                        $object->name = 'ok' === $name ? 'ok' : new \stdClass();
+                    },
+                ],
+            ]);
+
+            $this->fail(sprintf('"%s" has not been thrown.', PartialUnmarshalException::class));
+        } catch (PartialUnmarshalException $e) {
+            $okDummy = new ClassicDummy();
+            $okDummy->name = 'ok';
+
+            $koDummy = new ClassicDummy();
+
+            $this->assertEquals([$okDummy, $koDummy, $okDummy, $koDummy], $e->unmarshalled);
+
+            $this->assertCount(2, $e->errors);
+            $this->assertContainsOnlyInstancesOf(UnexpectedTypeException::class, $e->errors);
+        }
     }
 
     /**

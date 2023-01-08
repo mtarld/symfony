@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller;
 
+use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ArgumentsNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ClosureNode;
@@ -81,11 +82,22 @@ if (!\function_exists('unmarshal')) {
     /**
      * @param resource             $resource
      * @param array<string, mixed> $context
+     *
+     * @throws PartialUnmarshalException
      */
     function unmarshal($resource, string $type, string $format, array $context = []): mixed
     {
-        $tokens = LexerFactory::create($format)->tokens($resource, $context);
+        if ($context['collect_errors'] ?? false) {
+            $errors = &$context['collected_errors'];
+        }
 
-        return ParserFactory::create($format)->parse($tokens, Type::createFromString($type), $context);
+        $tokens = LexerFactory::create($format)->tokens($resource, $context);
+        $result = ParserFactory::create($format)->parse($tokens, Type::createFromString($type), $context);
+
+        if (isset($errors) && [] !== $errors) {
+            throw new PartialUnmarshalException($resource, $result, $errors);
+        }
+
+        return $result;
     }
 }

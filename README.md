@@ -1,13 +1,11 @@
 # TODO
 
 ## Marshal
+- test exception messages
 - Better name for warmable
 
 ## Unmarshal
-- try catch property assignment (to not have TypeError)
-    - same for object construction (like in serializer)
-    - then collect errors mode (optional) -> throw at the end with errors and decoded object
-    - option and context builder
+- context builder namespace
 - bench in CI
 
 ## Common

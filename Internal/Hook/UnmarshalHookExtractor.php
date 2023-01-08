@@ -24,7 +24,12 @@ final class UnmarshalHookExtractor
      */
     public function extractFromKey(string $className, string $key, array $context): ?callable
     {
-        if (null === $findHookResult = $this->findHook($className, $key, $context)) {
+        $hookNames = [
+            sprintf('%s[%s]', $className, $key),
+            'property',
+        ];
+
+        if (null === $findHookResult = $this->findHook($hookNames, $context)) {
             return null;
         }
 
@@ -65,19 +70,17 @@ final class UnmarshalHookExtractor
     }
 
     /**
-     * @param class-string         $className
+     * @param list<string>         $hookNames
      * @param array<string, mixed> $context
      *
      * @return array{0: string, 1: callable}|null
      */
-    private function findHook(string $className, string $key, array $context): ?array
+    private function findHook(array $hookNames, array $context): ?array
     {
-        if (null !== ($hook = $context['hooks'][$className][$key] ?? null)) {
-            return [sprintf('%s: %s', $className, $key), $hook];
-        }
-
-        if (null !== ($hook = $context['hooks']['property'] ?? null)) {
-            return ['property', $hook];
+        foreach ($hookNames as $hookName) {
+            if (null !== ($hook = $context['hooks'][$hookName] ?? null)) {
+                return [$hookName, $hook];
+            }
         }
 
         return null;
