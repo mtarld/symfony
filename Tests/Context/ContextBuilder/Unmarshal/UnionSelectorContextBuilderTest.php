@@ -7,12 +7,12 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Context\Unmarshal;
+namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Unmarshal;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal\UnionSelectorContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
-use Symfony\Component\Marshaller\Context\Unmarshal\UnionSelectorContextBuilder;
 
 final class UnionSelectorContextBuilderTest extends TestCase
 {

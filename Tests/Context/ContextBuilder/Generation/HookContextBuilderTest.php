@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Context\Generation;
+namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Generation;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Generation\HookContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Generation\HookContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 
 final class HookContextBuilderTest extends TestCase

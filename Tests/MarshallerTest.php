@@ -11,15 +11,15 @@ namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Generation as GenerationContext;
-use Symfony\Component\Marshaller\Context\Marshal as MarshalContext;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Generation as GenerationContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Marshal as MarshalContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal as UnmarshalContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\CollectErrorsOption;
 use Symfony\Component\Marshaller\Context\Option\HookOption;
 use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
-use Symfony\Component\Marshaller\Context\Unmarshal as UnmarshalContext;
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Marshaller;
@@ -61,10 +61,10 @@ final class MarshallerTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $marshalGenerationContextBuilders = [
-            new GenerationContext\HookContextBuilder(),
-            new GenerationContext\TypeFormatterContextBuilder(),
-            new GenerationContext\NameAttributeContextBuilder(),
-            new GenerationContext\FormatterAttributeContextBuilder(),
+            new GenerationContextBuilder\HookContextBuilder(),
+            new GenerationContextBuilder\TypeFormatterContextBuilder(),
+            new GenerationContextBuilder\NameAttributeContextBuilder(),
+            new GenerationContextBuilder\FormatterAttributeContextBuilder(),
         ];
 
         $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerationContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
@@ -184,8 +184,8 @@ final class MarshallerTest extends TestCase
     public function testMarshal(string $expectedMarshalled, mixed $data, ?Context $context): void
     {
         $marshalContextBuilders = [
-            new MarshalContext\TypeContextBuilder(),
-            new MarshalContext\JsonEncodeFlagsContextBuilder(),
+            new MarshalContextBuilder\TypeContextBuilder(),
+            new MarshalContextBuilder\JsonEncodeFlagsContextBuilder(),
         ];
 
         $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], [], $this->cacheDir);
@@ -212,11 +212,11 @@ final class MarshallerTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $unmarshalContextBuilders = [
-            new UnmarshalContext\HookContextBuilder(),
-            new UnmarshalContext\CollectErrorsContextBuilder(),
-            new UnmarshalContext\UnionSelectorContextBuilder(),
-            new UnmarshalContext\NameAttributeContextBuilder(),
-            new UnmarshalContext\FormatterAttributeContextBuilder(),
+            new UnmarshalContextBuilder\HookContextBuilder(),
+            new UnmarshalContextBuilder\CollectErrorsContextBuilder(),
+            new UnmarshalContextBuilder\UnionSelectorContextBuilder(),
+            new UnmarshalContextBuilder\NameAttributeContextBuilder(),
+            new UnmarshalContextBuilder\FormatterAttributeContextBuilder(),
         ];
 
         $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
@@ -265,8 +265,8 @@ final class MarshallerTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $unmarshalContextBuilders = [
-            new UnmarshalContext\HookContextBuilder(),
-            new UnmarshalContext\CollectErrorsContextBuilder(),
+            new UnmarshalContextBuilder\HookContextBuilder(),
+            new UnmarshalContextBuilder\CollectErrorsContextBuilder(),
         ];
 
         $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);

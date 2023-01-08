@@ -1,14 +1,13 @@
 # TODO
 
 ## Marshal
-- test exception messages
 - Better name for warmable
 
 ## Unmarshal
-- context builder namespace
 - bench in CI
 
 ## Common
+- test exception messages
 - determine which services are internal
 - determine which classes are internal
 

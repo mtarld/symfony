@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context\Generation;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder\Generation;
 
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

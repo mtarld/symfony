@@ -10,9 +10,9 @@
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\GenerationContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\MarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\MarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook as MarshalObjectHook;
 use Symfony\Component\Marshaller\Hook\Marshal\PropertyHook as MarshalPropertyHook;
 use Symfony\Component\Marshaller\Hook\Marshal\TypeHook as MarshalTypeHook;

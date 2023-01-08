@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Context\Unmarshal;
+namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Generation;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Unmarshal\NameAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Generation\NameAttributeContextBuilder;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
 final class NameAttributeContextBuilderTest extends TestCase
@@ -22,9 +22,9 @@ final class NameAttributeContextBuilderTest extends TestCase
 
         $this->assertEquals([
             'symfony' => [
-                'unmarshal' => [
+                'marshal' => [
                     'property_name' => [
-                        DummyWithNameAttributes::class => ['@id' => 'id'],
+                        sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
                     ],
                 ],
             ],

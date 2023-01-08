@@ -7,7 +7,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder;
+
+use Symfony\Component\Marshaller\Context\Context;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

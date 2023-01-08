@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context\Unmarshal;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal;
 
 use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

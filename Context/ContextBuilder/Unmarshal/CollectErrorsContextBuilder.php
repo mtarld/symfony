@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context\Unmarshal;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal;
 
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\Option\CollectErrorsOption;
-use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

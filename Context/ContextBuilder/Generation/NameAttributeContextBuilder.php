@@ -7,16 +7,16 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context\Unmarshal;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder\Generation;
 
-use Symfony\Component\Marshaller\Attribute\Formatter;
+use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\UnmarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderInterface
+final class NameAttributeContextBuilder implements GenerationContextBuilderInterface
 {
     public function build(string $type, Context $context, array $rawContext): array
     {
@@ -26,18 +26,15 @@ final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderI
 
         foreach ((new \ReflectionClass($type))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
+                if (Name::class !== $attribute->getName()) {
                     continue;
                 }
 
-                /** @var Formatter $attributeInstance */
+                /** @var Name $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
-                if (null === $attributeInstance->unmarshalFormatter) {
-                    break;
-                }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshalFormatter;
+                $rawContext['symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
 
                 break;
             }

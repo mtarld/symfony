@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Context\Marshal;
+namespace Symfony\Component\Marshaller\Context\ContextBuilder\Marshal;
 
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\MarshalContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\MarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 
 /**

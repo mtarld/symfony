@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Context\Generation;
+namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Marshal;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Marshal\TypeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Marshal\TypeContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\TypeOption;
 
 final class TypeContextBuilderTest extends TestCase

@@ -7,9 +7,11 @@
  * file that was distributed with this source code.
  */
 
+namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Generation;
+
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\Generation\TypeFormatterContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\Generation\TypeFormatterContextBuilder;
 use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
 
 final class TypeFormatterContextBuilderTest extends TestCase
