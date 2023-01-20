@@ -23,7 +23,7 @@ final class StreamTest extends TestCase
             }
         };
 
-        $streamMetadata = stream_get_meta_data($stream->stream());
+        $streamMetadata = stream_get_meta_data($stream->resource());
 
         $this->assertSame('php://memory', $streamMetadata['uri']);
         $this->assertSame('w+b', $streamMetadata['mode']);
@@ -38,7 +38,7 @@ final class StreamTest extends TestCase
             }
         };
 
-        fwrite($stream->stream(), 'content');
+        fwrite($stream->resource(), 'content');
 
         $this->assertSame('content', (string) $stream);
     }

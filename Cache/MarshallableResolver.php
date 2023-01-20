@@ -9,12 +9,12 @@
 
 namespace Symfony\Component\Marshaller\Cache;
 
-use Symfony\Component\Marshaller\Attribute\Warmable;
+use Symfony\Component\Marshaller\Attribute\Marshallable;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class WarmableResolver
+final class MarshallableResolver
 {
     /**
      * @param list<string> $paths
@@ -25,7 +25,7 @@ final class WarmableResolver
     }
 
     /**
-     * @return \Generator<class-string, Warmable>
+     * @return \Generator<class-string, Marshallable>
      */
     public function resolve(): \Generator
     {
@@ -33,12 +33,12 @@ final class WarmableResolver
             $attributeInstance = null;
 
             foreach ($class->getAttributes() as $attribute) {
-                if (Warmable::class === $attribute->getName()) {
+                if (Marshallable::class === $attribute->getName()) {
                     $attributeInstance = $attribute->newInstance();
                 }
             }
 
-            /** @var Warmable|null $attributeInstance */
+            /** @var Marshallable|null $attributeInstance */
             if (null === $attributeInstance) {
                 continue;
             }

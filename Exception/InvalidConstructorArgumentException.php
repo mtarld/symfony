@@ -18,12 +18,4 @@ final class InvalidConstructorArgumentException extends InvalidArgumentException
     {
         parent::__construct(sprintf('Parameter "%s" of "%s" constructor must either have a default value or be nullable.', $parameter, $className));
     }
-
-    /**
-     * @param \ReflectionClass<object> $class
-     */
-    public static function createForReflectors(\ReflectionParameter $parameter, \ReflectionClass $class): self
-    {
-        return new self($parameter->getName(), $class->getName());
-    }
 }

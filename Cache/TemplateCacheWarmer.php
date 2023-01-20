@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Cache;
 
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
-use Symfony\Component\Marshaller\Attribute\Warmable;
+use Symfony\Component\Marshaller\Attribute\Marshallable;
 use Symfony\Component\Marshaller\MarshallerInterface;
 
 /**
@@ -22,7 +22,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
      * @param list<string> $formats
      */
     public function __construct(
-        private readonly WarmableResolver $warmableResolver,
+        private readonly MarshallableResolver $marshallableResolver,
         private readonly MarshallerInterface $marshaller,
         private readonly string $cacheDir,
         private readonly array $formats,
@@ -32,7 +32,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
 
     public function warmUp(string $cacheDir): array
     {
-        foreach ($this->warmableResolver->resolve() as $class => $attribute) {
+        foreach ($this->marshallableResolver->resolve() as $class => $attribute) {
             foreach ($this->formats as $format) {
                 $this->warmClass($class, $attribute, $format);
             }
@@ -49,7 +49,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
     /**
      * @param class-string $class
      */
-    private function warmClass(string $class, Warmable $attribute, string $format): void
+    private function warmClass(string $class, Marshallable $attribute, string $format): void
     {
         $path = sprintf('%s/%s.%s.php', $this->cacheDir, md5($class), $format);
         if (file_exists($path)) {

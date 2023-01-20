@@ -9,9 +9,9 @@
 
 namespace Symfony\Component\Marshaller\Tests\Fixtures\Dto;
 
-use Symfony\Component\Marshaller\Attribute\Warmable;
+use Symfony\Component\Marshaller\Attribute\Marshallable;
 
-#[Warmable(nullable: false)]
-final class WarmableNotNullableDummy
+#[Marshallable(nullable: true)]
+final class MarshallableNullableDummy
 {
 }

@@ -19,7 +19,7 @@ class Stream implements StreamInterface
     /**
      * @var resource
      */
-    protected $stream;
+    protected $resource;
 
     public function __construct(
         protected readonly string $filename,
@@ -27,25 +27,25 @@ class Stream implements StreamInterface
     ) {
     }
 
-    final public function stream()
+    final public function resource()
     {
-        if (null !== $this->stream) {
-            return $this->stream;
+        if (null !== $this->resource) {
+            return $this->resource;
         }
 
-        if (false === $stream = @fopen($this->filename, $this->mode)) {
-            throw new RuntimeException(sprintf('Cannot open "%s" stream', $this->filename));
+        if (false === $resource = @fopen($this->filename, $this->mode)) {
+            throw new RuntimeException(sprintf('Cannot open "%s" resource', $this->filename));
         }
 
-        return $this->stream = $stream;
+        return $this->resource = $resource;
     }
 
     final public function __toString(): string
     {
-        rewind($this->stream());
+        rewind($this->resource());
 
-        if (false === $content = stream_get_contents($this->stream())) {
-            throw new RuntimeException(sprintf('Cannot read "%s" stream', $this->filename));
+        if (false === $content = stream_get_contents($this->resource())) {
+            throw new RuntimeException(sprintf('Cannot read "%s" resource', $this->filename));
         }
 
         return $content;

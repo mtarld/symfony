@@ -222,8 +222,8 @@ final class MarshallerTest extends TestCase
         $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
 
         $input = new MemoryStream();
-        fwrite($input->stream(), $content);
-        rewind($input->stream());
+        fwrite($input->resource(), $content);
+        rewind($input->resource());
 
         $result = $marshaller->unmarshal($input, $type, 'json', $context);
 
@@ -272,8 +272,8 @@ final class MarshallerTest extends TestCase
         $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
 
         $input = new MemoryStream();
-        fwrite($input->stream(), '[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]');
-        rewind($input->stream());
+        fwrite($input->resource(), '[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]');
+        rewind($input->resource());
 
         try {
             $marshaller->unmarshal($input, sprintf('array<int, %s>', ClassicDummy::class), 'json', new Context(new HookOption([

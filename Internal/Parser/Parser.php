@@ -197,7 +197,7 @@ final class Parser
                 continue;
             }
 
-            $exception = InvalidConstructorArgumentException::createForReflectors($parameter, $class);
+            $exception = new InvalidConstructorArgumentException($parameter->getName(), $class->getName());
             if (!($context['collect_errors'] ?? false)) {
                 throw $exception;
             }

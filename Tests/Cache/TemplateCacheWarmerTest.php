@@ -10,12 +10,12 @@
 namespace Symfony\Component\Marshaller\Tests\Cache;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Cache\MarshallableResolver;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
-use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableNotNullableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\WarmableNullableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableNotNullableDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableNullableDummy;
 
 final class TemplateCacheWarmerTest extends TestCase
 {
@@ -40,10 +40,13 @@ final class TemplateCacheWarmerTest extends TestCase
 
     /**
      * @dataProvider warmUpDataProvider
+     *
+     * @param list<list<string>> $expectedArguments
+     * @param list<string>       $formats
      */
     public function testWarmUp(array $expectedArguments, array $formats, bool $nullableData): void
     {
-        $warmableResolver = new WarmableResolver([__DIR__.'/../Fixtures']);
+        $marshallableResolver = new MarshallableResolver([__DIR__.'/../Fixtures']);
         $marshaller = $this->createMock(MarshallerInterface::class);
         $marshaller
             ->expects($this->exactly(\count($expectedArguments)))
@@ -51,7 +54,7 @@ final class TemplateCacheWarmerTest extends TestCase
             ->withConsecutive(...$expectedArguments)
             ->willReturn('content');
 
-        (new TemplateCacheWarmer($warmableResolver, $marshaller, $this->cacheDir, $formats, $nullableData))->warmUp('useless');
+        (new TemplateCacheWarmer($marshallableResolver, $marshaller, $this->cacheDir, $formats, $nullableData))->warmUp('useless');
     }
 
     /**
@@ -61,12 +64,12 @@ final class TemplateCacheWarmerTest extends TestCase
     {
         yield [
             [
-                [WarmableNotNullableDummy::class, 'json'],
-                [WarmableNotNullableDummy::class, 'xml'],
-                ['?'.WarmableNullableDummy::class, 'json'],
-                ['?'.WarmableNullableDummy::class, 'xml'],
-                [WarmableDummy::class, 'json'],
-                [WarmableDummy::class, 'xml'],
+                ['?'.MarshallableNullableDummy::class, 'json'],
+                ['?'.MarshallableNullableDummy::class, 'xml'],
+                [MarshallableDummy::class, 'json'],
+                [MarshallableDummy::class, 'xml'],
+                [MarshallableNotNullableDummy::class, 'json'],
+                [MarshallableNotNullableDummy::class, 'xml'],
             ],
             ['json', 'xml'],
             false,
@@ -74,9 +77,9 @@ final class TemplateCacheWarmerTest extends TestCase
 
         yield [
             [
-                [WarmableNotNullableDummy::class, 'json'],
-                ['?'.WarmableNullableDummy::class, 'json'],
-                ['?'.WarmableDummy::class, 'json'],
+                ['?'.MarshallableNullableDummy::class, 'json'],
+                ['?'.MarshallableDummy::class, 'json'],
+                [MarshallableNotNullableDummy::class, 'json'],
             ],
             ['json'],
             true,
@@ -85,24 +88,24 @@ final class TemplateCacheWarmerTest extends TestCase
 
     public function testGenerateOnlyIfNotExists(): void
     {
-        $cacheFilename = sprintf('%s%s%s.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5(WarmableDummy::class));
+        $cacheFilename = sprintf('%s%s%s.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5(MarshallableDummy::class));
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }
 
         touch($cacheFilename);
 
-        $warmableResolver = new WarmableResolver([__DIR__.'/../Fixtures']);
+        $marshallableResolver = new MarshallableResolver([__DIR__.'/../Fixtures']);
         $marshaller = $this->createMock(MarshallerInterface::class);
         $marshaller
             ->expects($this->exactly(2))
             ->method('generate')
             ->withConsecutive(
-                [WarmableNotNullableDummy::class, 'json'],
-                ['?'.WarmableNullableDummy::class, 'json'],
+                ['?'.MarshallableNullableDummy::class, 'json'],
+                [MarshallableNotNullableDummy::class, 'json'],
             )
             ->willReturn('content');
 
-        (new TemplateCacheWarmer($warmableResolver, $marshaller, $this->cacheDir, ['json'], false))->warmUp('useless');
+        (new TemplateCacheWarmer($marshallableResolver, $marshaller, $this->cacheDir, ['json'], false))->warmUp('useless');
     }
 }

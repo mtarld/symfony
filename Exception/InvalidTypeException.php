@@ -14,14 +14,8 @@ namespace Symfony\Component\Marshaller\Exception;
  */
 final class InvalidTypeException extends InvalidArgumentException
 {
-    public function __construct(string $type, string $cause = null)
+    public function __construct(string $type)
     {
-        $message = sprintf('Invalid "%s" type', $type);
-
-        if (null !== $cause) {
-            $message .= ': '.$cause;
-        }
-
-        parent::__construct($message.'.');
+        parent::__construct(sprintf('Invalid "%s" type.', $type));
     }
 }

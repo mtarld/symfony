@@ -1,13 +1,9 @@
 # TODO
 
-## Marshal
-- Better name for warmable
-
 ## Unmarshal
 - bench in CI
 
 ## Common
-- test exception messages
 - determine which services are internal
 - determine which classes are internal
 

@@ -14,8 +14,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\Marshaller\Cache\MarshallableResolver;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
-use Symfony\Component\Marshaller\Cache\WarmableResolver;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Generation as GenerationContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Marshal as MarshalContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal as UnmarshalContextBuilder;
@@ -107,18 +107,18 @@ final class MarshallerExtension extends Extension
         //
         // Cache
         //
-        $container->register('.marshaller.cache.warmable_resolver', WarmableResolver::class)
+        $container->register('.marshaller.cache.marshallable_resolver', MarshallableResolver::class)
             ->setArguments([
-                new Parameter('marshaller.warmable_paths'),
+                new Parameter('marshaller.marshallable_paths'),
             ]);
 
         $container->register('.marshaller.cache.template_warmer', TemplateCacheWarmer::class)
             ->setArguments([
-                new Reference('.marshaller.cache.warmable_resolver'),
+                new Reference('.marshaller.cache.marshallable_resolver'),
                 new Reference('marshaller'),
                 new Parameter('marshaller.cache_dir'),
-                new Parameter('marshaller.warmable_formats'),
-                new Parameter('marshaller.warmable_nullable_data'),
+                new Parameter('marshaller.marshallable_formats'),
+                new Parameter('marshaller.marshallable_nullable_data'),
             ])
             ->addTag('kernel.cache_warmer');
     }

@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Context\Context;
+use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Stream\StreamInterface;
 
 /**
@@ -21,5 +22,8 @@ interface MarshallerInterface
 
     public function generate(string $type, string $format, Context $context = null): string;
 
+    /**
+     * @throws PartialUnmarshalException
+     */
     public function unmarshal(StreamInterface $input, string $type, string $format, Context $context = null): mixed;
 }

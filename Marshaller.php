@@ -49,7 +49,7 @@ final class Marshaller implements MarshallerInterface
             $rawContext = $this->buildGenerationContext($type, $context, $rawContext);
         }
 
-        marshal($data, $output->stream(), $format, $rawContext);
+        marshal($data, $output->resource(), $format, $rawContext);
     }
 
     public function generate(string $type, string $format, Context $context = null): string
@@ -59,7 +59,7 @@ final class Marshaller implements MarshallerInterface
 
     public function unmarshal(StreamInterface $input, string $type, string $format, Context $context = null): mixed
     {
-        return unmarshal($input->stream(), $type, $format, $this->buildUnmarshalContext($type, $context));
+        return unmarshal($input->resource(), $type, $format, $this->buildUnmarshalContext($type, $context));
     }
 
     /**

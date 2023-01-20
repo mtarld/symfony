@@ -17,5 +17,5 @@ interface StreamInterface extends \Stringable
     /**
      * @return resource
      */
-    public function stream();
+    public function resource();
 }

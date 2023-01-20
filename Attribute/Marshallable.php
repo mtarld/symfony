@@ -13,7 +13,7 @@ namespace Symfony\Component\Marshaller\Attribute;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
-final class Warmable
+final class Marshallable
 {
     public function __construct(
         public readonly ?bool $nullable = null,
