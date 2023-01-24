@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Hook;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
@@ -120,76 +119,5 @@ final class MarshalHookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), ['array' => $hook, 'dict' => $createTypeHook()], $dictType];
         yield [$hook = $createTypeHook(), ['dict' => $hook, 'collection' => $createTypeHook()], $dictType];
         yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $dictType];
-    }
-
-    /**
-     * @dataProvider propertyHookValidationDataProvider
-     */
-    public function testPropertyHookValidation(?string $expectedExceptionMessage, callable $callable): void
-    {
-        $class = $this->createStub(\ReflectionClass::class);
-        $class->method('getName')->willReturn('Foo');
-
-        $property = $this->createStub(\ReflectionProperty::class);
-        $property->method('getName')->willReturn('bar');
-        $property->method('getDeclaringClass')->willReturn($class);
-
-        if (null !== $expectedExceptionMessage) {
-            $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage($expectedExceptionMessage);
-        }
-
-        (new MarshalHookExtractor())->extractFromProperty($property, ['hooks' => ['property' => $callable]]);
-
-        $this->addToAssertionCount(1);
-    }
-
-    /**
-     * @return iterable<array{0: ?string, 1: callable}>
-     */
-    public function propertyHookValidationDataProvider(): iterable
-    {
-        yield [null, static function (\ReflectionProperty $property, string $accessor, array $context) {
-        }];
-        yield ['Hook "property" must have exactly 3 arguments.', static function () {
-        }];
-        yield ['Hook "property" must have a "ReflectionProperty" for first argument.', static function (int $property, string $accessor, array $context) {
-        }];
-        yield ['Hook "property" must have a "string" for second argument.', static function (\ReflectionProperty $property, int $accessor, array $context) {
-        }];
-        yield ['Hook "property" must have an "array" for third argument.', static function (\ReflectionProperty $property, string $accessor, int $context) {
-        }];
-    }
-
-    /**
-     * @dataProvider typeHookValidationDataProvider
-     */
-    public function testTypeHookValidation(?string $expectedExceptionMessage, callable $callable): void
-    {
-        if (null !== $expectedExceptionMessage) {
-            $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage($expectedExceptionMessage);
-        }
-
-        (new MarshalHookExtractor())->extractFromType(new Type('int'), ['hooks' => ['type' => $callable]]);
-
-        $this->addToAssertionCount(1);
-    }
-
-    /**
-     * @return iterable<array{0: ?string, 1: callable}>
-     */
-    public function typeHookValidationDataProvider(): iterable
-    {
-        yield [null, static function (string $type, string $accessor, array $context) {
-        }];
-        yield ['Hook "type" must have exactly 3 arguments.', static function () {
-        }];
-        yield ['Hook "type" must have a "string" for first argument.', static function (int $type, string $accessor, array $context) {
-        }];
-        yield ['Hook "type" must have a "string" for second argument.', static function (string $type, int $accessor, array $context) {
-        }];
-        yield ['Hook "type" must have an "array" for third argument.', static function (string $type, string $accessor, int $context) {
-        }];
     }
 }

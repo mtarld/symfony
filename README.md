@@ -4,6 +4,7 @@
 - bench in CI
 
 ## Common
+- handle property generics in hooks
 - reflection factory
 - maybe move hooks out from Marshaller? (no new anymore)
 - determine which services and classes are internal
