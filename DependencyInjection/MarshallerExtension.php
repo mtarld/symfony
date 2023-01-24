@@ -41,9 +41,9 @@ final class MarshallerExtension extends Extension
         $container->register('marshaller', Marshaller::class)
             ->setArguments([
                 new Reference('marshaller.type_extractor'),
-                new TaggedIteratorArgument('marshaller.context.builder.marshal'),
-                new TaggedIteratorArgument('marshaller.context.builder.generation'),
-                new TaggedIteratorArgument('marshaller.context.builder.unmarshal'),
+                new TaggedIteratorArgument('marshaller.context_builder.marshal'),
+                new TaggedIteratorArgument('marshaller.context_builder.generation'),
+                new TaggedIteratorArgument('marshaller.context_builder.unmarshal'),
                 new Parameter('marshaller.cache_dir'),
             ]);
 
@@ -69,50 +69,50 @@ final class MarshallerExtension extends Extension
         //
         // Generation context builders
         //
-        $container->register('.marshaller.builder.generation.hook', GenerationContextBuilder\HookContextBuilder::class)
-            ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
+        $container->register('marshaller.context_builder.generation.hook', GenerationContextBuilder\HookContextBuilder::class)
+            ->addTag('marshaller.context_builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.type_formatter', GenerationContextBuilder\TypeFormatterContextBuilder::class)
-            ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
+        $container->register('marshaller.context_builder.generation.type_formatter', GenerationContextBuilder\TypeFormatterContextBuilder::class)
+            ->addTag('marshaller.context_builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.name_attribute', GenerationContextBuilder\NameAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
+        $container->register('marshaller.context_builder.generation.name_attribute', GenerationContextBuilder\NameAttributeContextBuilder::class)
+            ->addTag('marshaller.context_builder.generation', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.generation.formatter_attribute', GenerationContextBuilder\FormatterAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.generation', ['priority' => -128]);
+        $container->register('marshaller.context_builder.generation.formatter_attribute', GenerationContextBuilder\FormatterAttributeContextBuilder::class)
+            ->addTag('marshaller.context_builder.generation', ['priority' => -128]);
 
         //
         // Marshal context builders
         //
-        $container->register('.marshaller.builder.marshal.type', MarshalContextBuilder\TypeContextBuilder::class)
-            ->addTag('marshaller.context.builder.marshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.marshal.type', MarshalContextBuilder\TypeContextBuilder::class)
+            ->addTag('marshaller.context_builder.marshal', ['priority' => -128]);
 
-        $container->register('.marshaller.builder.marshal.json_encode_flags', MarshalContextBuilder\JsonEncodeFlagsContextBuilder::class)
-            ->addTag('marshaller.context.builder.marshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.marshal.json_encode_flags', MarshalContextBuilder\JsonEncodeFlagsContextBuilder::class)
+            ->addTag('marshaller.context_builder.marshal', ['priority' => -128]);
 
         //
         // Unmarshal context builders
         //
-        $container->register('.marshaller.builder.unmarshal.hook', UnmarshalContextBuilder\HookContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
-        $container->register('.marshaller.builder.unmarshal.collect_errors', UnmarshalContextBuilder\CollectErrorsContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
-        $container->register('.marshaller.builder.unmarshal.union_selector', UnmarshalContextBuilder\UnionSelectorContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
-        $container->register('.marshaller.builder.unmarshal.name_attribute', UnmarshalContextBuilder\NameAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -128]);
-        $container->register('.marshaller.builder.unmarshal.formatter_attribute', UnmarshalContextBuilder\FormatterAttributeContextBuilder::class)
-            ->addTag('marshaller.context.builder.unmarshal', ['priority' => -64]); // must be triggered after ".marshaller.builder.unmarshal.name_attribute"
+        $container->register('marshaller.context_builder.unmarshal.hook', UnmarshalContextBuilder\HookContextBuilder::class)
+            ->addTag('marshaller.context_builder.unmarshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.unmarshal.collect_errors', UnmarshalContextBuilder\CollectErrorsContextBuilder::class)
+            ->addTag('marshaller.context_builder.unmarshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.unmarshal.union_selector', UnmarshalContextBuilder\UnionSelectorContextBuilder::class)
+            ->addTag('marshaller.context_builder.unmarshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.unmarshal.name_attribute', UnmarshalContextBuilder\NameAttributeContextBuilder::class)
+            ->addTag('marshaller.context_builder.unmarshal', ['priority' => -128]);
+        $container->register('marshaller.context_builder.unmarshal.formatter_attribute', UnmarshalContextBuilder\FormatterAttributeContextBuilder::class)
+            ->addTag('marshaller.context_builder.unmarshal', ['priority' => -64]); // must be triggered after "marshaller.context_builder.unmarshal.name_attribute"
 
         //
         // Cache
         //
-        $container->register('.marshaller.cache.marshallable_resolver', MarshallableResolver::class)
+        $container->register('marshaller.cache.marshallable_resolver', MarshallableResolver::class)
             ->setArguments([
                 new Parameter('marshaller.marshallable_paths'),
             ]);
 
-        $container->register('.marshaller.cache.template_warmer', TemplateCacheWarmer::class)
+        $container->register('marshaller.cache.template_warmer', TemplateCacheWarmer::class)
             ->setArguments([
                 new Reference('.marshaller.cache.marshallable_resolver'),
                 new Reference('marshaller'),
