@@ -35,6 +35,8 @@ final class PropertyHook
         $propertyIdentifier = sprintf('%s::$%s', $class->getName(), $propertyName);
         $propertyFormatter = $context['symfony']['unmarshal']['property_formatter'][$propertyIdentifier] ?? null;
 
+        // TODO handle property type generic
+
         if (null !== $propertyFormatter) {
             $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
             $this->validateFormatter($propertyFormatterReflection, $propertyIdentifier);

@@ -12,26 +12,32 @@ namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Generation;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Generation\FormatterAttributeContextBuilder;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AnotherDummyWithFormatterAttributes;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 
 final class FormatterAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyFormattersToContext(): void
     {
-        $rawContext = (new FormatterAttributeContextBuilder())->build(DummyWithFormatterAttributes::class, new Context(), []);
+        $rawContext = (new FormatterAttributeContextBuilder())->build(
+            sprintf('%s<%s>', DummyWithFormatterAttributes::class, AnotherDummyWithFormatterAttributes::class),
+            new Context(),
+            [],
+        );
 
         $this->assertEquals([
             'symfony' => [
                 'marshal' => [
                     'property_formatter' => [
                         sprintf('%s::$id', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
+                        sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => AnotherDummyWithFormatterAttributes::uppercase(...),
                     ],
                 ],
             ],
         ], $rawContext);
     }
 
-    public function testSkipOnInvalidClassName(): void
+    public function testSkipWithoutClassNames(): void
     {
         $rawContext = (new FormatterAttributeContextBuilder())->build('useless', new Context(), []);
 
