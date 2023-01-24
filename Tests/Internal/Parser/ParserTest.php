@@ -54,7 +54,7 @@ final class ParserTest extends TestCase
         $this->assertSame('SCALAR', $value);
     }
 
-    public function testCannotParUnionWithoutSelector(): void
+    public function testCannotParseUnionWithoutSelector(): void
     {
         $this->expectException(UnexpectedValueException::class);
         $this->expectExceptionMessage('Cannot guess type to use for "int|string", you may specify a type in "$context[\'union_selector\'][\'int|string\']".');
@@ -511,6 +511,32 @@ final class ParserTest extends TestCase
 
         $this->assertCount(1, $errors);
         $this->assertInstanceOf(UnexpectedTypeException::class, $errors[0]);
+    }
+
+    public function testReplaceTypeAccessorAndContextWithHook(): void
+    {
+        $tokens = new \ArrayIterator();
+
+        $scalarParser = $this->createMock(ScalarParserInterface::class);
+        $scalarParser
+            ->expects($this->once())
+            ->method('parse')
+            ->with($tokens, new Type('string'), ['CONTEXT'])
+            ->willReturn('SCALAR');
+
+        $parser = $this->createParser(scalarParser: $scalarParser);
+        $value = $parser->parse($tokens, new UnionType([new Type('int'), new Type('string')]), [
+            'hooks' => [
+                'type' => static function (string $type, array $context): array {
+                    return [
+                        'type' => 'string',
+                        'context' => ['CONTEXT'],
+                    ];
+                },
+            ],
+        ]);
+
+        $this->assertSame('SCALAR', $value);
     }
 
     private function createParser(

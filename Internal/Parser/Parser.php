@@ -14,7 +14,7 @@ use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\Hook\UnmarshalHookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
@@ -26,7 +26,7 @@ use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
  */
 final class Parser
 {
-    private UnmarshalHookExtractor|null $hookExtractor = null;
+    private readonly HookExtractor $hookExtractor;
     private ReflectionTypeExtractor|null $reflectionTypeExtractor = null;
 
     public function __construct(
@@ -35,6 +35,7 @@ final class Parser
         private readonly ListParserInterface $listParser,
         private readonly DictParserInterface $dictParser,
     ) {
+        $this->hookExtractor = new HookExtractor();
     }
 
     /**
@@ -43,6 +44,13 @@ final class Parser
      */
     public function parse(\Iterator $tokens, Type|UnionType $type, array $context): mixed
     {
+        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
+            $hookResult = $hook((string) $type, $context);
+
+            $type = isset($hookResult['type']) ? Type::createFromString($hookResult['type']) : $type;
+            $context = $hookResult['context'] ?? $context;
+        }
+
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][(string) $type])) {
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
@@ -127,7 +135,6 @@ final class Parser
      */
     private function parseObject(\Iterator $tokens, Type $type, array $context): object
     {
-        $this->hookExtractor = $this->hookExtractor ?? new UnmarshalHookExtractor();
         $this->reflectionTypeExtractor = $this->reflectionTypeExtractor ?? new ReflectionTypeExtractor();
 
         $reflection = new \ReflectionClass($type->className());

@@ -12,7 +12,6 @@ namespace Symfony\Component\Marshaller\Tests\Internal\Type;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 
 final class UnionTypeTest extends TestCase
 {
@@ -28,14 +27,6 @@ final class UnionTypeTest extends TestCase
 
         $this->assertTrue((new UnionType([new Type('int'), new Type('string')]))->atLeastOneTypeIs($callable));
         $this->assertFalse((new UnionType([new Type('float'), new Type('string')]))->atLeastOneTypeIs($callable));
-    }
-
-    public function testEveryTypeIs(): void
-    {
-        $callable = fn (Type $t): bool => $t->isScalar();
-
-        $this->assertTrue((new UnionType([new Type('int'), new Type('string')]))->everyTypeIs($callable));
-        $this->assertFalse((new UnionType([new Type('int'), new Type('object', className: ClassicDummy::class)]))->everyTypeIs($callable));
     }
 
     /**

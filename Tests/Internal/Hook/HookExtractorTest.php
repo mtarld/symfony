@@ -10,11 +10,12 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Hook;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type\UnionType;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 
-final class MarshalHookExtractorTest extends TestCase
+final class HookExtractorTest extends TestCase
 {
     /**
      * @dataProvider extractFromPropertyDataProvider
@@ -30,7 +31,7 @@ final class MarshalHookExtractorTest extends TestCase
         $property->method('getName')->willReturn('bar');
         $property->method('getDeclaringClass')->willReturn($class);
 
-        $this->assertSame($expectedHook, (new MarshalHookExtractor())->extractFromProperty($property, ['hooks' => $hooks]));
+        $this->assertSame($expectedHook, (new HookExtractor())->extractFromProperty($property, ['hooks' => $hooks]));
     }
 
     /**
@@ -52,13 +53,13 @@ final class MarshalHookExtractorTest extends TestCase
      *
      * @param array<string, callable> $hooks
      */
-    public function testExtractFromType(?callable $expectedHook, array $hooks, Type $type): void
+    public function testExtractFromType(?callable $expectedHook, array $hooks, Type|UnionType $type): void
     {
-        $this->assertSame($expectedHook, (new MarshalHookExtractor())->extractFromType($type, ['hooks' => $hooks]));
+        $this->assertSame($expectedHook, (new HookExtractor())->extractFromType($type, ['hooks' => $hooks]));
     }
 
     /**
-     * @return iterable<array{0: ?callable, 1: array<string, callable>}, 2: Type>
+     * @return iterable<array{0: ?callable, 1: array<string, callable>}, 2: Type|UnionType>
      */
     public function extractFromTypeDataProvider(): iterable
     {
@@ -69,6 +70,14 @@ final class MarshalHookExtractorTest extends TestCase
         yield [null, ['other' => $createTypeHook()], new Type('int')];
 
         yield [$hook = $createTypeHook(), ['foo' => $hook], new Type('foo')];
+
+        $unionType = new UnionType([new Type('int'), new Type('string')]);
+
+        yield [$hook = $createTypeHook(), ['int|string' => $hook], $unionType];
+        yield [$hook = $createTypeHook(), ['union' => $hook], $unionType];
+        yield [$hook = $createTypeHook(), ['type' => $hook], $unionType];
+        yield [$hook = $createTypeHook(), ['int|string' => $hook, 'union' => $createTypeHook()], $unionType];
+        yield [$hook = $createTypeHook(), ['union' => $hook, 'type' => $createTypeHook()], $unionType];
 
         $nullType = new Type('null');
 
@@ -119,5 +128,35 @@ final class MarshalHookExtractorTest extends TestCase
         yield [$hook = $createTypeHook(), ['array' => $hook, 'dict' => $createTypeHook()], $dictType];
         yield [$hook = $createTypeHook(), ['dict' => $hook, 'collection' => $createTypeHook()], $dictType];
         yield [$hook = $createTypeHook(), ['collection' => $hook, 'type' => $createTypeHook()], $dictType];
+    }
+
+    public function testExtractFromKey(): void
+    {
+        $fooHook = static function (\ReflectionClass $class, object $object, string $key, callable $value, array $context): void {
+        };
+        $barHook = static function (\ReflectionClass $class, object $object, string $key, callable $value, array $context): void {
+        };
+
+        $contextWithProperty = [
+            'hooks' => [
+                'class[foo]' => $fooHook,
+                'property' => $barHook,
+            ],
+        ];
+
+        $contextWithoutProperty = [
+            'hooks' => [
+                'class[foo]' => $fooHook,
+            ],
+        ];
+
+        $hookExtractor = new HookExtractor();
+
+        $this->assertSame($barHook, $hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithProperty));
+        $this->assertSame($barHook, $hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithProperty));
+        $this->assertSame($fooHook, $hookExtractor->extractFromKey('class', 'foo', $contextWithProperty));
+
+        $this->assertNull($hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithoutProperty));
+        $this->assertNull($hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithoutProperty));
     }
 }

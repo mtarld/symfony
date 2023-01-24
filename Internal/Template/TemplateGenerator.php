@@ -17,7 +17,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\IfNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
 use Symfony\Component\Marshaller\Internal\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
-use Symfony\Component\Marshaller\Internal\Hook\MarshalHookExtractor;
+use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
@@ -28,7 +28,7 @@ use Symfony\Component\Marshaller\Internal\Type\UnionType;
  */
 final class TemplateGenerator
 {
-    private readonly MarshalHookExtractor $hookExtractor;
+    private readonly HookExtractor $hookExtractor;
     private readonly UnionTemplateGenerator $unionGenerator;
 
     public function __construct(
@@ -37,7 +37,7 @@ final class TemplateGenerator
         private readonly ListTemplateGenerator $listGenerator,
         private readonly DictTemplateGenerator $dictGenerator,
     ) {
-        $this->hookExtractor = new MarshalHookExtractor();
+        $this->hookExtractor = new HookExtractor();
         $this->unionGenerator = new UnionTemplateGenerator($this);
     }
 
@@ -70,10 +70,6 @@ final class TemplateGenerator
      */
     private function generateTypeTemplate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
-        if ($type instanceof UnionType) {
-            return $this->unionGenerator->generate($type, $accessor, $context);
-        }
-
         if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
             $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
 

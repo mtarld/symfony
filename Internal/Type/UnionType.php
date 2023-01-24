@@ -29,17 +29,9 @@ final class UnionType implements \Stringable
         return $this->atLeastOneTypeIs(fn (Type $t): bool => $t->isNull());
     }
 
-    public function everyTypeIs(callable $callable): bool
-    {
-        foreach ($this->types as $type) {
-            if (!$callable($type)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
+    /**
+     * @param callable(Type): mixed $callable
+     */
     public function atLeastOneTypeIs(callable $callable): bool
     {
         foreach ($this->types as $type) {
