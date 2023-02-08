@@ -12,7 +12,6 @@ namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Hook\Marshal\TypeHook;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -29,7 +28,7 @@ final class TypeHookTest extends TestCase
         $typeExtractor->method('extractFromFunctionReturn')->willReturn($formatterReturnType);
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'type_formatter' => $typeFormatters,
                 ],
@@ -52,45 +51,6 @@ final class TypeHookTest extends TestCase
         yield ['string', sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class), 'string', ['int' => DummyWithMethods::doubleAndCastToString(...)]];
     }
 
-    public function testConvertGenericTypes(): void
-    {
-        $hook = new TypeHook($this->createStub(TypeExtractorInterface::class));
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'current_property_class' => ClassicDummy::class,
-                    'generic_parameter_types' => [ClassicDummy::class => ['T' => 'string']],
-                ],
-            ],
-        ];
-
-        $this->assertSame('string', $hook('T', '$accessor', $context)['type']);
-
-        $context['symfony']['marshal']['current_property_class'] = DummyWithMethods::class;
-        $this->assertSame('T', $hook('T', '$accessor', $context)['type']);
-    }
-
-    public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass(): void
-    {
-        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromFunctionReturn')->willReturn('T');
-
-        $context = [
-            'symfony' => [
-                'marshal' => [
-                    'type_formatter' => ['int' => DummyWithMethods::doubleAndCastToString(...)],
-                    'current_property_class' => DummyWithMethods::class,
-                    'generic_parameter_types' => [DummyWithMethods::class => ['T' => 'string']],
-                ],
-            ],
-        ];
-        $this->assertSame('string', (new TypeHook($typeExtractor))('int', '$accessor', $context)['type']);
-
-        $context['symfony']['marshal']['current_property_class'] = ClassicDummy::class;
-        $this->assertSame('T', (new TypeHook($typeExtractor))('T', '$accessor', $context)['type']);
-    }
-
     /**
      * @dataProvider throwWhenWrongFormatterDataProvider
      */
@@ -99,7 +59,7 @@ final class TypeHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'type_formatter' => ['int' => $formatter],
                 ],

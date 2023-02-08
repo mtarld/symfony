@@ -10,42 +10,62 @@
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 use Symfony\Component\Marshaller\Type\TypeHelper;
 
 final class TypeHelperTest extends TestCase
 {
     /**
-     * @dataProvider extractClassNamesDataProvider
+     * @dataProvider replaceGenericTypesDataProvider
      *
-     * @param list<string> $expectedClassNames
+     * @param array<string, string> $genericTypes
      */
-    public function testExtractClassNames(array $expectedClassNames, string $type): void
+    public function testReplaceGenericTypes(string $expectedType, string $type, array $genericTypes): void
     {
-        $this->assertSame($expectedClassNames, (new TypeHelper())->extractClassNames($type));
+        $this->assertSame($expectedType, (new TypeHelper())->replaceGenericTypes($type, $genericTypes));
     }
 
     /**
-     * @return iterable<array{0: list<string>, 1: string}>
+     * @return iterable<array{0: string, 1: string, 2: array<string, string>}>
      */
-    public function extractClassNamesDataProvider(): iterable
+    public function replaceGenericTypesDataProvider(): iterable
     {
-        yield [[], 'int'];
-        yield [[ClassicDummy::class], ClassicDummy::class];
-        yield [[\Stringable::class], \Stringable::class];
+        yield ['T', 'T', []];
+        yield ['Foo', 'T', ['T' => 'Foo']];
 
-        yield [[ClassicDummy::class], sprintf('array<int, %s>', ClassicDummy::class)];
-        yield [[ClassicDummy::class], sprintf('array<%s>', ClassicDummy::class)];
-        yield [[ClassicDummy::class], sprintf('array<%s, %1$s>', ClassicDummy::class)];
-        yield [[ClassicDummy::class, DummyWithMethods::class], sprintf('array<%s, %s>', ClassicDummy::class, DummyWithMethods::class)];
+        yield ['array<int, Foo>', 'array<int, T>', ['T' => 'Foo']];
+        yield ['array<Foo>', 'array<T>', ['T' => 'Foo']];
+        yield ['array<Foo, Foo>', 'array<T, T>', ['T' => 'Foo']];
 
-        yield [[ClassicDummy::class], sprintf('int|%s', ClassicDummy::class)];
-        yield [[ClassicDummy::class], sprintf('int|%s|%1$s', ClassicDummy::class)];
-        yield [[ClassicDummy::class, DummyWithMethods::class], sprintf('int|%s|%s', ClassicDummy::class, DummyWithMethods::class)];
+        yield ['int|Foo', 'int|T', ['T' => 'Foo']];
+        yield ['int|Foo|Bar', 'int|T|U', ['T' => 'Foo', 'U' => 'Bar']];
+        yield ['int|Foo|array<string, Bar>', 'int|T|array<string, U>', ['T' => 'Foo', 'U' => 'Bar']];
+    }
 
-        yield [[ClassicDummy::class], sprintf('array<int, %s>|%1$s|list<%1$s>', ClassicDummy::class)];
-        yield [[ClassicDummy::class, DummyWithMethods::class, DummyWithQuotes::class], sprintf('array<int, %s>|%s|list<%s>', ClassicDummy::class, DummyWithMethods::class, DummyWithQuotes::class)];
+    /**
+     * @dataProvider extractGenericsDataProvider
+     *
+     * @param list<string> $expectedGenericParameters
+     */
+    public function testExtractGenerics(string $expectedGenericType, array $expectedGenericParameters, string $type): void
+    {
+        $this->assertSame(['genericType' => $expectedGenericType, 'genericParameters' => $expectedGenericParameters], (new TypeHelper())->extractGenerics($type));
+    }
+
+    /**
+     * @return iterable<array{0: string, 1: list<string>, 2: string}>
+     */
+    public function extractGenericsDataProvider(): iterable
+    {
+        yield ['int', [], 'int'];
+        yield ['Foo', ['int'], 'Foo<int>'];
+        yield ['array', ['int', 'string'], 'array<int, string>'];
+    }
+
+    public function testExtractGenericsThrowOnInvalidGenericString(): void
+    {
+        $this->expectException(InvalidTypeException::class);
+
+        (new TypeHelper())->extractGenerics('Foo<int, Bar<string>', '$accessor', []);
     }
 }

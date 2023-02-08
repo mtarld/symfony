@@ -9,12 +9,93 @@
 
 namespace Symfony\Component\Marshaller\Type;
 
+use Symfony\Component\Marshaller\Exception\InvalidTypeException;
+
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
+// TODO move to util and rename TypeGenericsHelper
 final class TypeHelper
 {
     /**
-     * @return list<class-string>
+     * @param array<string, string> $genericTypes
      */
-    public function extractClassNames(string $type): array
+    public function replaceGenericTypes(string $type, array $genericTypes): string
+    {
+        $types = $this->explodeUnion($type);
+
+        if (\count($types) > 1) {
+            return implode('|', array_map(fn (string $t): string => $this->replaceGenericTypes($t, $genericTypes), $types));
+        }
+
+        [$type, $genericParameterTypes] = $this->explodeGenerics($type);
+
+        if ([] !== $genericParameterTypes) {
+            return sprintf(
+                '%s<%s>',
+                $this->replaceGenericTypes($type, $genericTypes),
+                implode(', ', array_map(fn (string $t): string => $this->replaceGenericTypes($t, $genericTypes), $genericParameterTypes)),
+            );
+        }
+
+        return str_replace(array_keys($genericTypes), array_values($genericTypes), $type);
+    }
+
+    /**
+     * @return array{genericType: string, genericParameters: list<string>}
+     */
+    public function extractGenerics(string $type): array
+    {
+        $results = [];
+        if (!preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $results)) {
+            return [
+                'genericType' => $type,
+                'genericParameters' => [],
+            ];
+        }
+
+        $genericType = $results['type'];
+        $genericParameters = [];
+        $currentGenericParameter = '';
+        $nestedLevel = 0;
+
+        foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
+            if (',' === $char && 0 === $nestedLevel) {
+                $genericParameters[] = $currentGenericParameter;
+                $currentGenericParameter = '';
+
+                continue;
+            }
+
+            if ('<' === $char) {
+                ++$nestedLevel;
+            }
+
+            if ('>' === $char) {
+                --$nestedLevel;
+            }
+
+            $currentGenericParameter .= $char;
+        }
+
+        if (0 !== $nestedLevel) {
+            throw new InvalidTypeException($type);
+        }
+
+        $genericParameters[] = $currentGenericParameter;
+
+        return [
+            'genericType' => $genericType,
+            'genericParameters' => $genericParameters,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function explodeUnion(string $type): array
     {
         $currentTypeString = '';
         $typeStrings = [];
@@ -41,47 +122,46 @@ final class TypeHelper
 
         $typeStrings[] = $currentTypeString;
 
-        if (\count($typeStrings) > 1) {
-            return array_unique(array_merge(...array_map($this->extractClassNames(...), $typeStrings)));
-        }
+        return $typeStrings;
+    }
 
-        if (class_exists($type) || interface_exists($type)) {
-            return [$type];
-        }
-
+    /**
+     * @return array{0: string, 1: list<string>}
+     */
+    private function explodeGenerics(string $type): array
+    {
         $matches = [];
-        if (preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $matches)) {
-            $classNames = [];
-            $genericType = $matches['type'];
-            $genericParameterTypes = [];
-            $currentGenericParameterType = '';
-            $nestedLevel = 0;
+        if (!preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $matches)) {
+            return [$type, []];
+        }
 
-            foreach (str_split(str_replace(' ', '', $matches['diamond'])) as $char) {
-                if (',' === $char && 0 === $nestedLevel) {
-                    $genericParameterTypes[] = $currentGenericParameterType;
-                    $currentGenericParameterType = '';
+        $genericType = $matches['type'];
+        $genericParameterTypes = [];
 
-                    continue;
-                }
+        $currentGenericParameterType = '';
+        $nestedLevel = 0;
 
-                if ('<' === $char) {
-                    ++$nestedLevel;
-                }
+        foreach (str_split(str_replace(' ', '', $matches['diamond'])) as $char) {
+            if (',' === $char && 0 === $nestedLevel) {
+                $genericParameterTypes[] = $currentGenericParameterType;
+                $currentGenericParameterType = '';
 
-                if ('>' === $char) {
-                    --$nestedLevel;
-                }
-
-                $currentGenericParameterType .= $char;
+                continue;
             }
 
-            $genericParameterTypes[] = $currentGenericParameterType;
-            $type = $genericType;
+            if ('<' === $char) {
+                ++$nestedLevel;
+            }
 
-            return array_unique(array_merge($this->extractClassNames($type), ...array_map($this->extractClassNames(...), $genericParameterTypes)));
+            if ('>' === $char) {
+                --$nestedLevel;
+            }
+
+            $currentGenericParameterType .= $char;
         }
 
-        return [];
+        $genericParameterTypes[] = $currentGenericParameterType;
+
+        return [$genericType, $genericParameterTypes];
     }
 }

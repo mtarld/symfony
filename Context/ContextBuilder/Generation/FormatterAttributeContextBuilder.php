@@ -12,23 +12,21 @@ namespace Symfony\Component\Marshaller\Context\ContextBuilder\Generation;
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 final class FormatterAttributeContextBuilder implements GenerationContextBuilderInterface
 {
-    private readonly TypeHelper $typeHelper;
-
-    public function __construct()
-    {
-        $this->typeHelper = new TypeHelper();
+    public function __construct(
+        private readonly MarshallableResolverInterface $marshallableResolver,
+    ) {
     }
 
     public function build(string $type, Context $context, array $rawContext): array
     {
-        foreach ($this->typeHelper->extractClassNames($type) as $className) {
+        foreach ($this->marshallableResolver->resolve() as $className => $_) {
             $rawContext = $this->addPropertyFormatters($className, $rawContext);
         }
 
@@ -51,12 +49,12 @@ final class FormatterAttributeContextBuilder implements GenerationContextBuilder
 
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
-                if (null === $attributeInstance->marshalFormatter) {
+                if (null === $attributeInstance->marshal) {
                     break;
                 }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshalFormatter;
+                $rawContext['_symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshal;
 
                 break;
             }

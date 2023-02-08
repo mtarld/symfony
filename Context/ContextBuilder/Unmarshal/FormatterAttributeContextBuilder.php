@@ -12,23 +12,21 @@ namespace Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal;
 use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderInterface
 {
-    private readonly TypeHelper $typeHelper;
-
-    public function __construct()
-    {
-        $this->typeHelper = new TypeHelper();
+    public function __construct(
+        private readonly MarshallableResolverInterface $marshallableResolver,
+    ) {
     }
 
     public function build(string $type, Context $context, array $rawContext): array
     {
-        foreach ($this->typeHelper->extractClassNames($type) as $className) {
+        foreach ($this->marshallableResolver->resolve() as $className => $_) {
             $rawContext = $this->addPropertyFormatters($className, $rawContext);
         }
 
@@ -51,12 +49,12 @@ final class FormatterAttributeContextBuilder implements UnmarshalContextBuilderI
 
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
-                if (null === $attributeInstance->unmarshalFormatter) {
+                if (null === $attributeInstance->unmarshal) {
                     break;
                 }
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshalFormatter;
+                $rawContext['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshal;
 
                 break;
             }

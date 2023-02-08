@@ -12,6 +12,7 @@ namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Unmarshal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal\FormatterAttributeContextBuilder;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AnotherDummyWithFormatterAttributes;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 
@@ -19,28 +20,33 @@ final class FormatterAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyFormattersToContext(): void
     {
-        $rawContext = (new FormatterAttributeContextBuilder())->build(
+        $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
+        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+
+        $rawContext = (new FormatterAttributeContextBuilder($marshallableResolver))->build(
             sprintf('%s<%s>', DummyWithFormatterAttributes::class, AnotherDummyWithFormatterAttributes::class),
             new Context(),
             [],
         );
 
         $this->assertEquals([
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_formatter' => [
-                        sprintf('%s::$id', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::divideAndCastToInt(...),
-                        sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => AnotherDummyWithFormatterAttributes::lowercase(...),
+                        sprintf('%s::$id', DummyWithFormatterAttributes::class) => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
+                        sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
                     ],
                 ],
             ],
         ], $rawContext);
     }
 
-    public function testSkipWithoutClassNames(): void
+    /**
+     * @return \Generator<class-string, null>
+     */
+    private function getMarshallable(): \Generator
     {
-        $rawContext = (new FormatterAttributeContextBuilder())->build('useless', new Context(), []);
-
-        $this->assertSame([], $rawContext);
+        yield DummyWithFormatterAttributes::class => null;
+        yield AnotherDummyWithFormatterAttributes::class => null;
     }
 }

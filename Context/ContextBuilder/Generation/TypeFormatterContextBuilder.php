@@ -27,7 +27,7 @@ final class TypeFormatterContextBuilder implements GenerationContextBuilderInter
         }
 
         foreach ($typeFormatterOption->formatters as $formatterName => $formatter) {
-            $rawContext['symfony']['marshal']['type_formatter'][$formatterName] = $formatter;
+            $rawContext['_symfony']['marshal']['type_formatter'][$formatterName] = $formatter;
         }
 
         return $rawContext;

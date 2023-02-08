@@ -12,6 +12,7 @@ namespace Symfony\Component\Marshaller\Tests\Context\ContextBuilder\Unmarshal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal\NameAttributeContextBuilder;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AnotherDummyWithNameAttributes;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
@@ -19,14 +20,17 @@ final class NameAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyNameToContext(): void
     {
-        $rawContext = (new NameAttributeContextBuilder())->build(
+        $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
+        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+
+        $rawContext = (new NameAttributeContextBuilder($marshallableResolver))->build(
             sprintf('%s|%s', DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class),
             new Context(),
             [],
         );
 
         $this->assertEquals([
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_name' => [
                         DummyWithNameAttributes::class => ['@id' => 'id'],
@@ -37,10 +41,12 @@ final class NameAttributeContextBuilderTest extends TestCase
         ], $rawContext);
     }
 
-    public function testSkipWithoutClassNames(): void
+    /**
+     * @return \Generator<class-string, null>
+     */
+    private function getMarshallable(): \Generator
     {
-        $rawContext = (new NameAttributeContextBuilder())->build('int', new Context(), []);
-
-        $this->assertSame([], $rawContext);
+        yield DummyWithNameAttributes::class => null;
+        yield AnotherDummyWithNameAttributes::class => null;
     }
 }

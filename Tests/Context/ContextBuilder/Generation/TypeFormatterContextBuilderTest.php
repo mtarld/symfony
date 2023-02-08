@@ -25,7 +25,7 @@ final class TypeFormatterContextBuilderTest extends TestCase
         ]);
 
         $expectedContext = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'type_formatter' => [
                         'int' => $idFormatter,

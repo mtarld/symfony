@@ -24,13 +24,13 @@ final class JsonEncodeFlagsContextBuilderTest extends TestCase
 
         $expectedContext = ['json_encode_flags' => \JSON_BIGINT_AS_STRING];
 
-        $this->assertSame($expectedContext, $contextBuilder->build(new Context($jsonEncodeFlagsOption), []));
+        $this->assertSame($expectedContext, $contextBuilder->build('useless', new Context($jsonEncodeFlagsOption), []));
     }
 
     public function testSkipOnMissingTypeOption(): void
     {
         $contextBuilder = new JsonEncodeFlagsContextBuilder();
 
-        $this->assertSame([], $contextBuilder->build(new Context(), []));
+        $this->assertSame([], $contextBuilder->build('useless', new Context(), []));
     }
 }

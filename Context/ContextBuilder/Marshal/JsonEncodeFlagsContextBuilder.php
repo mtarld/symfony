@@ -18,7 +18,7 @@ use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
  */
 final class JsonEncodeFlagsContextBuilder implements MarshalContextBuilderInterface
 {
-    public function build(Context $context, array $rawContext): array
+    public function build(string $type, Context $context, array $rawContext): array
     {
         /** @var JsonEncodeFlagsOption|null $jsonEncodeFlagsOption */
         $jsonEncodeFlagsOption = $context->get(JsonEncodeFlagsOption::class);

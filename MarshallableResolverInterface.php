@@ -7,11 +7,17 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Fixtures\Dto;
+namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Attribute\Marshallable;
 
-#[Marshallable(nullable: false)]
-final class MarshallableNotNullableDummy
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ */
+interface MarshallableResolverInterface
 {
+    /**
+     * @return \Generator<class-string, Marshallable>
+     */
+    public function resolve(): \Generator;
 }

@@ -14,6 +14,7 @@ use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Hook\Marshal\PropertyHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class PropertyHookTest extends TestCase
@@ -28,7 +29,7 @@ final class PropertyHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'property_name' => $propertyNames,
                 ],
@@ -62,7 +63,7 @@ final class PropertyHookTest extends TestCase
         $typeExtractor->method('extractFromFunctionReturn')->willReturn('string');
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'property_formatter' => $propertyFormatters,
                 ],
@@ -73,7 +74,6 @@ final class PropertyHookTest extends TestCase
 
         $this->assertSame($expectedType, $hookResult['type']);
         $this->assertSame($expectedAccessor, $hookResult['accessor']);
-        $this->assertSame(ClassicDummy::class, $hookResult['context']['symfony']['marshal']['current_property_class']);
     }
 
     /**
@@ -98,7 +98,7 @@ final class PropertyHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'marshal' => [
                     'property_formatter' => [
                         sprintf('%s::$id', ClassicDummy::class) => $formatter,
@@ -132,5 +132,55 @@ final class PropertyHookTest extends TestCase
             sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class),
             DummyWithMethods::invalidContextType(...),
         ];
+    }
+
+    public function testConvertGenericTypes(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn('U');
+
+        $context = [
+            '_symfony' => [
+                'marshal' => [
+                    'generic_parameter_types' => [
+                        ClassicDummy::class => ['T' => 'string'],
+                        DummyWithMethods::class => ['U' => 'int'],
+                    ],
+                    'property_formatter' => [
+                        sprintf('%s::$id', DummyWithMethods::class) => DummyWithMethods::doubleAndCastToString(...),
+                    ],
+                ],
+            ],
+        ];
+
+        $hook = new PropertyHook($typeExtractor);
+
+        $this->assertSame('string', $hook(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context)['type']);
+        $this->assertSame('int', $hook(new \ReflectionProperty(DummyWithMethods::class, 'id'), '$accessor', $context)['type']);
+        $this->assertSame('T', $hook(new \ReflectionProperty(DummyWithQuotes::class, 'name'), '$accessor', $context)['type']);
+    }
+
+    public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass(): void
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn('T');
+
+        $context = [
+            '_symfony' => [
+                'marshal' => [
+                    'generic_parameter_types' => [
+                        ClassicDummy::class => ['T' => 'string'],
+                    ],
+                    'property_formatter' => [
+                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...),
+                    ],
+                ],
+            ],
+        ];
+
+        $hook = new PropertyHook($typeExtractor);
+
+        $this->assertSame('T', $hook(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context)['type']);
     }
 }

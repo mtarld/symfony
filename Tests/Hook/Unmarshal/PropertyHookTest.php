@@ -49,7 +49,7 @@ final class PropertyHookTest extends TestCase
         };
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_name' => [
                         $object::class => ['fooAlias' => 'foo'],
@@ -88,7 +88,7 @@ final class PropertyHookTest extends TestCase
         };
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_formatter' => [
                         sprintf('%s::$bar', $object::class) => $object::castToDateTime(...),
@@ -119,7 +119,7 @@ final class PropertyHookTest extends TestCase
         };
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_name' => [
                         $object::class => ['created_at' => 'createdAt'],
@@ -146,7 +146,7 @@ final class PropertyHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
 
         $context = [
-            'symfony' => [
+            '_symfony' => [
                 'unmarshal' => [
                     'property_formatter' => [
                         sprintf('%s::$id', ClassicDummy::class) => $formatter,
@@ -188,5 +188,98 @@ final class PropertyHookTest extends TestCase
             sprintf('Second argument of property formatter "%s::$id" must be an array.', ClassicDummy::class),
             DummyWithMethods::invalidContextType(...),
         ];
+    }
+
+    public function testConvertGenericTypes(): void
+    {
+        $foo = new class() {
+            public $foo;
+        };
+
+        $bar = new class() {
+            public $bar;
+        };
+
+        $baz = new class() {
+            public $baz;
+
+            public static function baz(int $_): int
+            {
+                return 0;
+            }
+        };
+
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionParameter')->willReturn('U');
+
+        $context = [
+            '_symfony' => [
+                'unmarshal' => [
+                    'generic_parameter_types' => [
+                        $foo::class => ['T' => 'string'],
+                        $baz::class => ['U' => 'int'],
+                    ],
+                    'property_formatter' => [
+                        sprintf('%s::$baz', $baz::class) => $baz::baz(...),
+                    ],
+                ],
+            ],
+        ];
+
+        $hook = new PropertyHook($typeExtractor);
+
+        $type = null;
+
+        $value = static function (string $t) use (&$type): int {
+            $type = $t;
+
+            return 1;
+        };
+
+        $hook(new \ReflectionClass($foo), $foo, 'foo', $value, $context);
+        $this->assertSame('string', $type);
+
+        $hook(new \ReflectionClass($bar), $bar, 'bar', $value, $context);
+        $this->assertSame('T', $type);
+
+        $hook(new \ReflectionClass($baz), $baz, 'baz', $value, $context);
+        $this->assertSame('int', $type);
+    }
+
+    public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass(): void
+    {
+        $foo = new class() {
+            public $foo;
+        };
+
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromFunctionParameter')->willReturn('T');
+
+        $context = [
+            '_symfony' => [
+                'unmarshal' => [
+                    'generic_parameter_types' => [
+                        $foo::class => ['T' => 'string'],
+                    ],
+                    'property_formatter' => [
+                        sprintf('%s::$foo', $foo::class) => DummyWithMethods::doubleAndCastToString(...),
+                    ],
+                ],
+            ],
+        ];
+
+        $hook = new PropertyHook($typeExtractor);
+
+        $type = null;
+
+        $value = static function (string $t) use (&$type): int {
+            $type = $t;
+
+            return 1;
+        };
+
+        $hook(new \ReflectionClass($foo), $foo, 'foo', $value, $context);
+        $this->assertSame('T', $type);
     }
 }

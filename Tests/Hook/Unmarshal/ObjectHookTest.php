@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Hook\Marshal;
+namespace Symfony\Component\Marshaller\Tests\Hook\Unmarshal;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
-use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook;
+use Symfony\Component\Marshaller\Hook\Unmarshal\ObjectHook;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -28,9 +28,9 @@ final class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn($templates);
 
-        $hookResult = (new ObjectHook($typeExtractor))($type, '$accessor', []);
+        $hookResult = (new ObjectHook($typeExtractor))($type, []);
 
-        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['_symfony']['marshal']['generic_parameter_types'] ?? []);
+        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['_symfony']['unmarshal']['generic_parameter_types'] ?? []);
     }
 
     /**
@@ -52,6 +52,6 @@ final class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn(['Tk', 'Tv']);
 
-        (new ObjectHook($typeExtractor))(ClassicDummy::class.'<int>', '$accessor', []);
+        (new ObjectHook($typeExtractor))(ClassicDummy::class.'<int>', []);
     }
 }

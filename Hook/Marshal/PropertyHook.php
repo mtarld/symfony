@@ -11,6 +11,7 @@ namespace Symfony\Component\Marshaller\Hook\Marshal;
 
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
+use Symfony\Component\Marshaller\Type\TypeHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -19,6 +20,8 @@ use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
  */
 final class PropertyHook
 {
+    private TypeHelper|null $typeHelper = null;
+
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
     ) {
@@ -33,11 +36,9 @@ final class PropertyHook
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
-        $propertyFormatter = isset($context['symfony']['marshal']['property_formatter'][$propertyIdentifier])
-            ? new \ReflectionFunction($context['symfony']['marshal']['property_formatter'][$propertyIdentifier])
+        $propertyFormatter = isset($context['_symfony']['marshal']['property_formatter'][$propertyIdentifier])
+            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['marshal']['property_formatter'][$propertyIdentifier]))
             : null;
-
-        $context['symfony']['marshal']['current_property_class'] = $property->getDeclaringClass()->getName();
 
         return [
             'name' => $this->name($property, $propertyIdentifier, $context),
@@ -54,8 +55,8 @@ final class PropertyHook
     {
         $name = $property->getName();
 
-        if (isset($context['symfony']['marshal']['property_name'][$propertyIdentifier])) {
-            $name = $context['symfony']['marshal']['property_name'][$propertyIdentifier];
+        if (isset($context['_symfony']['marshal']['property_name'][$propertyIdentifier])) {
+            $name = $context['_symfony']['marshal']['property_name'][$propertyIdentifier];
         }
 
         return $name;
@@ -66,9 +67,23 @@ final class PropertyHook
      */
     private function type(\ReflectionProperty $property, ?\ReflectionFunction $propertyFormatter, array $context): string
     {
-        return null !== $propertyFormatter
+        $propertyClass = $property->getDeclaringClass()->getName();
+
+        $type = null !== $propertyFormatter
             ? $this->typeExtractor->extractFromFunctionReturn($propertyFormatter)
             : $this->typeExtractor->extractFromProperty($property);
+
+        // if method doesn't belong to the property class, ignore generic search
+        if (null !== $propertyFormatter && $propertyFormatter->getClosureScopeClass()?->getName() !== $propertyClass) {
+            $propertyClass = null;
+        }
+
+        if ([] !== ($genericTypes = $context['_symfony']['marshal']['generic_parameter_types'][$propertyClass] ?? [])) {
+            $this->typeHelper = $this->typeHelper ?? new TypeHelper();
+            $type = $this->typeHelper->replaceGenericTypes($type, $genericTypes);
+        }
+
+        return $type;
     }
 
     /**

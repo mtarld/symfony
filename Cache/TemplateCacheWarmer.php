@@ -9,8 +9,12 @@
 
 namespace Symfony\Component\Marshaller\Cache;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
+use Symfony\Component\Marshaller\Exception\ExceptionInterface;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\MarshallerInterface;
 
 /**
@@ -22,11 +26,12 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
      * @param list<string> $formats
      */
     public function __construct(
-        private readonly MarshallableResolver $marshallableResolver,
+        private readonly MarshallableResolverInterface $marshallableResolver,
         private readonly MarshallerInterface $marshaller,
         private readonly string $cacheDir,
         private readonly array $formats,
         private readonly bool $nullableData,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -64,6 +69,13 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
             $class = '?'.$class;
         }
 
-        file_put_contents($path, $this->marshaller->generate($class, $format));
+        try {
+            file_put_contents($path, $this->marshaller->generate($class, $format));
+        } catch (ExceptionInterface $e) {
+            $this->logger->debug('Cannot generate template for "{class}": {exception}', [
+                'class' => $class,
+                'exception' => $e,
+            ]);
+        }
     }
 }

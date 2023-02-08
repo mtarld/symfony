@@ -13,10 +13,9 @@ use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\ContextBuilder\MarshalContextBuilderInterface;
 use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Hook\Marshal\ObjectHook as MarshalObjectHook;
-use Symfony\Component\Marshaller\Hook\Marshal\PropertyHook as MarshalPropertyHook;
-use Symfony\Component\Marshaller\Hook\Marshal\TypeHook as MarshalTypeHook;
-use Symfony\Component\Marshaller\Hook\Unmarshal\PropertyHook as UnmarshalPropertyHook;
+use Symfony\Component\Marshaller\Context\Option\TypeOption;
+use Symfony\Component\Marshaller\Hook\Marshal as MarshalHook;
+use Symfony\Component\Marshaller\Hook\Unmarshal as UnmarshalHook;
 use Symfony\Component\Marshaller\Stream\StreamInterface;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
@@ -41,8 +40,11 @@ final class Marshaller implements MarshallerInterface
 
     public function marshal(mixed $data, string $format, StreamInterface $output, Context $context = null): void
     {
-        $rawContext = $this->buildMarshalContext($context);
-        $type = $rawContext['type'] ?? get_debug_type($data);
+        /** @var TypeOption|null $typeOption */
+        $typeOption = $context?->get(TypeOption::class);
+        $type = $typeOption?->type ?? get_debug_type($data);
+
+        $rawContext = $this->buildMarshalContext($type, $context);
 
         // if template does not exist, it'll be generated therefore raw context must be filled accordingly
         if (!file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))) {
@@ -63,15 +65,20 @@ final class Marshaller implements MarshallerInterface
     }
 
     /**
+     * @param array<string, mixed> $rawContext
+     *
      * @return array<string, mixed>
      */
-    private function buildMarshalContext(?Context $context): array
+    private function buildMarshalContext(string $type, ?Context $context, array $rawContext = []): array
     {
         $context = $context ?? new Context();
-        $rawContext = ['cache_dir' => $this->cacheDir];
+        $rawContext += [
+            'cache_dir' => $this->cacheDir,
+            'type' => $type,
+        ];
 
         foreach ($this->marshalContextBuilders as $builder) {
-            $rawContext = $builder->build($context, $rawContext);
+            $rawContext = $builder->build($type, $context, $rawContext);
         }
 
         return $rawContext;
@@ -85,12 +92,11 @@ final class Marshaller implements MarshallerInterface
     private function buildGenerationContext(string $type, ?Context $context, array $rawContext = []): array
     {
         $context = $context ?? new Context();
-
         $rawContext += [
             'hooks' => [
-                'object' => (new MarshalObjectHook($this->typeExtractor))(...),
-                'property' => (new MarshalPropertyHook($this->typeExtractor))(...),
-                'type' => (new MarshalTypeHook($this->typeExtractor))(...),
+                'object' => (new MarshalHook\ObjectHook($this->typeExtractor))(...),
+                'property' => (new MarshalHook\PropertyHook($this->typeExtractor))(...),
+                'type' => (new MarshalHook\TypeHook($this->typeExtractor))(...),
             ],
         ];
 
@@ -102,16 +108,17 @@ final class Marshaller implements MarshallerInterface
     }
 
     /**
+     * @param array<string, mixed> $rawContext
+     *
      * @return array<string, mixed>
      */
-    private function buildUnmarshalContext(string $type, ?Context $context): array
+    private function buildUnmarshalContext(string $type, ?Context $context, array $rawContext = []): array
     {
         $context = $context ?? new Context();
-        $rawContext = [];
-
         $rawContext += [
             'hooks' => [
-                'property' => (new UnmarshalPropertyHook($this->typeExtractor))(...),
+                'object' => (new UnmarshalHook\ObjectHook($this->typeExtractor))(...),
+                'property' => (new UnmarshalHook\PropertyHook($this->typeExtractor))(...),
             ],
         ];
 

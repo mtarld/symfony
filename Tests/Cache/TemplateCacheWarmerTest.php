@@ -10,12 +10,10 @@
 namespace Symfony\Component\Marshaller\Tests\Cache;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Cache\MarshallableResolver;
+use Symfony\Component\Marshaller\Attribute\Marshallable;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\MarshallerInterface;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableNotNullableDummy;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\MarshallableNullableDummy;
 
 final class TemplateCacheWarmerTest extends TestCase
 {
@@ -46,7 +44,9 @@ final class TemplateCacheWarmerTest extends TestCase
      */
     public function testWarmUp(array $expectedArguments, array $formats, bool $nullableData): void
     {
-        $marshallableResolver = new MarshallableResolver([__DIR__.'/../Fixtures']);
+        $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
+        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+
         $marshaller = $this->createMock(MarshallerInterface::class);
         $marshaller
             ->expects($this->exactly(\count($expectedArguments)))
@@ -64,12 +64,12 @@ final class TemplateCacheWarmerTest extends TestCase
     {
         yield [
             [
-                ['?'.MarshallableNullableDummy::class, 'json'],
-                ['?'.MarshallableNullableDummy::class, 'xml'],
-                [MarshallableDummy::class, 'json'],
-                [MarshallableDummy::class, 'xml'],
-                [MarshallableNotNullableDummy::class, 'json'],
-                [MarshallableNotNullableDummy::class, 'xml'],
+                ['MarshallableDummy', 'json'],
+                ['MarshallableDummy', 'xml'],
+                ['?MarshallableNullableDummy', 'json'],
+                ['?MarshallableNullableDummy', 'xml'],
+                ['MarshallableNotNullableDummy', 'json'],
+                ['MarshallableNotNullableDummy', 'xml'],
             ],
             ['json', 'xml'],
             false,
@@ -77,9 +77,9 @@ final class TemplateCacheWarmerTest extends TestCase
 
         yield [
             [
-                ['?'.MarshallableNullableDummy::class, 'json'],
-                ['?'.MarshallableDummy::class, 'json'],
-                [MarshallableNotNullableDummy::class, 'json'],
+                ['?MarshallableDummy', 'json'],
+                ['?MarshallableNullableDummy', 'json'],
+                ['MarshallableNotNullableDummy', 'json'],
             ],
             ['json'],
             true,
@@ -88,24 +88,36 @@ final class TemplateCacheWarmerTest extends TestCase
 
     public function testGenerateOnlyIfNotExists(): void
     {
-        $cacheFilename = sprintf('%s%s%s.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5(MarshallableDummy::class));
+        $cacheFilename = sprintf('%s%s%s.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5('MarshallableDummy'));
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }
 
         touch($cacheFilename);
 
-        $marshallableResolver = new MarshallableResolver([__DIR__.'/../Fixtures']);
+        $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
+        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+
         $marshaller = $this->createMock(MarshallerInterface::class);
         $marshaller
             ->expects($this->exactly(2))
             ->method('generate')
             ->withConsecutive(
-                ['?'.MarshallableNullableDummy::class, 'json'],
-                [MarshallableNotNullableDummy::class, 'json'],
+                ['?MarshallableNullableDummy', 'json'],
+                ['MarshallableNotNullableDummy', 'json'],
             )
             ->willReturn('content');
 
         (new TemplateCacheWarmer($marshallableResolver, $marshaller, $this->cacheDir, ['json'], false))->warmUp('useless');
+    }
+
+    /**
+     * @return \Generator<string, Marshallable>
+     */
+    private function getMarshallable(): \Generator
+    {
+        yield 'MarshallableDummy' => new Marshallable();
+        yield 'MarshallableNullableDummy' => new Marshallable(true);
+        yield 'MarshallableNotNullableDummy' => new Marshallable(false);
     }
 }

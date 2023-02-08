@@ -54,7 +54,6 @@ final class JsonLexer implements LexerInterface
             }
 
             if (self::SCALAR === $type) {
-                // TODO maybe yield the result for performances?
                 json_decode($token, flags: $context['json_decode_flags'] ?? 0);
 
                 if (\JSON_ERROR_NONE !== json_last_error()) {

@@ -9,9 +9,17 @@
 
 namespace Symfony\Component\Marshaller\Context\ContextBuilder;
 
+use Symfony\Component\Marshaller\Context\Context;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-interface GenerationContextBuilderInterface extends ContextBuilderInterface
+interface ContextBuilderInterface
 {
+    /**
+     * @param array<string, mixed> $rawContext
+     *
+     * @return array<string, mixed>
+     */
+    public function build(string $type, Context $context, array $rawContext): array;
 }

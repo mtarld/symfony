@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Hook\Marshal;
+namespace Symfony\Component\Marshaller\Hook\Unmarshal;
 
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -31,13 +31,12 @@ final class ObjectHook
     /**
      * @param array<string, mixed> $context
      *
-     * @return array{type: string, accessor: string, context: array<string, mixed>}
+     * @return array{type: string, context: array<string, mixed>}
      */
-    public function __invoke(string $type, string $accessor, array $context): array
+    public function __invoke(string $type, array $context): array
     {
         return [
             'type' => $type,
-            'accessor' => $accessor,
             'context' => $this->addGenericParameterTypes($type, $context),
         ];
     }
@@ -65,7 +64,7 @@ final class ObjectHook
         }
 
         foreach ($genericParameters as $i => $genericParameter) {
-            $context['_symfony']['marshal']['generic_parameter_types'][$genericType][$templates[$i]] = $genericParameter;
+            $context['_symfony']['unmarshal']['generic_parameter_types'][$genericType][$templates[$i]] = $genericParameter;
         }
 
         return $context;

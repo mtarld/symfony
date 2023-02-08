@@ -7,14 +7,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Cache;
+namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Attribute\Marshallable;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class MarshallableResolver
+final class MarshallableResolver implements MarshallableResolverInterface
 {
     /**
      * @param list<string> $paths
@@ -30,6 +30,10 @@ final class MarshallableResolver
     public function resolve(): \Generator
     {
         foreach ($this->fromPaths($this->paths) as $class) {
+            if ($class->isAbstract() || $class->isInterface() || $class->isTrait()) {
+                continue;
+            }
+
             $attributeInstance = null;
 
             foreach ($class->getAttributes() as $attribute) {

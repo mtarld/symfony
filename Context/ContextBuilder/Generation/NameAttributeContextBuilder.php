@@ -12,23 +12,21 @@ namespace Symfony\Component\Marshaller\Context\ContextBuilder\Generation;
 use Symfony\Component\Marshaller\Attribute\Name;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\MarshallableResolverInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 final class NameAttributeContextBuilder implements GenerationContextBuilderInterface
 {
-    private readonly TypeHelper $typeHelper;
-
-    public function __construct()
-    {
-        $this->typeHelper = new TypeHelper();
+    public function __construct(
+        private readonly MarshallableResolverInterface $marshallableResolver,
+    ) {
     }
 
     public function build(string $type, Context $context, array $rawContext): array
     {
-        foreach ($this->typeHelper->extractClassNames($type) as $className) {
+        foreach ($this->marshallableResolver->resolve() as $className => $_) {
             $rawContext = $this->addPropertyNames($className, $rawContext);
         }
 
@@ -53,7 +51,7 @@ final class NameAttributeContextBuilder implements GenerationContextBuilderInter
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-                $rawContext['symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
+                $rawContext['_symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
 
                 break;
             }

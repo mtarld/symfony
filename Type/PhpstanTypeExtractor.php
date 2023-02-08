@@ -136,7 +136,8 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
     public function extractTemplateFromClass(\ReflectionClass $class): array
     {
         $templates = array_map(fn (TemplateTagValueNode $t): string => $t->name, $this->getTemplateNodes($class));
-        if (!array_unique($templates)) {
+
+        if (array_unique($templates) !== $templates) {
             throw new UnexpectedValueException(sprintf('Templates defined in "%s" must be unique.', $class->getName()));
         }
 

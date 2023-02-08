@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Marshaller\Context\Context;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Generation as GenerationContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\Marshal as MarshalContextBuilder;
@@ -22,6 +23,7 @@ use Symfony\Component\Marshaller\Context\Option\TypeOption;
 use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
+use Symfony\Component\Marshaller\MarshallableResolver;
 use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Marshaller\Stream\MemoryStream;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
@@ -63,8 +65,14 @@ final class MarshallerTest extends TestCase
         $marshalGenerationContextBuilders = [
             new GenerationContextBuilder\HookContextBuilder(),
             new GenerationContextBuilder\TypeFormatterContextBuilder(),
-            new GenerationContextBuilder\NameAttributeContextBuilder(),
-            new GenerationContextBuilder\FormatterAttributeContextBuilder(),
+            new GenerationContextBuilder\CachedNameAttributeContextBuilder(
+                new GenerationContextBuilder\NameAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
+                new ArrayAdapter(),
+            ),
+            new GenerationContextBuilder\CachedFormatterAttributeContextBuilder(
+                new GenerationContextBuilder\FormatterAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
+                new ArrayAdapter(),
+            ),
         ];
 
         $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerationContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
@@ -184,7 +192,6 @@ final class MarshallerTest extends TestCase
     public function testMarshal(string $expectedMarshalled, mixed $data, ?Context $context): void
     {
         $marshalContextBuilders = [
-            new MarshalContextBuilder\TypeContextBuilder(),
             new MarshalContextBuilder\JsonEncodeFlagsContextBuilder(),
         ];
 
@@ -215,8 +222,14 @@ final class MarshallerTest extends TestCase
             new UnmarshalContextBuilder\HookContextBuilder(),
             new UnmarshalContextBuilder\CollectErrorsContextBuilder(),
             new UnmarshalContextBuilder\UnionSelectorContextBuilder(),
-            new UnmarshalContextBuilder\NameAttributeContextBuilder(),
-            new UnmarshalContextBuilder\FormatterAttributeContextBuilder(),
+            new UnmarshalContextBuilder\CachedNameAttributeContextBuilder(
+                new UnmarshalContextBuilder\NameAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
+                new ArrayAdapter(),
+            ),
+            new UnmarshalContextBuilder\CachedFormatterAttributeContextBuilder(
+                new UnmarshalContextBuilder\FormatterAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
+                new ArrayAdapter(),
+            ),
         ];
 
         $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);

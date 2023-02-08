@@ -10,8 +10,10 @@
 namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\AbstractDummy;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\NonUniqueTemplatePhpstanExtractableDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\PhpstanExtractableDummy;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
@@ -167,5 +169,21 @@ final class PhpstanTypeExtractorTest extends TestCase
         yield ['ArrayIterator<Tk, Tv>', 'generic'];
         yield ['Tv', 'genericParameter'];
         yield ['FALLBACK', 'undefined'];
+    }
+
+    public function testExtractTemplateFromClass(): void
+    {
+        $extractor = new PhpstanTypeExtractor($this->createStub(TypeExtractorInterface::class));
+
+        $this->assertSame(['Tk', 'Tv'], $extractor->extractTemplateFromClass(new \ReflectionClass(PhpstanExtractableDummy::class)));
+    }
+
+    public function testExtractTemplateFromClassThrowWhenNonUniqueTemplate(): void
+    {
+        $extractor = new PhpstanTypeExtractor($this->createStub(TypeExtractorInterface::class));
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $extractor->extractTemplateFromClass(new \ReflectionClass(NonUniqueTemplatePhpstanExtractableDummy::class));
     }
 }

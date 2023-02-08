@@ -17,16 +17,13 @@ use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class Formatter
 {
-    public readonly ?\Closure $marshalFormatter;
-    public readonly ?\Closure $unmarshalFormatter;
-
     /**
-     * @param string|array{0: string, 1: string} $marshal
-     * @param string|array{0: string, 1: string} $unmarshal
+     * @param string|array{0: string, 1: string}|null $marshal
+     * @param string|array{0: string, 1: string}|null $unmarshal
      */
     public function __construct(
-        string|array $marshal = null,
-        string|array $unmarshal = null,
+        public readonly string|array|null $marshal = null,
+        public readonly string|array|null $unmarshal = null,
     ) {
         if (null !== $marshal) {
             if (!\is_callable($marshal)) {
@@ -39,8 +36,5 @@ final class Formatter
                 throw new InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
             }
         }
-
-        $this->marshalFormatter = null !== $marshal ? \Closure::fromCallable($marshal) : null;
-        $this->unmarshalFormatter = null !== $unmarshal ? \Closure::fromCallable($unmarshal) : null;
     }
 }
