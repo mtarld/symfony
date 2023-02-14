@@ -91,8 +91,7 @@ if (!\function_exists('unmarshal')) {
             $errors = &$context['collected_errors'];
         }
 
-        $tokens = LexerFactory::create($format)->tokens($resource, $context);
-        $result = ParserFactory::create($format)->parse($tokens, Type::createFromString($type), $context);
+        $result = ParserFactory::create($format)->parse($resource, Type::createFromString($type), 0, -1, $context);
 
         if (isset($errors) && [] !== $errors) {
             throw new PartialUnmarshalException($resource, $result, $errors);

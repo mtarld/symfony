@@ -19,8 +19,13 @@ use Symfony\Component\Marshaller\Internal\Parser\ListParserInterface;
  */
 final class JsonListParser implements ListParserInterface
 {
-    public function parse(\Iterator $tokens, array $context): \Iterator
+    public function parse(\Iterator $tokens, $resource, array $context): \Iterator
     {
+        // $it = new \LimitIterator($tokens->);
+        dd($resource);
+        dd($it->current());
+
+
         if ('[' !== $tokens->current()) {
             throw new UnexpectedTokenException('[', $tokens->current());
         }

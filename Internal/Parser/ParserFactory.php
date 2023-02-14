@@ -10,10 +10,8 @@
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
-use Symfony\Component\Marshaller\Internal\Parser\Json\JsonDictParser;
+use Symfony\Component\Marshaller\Internal\Lexer\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonListParser;
-use Symfony\Component\Marshaller\Internal\Parser\Json\JsonNullableParser;
-use Symfony\Component\Marshaller\Internal\Parser\Json\JsonScalarParser;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -29,18 +27,11 @@ final class ParserFactory
     public static function create(string $format): Parser
     {
         return match ($format) {
-            'json' => self::createJson(),
+            'json' => new Parser(
+                new JsonLexer(),
+                new JsonListParser(),
+            ),
             default => throw new UnsupportedFormatException($format),
         };
-    }
-
-    private static function createJson(): Parser
-    {
-        return new Parser(
-            nullableParser: new JsonNullableParser(),
-            scalarParser: new JsonScalarParser(),
-            listParser: new JsonListParser(),
-            dictParser: new JsonDictParser(),
-        );
     }
 }

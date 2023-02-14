@@ -9,15 +9,12 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
-use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
+use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\LogicException;
-use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
-use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
+use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
-use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -26,193 +23,195 @@ use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
  */
 final class Parser
 {
-    private readonly HookExtractor $hookExtractor;
-    private ReflectionTypeExtractor|null $reflectionTypeExtractor = null;
-
     public function __construct(
-        private readonly NullableParserInterface $nullableParser,
-        private readonly ScalarParserInterface $scalarParser,
+        private readonly LexerInterface $lexer,
         private readonly ListParserInterface $listParser,
-        private readonly DictParserInterface $dictParser,
     ) {
-        $this->hookExtractor = new HookExtractor();
     }
 
     /**
-     * @param \Iterator<string>    $tokens
+     * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    public function parse(\Iterator $tokens, Type|UnionType $type, array $context): mixed
+    public function parse(mixed $resource, Type|UnionType $type, int $offset, int $length, array $context): mixed
     {
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $hookResult = $hook((string) $type, $context);
-
-            $type = isset($hookResult['type']) ? Type::createFromString($hookResult['type']) : $type;
-            $context = $hookResult['context'] ?? $context;
-        }
-
-        if ($type instanceof UnionType) {
-            if (!isset($context['union_selector'][(string) $type])) {
-                throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
-            }
-
-            /** @var Type $type */
-            $type = Type::createFromString($context['union_selector'][(string) $type]);
-        }
-
-        if ($type->isNullable()) {
-            return $this->nullableParser->parse($tokens, function (\Iterator $tokens) use ($type, $context): mixed {
-                return $this->parse($tokens, Type::createFromString(substr((string) $type, 1)), $context);
-            }, $context);
-        }
-
         if ($type->isScalar()) {
-            $result = $this->scalarParser->parse($tokens, $type, $context);
+            $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
 
-            return match ($type->name()) {
-                'int' => (int) $result,
-                'float' => (float) $result,
-                'string' => (string) $result,
-                'bool' => (bool) $result,
-                default => throw new LogicException(sprintf('Cannot cast value to "%s".', $type->name())),
-            };
-        }
-
-        if ($type->isList()) {
-            $result = $this->parseList($tokens, $type, $context);
-
-            return $type->isIterable() ? $result : iterator_to_array($result);
+            return json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
         }
 
         if ($type->isDict()) {
-            $result = $this->parseDict($tokens, $type, $context);
+            $tokens = $this->getDictTokens($resource, $offset, $length, $context);
 
-            return $type->isIterable() ? $result : iterator_to_array($result);
+            return iterator_to_array($this->parseDict($resource, $tokens, $type, $context));
+            return $this->parseDict($resource, $tokens, $type, $context);
         }
 
-        if ($type->isObject()) {
-            return $this->parseObject($tokens, $type, $context);
+        if ($type->isList()) {
+            $tokens = $this->getListTokens($resource, $offset, $length, $context);
+
+            return iterator_to_array($this->parseList($resource, $tokens, $type, $context));
+            return $this->parseList($resource, $tokens, $type, $context);
         }
 
         throw new UnsupportedTypeException($type);
     }
 
-    /**
-     * @param \Iterator<string>    $tokens
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<mixed>
-     */
-    private function parseList(\Iterator $tokens, Type $type, array $context): \Iterator
+    private function getDictTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
     {
-        $valueType = $type->collectionValueType();
+        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
+        $level = 0;
 
-        foreach ($this->listParser->parse($tokens, $context) as $_) {
-            yield $this->parse($tokens, $valueType, $context);
-        }
-    }
+        while ($tokens->valid()) {
+            $token = $tokens->current();
+            $tokens->next();
 
-    /**
-     * @param \Iterator<string>    $tokens
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<string, mixed>
-     */
-    private function parseDict(\Iterator $tokens, Type $type, array $context): \Iterator
-    {
-        $valueType = $type->collectionValueType();
-
-        foreach ($this->dictParser->parse($tokens, $context) as $key) {
-            yield $key => $this->parse($tokens, $valueType, $context);
-        }
-    }
-
-    /**
-     * @param \Iterator<string>    $tokens
-     * @param array<string, mixed> $context
-     *
-     * @throws UnexpectedTypeException
-     */
-    private function parseObject(\Iterator $tokens, Type $type, array $context): object
-    {
-        $this->reflectionTypeExtractor = $this->reflectionTypeExtractor ?? new ReflectionTypeExtractor();
-
-        $reflection = new \ReflectionClass($type->className());
-        $object = $this->instantiateObject($reflection, $context);
-
-        foreach ($this->dictParser->parse($tokens, $context) as $key) {
-            try {
-                if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
-                    $hook(
-                        $reflection,
-                        $object,
-                        $key,
-                        fn (string $type, array $context): mixed => $this->parse($tokens, Type::createFromString($type), $context),
-                        $context,
-                    );
-
-                    continue;
-                }
-
-                $object->{$key} = $this->parse($tokens, Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key))), $context);
-            } catch (\TypeError $e) {
-                $exception = new UnexpectedTypeException($e->getMessage());
-                if (!($context['collect_errors'] ?? false)) {
-                    throw $exception;
-                }
-
-                $context['collected_errors'][] = $exception;
-            }
-        }
-
-        return $object;
-    }
-
-    /**
-     * @template T of object
-     *
-     * @param \ReflectionClass<T>  $class
-     * @param array<string, mixed> $context
-     *
-     * @return T
-     *
-     * @throws InvalidConstructorArgumentException
-     */
-    private function instantiateObject(\ReflectionClass $class, array $context): object
-    {
-        if (null === $constructor = $class->getConstructor()) {
-            return new ($class->getName())();
-        }
-
-        if (!$constructor->isPublic()) {
-            return $class->newInstanceWithoutConstructor();
-        }
-
-        $parameters = [];
-        $validContructor = true;
-
-        foreach ($constructor->getParameters() as $parameter) {
-            if ($parameter->isDefaultValueAvailable()) {
-                $parameters[] = $parameter->getDefaultValue();
+            if ('{' === $token['value']) {
+                ++$level;
 
                 continue;
             }
 
-            if ($parameter->getType()?->allowsNull()) {
-                $parameters[] = null;
+            if ('}' === $token['value']) {
+                --$level;
+
+                if (0 === $level) {
+                    $dictLength = $token['position'] - $offset + 1;
+                    $length = -1 === $length ? $dictLength : \min($length, $dictLength);
+
+                    return $this->lexer->tokens($resource, $offset, $length, $context);
+                }
+
+                continue;
+            }
+        }
+
+        throw new InvalidResourceException($resource);
+    }
+
+    private function getListTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
+    {
+        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
+        $level = 0;
+
+        while ($tokens->valid()) {
+            $token = $tokens->current();
+            $tokens->next();
+
+            if ('[' === $token['value']) {
+                ++$level;
 
                 continue;
             }
 
-            $exception = new InvalidConstructorArgumentException($parameter->getName(), $class->getName());
-            if (!($context['collect_errors'] ?? false)) {
-                throw $exception;
-            }
+            if (']' === $token['value']) {
+                --$level;
 
-            $context['collected_errors'][] = $exception;
-            $validContructor = false;
+                if (0 === $level) {
+                    $listLength = $token['position'] - $offset + 1;
+                    $length = -1 === $length ? $listLength : \min($length, $listLength);
+
+                    return $this->lexer->tokens($resource, $offset, $length, $context);
+                }
+
+                continue;
+            }
         }
 
-        return $validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor();
+        throw new InvalidResourceException($resource);
+    }
+
+    private function parseDict(mixed $resource, \Iterator $tokens, Type $type, array $context): \Iterator
+    {
+        $level = 0;
+
+        $key = null;
+
+        $valueType = $type->collectionValueType();
+        $valueOffset = null;
+
+        foreach ($tokens as $token) {
+            if (\in_array($token['value'], ['[', '{'], true)) {
+                ++$level;
+
+                continue;
+            }
+
+            if (\in_array($token['value'], [']', '}'], true)) {
+                --$level;
+
+                if (0 === $level) {
+                    yield $key => $this->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
+
+                    $key = null;
+                }
+
+                continue;
+            }
+
+            if (1 !== $level) {
+                continue;
+            }
+
+            if (':' === $token['value']) {
+                continue;
+            }
+
+            if (',' === $token['value']) {
+                yield $key => $this->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
+
+                $key = null;
+
+                continue;
+            }
+
+            if (null === $key) {
+                $key = json_decode($token['value'], flags: $context['json_decode_flags'] ?? 0);
+
+                continue;
+            }
+
+            $valueOffset = $token['position'];
+        }
+    }
+
+    private function parseList(mixed $resource, \Iterator $tokens, Type $type, array $context): \Generator
+    {
+        $level = 0;
+
+        $itemType = $type->collectionValueType();
+        $itemOffset = $tokens->current()['position'] + 1;
+
+        foreach ($tokens as $token) {
+            if (\in_array($token['value'], ['[', '{'], true)) {
+                ++$level;
+
+                continue;
+            }
+
+            if (\in_array($token['value'], [']', '}'], true)) {
+                --$level;
+
+                if (0 === $level) {
+                    yield $this->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
+
+                    $itemOffset = $tokens->current()['position'] + 1;
+                }
+
+                continue;
+            }
+
+            if (1 !== $level) {
+                continue;
+            }
+
+            if (',' === $token['value']) {
+                yield $this->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
+
+                $itemOffset = $tokens->current()['position'] + 1;
+            }
+        }
     }
 }
+

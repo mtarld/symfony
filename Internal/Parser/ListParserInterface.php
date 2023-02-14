@@ -22,5 +22,5 @@ interface ListParserInterface
      *
      * @return \Iterator<null>
      */
-    public function parse(\Iterator $tokens, array $context): \Iterator;
+    public function parse(\Iterator $tokens, $resource, array $context): \Iterator;
 }

@@ -9,7 +9,6 @@
 
 namespace Symfony\Component\Marshaller\Internal\Lexer;
 
-use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\RuntimeException;
 
 /**
@@ -19,106 +18,30 @@ use Symfony\Component\Marshaller\Exception\RuntimeException;
  */
 final class JsonLexer implements LexerInterface
 {
-    private const DICT_START = 1;
-    private const DICT_END = 2;
-
-    private const LIST_START = 4;
-    private const LIST_END = 8;
-
-    private const KEY = 16;
-    private const COLUMN = 32;
-    private const COMMA = 64;
-
-    private const SCALAR = 128;
-
-    private const END = 256;
-
-    private const VALUE = self::DICT_START | self::LIST_START | self::SCALAR;
-
-    public function tokens(mixed $resource, array $context): \Iterator
-    {
-        $expectedType = self::VALUE;
-        $structureStack = new \SplStack();
-
-        foreach ($this->tokenize($resource) as $i => [$type, $token]) {
-            if ('' === $token) {
-                continue;
-            }
-
-            if (0 === $i && "\xEF\xBB\xBF" === $token) {
-                continue;
-            }
-
-            if (!($type & $expectedType)) {
-                throw new InvalidResourceException($resource);
-            }
-
-            if (self::SCALAR === $type) {
-                json_decode($token, flags: $context['json_decode_flags'] ?? 0);
-
-                if (\JSON_ERROR_NONE !== json_last_error()) {
-                    throw new InvalidResourceException($resource);
-                }
-            }
-
-            if (self::KEY === $type && !(str_starts_with($token, '"') && str_ends_with($token, '"'))) {
-                throw new InvalidResourceException($resource);
-            }
-
-            yield $token;
-
-            if (self::DICT_START === $type) {
-                $structureStack->push('dict');
-            } elseif (self::LIST_START === $type) {
-                $structureStack->push('list');
-            } elseif ($type & (self::DICT_END | self::LIST_END)) {
-                $structureStack->pop();
-            }
-
-            $currentStructure = !$structureStack->isEmpty() ? $structureStack->top() : null;
-
-            $expectedType = match (true) {
-                self::DICT_START === $type => self::KEY | self::DICT_END,
-                self::LIST_START === $type => self::VALUE | self::LIST_END,
-
-                self::KEY === $type => self::COLUMN,
-                self::COLUMN === $type => self::VALUE,
-
-                self::COMMA === $type && 'dict' === $currentStructure => self::KEY,
-                self::COMMA === $type && 'list' === $currentStructure => self::VALUE,
-
-                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'dict' === $currentStructure => self::COMMA | self::DICT_END,
-                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) && 'list' === $currentStructure => self::COMMA | self::LIST_END,
-                0 !== ($type & (self::DICT_END | self::LIST_END | self::SCALAR)) => self::END,
-
-                default => throw new InvalidResourceException($resource),
-            };
-        }
-
-        if (self::END !== $expectedType) {
-            throw new InvalidResourceException($resource);
-        }
-    }
-
-    /**
-     * @param resource $resource
-     *
-     * @return \Generator<array{int, string}>
-     */
-    private function tokenize(mixed $resource): \Generator
+    public function tokens(mixed $resource, int $offset, int $length, array $context): \Generator
     {
         $token = '';
+        $currentTokenPosition = $offset;
+
         $inString = false;
         $escaping = false;
 
-        while (!feof($resource)) {
-            if (false === $buffer = stream_get_contents($resource, 4096)) {
+        $chunkLength = -1 === $length ? 4096 : \min($length, 4096);
+        $readLength = 0;
+
+        // TODO validate JSON
+
+        rewind($resource);
+
+        while (!feof($resource) && (-1 === $length || $readLength < $length)) {
+            if (false === $buffer = \stream_get_contents($resource, $chunkLength, $offset)) {
                 throw new RuntimeException('Cannot read JSON resource.');
             }
 
-            $length = \strlen($buffer);
+            $bufferLength = \strlen($buffer);
+            $readLength += $bufferLength;
 
-            for ($i = 0; $i < $length; ++$i) {
+            for ($i = 0; $i < $bufferLength; ++$i) {
                 $byte = $buffer[$i];
 
                 if ($escaping) {
@@ -147,70 +70,34 @@ final class JsonLexer implements LexerInterface
                     continue;
                 }
 
-                if (',' === $byte) {
-                    yield [self::SCALAR, $token];
-                    yield [self::COMMA, $byte];
+                if (\in_array($byte, [',', ':', '{', '}', '[', ']'], true)) {
+                    if ('' !== $token) {
+                        yield ['position' => $currentTokenPosition, 'value' => $token];
 
-                    $token = '';
+                        $currentTokenPosition += \strlen($token);
+                        $token = '';
+                    }
 
-                    continue;
-                }
-
-                if (':' === $byte) {
-                    yield [self::KEY, $token];
-                    yield [self::COLUMN, $byte];
-
-                    $token = '';
+                    yield ['position' => $currentTokenPosition, 'value' => $byte];
+                    ++$currentTokenPosition;
 
                     continue;
                 }
 
-                if ('{' === $byte) {
-                    yield [self::SCALAR, $token];
-                    yield [self::DICT_START, $byte];
-
-                    $token = '';
-
-                    continue;
+                if ($token !== '' || !\in_array($byte, [' ', "\r", "\t", "\n"], true)) {
+                    $token .= $byte;
+                } else {
+                    ++$currentTokenPosition;
                 }
 
-                if ('[' === $byte) {
-                    yield [self::SCALAR, $token];
-                    yield [self::LIST_START, $byte];
-
-                    $token = '';
-
-                    continue;
-                }
-
-                if ('}' === $byte) {
-                    yield [self::SCALAR, $token];
-                    yield [self::DICT_END, $byte];
-
-                    $token = '';
-
-                    continue;
-                }
-
-                if (']' === $byte) {
-                    yield [self::SCALAR, $token];
-                    yield [self::LIST_END, $byte];
-
-                    $token = '';
-
-                    continue;
-                }
-
-                if ('' === $token && \in_array($byte, [' ', "\r", "\t", "\n"], true)) {
-                    continue;
-                }
-
-                $token .= $byte;
             }
+
+            $offset += $bufferLength;
         }
 
-        if (!$inString && !$escaping) {
-            yield [self::SCALAR, $token];
+        if (!$inString && !$escaping && '' !== $token) {
+            yield ['position' => $currentTokenPosition, 'value' => $token];
         }
     }
 }
+
