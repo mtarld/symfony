@@ -9,10 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
-use Symfony\Component\Marshaller\Exception\InvalidResourceException;
-use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
+use Symfony\Component\Marshaller\Internal\Lexer\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
@@ -24,8 +22,9 @@ use Symfony\Component\Marshaller\Internal\Type\UnionType;
 final class Parser
 {
     public function __construct(
-        private readonly LexerInterface $lexer,
+        private readonly ScalarParserInterface $scalarParser,
         private readonly ListParserInterface $listParser,
+        private readonly DictParserInterface $dictParser,
     ) {
     }
 
@@ -35,183 +34,32 @@ final class Parser
      */
     public function parse(mixed $resource, Type|UnionType $type, int $offset, int $length, array $context): mixed
     {
-        if ($type->isScalar()) {
-            $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
+        if ($type->isNullable()) {
+            $l = new JsonLexer();
 
-            return json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
+            $tokens = $l->tokens($resource, $offset, $length, $context);
+            if ('null' === $tokens->current()['value']) {
+                return null;
+            }
+        }
+
+        if ($type->isScalar()) {
+            return $this->scalarParser->parse($resource, $type, $offset, $length, $context);
         }
 
         if ($type->isDict()) {
-            $tokens = $this->getDictTokens($resource, $offset, $length, $context);
+            $result = $this->dictParser->parse($resource, $type, $offset, $length, $context, $this);
 
-            return iterator_to_array($this->parseDict($resource, $tokens, $type, $context));
-            return $this->parseDict($resource, $tokens, $type, $context);
+            return $type->isIterable() ? $result : iterator_to_array($result);
         }
 
         if ($type->isList()) {
-            $tokens = $this->getListTokens($resource, $offset, $length, $context);
+            $result = $this->listParser->parse($resource, $type, $offset, $length, $context, $this);
 
-            return iterator_to_array($this->parseList($resource, $tokens, $type, $context));
-            return $this->parseList($resource, $tokens, $type, $context);
+            return $type->isIterable() ? $result : iterator_to_array($result);
         }
 
         throw new UnsupportedTypeException($type);
-    }
-
-    private function getDictTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
-    {
-        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
-        $level = 0;
-
-        while ($tokens->valid()) {
-            $token = $tokens->current();
-            $tokens->next();
-
-            if ('{' === $token['value']) {
-                ++$level;
-
-                continue;
-            }
-
-            if ('}' === $token['value']) {
-                --$level;
-
-                if (0 === $level) {
-                    $dictLength = $token['position'] - $offset + 1;
-                    $length = -1 === $length ? $dictLength : \min($length, $dictLength);
-
-                    return $this->lexer->tokens($resource, $offset, $length, $context);
-                }
-
-                continue;
-            }
-        }
-
-        throw new InvalidResourceException($resource);
-    }
-
-    private function getListTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
-    {
-        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
-        $level = 0;
-
-        while ($tokens->valid()) {
-            $token = $tokens->current();
-            $tokens->next();
-
-            if ('[' === $token['value']) {
-                ++$level;
-
-                continue;
-            }
-
-            if (']' === $token['value']) {
-                --$level;
-
-                if (0 === $level) {
-                    $listLength = $token['position'] - $offset + 1;
-                    $length = -1 === $length ? $listLength : \min($length, $listLength);
-
-                    return $this->lexer->tokens($resource, $offset, $length, $context);
-                }
-
-                continue;
-            }
-        }
-
-        throw new InvalidResourceException($resource);
-    }
-
-    private function parseDict(mixed $resource, \Iterator $tokens, Type $type, array $context): \Iterator
-    {
-        $level = 0;
-
-        $key = null;
-
-        $valueType = $type->collectionValueType();
-        $valueOffset = null;
-
-        foreach ($tokens as $token) {
-            if (\in_array($token['value'], ['[', '{'], true)) {
-                ++$level;
-
-                continue;
-            }
-
-            if (\in_array($token['value'], [']', '}'], true)) {
-                --$level;
-
-                if (0 === $level) {
-                    yield $key => $this->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
-
-                    $key = null;
-                }
-
-                continue;
-            }
-
-            if (1 !== $level) {
-                continue;
-            }
-
-            if (':' === $token['value']) {
-                continue;
-            }
-
-            if (',' === $token['value']) {
-                yield $key => $this->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
-
-                $key = null;
-
-                continue;
-            }
-
-            if (null === $key) {
-                $key = json_decode($token['value'], flags: $context['json_decode_flags'] ?? 0);
-
-                continue;
-            }
-
-            $valueOffset = $token['position'];
-        }
-    }
-
-    private function parseList(mixed $resource, \Iterator $tokens, Type $type, array $context): \Generator
-    {
-        $level = 0;
-
-        $itemType = $type->collectionValueType();
-        $itemOffset = $tokens->current()['position'] + 1;
-
-        foreach ($tokens as $token) {
-            if (\in_array($token['value'], ['[', '{'], true)) {
-                ++$level;
-
-                continue;
-            }
-
-            if (\in_array($token['value'], [']', '}'], true)) {
-                --$level;
-
-                if (0 === $level) {
-                    yield $this->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
-
-                    $itemOffset = $tokens->current()['position'] + 1;
-                }
-
-                continue;
-            }
-
-            if (1 !== $level) {
-                continue;
-            }
-
-            if (',' === $token['value']) {
-                yield $this->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
-
-                $itemOffset = $tokens->current()['position'] + 1;
-            }
-        }
     }
 }
 

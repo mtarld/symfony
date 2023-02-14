@@ -19,8 +19,8 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
 interface ScalarParserInterface
 {
     /**
-     * @param \Iterator<string>    $tokens
+     * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    public function parse(\Iterator $tokens, Type $type, array $context): int|float|string|bool|null;
+    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context): int|float|string|bool|null;
 }

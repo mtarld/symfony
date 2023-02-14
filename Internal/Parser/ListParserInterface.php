@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Internal\Type\Type;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -17,10 +19,10 @@ namespace Symfony\Component\Marshaller\Internal\Parser;
 interface ListParserInterface
 {
     /**
-     * @param \Iterator<string>    $tokens
+     * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @return \Iterator<null>
+     * @return \Iterator<mixed>
      */
-    public function parse(\Iterator $tokens, $resource, array $context): \Iterator;
+    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context, Parser $parser): \Iterator;
 }

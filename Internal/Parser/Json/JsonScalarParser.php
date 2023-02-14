@@ -9,6 +9,8 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
+use Symfony\Component\Marshaller\Exception\LogicException;
+use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ScalarParserInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 
@@ -19,11 +21,23 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
  */
 final class JsonScalarParser implements ScalarParserInterface
 {
-    public function parse(\Iterator $tokens, Type $type, array $context): int|float|string|bool|null
-    {
-        $value = json_decode($tokens->current(), flags: $context['json_decode_flags'] ?? 0);
-        $tokens->next();
+    public function __construct(
+        private readonly LexerInterface $lexer,
+    ) {
+    }
 
-        return $value;
+    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context): int|float|string|bool|null
+    {
+        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
+
+        $result = \json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
+
+        return match ($type->name()) {
+            'int' => (int) $result,
+            'float' => (float) $result,
+            'string' => (string) $result,
+            'bool' => (bool) $result,
+            default => throw new LogicException(sprintf('Cannot cast scalar to "%s".', $type->name())),
+        };
     }
 }
