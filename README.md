@@ -4,6 +4,9 @@
 - bench in CI
 
 ## Common
+- See why deserialization is slow
+- why not iterable?
+
 - ISSUE -> 'Relation' class is not discovered when marshalling/unmarshalling...
 - Test that the Relation test case is working (marshal and unmarshal, functionally)
 
