@@ -27,9 +27,9 @@ final class JsonListParser implements ListParserInterface
     ) {
     }
 
-    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context, Parser $parser): \Iterator
+    public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator
     {
-        $tokens = $this->tokens($resource, $offset, $length, $context);
+        $tokens = $this->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
 
         $itemType = $type->collectionValueType();
         $itemOffset = $tokens->current()['position'] + 1;
@@ -47,7 +47,12 @@ final class JsonListParser implements ListParserInterface
                 --$level;
 
                 if (0 === $level) {
-                    yield $parser->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
+                    $context['resource'] = [
+                        'offset' => $itemOffset,
+                        'length' => $token['position'] - $itemOffset,
+                    ];
+
+                    yield $parser->parse($resource, $itemType, $context);
 
                     $itemOffset = $tokens->current()['position'] + 1;
                 }
@@ -60,7 +65,12 @@ final class JsonListParser implements ListParserInterface
             }
 
             if (',' === $token['value']) {
-                yield $parser->parse($resource, $itemType, $itemOffset, $token['position'] - $itemOffset, $context);
+                $context['resource'] = [
+                    'offset' => $itemOffset,
+                    'length' => $token['position'] - $itemOffset,
+                ];
+
+                yield $parser->parse($resource, $itemType, $context);
 
                 $itemOffset = $tokens->current()['position'] + 1;
             }

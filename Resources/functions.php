@@ -91,7 +91,12 @@ if (!\function_exists('unmarshal')) {
             $errors = &$context['collected_errors'];
         }
 
-        $result = ParserFactory::create($format)->parse($resource, Type::createFromString($type), 0, -1, $context);
+        $context['resource'] = [
+            'offset' => 0,
+            'length' => -1,
+        ];
+
+        $result = ParserFactory::create($format)->parse($resource, Type::createFromString($type), $context);
 
         if (isset($errors) && [] !== $errors) {
             throw new PartialUnmarshalException($resource, $result, $errors);

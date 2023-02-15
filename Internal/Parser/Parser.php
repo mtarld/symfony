@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\Lexer\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
@@ -32,31 +31,22 @@ final class Parser
      * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    public function parse(mixed $resource, Type|UnionType $type, int $offset, int $length, array $context): mixed
+    public function parse(mixed $resource, Type|UnionType $type, array $context): mixed
     {
-        if ($type->isNullable()) {
-            $l = new JsonLexer();
-
-            $tokens = $l->tokens($resource, $offset, $length, $context);
-            if ('null' === $tokens->current()['value']) {
-                return null;
-            }
-        }
-
         if ($type->isScalar()) {
-            return $this->scalarParser->parse($resource, $type, $offset, $length, $context);
+            return $this->scalarParser->parse($resource, $type, $context);
         }
 
         if ($type->isDict()) {
-            $result = $this->dictParser->parse($resource, $type, $offset, $length, $context, $this);
+            $result = $this->dictParser->parse($resource, $type, $context, $this);
 
-            return $type->isIterable() ? $result : iterator_to_array($result);
+            return ($type->isIterable() || null === $result) ? $result : iterator_to_array($result);
         }
 
         if ($type->isList()) {
-            $result = $this->listParser->parse($resource, $type, $offset, $length, $context, $this);
+            $result = $this->listParser->parse($resource, $type, $context, $this);
 
-            return $type->isIterable() ? $result : iterator_to_array($result);
+            return ($type->isIterable() || null === $result) ? $result : iterator_to_array($result);
         }
 
         throw new UnsupportedTypeException($type);

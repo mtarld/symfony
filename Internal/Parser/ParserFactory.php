@@ -13,7 +13,6 @@ use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 use Symfony\Component\Marshaller\Internal\Lexer\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonDictParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonListParser;
-use Symfony\Component\Marshaller\Internal\Parser\Json\JsonNullableParser;
 use Symfony\Component\Marshaller\Internal\Parser\Json\JsonScalarParser;
 
 /**
@@ -40,9 +39,7 @@ final class ParserFactory
         $lexer = new JsonLexer();
 
         return new Parser(
-            // lexer: $lexer,
             scalarParser: new JsonScalarParser($lexer),
-            // nullableParser: new JsonNullableParser(),
             listParser: new JsonListParser($lexer),
             dictParser: new JsonDictParser($lexer),
         );

@@ -22,5 +22,5 @@ interface ScalarParserInterface
      * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context): int|float|string|bool|null;
+    public function parse(mixed $resource, Type $type, array $context): int|float|string|bool|null;
 }

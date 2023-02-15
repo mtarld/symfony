@@ -22,33 +22,58 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
  */
 final class JsonDictParser implements DictParserInterface
 {
+    private const NESTING_CHARS = ['{' => true, '[' => true];
+    private const UNNESTING_CHARS = ['}' => true, ']' => true];
+
     public function __construct(
         private readonly LexerInterface $lexer,
     ) {
     }
 
-    public function parse(mixed $resource, Type $type, int $offset, int $length, array $context, Parser $parser): \Iterator
+    public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator
     {
-        $tokens = $this->tokens($resource, $offset, $length, $context);
+        $tokens = $this->scopeTokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
 
-        $valueType = $type->collectionValueType();
-        $valueOffset = null;
+        if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
+            if (!$type->isNullable()) {
+                throw new InvalidResourceException($resource);
+            }
 
+            return null;
+        }
+
+        return $this->parseTokens($tokens, $resource, $type->collectionValueType(), $context, $parser);
+    }
+
+    /**
+     * @param \Iterator<array{position: int, value: string}> $tokens
+     * @param array<string, mixed>                           $context
+     *
+     * @return \Iterator<string, mixed>
+     */
+    public function parseTokens(\Iterator $tokens, mixed $resource, Type $valueType, array $context, Parser $parser): \Iterator
+    {
         $level = 0;
+        $offset = null;
         $key = null;
 
         foreach ($tokens as $token) {
-            if (\in_array($token['value'], ['[', '{'], true)) {
+            if (isset(self::NESTING_CHARS[$token['value']])) {
                 ++$level;
 
                 continue;
             }
 
-            if (\in_array($token['value'], [']', '}'], true)) {
+            if (isset(self::UNNESTING_CHARS[$token['value']])) {
                 --$level;
 
                 if (0 === $level) {
-                    yield $key => $parser->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
+                    $context['resource'] = [
+                        'offset' => $offset,
+                        'length' => $token['position'] - $offset,
+                    ];
+
+                    yield $key => $parser->parse($resource, $valueType, $context);
 
                     $key = null;
                 }
@@ -65,7 +90,12 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (',' === $token['value']) {
-                yield $key => $parser->parse($resource, $valueType, $valueOffset, $token['position'] - $valueOffset, $context);
+                $context['resource'] = [
+                    'offset' => $offset,
+                    'length' => $token['position'] - $offset,
+                ];
+
+                yield $key => $parser->parse($resource, $valueType, $context);
 
                 $key = null;
 
@@ -78,22 +108,27 @@ final class JsonDictParser implements DictParserInterface
                 continue;
             }
 
-            $valueOffset = $token['position'];
+            $offset = $token['position'];
         }
     }
 
     /**
+     * @param resource             $resource
      * @param array<string, mixed> $context
      *
      * @return \Iterator<array{position: int, value: string}>
      */
-    private function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
+    private function scopeTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
     {
         $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
 
         $level = 0;
 
         foreach ($tokens as $token) {
+            if ('null' === $token['value'] && 1 === \iterator_count($tokens)) {
+                return new \ArrayIterator([$token]);
+            }
+
             if ('{' === $token['value']) {
                 ++$level;
 
