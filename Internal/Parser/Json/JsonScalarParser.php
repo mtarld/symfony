@@ -34,7 +34,7 @@ final class JsonScalarParser implements ScalarParserInterface
         $result = \json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
         if (null === $result) {
             if (!$type->isNullable()) {
-                throw new InvalidResourceException($resource);
+                // throw new InvalidResourceException($resource);
             }
 
             return null;

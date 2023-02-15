@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser;
 
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
@@ -33,6 +34,15 @@ final class Parser
      */
     public function parse(mixed $resource, Type|UnionType $type, array $context): mixed
     {
+        if ($type instanceof UnionType) {
+            if (!isset($context['union_selector'][(string) $type])) {
+                throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
+            }
+
+            /** @var Type $type */
+            $type = Type::createFromString($context['union_selector'][(string) $type]);
+        }
+
         if ($type->isScalar()) {
             return $this->scalarParser->parse($resource, $type, $context);
         }

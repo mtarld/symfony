@@ -14,6 +14,7 @@ use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ListParserInterface;
 use Symfony\Component\Marshaller\Internal\Parser\Parser;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -24,6 +25,7 @@ final class JsonListParser implements ListParserInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
+    private const ENDING_CHARS = [']' => true, 'null' => true];
 
     public function __construct(
         private readonly LexerInterface $lexer,
@@ -52,7 +54,7 @@ final class JsonListParser implements ListParserInterface
      *
      * @return \Iterator<mixed>
      */
-    public function parseTokens(\Iterator $tokens, mixed $resource, Type $valueType, array $context, Parser $parser): \Iterator
+    public function parseTokens(\Iterator $tokens, mixed $resource, Type|UnionType $valueType, array $context, Parser $parser): \Iterator
     {
         $level = 0;
         $offset = $tokens->current()['position'] + 1;
@@ -73,7 +75,6 @@ final class JsonListParser implements ListParserInterface
                         'length' => $token['position'] - $offset,
                     ];
 
-                    // TODO same in dict
                     if ($context['resource']['length'] > 0) {
                         yield $parser->parse($resource, $valueType, $context);
                     }
@@ -100,7 +101,7 @@ final class JsonListParser implements ListParserInterface
             }
         }
 
-        if (0 !== $level || !\in_array($token['value'], ['null', ']'], true)) {
+        if (0 !== $level || !isset(self::ENDING_CHARS[$token['value']])) {
             throw new InvalidResourceException($resource);
         }
     }
