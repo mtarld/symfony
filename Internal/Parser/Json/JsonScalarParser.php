@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
+use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ScalarParserInterface;
@@ -31,6 +32,13 @@ final class JsonScalarParser implements ScalarParserInterface
         $tokens = $this->lexer->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
 
         $result = \json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
+        if (null === $result) {
+            if (!$type->isNullable()) {
+                throw new InvalidResourceException($resource);
+            }
+
+            return null;
+        }
 
         return match ($type->name()) {
             'int' => (int) $result,

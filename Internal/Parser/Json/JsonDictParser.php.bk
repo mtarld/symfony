@@ -32,9 +32,9 @@ final class JsonDictParser implements DictParserInterface
 
     public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
+        $tokens = $this->scopeTokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
 
-        if ('null' === $tokens->current()['value'] && 1 === \iterator_count($tokens)) {
+        if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
             if (!$type->isNullable()) {
                 throw new InvalidResourceException($resource);
             }
@@ -47,7 +47,6 @@ final class JsonDictParser implements DictParserInterface
 
     /**
      * @param \Iterator<array{position: int, value: string}> $tokens
-     * @param resource                                       $resource
      * @param array<string, mixed>                           $context
      *
      * @return \Iterator<string, mixed>
@@ -55,16 +54,10 @@ final class JsonDictParser implements DictParserInterface
     public function parseTokens(\Iterator $tokens, mixed $resource, Type $valueType, array $context, Parser $parser): \Iterator
     {
         $level = 0;
-        $offset = $tokens->current()['position'] + 1;
+        $offset = null;
         $key = null;
-        $firstValueToken = false;
 
         foreach ($tokens as $token) {
-            if ($firstValueToken) {
-                $firstValueToken = false;
-                $offset = $token['position'];
-            }
-
             if (isset(self::NESTING_CHARS[$token['value']])) {
                 ++$level;
 
@@ -74,17 +67,15 @@ final class JsonDictParser implements DictParserInterface
             if (isset(self::UNNESTING_CHARS[$token['value']])) {
                 --$level;
 
-                if (0 === $level && '}' === $token['value']) {
+                if (0 === $level) {
                     $context['resource'] = [
                         'offset' => $offset,
                         'length' => $token['position'] - $offset,
                     ];
 
-                    if ($context['resource']['length'] > 0) {
-                        yield $key => $parser->parse($resource, $valueType, $context);
-                    }
+                    yield $key => $parser->parse($resource, $valueType, $context);
 
-                    break;
+                    $key = null;
                 }
 
                 continue;
@@ -95,8 +86,6 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (':' === $token['value']) {
-                $firstValueToken = true;
-
                 continue;
             }
 
@@ -115,11 +104,51 @@ final class JsonDictParser implements DictParserInterface
 
             if (null === $key) {
                 $key = \json_decode($token['value'], flags: $context['json_decode_flags'] ?? 0);
+
+                continue;
+            }
+
+            $offset = $token['position'];
+        }
+    }
+
+    /**
+     * @param resource             $resource
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<array{position: int, value: string}>
+     */
+    private function scopeTokens(mixed $resource, int $offset, int $length, array $context): \Iterator
+    {
+        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
+
+        $level = 0;
+
+        foreach ($tokens as $token) {
+            if ('null' === $token['value'] && 1 === \iterator_count($tokens)) {
+                return new \ArrayIterator([$token]);
+            }
+
+            if ('{' === $token['value']) {
+                ++$level;
+
+                continue;
+            }
+
+            if ('}' === $token['value']) {
+                --$level;
+
+                if (0 === $level) {
+                    $nestedLength = $token['position'] - $offset + 1;
+                    $length = -1 === $length ? $nestedLength : \min($length, $nestedLength);
+
+                    return $this->lexer->tokens($resource, $offset, $length, $context);
+                }
+
+                continue;
             }
         }
 
-        if (0 !== $level || !\in_array($token['value'], ['null', '}'], true)) {
-            throw new InvalidResourceException($resource);
-        }
+        throw new InvalidResourceException($resource);
     }
 }

@@ -22,6 +22,9 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
  */
 final class JsonListParser implements ListParserInterface
 {
+    private const NESTING_CHARS = ['{' => true, '[' => true];
+    private const UNNESTING_CHARS = ['}' => true, ']' => true];
+
     public function __construct(
         private readonly LexerInterface $lexer,
     ) {
@@ -29,32 +32,53 @@ final class JsonListParser implements ListParserInterface
 
     public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator
     {
-        $tokens = $this->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
 
-        $itemType = $type->collectionValueType();
-        $itemOffset = $tokens->current()['position'] + 1;
+        if ('null' === $tokens->current()['value'] && 1 === \iterator_count($tokens)) {
+            if (!$type->isNullable()) {
+                throw new InvalidResourceException($resource);
+            }
 
+            return null;
+        }
+
+        return $this->parseTokens($tokens, $resource, $type->collectionValueType(), $context, $parser);
+    }
+
+    /**
+     * @param \Iterator<array{position: int, value: string}> $tokens
+     * @param resource                                       $resource
+     * @param array<string, mixed>                           $context
+     *
+     * @return \Iterator<mixed>
+     */
+    public function parseTokens(\Iterator $tokens, mixed $resource, Type $valueType, array $context, Parser $parser): \Iterator
+    {
         $level = 0;
+        $offset = $tokens->current()['position'] + 1;
 
         foreach ($tokens as $token) {
-            if (\in_array($token['value'], ['[', '{'], true)) {
+            if (isset(self::NESTING_CHARS[$token['value']])) {
                 ++$level;
 
                 continue;
             }
 
-            if (\in_array($token['value'], [']', '}'], true)) {
+            if (isset(self::UNNESTING_CHARS[$token['value']])) {
                 --$level;
 
                 if (0 === $level) {
                     $context['resource'] = [
-                        'offset' => $itemOffset,
-                        'length' => $token['position'] - $itemOffset,
+                        'offset' => $offset,
+                        'length' => $token['position'] - $offset,
                     ];
 
-                    yield $parser->parse($resource, $itemType, $context);
+                    // TODO same in dict
+                    if ($context['resource']['length'] > 0) {
+                        yield $parser->parse($resource, $valueType, $context);
+                    }
 
-                    $itemOffset = $tokens->current()['position'] + 1;
+                    break;
                 }
 
                 continue;
@@ -66,49 +90,18 @@ final class JsonListParser implements ListParserInterface
 
             if (',' === $token['value']) {
                 $context['resource'] = [
-                    'offset' => $itemOffset,
-                    'length' => $token['position'] - $itemOffset,
+                    'offset' => $offset,
+                    'length' => $token['position'] - $offset,
                 ];
 
-                yield $parser->parse($resource, $itemType, $context);
+                yield $parser->parse($resource, $valueType, $context);
 
-                $itemOffset = $tokens->current()['position'] + 1;
-            }
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<array{position: int, value: string}>
-     */
-    private function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
-    {
-        $tokens = $this->lexer->tokens($resource, $offset, $length, $context);
-
-        $level = 0;
-
-        foreach ($tokens as $token) {
-            if ('[' === $token['value']) {
-                ++$level;
-
-                continue;
-            }
-
-            if (']' === $token['value']) {
-                --$level;
-
-                if (0 === $level) {
-                    $nestedLength = $token['position'] - $offset + 1;
-                    $length = -1 === $length ? $nestedLength : \min($length, $nestedLength);
-
-                    return $this->lexer->tokens($resource, $offset, $length, $context);
-                }
-
-                continue;
+                $offset = $token['position'] + 1;
             }
         }
 
-        throw new InvalidResourceException($resource);
+        if (0 !== $level || !\in_array($token['value'], ['null', ']'], true)) {
+            throw new InvalidResourceException($resource);
+        }
     }
 }

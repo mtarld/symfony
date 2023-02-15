@@ -84,12 +84,13 @@ final class JsonLexer implements LexerInterface
                     continue;
                 }
 
-                if ($token !== '' || !\in_array($byte, [' ', "\r", "\t", "\n"], true)) {
-                    $token .= $byte;
+                if (\in_array($byte, [' ', "\r", "\t", "\n"], true)) {
+                    if ('' === $token) {
+                        ++$currentTokenPosition;
+                    }
                 } else {
-                    ++$currentTokenPosition;
+                    $token .= $byte;
                 }
-
             }
 
             $offset += $bufferLength;
