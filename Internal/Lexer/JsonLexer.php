@@ -18,7 +18,7 @@ use Symfony\Component\Marshaller\Exception\RuntimeException;
  */
 final class JsonLexer implements LexerInterface
 {
-    public function tokens(mixed $resource, int $offset, int $length, array $context): \Generator
+    public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
     {
         $token = '';
         $currentTokenPosition = $offset;
@@ -26,7 +26,7 @@ final class JsonLexer implements LexerInterface
         $inString = false;
         $escaping = false;
 
-        $chunkLength = -1 === $length ? 4096 : \min($length, 4096);
+        $chunkLength = -1 === $length ? 4096 : min($length, 4096);
         $readLength = 0;
 
         // TODO validate JSON
@@ -34,7 +34,7 @@ final class JsonLexer implements LexerInterface
         rewind($resource);
 
         while (!feof($resource) && (-1 === $length || $readLength < $length)) {
-            if (false === $buffer = \stream_get_contents($resource, $chunkLength, $offset)) {
+            if (false === $buffer = stream_get_contents($resource, $chunkLength, $offset)) {
                 throw new RuntimeException('Cannot read JSON resource.');
             }
 
@@ -101,4 +101,3 @@ final class JsonLexer implements LexerInterface
         }
     }
 }
-

@@ -22,7 +22,7 @@ interface DictParserInterface
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @return \Iterator<string, mixed>|null
+     * @return \Iterator<string, array{offset: int, length: int}>|null
      */
-    public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator;
+    public function parse(mixed $resource, Type $type, array $context): ?\Iterator;
 }

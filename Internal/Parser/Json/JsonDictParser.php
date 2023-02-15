@@ -12,9 +12,7 @@ namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
-use Symfony\Component\Marshaller\Internal\Parser\Parser;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,11 +30,11 @@ final class JsonDictParser implements DictParserInterface
     ) {
     }
 
-    public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator
+    public function parse(mixed $resource, Type $type, array $context): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary']['offset'], $context['boundary']['length'], $context);
 
-        if ('null' === $tokens->current()['value'] && 1 === \iterator_count($tokens)) {
+        if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
             if (!$type->isNullable()) {
                 throw new InvalidResourceException($resource);
             }
@@ -44,7 +42,7 @@ final class JsonDictParser implements DictParserInterface
             return null;
         }
 
-        return $this->parseTokens($tokens, $resource, $type->collectionValueType(), $context, $parser);
+        return $this->parseTokens($tokens, $resource, $context);
     }
 
     /**
@@ -52,9 +50,9 @@ final class JsonDictParser implements DictParserInterface
      * @param resource                                       $resource
      * @param array<string, mixed>                           $context
      *
-     * @return \Iterator<string, mixed>
+     * @return \Iterator<string, array{offset: int, length: int}>
      */
-    public function parseTokens(\Iterator $tokens, mixed $resource, Type|UnionType $valueType, array $context, Parser $parser): \Iterator
+    public function parseTokens(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
         $offset = $tokens->current()['position'] + 1;
@@ -77,13 +75,13 @@ final class JsonDictParser implements DictParserInterface
                 --$level;
 
                 if (0 === $level && '}' === $token['value']) {
-                    $context['resource'] = [
+                    $context['boundary'] = [
                         'offset' => $offset,
                         'length' => $token['position'] - $offset,
                     ];
 
-                    if ($context['resource']['length'] > 0) {
-                        yield $key => $parser->parse($resource, $valueType, $context);
+                    if (null !== $key && $context['boundary']['length'] > 0) {
+                        yield $key => $context['boundary'];
                     }
 
                     break;
@@ -103,12 +101,14 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (',' === $token['value']) {
-                $context['resource'] = [
+                $context['boundary'] = [
                     'offset' => $offset,
                     'length' => $token['position'] - $offset,
                 ];
 
-                yield $key => $parser->parse($resource, $valueType, $context);
+                if (null !== $key && $context['boundary']['length'] > 0) {
+                    yield $key => $context['boundary'];
+                }
 
                 $key = null;
 
@@ -116,11 +116,11 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (null === $key) {
-                $key = \json_decode($token['value'], flags: $context['json_decode_flags'] ?? 0);
+                $key = json_decode($token['value'], flags: $context['json_decode_flags'] ?? 0);
             }
         }
 
-        if (0 !== $level || !isset(self::ENDING_CHARS[$token['value']])) {
+        if (0 !== $level || !isset(self::ENDING_CHARS[$token['value'] ?? null])) {
             throw new InvalidResourceException($resource);
         }
     }

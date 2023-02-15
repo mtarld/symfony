@@ -29,12 +29,12 @@ final class JsonScalarParser implements ScalarParserInterface
 
     public function parse(mixed $resource, Type $type, array $context): int|float|string|bool|null
     {
-        $tokens = $this->lexer->tokens($resource, $context['resource']['offset'], $context['resource']['length'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary']['offset'], $context['boundary']['length'], $context);
 
-        $result = \json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
+        $result = json_decode($tokens->current()['value'], flags: $context['json_decode_flags'] ?? 0);
         if (null === $result) {
             if (!$type->isNullable()) {
-                // throw new InvalidResourceException($resource);
+                throw new InvalidResourceException($resource);
             }
 
             return null;

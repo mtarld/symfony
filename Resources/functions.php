@@ -17,7 +17,6 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Internal\Lexer\LexerFactory;
 use Symfony\Component\Marshaller\Internal\Parser\ParserFactory;
 use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Internal\Type\Type;
@@ -91,7 +90,7 @@ if (!\function_exists('unmarshal')) {
             $errors = &$context['collected_errors'];
         }
 
-        $context['resource'] = [
+        $context['boundary'] = [
             'offset' => 0,
             'length' => -1,
         ];

@@ -22,7 +22,7 @@ interface ListParserInterface
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @return \Iterator<mixed>|null
+     * @return \Iterator<array{offset: int, length: int}>|null
      */
-    public function parse(mixed $resource, Type $type, array $context, Parser $parser): ?\Iterator;
+    public function parse(mixed $resource, Type $type, array $context): ?\Iterator;
 }

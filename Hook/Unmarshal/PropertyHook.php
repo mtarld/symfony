@@ -35,7 +35,13 @@ final class PropertyHook
     public function __invoke(\ReflectionClass $class, object $object, string $key, callable $value, array $context): void
     {
         $propertyClass = $class->getName();
-        $propertyName = $context['_symfony']['unmarshal']['property_name'][$class->getName()][$key] ?? $key;
+        $propertyName = $context['_symfony']['unmarshal']['property_name'][$propertyClass][$key] ?? $key;
+
+        // TODO test
+        if (!$class->hasProperty($propertyName)) {
+            return;
+        }
+
         $propertyIdentifier = sprintf('%s::$%s', $class->getName(), $propertyName);
         $propertyFormatter = isset($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])
             ? \Closure::fromCallable($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])
