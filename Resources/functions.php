@@ -18,11 +18,11 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Internal\Decoder\Json\JsonDecoder;
-use Symfony\Component\Marshaller\Internal\Denormalizer\Denormalizer;
-use Symfony\Component\Marshaller\Internal\Parser\ParserFactory;
 use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
+use Symfony\Component\Marshaller\Internal\Unmarshal\DecoderFactory;
+use Symfony\Component\Marshaller\Internal\Unmarshal\UnmarshallerFactory;
 
 if (!\function_exists('marshal')) {
     /**
@@ -93,16 +93,17 @@ if (!\function_exists('unmarshal')) {
             $errors = &$context['collected_errors'];
         }
 
-        $context['boundary'] = [
-            'offset' => 0,
-            'length' => -1,
-        ];
+        // TODO can be overriden
+        $context['boundary'] = new Boundary(0, -1);
 
-        $context['mode'] = 'eager';
+        $context['mode'] = $context['mode'] ?? 'lazy';
+
+        $unmarshaller = UnmarshallerFactory::create($format);
+        $type = Type::createFromString($type);
 
         $result = match ($mode = $context['mode'] ?? 'lazy') {
-            'lazy' => ParserFactory::create($format)->parse($resource, Type::createFromString($type), $context),
-            'eager' => (new Denormalizer())->denormalize((new JsonDecoder())->decode($resource, 0, -1, $context), Type::createFromString($type), $context),
+            'lazy' => $unmarshaller->unmarshal($resource, $type, $context),
+            'eager' => $unmarshaller->unmarshal(DecoderFactory::create($format)->decode($resource, $context['boundary'], $context), $type, $context),
             default => throw new InvalidArgumentException(sprintf('Invalid "%s" mode.', $mode)),
         };
 

@@ -7,22 +7,21 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Parser;
-
-use Symfony\Component\Marshaller\Internal\Type\Type;
+namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
  */
-interface DictParserInterface
+interface LexerInterface
 {
     /**
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @return \Iterator<string, array{offset: int, length: int}>|null
+     * @return \Iterator<array{position: int, value: string}>
      */
-    public function parse(mixed $resource, Type $type, array $context): ?\Iterator;
+    public function tokens(mixed $resource, Boundary $boundary, array $context): \Iterator;
 }
+

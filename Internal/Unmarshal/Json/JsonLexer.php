@@ -7,9 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Lexer;
+namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\RuntimeException;
+use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -18,10 +20,12 @@ use Symfony\Component\Marshaller\Exception\RuntimeException;
  */
 final class JsonLexer implements LexerInterface
 {
-    public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
+    public function tokens(mixed $resource, Boundary $boundary, array $context): \Iterator
     {
+        $offset = $currentTokenPosition = $boundary->offset;
+        $length = $boundary->length;
+
         $token = '';
-        $currentTokenPosition = $offset;
 
         $inString = false;
         $escaping = false;
@@ -102,3 +106,4 @@ final class JsonLexer implements LexerInterface
         }
     }
 }
+

@@ -7,20 +7,20 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Lexer;
+namespace Symfony\Component\Marshaller\Internal\Unmarshal;
+
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
  */
-interface LexerInterface
+interface DecoderInterface
 {
     /**
      * @param resource             $resource
      * @param array<string, mixed> $context
-     *
-     * @return \Iterator<array{position: int, value: string}>
      */
-    public function tokens(mixed $resource, int $offset, int $limit, array $context): \Iterator;
+    public function decode(mixed $resource, Boundary $boundary, array $context): mixed;
 }
+

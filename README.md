@@ -11,6 +11,7 @@
 
 ## Common
 - validate reflection factory
+- DSL instead of options?
 - maybe move hooks out from Marshaller? (no new anymore)
 
 - determine which services and classes are internal

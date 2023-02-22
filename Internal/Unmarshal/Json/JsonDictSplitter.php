@@ -1,26 +1,14 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- * (c) Fabien Potencier <fabien@symfony.com>
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
-namespace Symfony\Component\Marshaller\Internal\Parser\Json;
+namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
-use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
-use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
-use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
+use Symfony\Component\Marshaller\Internal\Unmarshal\DictSplitterInterface;
+use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 
-/**
- * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
- */
-final class JsonDictParser implements DictParserInterface
+final class JsonDictSplitter implements DictSplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
@@ -31,19 +19,15 @@ final class JsonDictParser implements DictParserInterface
     ) {
     }
 
-    public function parse(mixed $resource, Type $type, array $context): ?\Iterator
+    public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['boundary']['offset'], $context['boundary']['length'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary'], $context);
 
         if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
-            if (!$type->isNullable()) {
-                throw new UnexpectedValueException('TODO');
-            }
-
             return null;
         }
 
-        return $this->parseTokens($tokens, $resource, $context);
+        return $this->createBoundaries($tokens, $resource, $context);
     }
 
     /**
@@ -51,9 +35,9 @@ final class JsonDictParser implements DictParserInterface
      * @param resource                                       $resource
      * @param array<string, mixed>                           $context
      *
-     * @return \Iterator<string, array{offset: int, length: int}>
+     * @return \Iterator<string, Boundary>
      */
-    public function parseTokens(\Iterator $tokens, mixed $resource, array $context): \Iterator
+    public function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
         $offset = $tokens->current()['position'] + 1;
@@ -76,14 +60,10 @@ final class JsonDictParser implements DictParserInterface
                 --$level;
 
                 if (0 === $level && '}' === $token['value']) {
-                    $context['boundary'] = [
-                        // TODO boundary DTO
-                        'offset' => $offset,
-                        'length' => $token['position'] - $offset,
-                    ];
+                    $boundary = new Boundary($offset, $token['position'] - $offset);
 
-                    if (null !== $key && $context['boundary']['length'] > 0) {
-                        yield $key => $context['boundary'];
+                    if (null !== $key && $boundary->length > 0) {
+                        yield $key => $boundary;
                     }
 
                     break;
@@ -103,13 +83,10 @@ final class JsonDictParser implements DictParserInterface
             }
 
             if (',' === $token['value']) {
-                $context['boundary'] = [
-                    'offset' => $offset,
-                    'length' => $token['position'] - $offset,
-                ];
+                $boundary = new Boundary($offset, $token['position'] - $offset);
 
-                if (null !== $key && $context['boundary']['length'] > 0) {
-                    yield $key => $context['boundary'];
+                if (null !== $key && $boundary->length > 0) {
+                    yield $key => $boundary;
                 }
 
                 $key = null;

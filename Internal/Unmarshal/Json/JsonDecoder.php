@@ -7,11 +7,12 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Decoder\Json;
+namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\RuntimeException;
-use Symfony\Component\Marshaller\Internal\Decoder\DecoderInterface;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
+use Symfony\Component\Marshaller\Internal\Unmarshal\DecoderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -20,9 +21,9 @@ use Symfony\Component\Marshaller\Internal\Decoder\DecoderInterface;
  */
 final class JsonDecoder implements DecoderInterface
 {
-    public function decode(mixed $resource, int $offset, int $length, array $context): mixed
+    public function decode(mixed $resource, Boundary $boundary, array $context): mixed
     {
-        if (false === $content = stream_get_contents($resource, $length, $offset)) {
+        if (false === $content = stream_get_contents($resource, $boundary->length, $boundary->offset)) {
             throw new RuntimeException('Cannot read JSON resource.');
         }
 
@@ -39,3 +40,4 @@ final class JsonDecoder implements DecoderInterface
         return $data;
     }
 }
+
