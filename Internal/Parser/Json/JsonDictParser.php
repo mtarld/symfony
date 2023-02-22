@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\DictParserInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
@@ -36,7 +37,7 @@ final class JsonDictParser implements DictParserInterface
 
         if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
             if (!$type->isNullable()) {
-                throw new InvalidResourceException($resource);
+                throw new UnexpectedValueException('TODO');
             }
 
             return null;
@@ -76,6 +77,7 @@ final class JsonDictParser implements DictParserInterface
 
                 if (0 === $level && '}' === $token['value']) {
                     $context['boundary'] = [
+                        // TODO boundary DTO
                         'offset' => $offset,
                         'length' => $token['position'] - $offset,
                     ];

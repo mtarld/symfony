@@ -1,17 +1,16 @@
 # TODO
 
 ## Unmarshal
+- validate JSON
+- eager/lazy mode
+- JSON pointer
+- DTOs instead of hashmaps
+- improve perf of lazy mode
+- test that the Relation test case is working (marshal and unmarshal, functionally)
 - bench in CI
 
 ## Common
-- See why deserialization is slow
-- why not iterable?
-
-- ISSUE -> 'Relation' class is not discovered when marshalling/unmarshalling...
-- Test that the Relation test case is working (marshal and unmarshal, functionally)
-
 - validate reflection factory
-
 - maybe move hooks out from Marshaller? (no new anymore)
 
 - determine which services and classes are internal

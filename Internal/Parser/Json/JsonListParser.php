@@ -10,6 +10,7 @@
 namespace Symfony\Component\Marshaller\Internal\Parser\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
+use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Internal\Lexer\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Parser\ListParserInterface;
 use Symfony\Component\Marshaller\Internal\Type\Type;
@@ -36,7 +37,7 @@ final class JsonListParser implements ListParserInterface
 
         if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
             if (!$type->isNullable()) {
-                throw new InvalidResourceException($resource);
+                throw new UnexpectedValueException('TODO');
             }
 
             return null;

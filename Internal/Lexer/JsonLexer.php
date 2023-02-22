@@ -72,6 +72,7 @@ final class JsonLexer implements LexerInterface
 
                 if (\in_array($byte, [',', ':', '{', '}', '[', ']'], true)) {
                     if ('' !== $token) {
+                        // TODO DTO instead
                         yield ['position' => $currentTokenPosition, 'value' => $token];
 
                         $currentTokenPosition += \strlen($token);

@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller;
 
+use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ArgumentsNode;
@@ -17,6 +18,8 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
+use Symfony\Component\Marshaller\Internal\Decoder\Json\JsonDecoder;
+use Symfony\Component\Marshaller\Internal\Denormalizer\Denormalizer;
 use Symfony\Component\Marshaller\Internal\Parser\ParserFactory;
 use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Internal\Type\Type;
@@ -95,7 +98,13 @@ if (!\function_exists('unmarshal')) {
             'length' => -1,
         ];
 
-        $result = ParserFactory::create($format)->parse($resource, Type::createFromString($type), $context);
+        $context['mode'] = 'eager';
+
+        $result = match ($mode = $context['mode'] ?? 'lazy') {
+            'lazy' => ParserFactory::create($format)->parse($resource, Type::createFromString($type), $context),
+            'eager' => (new Denormalizer())->denormalize((new JsonDecoder())->decode($resource, 0, -1, $context), Type::createFromString($type), $context),
+            default => throw new InvalidArgumentException(sprintf('Invalid "%s" mode.', $mode)),
+        };
 
         if (isset($errors) && [] !== $errors) {
             throw new PartialUnmarshalException($resource, $result, $errors);
