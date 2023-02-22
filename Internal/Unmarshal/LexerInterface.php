@@ -24,4 +24,3 @@ interface LexerInterface
      */
     public function tokens(mixed $resource, Boundary $boundary, array $context): \Iterator;
 }
-

@@ -9,7 +9,6 @@
 
 namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
-
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -23,4 +22,3 @@ interface DecoderInterface
      */
     public function decode(mixed $resource, Boundary $boundary, array $context): mixed;
 }
-

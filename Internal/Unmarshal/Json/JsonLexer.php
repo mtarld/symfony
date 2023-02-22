@@ -10,8 +10,8 @@
 namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\RuntimeException;
-use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
+use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -106,4 +106,3 @@ final class JsonLexer implements LexerInterface
         }
     }
 }
-

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * This file is part of the Symfony package.
+ * (c) Fabien Potencier <fabien@symfony.com>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
 use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
@@ -86,7 +93,7 @@ final class Unmarshaller
     }
 
     /**
-     * @param resource $resource
+     * @param resource             $resource
      * @param array<string, mixed> $context
      */
     private function lazyUnmarshalScalar(mixed $resource, Type $type, array $context): int|string|bool|float|null
@@ -95,12 +102,12 @@ final class Unmarshaller
     }
 
     /**
-     * @param list<mixed>|array<string, mixed> $collection
-     * @param array<string, mixed>                               $context
+     * @param list<mixed>|array<string, mixed>|null $collection
+     * @param array<string, mixed>                  $context
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
      */
-    private function unmarshalCollection(array $collection, Type $type, array $context): \Iterator|array|null
+    private function unmarshalCollection(?array $collection, Type $type, array $context): \Iterator|array|null
     {
         if (null === $collection) {
             return null;
@@ -113,11 +120,11 @@ final class Unmarshaller
 
     /**
      * @param array<string, mixed>|list<mixed> $collection
-     * @param array<string, mixed>                               $context
+     * @param array<string, mixed>             $context
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
-    private function unmarshalCollectionItems(array $collection, Type $type, array $context): \Iterator
+    private function unmarshalCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
     {
         foreach ($collection as $key => $value) {
             yield $key => $this->unmarshal($value, $type, $context);
@@ -125,8 +132,8 @@ final class Unmarshaller
     }
 
     /**
-     * @param resource $resource
-     * @param array<string, mixed>                               $context
+     * @param resource             $resource
+     * @param array<string, mixed> $context
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
      */
@@ -144,22 +151,22 @@ final class Unmarshaller
     }
 
     /**
-     * @param \Iterator<Boundary> $boundaries
-     * @param resource                                           $resource
-     * @param array<string, mixed>                               $context
+     * @param \Iterator<Boundary>  $boundaries
+     * @param resource             $resource
+     * @param array<string, mixed> $context
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
     private function lazyUnmarshalCollectionItems(\Iterator $boundaries, mixed $resource, Type|UnionType $type, array $context): \Iterator
     {
         foreach ($boundaries as $key => $boundary) {
-            yield $key =>  $this->unmarshal($resource, $type, ['boundary' => $boundary] + $context);
+            yield $key => $this->unmarshal($resource, $type, ['boundary' => $boundary] + $context);
         }
     }
 
     /**
-     * @param array<string, mixed>|null                              $values
-     * @param array<string, mixed>                               $context
+     * @param array<string, mixed>|null $values
+     * @param array<string, mixed>      $context
      */
     private function unmarshalObject(?array $values, Type $type, array $context): ?object
     {
@@ -209,8 +216,8 @@ final class Unmarshaller
     }
 
     /**
-     * @param resource                                           $resource
-     * @param array<string, mixed>                               $context
+     * @param resource             $resource
+     * @param array<string, mixed> $context
      */
     private function lazyUnmarshalObject(mixed $resource, Type $type, array $context): ?object
     {

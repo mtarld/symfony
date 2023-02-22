@@ -40,4 +40,3 @@ final class JsonDecoder implements DecoderInterface
         return $data;
     }
 }
-
