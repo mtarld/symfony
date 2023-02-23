@@ -9,7 +9,6 @@
 
 namespace Symfony\Component\Marshaller\Hook\Unmarshal;
 
-use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 use Symfony\Component\Marshaller\Type\TypeHelper;
 
@@ -20,11 +19,15 @@ use Symfony\Component\Marshaller\Type\TypeHelper;
  */
 final class PropertyHook
 {
-    private TypeHelper|null $typeHelper = null;
+    private readonly TypeHelper $typeHelper;
+
+    private static array $valueTypesCache = [];
+    private static array $classPropertiesCache = [];
 
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
     ) {
+        $this->typeHelper = new TypeHelper();
     }
 
     /**
@@ -36,65 +39,50 @@ final class PropertyHook
     {
         $propertyClass = $class->getName();
         $propertyName = $context['_symfony']['unmarshal']['property_name'][$propertyClass][$key] ?? $key;
+        $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
-        // TODO test
-        if (!$class->hasProperty($propertyName)) {
+        if (!isset(self::$classPropertiesCache[$cacheKey])) {
+            self::$classPropertiesCache[$cacheKey] = $class->hasProperty($propertyName);
+        }
+
+        if (!self::$classPropertiesCache[$cacheKey]) {
             return;
         }
 
-        $propertyIdentifier = sprintf('%s::$%s', $class->getName(), $propertyName);
-        $propertyFormatter = isset($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])
-            ? \Closure::fromCallable($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])
-            : null;
-
-        if (null !== $propertyFormatter) {
-            $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
-            $this->validateFormatter($propertyFormatterReflection, $propertyIdentifier);
-
-            $valueType = $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
-
-            // if method doesn't belong to the property class, ignore generic search
-            if ($propertyFormatterReflection->getClosureScopeClass()?->getName() !== $propertyClass) {
-                $propertyClass = null;
+        if (!isset($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])) {
+            if (!isset(self::$valueTypesCache[$cacheKey])) {
+                self::$valueTypesCache[$cacheKey] = $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
             }
-        }
 
-        $valueType ??= $this->typeExtractor->extractFromProperty(new \ReflectionProperty($object, $propertyName));
+            $valueType = self::$valueTypesCache[$cacheKey];
 
-        if ([] !== ($genericTypes = $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass] ?? [])) {
-            $this->typeHelper = $this->typeHelper ?? new TypeHelper();
-            $valueType = $this->typeHelper->replaceGenericTypes($valueType, $genericTypes);
-        }
-
-        $propertyValue = $value($valueType, $context);
-
-        if (null !== $propertyFormatter) {
-            $propertyValue = $propertyFormatter($propertyValue, $context);
-        }
-
-        $object->{$propertyName} = $propertyValue;
-    }
-
-    private function validateFormatter(\ReflectionFunction $reflection, string $propertyIdentifier): void
-    {
-        if (!$reflection->getClosureScopeClass()?->hasMethod($reflection->getName()) || !$reflection->isStatic()) {
-            throw new InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
-        }
-
-        if (($returnType = $reflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
-            throw new InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
-        }
-
-        if (\count($reflection->getParameters()) < 1) {
-            throw new InvalidArgumentException(sprintf('Property formatter "%s" must have at least one argument.', $propertyIdentifier));
-        }
-
-        if (null !== ($contextParameter = $reflection->getParameters()[1] ?? null)) {
-            $contextParameterType = $contextParameter->getType();
-
-            if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
+            if (isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])) {
+                $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
             }
+
+            $object->{$propertyName} = $value($valueType, $context);
+
+            return;
         }
+
+        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier]));
+
+        $propertyFormatter = \Closure::fromCallable($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier]);
+        $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
+
+        if (!isset(self::$valueTypesCache[$cacheKey])) {
+            self::$valueTypesCache[$cacheKey] = $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
+        }
+
+        $valueType = self::$valueTypesCache[$cacheKey];
+
+        if (
+            isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])
+            && $propertyFormatterReflection->getClosureScopeClass()?->getName() === $propertyClass
+        ) {
+            $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
+        }
+
+        $object->{$propertyName} = $propertyFormatter($value($valueType, $context), $context);
     }
 }

@@ -19,7 +19,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
-use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 use Symfony\Component\Marshaller\Internal\Unmarshal\DecoderFactory;
 use Symfony\Component\Marshaller\Internal\Unmarshal\UnmarshallerFactory;
@@ -55,7 +55,7 @@ if (!\function_exists('marshal_generate')) {
     function marshal_generate(string $type, string $format, array $context = []): string
     {
         $compiler = new Compiler();
-        $type = Type::createFromString($type);
+        $type = TypeFactory::createFromString($type);
         $accessor = new VariableNode('data');
 
         $context = $context + [
@@ -98,8 +98,11 @@ if (!\function_exists('unmarshal')) {
 
         $context['mode'] = $context['mode'] ?? 'lazy';
 
+        $context['mode'] = 'lazy';
+        // $context['mode'] = 'eager';
+
         $unmarshaller = UnmarshallerFactory::create($format);
-        $type = Type::createFromString($type);
+        $type = TypeFactory::createFromString($type);
 
         $result = match ($mode = $context['mode'] ?? 'lazy') {
             'lazy' => $unmarshaller->unmarshal($resource, $type, $context),

@@ -16,11 +16,18 @@ use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 final class Unmarshaller
 {
+    private static array $typesCache = [];
+    private static array $propertyTypesCache = [];
+    private static array $classReflectionsCache = [];
+    private static array $objectHooksCache = [];
+    private static array $instantiatedObjectsCache = [];
+
     public function __construct(
         private readonly HookExtractor $hookExtractor,
         private readonly ReflectionTypeExtractor $reflectionTypeExtractor,
@@ -35,20 +42,13 @@ final class Unmarshaller
      */
     public function unmarshal(mixed $resourceOrData, Type|UnionType $type, array $context): mixed
     {
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
-            $hookResult = $hook((string) $type, $context);
-
-            $type = isset($hookResult['type']) ? Type::createFromString($hookResult['type']) : $type;
-            $context = $hookResult['context'] ?? $context;
-        }
-
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][(string) $type])) {
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
             }
 
             /** @var Type $type */
-            $type = Type::createFromString($context['union_selector'][(string) $type]);
+            $type = TypeFactory::createFromString($context['union_selector'][(string) $type]);
         }
 
         if ('lazy' === $context['mode']) {
@@ -174,7 +174,23 @@ final class Unmarshaller
             return null;
         }
 
-        $reflection = new \ReflectionClass($type->className());
+        if (!isset(self::$objectHooksCache[$typeString = $typeString = (string) $type])) {
+            self::$objectHooksCache[$typeString] = $this->hookExtractor->extractFromObject($type, $context);
+        }
+
+        if (null !== $hook = self::$objectHooksCache[$typeString]) {
+            $hookResult = $hook((string) $type, $context);
+
+            $type = isset($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $type;
+            $context = $hookResult['context'] ?? $context;
+        }
+
+        if (!isset(self::$classReflectionsCache[$typeString])) {
+            self::$classReflectionsCache[$typeString] = new \ReflectionClass($type->className());
+        }
+
+        $reflection = self::$classReflectionsCache[$typeString];
+
         // TODO override using context
         $object = $this->instantiateObject($reflection, $context);
 
@@ -185,23 +201,25 @@ final class Unmarshaller
                         $reflection,
                         $object,
                         $key,
-                        fn (string $type, array $context): mixed => $this->unmarshal($value, Type::createFromString($type), $context),
+                        fn (string $type, array $context): mixed => $this->unmarshal(
+                            $value,
+                            self::$typesCache[$type] = self::$typesCache[$type] ?? TypeFactory::createFromString($type),
+                            $context,
+                        ),
                         $context,
                     );
 
                     continue;
                 }
 
-                // TODO test
+                // TODO cache
                 if (!$reflection->hasProperty($key)) {
                     continue;
                 }
 
-                $object->{$key} = $this->unmarshal(
-                    $value,
-                    Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key))),
-                    $context,
-                );
+                self::$propertyTypesCache[$key] = self::$propertyTypesCache[$key] ?? TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key)));
+
+                $object->{$key} = $this->unmarshal($value, self::$propertyTypesCache[$key], $context);
             } catch (\TypeError $e) {
                 $exception = new UnexpectedTypeException($e->getMessage());
                 if (!($context['collect_errors'] ?? false)) {
@@ -225,7 +243,23 @@ final class Unmarshaller
             return null;
         }
 
-        $reflection = new \ReflectionClass($type->className());
+        if (!isset(self::$objectHooksCache[$typeString = $typeString = (string) $type])) {
+            self::$objectHooksCache[$typeString] = $this->hookExtractor->extractFromObject($type, $context);
+        }
+
+        if (null !== $hook = self::$objectHooksCache[$typeString]) {
+            $hookResult = $hook((string) $type, $context);
+
+            $type = isset($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $type;
+            $context = $hookResult['context'] ?? $context;
+        }
+
+        if (!isset(self::$classReflectionsCache[$typeString])) {
+            self::$classReflectionsCache[$typeString] = new \ReflectionClass($type->className());
+        }
+
+        $reflection = self::$classReflectionsCache[$typeString];
+
         $object = $this->instantiateObject($reflection, $context);
 
         foreach ($boundaries as $key => $boundary) {
@@ -235,22 +269,25 @@ final class Unmarshaller
                         $reflection,
                         $object,
                         $key,
-                        fn (string $type, array $context): mixed => $this->unmarshal($resource, Type::createFromString($type), ['boundary' => $boundary] + $context),
+                        fn (string $type, array $context): mixed => $this->unmarshal(
+                            $resource,
+                            self::$typesCache[$type] = self::$typesCache[$type] ?? TypeFactory::createFromString($type),
+                            ['boundary' => $boundary] + $context,
+                        ),
                         $context,
                     );
 
                     continue;
                 }
 
+                // TODO cache
                 if (!$reflection->hasProperty($key)) {
                     continue;
                 }
 
-                $object->{$key} = $this->unmarshal(
-                    $resource,
-                    Type::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key))),
-                    ['boundary' => $boundary] + $context,
-                );
+                self::$propertyTypesCache[$key] = self::$propertyTypesCache[$key] ?? TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key)));
+
+                $object->{$key} = $this->unmarshal($resource, self::$propertyTypesCache[$key], ['boundary' => $boundary] + $context);
             } catch (\TypeError $e) {
                 $exception = new UnexpectedTypeException($e->getMessage());
                 if (!($context['collect_errors'] ?? false)) {
@@ -276,12 +313,16 @@ final class Unmarshaller
      */
     private function instantiateObject(\ReflectionClass $class, array $context): object
     {
+        if (isset(self::$instantiatedObjectsCache[$className = $class->getName()])) {
+            return clone self::$instantiatedObjectsCache[$className];
+        }
+
         if (null === $constructor = $class->getConstructor()) {
-            return new ($class->getName())();
+            return self::$instantiatedObjectsCache[$className] = new ($class->getName())();
         }
 
         if (!$constructor->isPublic()) {
-            return $class->newInstanceWithoutConstructor();
+            return self::$instantiatedObjectsCache[$className] = $class->newInstanceWithoutConstructor();
         }
 
         $parameters = [];
@@ -309,6 +350,6 @@ final class Unmarshaller
             $validContructor = false;
         }
 
-        return $validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor();
+        return self::$instantiatedObjectsCache[$className] = ($validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor());
     }
 }

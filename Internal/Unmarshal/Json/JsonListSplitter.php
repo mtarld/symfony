@@ -14,6 +14,7 @@ use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\ListSplitterInterface;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Token;
 
 final class JsonListSplitter implements ListSplitterInterface
 {
@@ -30,7 +31,7 @@ final class JsonListSplitter implements ListSplitterInterface
     {
         $tokens = $this->lexer->tokens($resource, $context['boundary'], $context);
 
-        if ('null' === $tokens->current()['value'] && 1 === iterator_count($tokens)) {
+        if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
@@ -38,7 +39,7 @@ final class JsonListSplitter implements ListSplitterInterface
     }
 
     /**
-     * @param \Iterator<array{position: int, value: string}> $tokens
+     * @param \Iterator<Token> $tokens
      * @param resource                                       $resource
      * @param array<string, mixed>                           $context
      *
@@ -47,20 +48,22 @@ final class JsonListSplitter implements ListSplitterInterface
     private function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
-        $offset = $tokens->current()['position'] + 1;
+        $offset = $tokens->current()[1] + 1;
 
         foreach ($tokens as $token) {
-            if (isset(self::NESTING_CHARS[$token['value']])) {
+            // TODO in_array instead?
+            if (isset(self::NESTING_CHARS[$token[0]])) {
                 ++$level;
 
                 continue;
             }
 
-            if (isset(self::UNNESTING_CHARS[$token['value']])) {
+            // TODO in_array instead?
+            if (isset(self::UNNESTING_CHARS[$token[0]])) {
                 --$level;
 
                 if (0 === $level) {
-                    $boundary = new Boundary($offset, $token['position'] - $offset);
+                    $boundary = new Boundary($offset, $token[1] - $offset);
 
                     if ($boundary->length > 0) {
                         yield $boundary;
@@ -76,18 +79,18 @@ final class JsonListSplitter implements ListSplitterInterface
                 continue;
             }
 
-            if (',' === $token['value']) {
-                $boundary = new Boundary($offset, $token['position'] - $offset);
+            if (',' === $token[0]) {
+                $boundary = new Boundary($offset, $token[1] - $offset);
 
                 if ($boundary->length > 0) {
                     yield $boundary;
                 }
 
-                $offset = $token['position'] + 1;
+                $offset = $token[1] + 1;
             }
         }
 
-        if (0 !== $level || !isset(self::ENDING_CHARS[$token['value'] ?? null])) {
+        if (0 !== $level || !isset(self::ENDING_CHARS[$token[0] ?? null])) {
             throw new InvalidResourceException($resource);
         }
     }

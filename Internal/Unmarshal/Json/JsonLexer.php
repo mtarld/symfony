@@ -20,6 +20,9 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
  */
 final class JsonLexer implements LexerInterface
 {
+    private const WHITESPACE_CHARS = [' ' => true, "\r" => true, "\t" => true, "\n" => true];
+    private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
+
     public function tokens(mixed $resource, Boundary $boundary, array $context): \Iterator
     {
         $offset = $currentTokenPosition = $boundary->offset;
@@ -74,22 +77,25 @@ final class JsonLexer implements LexerInterface
                     continue;
                 }
 
-                if (\in_array($byte, [',', ':', '{', '}', '[', ']'], true)) {
+                // TODO in_array instead?
+                if (isset(self::STRUCTURE_CHARS[$byte])) {
                     if ('' !== $token) {
                         // TODO DTO instead
-                        yield ['position' => $currentTokenPosition, 'value' => $token];
+                        yield [$token, $currentTokenPosition];
 
                         $currentTokenPosition += \strlen($token);
                         $token = '';
                     }
 
-                    yield ['position' => $currentTokenPosition, 'value' => $byte];
+                    yield [$byte, $currentTokenPosition];
+
                     ++$currentTokenPosition;
 
                     continue;
                 }
 
-                if (\in_array($byte, [' ', "\r", "\t", "\n"], true)) {
+                // TODO in_array instead?
+                if (isset(self::WHITESPACE_CHARS[$byte])) {
                     if ('' === $token) {
                         ++$currentTokenPosition;
                     }
@@ -102,7 +108,7 @@ final class JsonLexer implements LexerInterface
         }
 
         if (!$inString && !$escaping && '' !== $token) {
-            yield ['position' => $currentTokenPosition, 'value' => $token];
+            yield [$token, $currentTokenPosition];
         }
     }
 }

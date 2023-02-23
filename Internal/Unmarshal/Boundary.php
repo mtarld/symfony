@@ -14,6 +14,7 @@ namespace Symfony\Component\Marshaller\Internal\Unmarshal;
  *
  * @internal
  */
+// TODO remove in favor of list?
 final class Boundary
 {
     public function __construct(

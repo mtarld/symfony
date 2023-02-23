@@ -10,9 +10,7 @@
 namespace Symfony\Component\Marshaller\Internal\Type;
 
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
-use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 use Symfony\Component\Marshaller\Exception\LogicException;
-use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Internal\Ast\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\FunctionNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\NodeInterface;
@@ -26,6 +24,8 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\UnaryNode;
  */
 final class Type implements \Stringable
 {
+    private readonly string $stringValue;
+
     /**
      * @param class-string|null    $className
      * @param list<self|UnionType> $genericParameterTypes
@@ -48,142 +48,8 @@ final class Type implements \Stringable
         if ($this->isCollection() && 2 !== \count($this->genericParameterTypes)) {
             throw new InvalidArgumentException(sprintf('Invalid generic parameter types of "%s" type.', $this->name));
         }
-    }
 
-    public static function createFromString(string $string): self|UnionType
-    {
-        $currentTypeString = '';
-        $typeStrings = [];
-        $nestedLevel = 0;
-
-        foreach (str_split(str_replace(' ', '', $string)) as $char) {
-            if ('<' === $char) {
-                ++$nestedLevel;
-            }
-
-            if ('>' === $char) {
-                --$nestedLevel;
-            }
-
-            if ('|' === $char && 0 === $nestedLevel) {
-                $typeStrings[] = $currentTypeString;
-                $currentTypeString = '';
-
-                continue;
-            }
-
-            $currentTypeString .= $char;
-        }
-
-        $typeStrings[] = $currentTypeString;
-
-        if (0 !== $nestedLevel) {
-            throw new InvalidTypeException($string);
-        }
-
-        if (\count($typeStrings) > 1) {
-            $nullable = false;
-
-            $types = [];
-
-            foreach ($typeStrings as $typeString) {
-                if (str_starts_with($typeString, '?')) {
-                    $nullable = true;
-                    $typeString = substr($typeString, 1);
-                }
-
-                if ('null' === $typeString) {
-                    $nullable = true;
-
-                    continue;
-                }
-
-                /** @var self $type */
-                $type = self::createFromString($typeString);
-                $types[] = $type;
-            }
-
-            if ($nullable) {
-                $types[] = new self('null');
-            }
-
-            return new UnionType($types);
-        }
-
-        if ('null' === $string) {
-            return new self('null');
-        }
-
-        if ($isNullable = str_starts_with($string, '?')) {
-            $string = substr($string, 1);
-        }
-
-        if (\count(explode('&', $string)) > 1) {
-            throw new UnsupportedTypeException($string);
-        }
-
-        if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
-            return new self($string, $isNullable);
-        }
-
-        if (class_exists($string) || interface_exists($string)) {
-            return new self('object', $isNullable, $string);
-        }
-
-        $results = [];
-        if (preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
-            $genericType = $results['type'];
-            $genericParameters = [];
-            $currentGenericParameter = '';
-            $nestedLevel = 0;
-
-            foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
-                if (',' === $char && 0 === $nestedLevel) {
-                    $genericParameters[] = $currentGenericParameter;
-                    $currentGenericParameter = '';
-
-                    continue;
-                }
-
-                if ('<' === $char) {
-                    ++$nestedLevel;
-                }
-
-                if ('>' === $char) {
-                    --$nestedLevel;
-                }
-
-                $currentGenericParameter .= $char;
-            }
-
-            $genericParameters[] = $currentGenericParameter;
-
-            if (0 !== $nestedLevel) {
-                throw new InvalidTypeException($string);
-            }
-
-            if (\in_array($genericType, ['array', 'iterable'], true) && 1 === \count($genericParameters)) {
-                array_unshift($genericParameters, 'int');
-            }
-
-            $type = $genericType;
-            $className = null;
-
-            if (class_exists($genericType)) {
-                $type = 'object';
-                $className = $genericType;
-            }
-
-            return new self(
-                name: $type,
-                isNullable: $isNullable,
-                isGeneric: true,
-                className: $className,
-                genericParameterTypes: array_map(fn (string $t): self|UnionType => self::createFromString($t), $genericParameters),
-            );
-        }
-
-        return new self($string, $isNullable);
+        $this->stringValue = $this->computeStringValue();
     }
 
     public function name(): string
@@ -286,7 +152,7 @@ final class Type implements \Stringable
         return $this->genericParameterTypes[1];
     }
 
-    public function __toString(): string
+    private function computeStringValue(): string
     {
         if ($this->isNull()) {
             return 'null';
@@ -304,6 +170,11 @@ final class Type implements \Stringable
         }
 
         return $nullablePrefix.$name;
+    }
+
+    public function __toString(): string
+    {
+        return $this->stringValue;
     }
 
     public function validator(NodeInterface $accessor): NodeInterface

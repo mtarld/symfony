@@ -92,7 +92,7 @@ final class ObjectTemplateGenerator
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->beforePropertyName)])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(($this->propertyNameEscaper)($propertyName))])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($this->afterPropertyName)])),
-                ...$templateGenerator->generate(Type::createFromString($propertyType), $propertyAccessor, $propertyContext),
+                ...$templateGenerator->generate(TypeFactory::createFromString($propertyType), $propertyAccessor, $propertyContext),
             );
 
             $propertySeparator = $this->propertySeparator;

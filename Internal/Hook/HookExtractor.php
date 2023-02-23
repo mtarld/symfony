@@ -24,20 +24,41 @@ final class HookExtractor
      */
     public function extractFromProperty(\ReflectionProperty $property, array $context): ?callable
     {
-        $hookNames = [
-            sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName()),
-            'property',
-        ];
+        if (isset($context['hooks'][$property->getDeclaringClass()->getName().'::$'.$property->getName()])) {
+            return $context['hooks'][$property->getDeclaringClass()->getName().'::$'.$property->getName()];
+        }
 
-        return $this->findHook($hookNames, $context);
+        if (isset($context['hooks']['property'])) {
+            return $context['hooks']['property'];
+        }
+
+        return null;
+    }
+
+    public function extractFromType(Type|UnionType $type, array $context): ?callable
+    {
+        // TODO
+        throw new \BadMethodCallException(__METHOD__);
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    public function extractFromType(Type|UnionType $type, array $context): ?callable
+    public function extractFromObject(Type $type, array $context): ?callable
     {
-        return $this->findHook($this->typeHookNames($type), $context);
+        if (isset($context['hooks']['?'.($className = $type->className())]) && $type->isNullable()) {
+            return $context['hooks']['?'.$className];
+        }
+
+        if (isset($context['hooks'][$className])) {
+            return $context['hooks'][$className];
+        }
+
+        if (isset($context['hooks']['object'])) {
+            return $context['hooks']['object'];
+        }
+
+        return null;
     }
 
     /**
@@ -46,81 +67,12 @@ final class HookExtractor
      */
     public function extractFromKey(string $className, string $key, array $context): ?callable
     {
-        $hookNames = [
-            sprintf('%s[%s]', $className, $key),
-            'property',
-        ];
-
-        return $this->findHook($hookNames, $context);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function typeHookNames(Type|UnionType $type): array
-    {
-        $hookNames = ['type'];
-
-        if ($type instanceof UnionType) {
-            array_unshift($hookNames, 'union');
-            array_unshift($hookNames, (string) $type);
-
-            return $hookNames;
+        if (isset($context['hooks'][$className.'['.$key.']'])) {
+            return $context['hooks'][$className.'['.$key.']'];
         }
 
-        if ($type->isNull()) {
-            array_unshift($hookNames, $type->name());
-
-            return $hookNames;
-        }
-
-        if ($type->isObject()) {
-            array_unshift($hookNames, $type->className(), 'object');
-            if ($type->isNullable()) {
-                array_unshift($hookNames, '?'.$type->className());
-            }
-
-            return $hookNames;
-        }
-
-        if ($type->isCollection()) {
-            array_unshift($hookNames, 'collection');
-
-            if ($type->isList()) {
-                array_unshift($hookNames, 'list');
-            }
-
-            if ($type->isDict()) {
-                array_unshift($hookNames, 'dict');
-            }
-
-            array_unshift($hookNames, $type->name());
-
-            if ($type->isNullable()) {
-                array_unshift($hookNames, '?'.$type->name());
-            }
-
-            return $hookNames;
-        }
-
-        array_unshift($hookNames, $type->name(), 'scalar');
-        if ($type->isNullable()) {
-            array_unshift($hookNames, '?'.$type->name());
-        }
-
-        return $hookNames;
-    }
-
-    /**
-     * @param list<string>         $hookNames
-     * @param array<string, mixed> $context
-     */
-    private function findHook(array $hookNames, array $context): ?callable
-    {
-        foreach ($hookNames as $hookName) {
-            if (null !== ($hook = $context['hooks'][$hookName] ?? null)) {
-                return $hook;
-            }
+        if (isset($context['hooks']['property'])) {
+            return $context['hooks']['property'];
         }
 
         return null;

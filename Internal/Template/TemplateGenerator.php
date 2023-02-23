@@ -57,7 +57,7 @@ final class TemplateGenerator
         return [
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), $accessor),
-                $this->generateTypeTemplate(Type::createFromString('null'), new ScalarNode(null), $context),
+                $this->generateTypeTemplate(TypeFactory::createFromString('null'), new ScalarNode(null), $context),
                 $nodes,
             ),
         ];
@@ -70,10 +70,11 @@ final class TemplateGenerator
      */
     private function generateTypeTemplate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
-        if (null !== $hook = $this->hookExtractor->extractFromType($type, $context)) {
+        // TODO extract now only for object
+        if (null !== $hook = $this->hookExtractor->extractFromObject($type, $context)) {
             $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
 
-            $type = isset($hookResult['type']) ? Type::createFromString($hookResult['type']) : $type;
+            $type = isset($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $type;
             $accessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $accessor;
             $context = $hookResult['context'] ?? $context;
         }
