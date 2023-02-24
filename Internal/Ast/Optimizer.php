@@ -98,7 +98,7 @@ final class Optimizer
         }
 
         $resourceParameter = $currentNode->parameters[0] ?? null;
-        $dataParameter = $node->node->parameters[1] ?? null;
+        $dataParameter = $currentNode->parameters[1] ?? null;
 
         return $resourceParameter instanceof VariableNode && 'resource' === $resourceParameter->name
             && $dataParameter instanceof ScalarNode && \is_string($dataParameter->value);

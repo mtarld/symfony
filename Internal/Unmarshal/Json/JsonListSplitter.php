@@ -11,10 +11,8 @@ namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\ListSplitterInterface;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Token;
 
 final class JsonListSplitter implements ListSplitterInterface
 {
@@ -29,44 +27,40 @@ final class JsonListSplitter implements ListSplitterInterface
 
     public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['boundary'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary'][0], $context['boundary'][1], $context);
+        $currentToken = $tokens->current();
 
-        if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
+        if ('null' === $currentToken[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource, $context);
+        return $this->createBoundaries($tokens, $resource, $currentToken[1] + 1, $context);
     }
 
     /**
-     * @param \Iterator<Token> $tokens
-     * @param resource                                       $resource
-     * @param array<string, mixed>                           $context
+     * @param \Iterator<array{0: string, 1: int}> $tokens
+     * @param resource                            $resource
+     * @param array<string, mixed>                $context
      *
-     * @return \Iterator<Boundary>
+     * @return \Iterator<array{0: int, 1: int}>
      */
-    private function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
+    private function createBoundaries(\Iterator $tokens, mixed $resource, int $offset, array $context): \Iterator
     {
         $level = 0;
-        $offset = $tokens->current()[1] + 1;
 
         foreach ($tokens as $token) {
-            // TODO in_array instead?
             if (isset(self::NESTING_CHARS[$token[0]])) {
                 ++$level;
 
                 continue;
             }
 
-            // TODO in_array instead?
             if (isset(self::UNNESTING_CHARS[$token[0]])) {
                 --$level;
 
                 if (0 === $level) {
-                    $boundary = new Boundary($offset, $token[1] - $offset);
-
-                    if ($boundary->length > 0) {
-                        yield $boundary;
+                    if (($length = $token[1] - $offset) > 0) {
+                        yield [$offset, $length];
                     }
 
                     break;
@@ -80,10 +74,8 @@ final class JsonListSplitter implements ListSplitterInterface
             }
 
             if (',' === $token[0]) {
-                $boundary = new Boundary($offset, $token[1] - $offset);
-
-                if ($boundary->length > 0) {
-                    yield $boundary;
+                if (($length = $token[1] - $offset) > 0) {
+                    yield [$offset, $length];
                 }
 
                 $offset = $token[1] + 1;

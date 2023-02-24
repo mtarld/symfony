@@ -19,6 +19,7 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\RawNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ScalarNode;
 use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 
 /**

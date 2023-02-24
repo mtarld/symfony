@@ -22,5 +22,5 @@ interface LexerInterface
      *
      * @return \Iterator<array{0: string, 1: int}>
      */
-    public function tokens(mixed $resource, Boundary $boundary, array $context): \Iterator;
+    public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator;
 }

@@ -35,6 +35,9 @@ final class HookExtractor
         return null;
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function extractFromType(Type|UnionType $type, array $context): ?callable
     {
         // TODO

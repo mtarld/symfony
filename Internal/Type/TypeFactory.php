@@ -16,7 +16,10 @@ use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 
 abstract class TypeFactory
 {
-    private static array $localCache = [];
+    /**
+     * @var array<string, Type|UnionType>
+     */
+    private static array $typesCache = [];
 
     private function __construct()
     {
@@ -24,8 +27,8 @@ abstract class TypeFactory
 
     public static function createFromString(string $string): Type|UnionType
     {
-        if (isset(self::$localCache[$string])) {
-            return self::$localCache[$string];
+        if (isset(self::$typesCache[$string])) {
+            return self::$typesCache[$string];
         }
 
         $currentTypeString = '';
@@ -83,11 +86,11 @@ abstract class TypeFactory
                 $types[] = new Type('null');
             }
 
-            return self::$localCache[$string] = new UnionType($types);
+            return self::$typesCache[$string] = new UnionType($types);
         }
 
         if ('null' === $string) {
-            return self::$localCache[$string] = new Type('null');
+            return self::$typesCache[$string] = new Type('null');
         }
 
         if ($isNullable = str_starts_with($string, '?')) {
@@ -99,11 +102,11 @@ abstract class TypeFactory
         }
 
         if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
-            return self::$localCache[$string] = new Type($string, $isNullable);
+            return self::$typesCache[$string] = new Type($string, $isNullable);
         }
 
         if (class_exists($string) || interface_exists($string)) {
-            return self::$localCache[$string] = new Type('object', $isNullable, $string);
+            return self::$typesCache[$string] = new Type('object', $isNullable, $string);
         }
 
         $results = [];
@@ -150,7 +153,7 @@ abstract class TypeFactory
                 $className = $genericType;
             }
 
-            return self::$localCache[$string] = new Type(
+            return self::$typesCache[$string] = new Type(
                 name: $type,
                 isNullable: $isNullable,
                 isGeneric: true,
@@ -159,6 +162,6 @@ abstract class TypeFactory
             );
         }
 
-        return self::$localCache[$string] = new Type($string, $isNullable);
+        return self::$typesCache[$string] = new Type($string, $isNullable);
     }
 }

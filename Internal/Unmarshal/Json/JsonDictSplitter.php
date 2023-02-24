@@ -11,10 +11,8 @@ namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 use Symfony\Component\Marshaller\Internal\Unmarshal\DictSplitterInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Token;
 
 final class JsonDictSplitter implements DictSplitterInterface
 {
@@ -22,6 +20,9 @@ final class JsonDictSplitter implements DictSplitterInterface
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
     private const ENDING_CHARS = ['}' => true, 'null' => true];
 
+    /**
+     * @var array<string, string>
+     */
     private static array $keysCache = [];
 
     public function __construct(
@@ -31,49 +32,45 @@ final class JsonDictSplitter implements DictSplitterInterface
 
     public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['boundary'], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary'][0], $context['boundary'][1], $context);
+        $currentToken = $tokens->current();
 
-        if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
+        if ('null' === $currentToken[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource, $context);
+        return $this->createBoundaries($tokens, $resource, $currentToken[1] + 1, $context);
     }
 
     /**
-     * @param \Iterator<Token> $tokens
-     * @param resource                                       $resource
-     * @param array<string, mixed>                           $context
+     * @param \Iterator<array{0: string, 1: int}> $tokens
+     * @param resource                            $resource
+     * @param array<string, mixed>                $context
      *
-     * @return \Iterator<string, Boundary>
+     * @return \Iterator<string, array{0: int, 1: int}>
      */
-    public function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
+    public function createBoundaries(\Iterator $tokens, mixed $resource, int $offset, array $context): \Iterator
     {
         $level = 0;
-        $offset = $tokens->current()[1] + 1;
         $key = null;
         $firstValueToken = false;
 
         foreach ($tokens as $token) {
-            if ($firstValueToken) {
-                $firstValueToken = false;
-                $offset = $token[1];
-            }
+            $value = $token[0];
+            $position = $token[1];
 
-            if (isset(self::NESTING_CHARS[$token[0]])) {
+            if (isset(self::NESTING_CHARS[$value])) {
                 ++$level;
 
                 continue;
             }
 
-            if (isset(self::UNNESTING_CHARS[$token[0]])) {
+            if (isset(self::UNNESTING_CHARS[$value])) {
                 --$level;
 
-                if (0 === $level && '}' === $token[0]) {
-                    $boundary = new Boundary($offset, $token[1] - $offset);
-
-                    if (null !== $key && $boundary->length > 0) {
-                        yield $key => $boundary;
+                if (0 === $level && '}' === $value) {
+                    if (null !== $key && ($length = $position - $offset) > 0) {
+                        yield $key => [$offset, $length];
                     }
 
                     break;
@@ -86,17 +83,15 @@ final class JsonDictSplitter implements DictSplitterInterface
                 continue;
             }
 
-            if (':' === $token[0]) {
+            if (':' === $value) {
                 $firstValueToken = true;
 
                 continue;
             }
 
-            if (',' === $token[0]) {
-                $boundary = new Boundary($offset, $token[1] - $offset);
-
-                if (null !== $key && $boundary->length > 0) {
-                    yield $key => $boundary;
+            if (',' === $value) {
+                if (null !== $key && ($length = $position - $offset) > 0) {
+                    yield $key => [$offset, $length];
                 }
 
                 $key = null;
@@ -105,11 +100,18 @@ final class JsonDictSplitter implements DictSplitterInterface
             }
 
             if (null === $key) {
-                $key = self::$keysCache[$key] = self::$keysCache[$key] ?? json_decode($token[0], flags: $context['json_decode_flags'] ?? 0);
+                $key = self::$keysCache[$value] = self::$keysCache[$value] ?? json_decode($value, flags: $context['json_decode_flags'] ?? 0);
+
+                continue;
+            }
+
+            if ($firstValueToken) {
+                $firstValueToken = false;
+                $offset = $position;
             }
         }
 
-        if (0 !== $level || !isset(self::ENDING_CHARS[$token[0] ?? null])) {
+        if (0 !== $level || !isset($token, self::ENDING_CHARS[$token[0]])) {
             throw new InvalidResourceException($resource);
         }
     }

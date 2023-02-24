@@ -4,7 +4,6 @@
 - validate JSON
 - eager/lazy mode
 - JSON pointer
-- DTOs instead of hashmaps
 - improve perf of lazy mode
 - test that the Relation test case is working (marshal and unmarshal, functionally)
 - bench in CI

@@ -20,7 +20,6 @@ use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
 use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
 use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Boundary;
 use Symfony\Component\Marshaller\Internal\Unmarshal\DecoderFactory;
 use Symfony\Component\Marshaller\Internal\Unmarshal\UnmarshallerFactory;
 
@@ -93,12 +92,9 @@ if (!\function_exists('unmarshal')) {
             $errors = &$context['collected_errors'];
         }
 
-        // TODO can be overriden
-        $context['boundary'] = new Boundary(0, -1);
-
+        $context['boundary'] = $context['boundary'] ?? [0, -1];
         $context['mode'] = $context['mode'] ?? 'lazy';
 
-        $context['mode'] = 'lazy';
         // $context['mode'] = 'eager';
 
         $unmarshaller = UnmarshallerFactory::create($format);
@@ -106,7 +102,11 @@ if (!\function_exists('unmarshal')) {
 
         $result = match ($mode = $context['mode'] ?? 'lazy') {
             'lazy' => $unmarshaller->unmarshal($resource, $type, $context),
-            'eager' => $unmarshaller->unmarshal(DecoderFactory::create($format)->decode($resource, $context['boundary'], $context), $type, $context),
+            'eager' => $unmarshaller->unmarshal(
+                DecoderFactory::create($format)->decode($resource, $context['boundary'][0], $context['boundary'][1], $context),
+                $type,
+                $context,
+            ),
             default => throw new InvalidArgumentException(sprintf('Invalid "%s" mode.', $mode)),
         };
 
