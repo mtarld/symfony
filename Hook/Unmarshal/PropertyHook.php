@@ -36,15 +36,17 @@ final class PropertyHook
      * @param \ReflectionClass<object>                      $class
      * @param callable(string, array<string, mixed>): mixed $value
      * @param array<string, mixed>                          $context
+     *
+     * @return array{name?: string, value?: callable(): mixed, context?: array<string, mixed>}
      */
-    public function __invoke(\ReflectionClass $class, object $object, string $key, callable $value, array $context): void
+    public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array
     {
         $propertyClass = $class->getName();
         $propertyName = $context['_symfony']['unmarshal']['property_name'][$propertyClass][$key] ?? $key;
         $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
         if (!$class->hasProperty($propertyName)) {
-            return;
+            return [];
         }
 
         if (!isset($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])) {
@@ -54,9 +56,10 @@ final class PropertyHook
                 $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
             }
 
-            $object->{$propertyName} = $value($valueType, $context);
-
-            return;
+            return [
+                'name' => $propertyName,
+                'value' => fn () => $value($valueType, $context),
+            ];
         }
 
         $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier]));
@@ -73,6 +76,9 @@ final class PropertyHook
             $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
         }
 
-        $object->{$propertyName} = $propertyFormatter($value($valueType, $context), $context);
+        return [
+            'name' => $propertyName,
+            'value' => fn () => $propertyFormatter($value($valueType, $context), $context),
+        ];
     }
 }

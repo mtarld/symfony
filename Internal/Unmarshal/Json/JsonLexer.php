@@ -88,7 +88,7 @@ final class JsonLexer implements LexerInterface
                 }
 
                 if (isset(self::WHITESPACE_CHARS[$byte])) {
-                    if ('' === $token) {
+                    if ('' !== $byte) {
                         ++$currentTokenPosition;
                     }
                 } else {

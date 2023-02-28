@@ -18,7 +18,6 @@ final class JsonListSplitter implements ListSplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
-    private const ENDING_CHARS = [']' => true, 'null' => true];
 
     public function __construct(
         private readonly LexerInterface $lexer,
@@ -28,13 +27,12 @@ final class JsonListSplitter implements ListSplitterInterface
     public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
         $tokens = $this->lexer->tokens($resource, $context['boundary'][0], $context['boundary'][1], $context);
-        $currentToken = $tokens->current();
 
-        if ('null' === $currentToken[0] && 1 === iterator_count($tokens)) {
+        if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource, $currentToken[1] + 1, $context);
+        return $this->createBoundaries($tokens, $resource, $context);
     }
 
     /**
@@ -44,45 +42,53 @@ final class JsonListSplitter implements ListSplitterInterface
      *
      * @return \Iterator<array{0: int, 1: int}>
      */
-    private function createBoundaries(\Iterator $tokens, mixed $resource, int $offset, array $context): \Iterator
+    private function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
 
-        foreach ($tokens as $token) {
-            if (isset(self::NESTING_CHARS[$token[0]])) {
+        foreach ($tokens as $i => $token) {
+            if (0 === $i) {
+                continue;
+            }
+
+            $value = $token[0];
+            $position = $token[1];
+            $offset = $offset ?? $position;
+
+            if (isset(self::NESTING_CHARS[$value])) {
                 ++$level;
 
                 continue;
             }
 
-            if (isset(self::UNNESTING_CHARS[$token[0]])) {
+            if (isset(self::UNNESTING_CHARS[$value])) {
                 --$level;
 
-                if (0 === $level) {
-                    if (($length = $token[1] - $offset) > 0) {
-                        yield [$offset, $length];
-                    }
-
-                    break;
-                }
-
                 continue;
             }
 
-            if (1 !== $level) {
+            if (0 !== $level) {
                 continue;
             }
 
-            if (',' === $token[0]) {
-                if (($length = $token[1] - $offset) > 0) {
+            if (']' === $value) {
+                if (($length = $position - $offset) > 0) {
                     yield [$offset, $length];
                 }
 
-                $offset = $token[1] + 1;
+                break;
+            }
+
+            if (',' === $value) {
+                if (($length = $position - $offset) > 0) {
+                    yield [$offset, $length];
+                }
+
+                $offset = null;
             }
         }
 
-        if (0 !== $level || !isset(self::ENDING_CHARS[$token[0] ?? null])) {
+        if (-1 !== $level || ']' !== ($value ?? null)) {
             throw new InvalidResourceException($resource);
         }
     }

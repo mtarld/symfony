@@ -18,7 +18,6 @@ final class JsonDictSplitter implements DictSplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
-    private const ENDING_CHARS = ['}' => true, 'null' => true];
 
     /**
      * @var array<string, string>
@@ -35,11 +34,11 @@ final class JsonDictSplitter implements DictSplitterInterface
         $tokens = $this->lexer->tokens($resource, $context['boundary'][0], $context['boundary'][1], $context);
         $currentToken = $tokens->current();
 
-        if ('null' === $currentToken[0] && 1 === iterator_count($tokens)) {
+        if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource, $currentToken[1] + 1, $context);
+        return $this->createBoundaries($tokens, $resource, $context);
     }
 
     /**
@@ -49,15 +48,25 @@ final class JsonDictSplitter implements DictSplitterInterface
      *
      * @return \Iterator<string, array{0: int, 1: int}>
      */
-    public function createBoundaries(\Iterator $tokens, mixed $resource, int $offset, array $context): \Iterator
+    public function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
         $key = null;
         $firstValueToken = false;
 
-        foreach ($tokens as $token) {
+        foreach ($tokens as $i => $token) {
+            if (0 === $i) {
+                continue;
+            }
+
             $value = $token[0];
             $position = $token[1];
+            $offset = $offset ?? $position;
+
+            if ($firstValueToken) {
+                $firstValueToken = false;
+                $offset = $position;
+            }
 
             if (isset(self::NESTING_CHARS[$value])) {
                 ++$level;
@@ -68,18 +77,10 @@ final class JsonDictSplitter implements DictSplitterInterface
             if (isset(self::UNNESTING_CHARS[$value])) {
                 --$level;
 
-                if (0 === $level && '}' === $value) {
-                    if (null !== $key && ($length = $position - $offset) > 0) {
-                        yield $key => [$offset, $length];
-                    }
-
-                    break;
-                }
-
                 continue;
             }
 
-            if (1 !== $level) {
+            if (0 !== $level) {
                 continue;
             }
 
@@ -87,6 +88,14 @@ final class JsonDictSplitter implements DictSplitterInterface
                 $firstValueToken = true;
 
                 continue;
+            }
+
+            if ('}' === $value) {
+                if (null !== $key && ($length = $position - $offset) > 0) {
+                    yield $key => [$offset, $length];
+                }
+
+                break;
             }
 
             if (',' === $value) {
@@ -104,14 +113,9 @@ final class JsonDictSplitter implements DictSplitterInterface
 
                 continue;
             }
-
-            if ($firstValueToken) {
-                $firstValueToken = false;
-                $offset = $position;
-            }
         }
 
-        if (0 !== $level || !isset($token, self::ENDING_CHARS[$token[0]])) {
+        if (-1 !== $level || '}' !== ($value ?? null)) {
             throw new InvalidResourceException($resource);
         }
     }

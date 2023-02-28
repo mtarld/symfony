@@ -96,6 +96,11 @@ if (!\function_exists('unmarshal')) {
         $context['mode'] = $context['mode'] ?? 'lazy';
 
         // $context['mode'] = 'eager';
+        // $context['instantiator'] = static function ($r, $p, $c) {
+        //     dd($r, $p, $c);
+        //     return ($r->getName())::createLazyGhost($p);
+        // };
+        // $context['instantiator'] = null;
 
         $unmarshaller = UnmarshallerFactory::create($format);
         $type = TypeFactory::createFromString($type);
