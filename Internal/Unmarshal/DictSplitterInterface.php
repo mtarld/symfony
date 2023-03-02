@@ -11,6 +11,11 @@ namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
 use Symfony\Component\Marshaller\Internal\Type\Type;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 interface DictSplitterInterface
 {
     /**

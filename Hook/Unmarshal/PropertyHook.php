@@ -26,6 +26,11 @@ final class PropertyHook
      */
     private static array $valueTypesCache = [];
 
+    /**
+     * @var array<string, bool>
+     */
+    private static array $classPropertiesCache = [];
+
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
     ) {
@@ -45,7 +50,7 @@ final class PropertyHook
         $propertyName = $context['_symfony']['unmarshal']['property_name'][$propertyClass][$key] ?? $key;
         $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
-        if (!$class->hasProperty($propertyName)) {
+        if (!self::$classPropertiesCache[$cacheKey] = self::$classPropertiesCache[$cacheKey] ?? $class->hasProperty($propertyName)) {
             return [];
         }
 
@@ -58,7 +63,7 @@ final class PropertyHook
 
             return [
                 'name' => $propertyName,
-                'value' => fn () => $value($valueType, $context),
+                'value_provider' => fn () => $value($valueType, $context),
             ];
         }
 
@@ -78,7 +83,7 @@ final class PropertyHook
 
         return [
             'name' => $propertyName,
-            'value' => fn () => $propertyFormatter($value($valueType, $context), $context),
+            'value_provider' => fn () => $propertyFormatter($value($valueType, $context), $context),
         ];
     }
 }

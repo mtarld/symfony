@@ -12,6 +12,11 @@ namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDecoder;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 abstract class DecoderFactory
 {
     private function __construct()

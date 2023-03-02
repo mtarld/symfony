@@ -17,6 +17,11 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonListSplitter;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 abstract class UnmarshallerFactory
 {
     private function __construct()
@@ -26,12 +31,12 @@ abstract class UnmarshallerFactory
     public static function create(string $format): Unmarshaller
     {
         return match ($format) {
-            'json' => self::createJson(),
+            'json' => self::json(),
             default => throw new UnsupportedFormatException($format),
         };
     }
 
-    private static function createJson(): Unmarshaller
+    private static function json(): Unmarshaller
     {
         $lexer = new JsonLexer();
 
@@ -41,6 +46,7 @@ abstract class UnmarshallerFactory
             decoder: new JsonDecoder(),
             listSplitter: new JsonListSplitter($lexer),
             dictSplitter: new JsonDictSplitter($lexer),
+            instantiator: new Instantiator(),
         );
     }
 }

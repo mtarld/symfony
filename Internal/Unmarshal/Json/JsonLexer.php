@@ -19,6 +19,7 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
  */
 final class JsonLexer implements LexerInterface
 {
+    private const MAX_CHUNK_LENGTH = 8192;
     private const WHITESPACE_CHARS = [' ' => true, "\r" => true, "\t" => true, "\n" => true];
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
 
@@ -29,19 +30,19 @@ final class JsonLexer implements LexerInterface
         $token = '';
 
         $inString = $escaping = false;
-        $chunkLength = -1 === $length ? 4096 : min($length, 4096);
-        $readLength = 0;
-
-        // TODO validate JSON, maybe can be opt in?
+        $infiniteLength = -1 === $length;
+        $chunkLength = $infiniteLength ? self::MAX_CHUNK_LENGTH : min($length, self::MAX_CHUNK_LENGTH);
 
         rewind($resource);
 
-        while (!feof($resource) && (-1 === $length || $readLength < $length)) {
-            if (false === $buffer = stream_get_contents($resource, $chunkLength, $offset)) {
+        $toReadLength = $length;
+
+        while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
+            if (false === $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
                 throw new RuntimeException('Cannot read JSON resource.');
             }
 
-            $readLength += $bufferLength = \strlen($buffer);
+            $toReadLength -= $bufferLength = \strlen($buffer);
 
             for ($i = 0; $i < $bufferLength; ++$i) {
                 $byte = $buffer[$i];
@@ -72,7 +73,7 @@ final class JsonLexer implements LexerInterface
                     continue;
                 }
 
-                if (isset(self::STRUCTURE_CHARS[$byte])) {
+                if (isset(self::STRUCTURE_CHARS[$byte]) || isset(self::WHITESPACE_CHARS[$byte])) {
                     if ('' !== $token) {
                         yield [$token, $currentTokenPosition];
 
@@ -80,27 +81,21 @@ final class JsonLexer implements LexerInterface
                         $token = '';
                     }
 
-                    yield [$byte, $currentTokenPosition];
+                    if (!isset(self::WHITESPACE_CHARS[$byte])) {
+                        yield [$byte, $currentTokenPosition];
+                    }
 
-                    ++$currentTokenPosition;
+                    if ('' !== $byte) {
+                        ++$currentTokenPosition;
+                    }
 
                     continue;
                 }
 
-                if (isset(self::WHITESPACE_CHARS[$byte])) {
-                    if ('' !== $byte) {
-                        ++$currentTokenPosition;
-                    }
-                } else {
-                    $token .= $byte;
-                }
+                $token .= $byte;
             }
 
             $offset += $bufferLength;
-        }
-
-        if (!$inString && !$escaping && '' !== $token) {
-            yield [$token, $currentTokenPosition];
         }
     }
 }

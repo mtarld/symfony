@@ -71,14 +71,6 @@ final class JsonListSplitter implements ListSplitterInterface
                 continue;
             }
 
-            if (']' === $value) {
-                if (($length = $position - $offset) > 0) {
-                    yield [$offset, $length];
-                }
-
-                break;
-            }
-
             if (',' === $value) {
                 if (($length = $position - $offset) > 0) {
                     yield [$offset, $length];
@@ -88,8 +80,12 @@ final class JsonListSplitter implements ListSplitterInterface
             }
         }
 
-        if (-1 !== $level || ']' !== ($value ?? null)) {
+        if (-1 !== $level || !isset($value, $offset, $position) || ']' !== $value) {
             throw new InvalidResourceException($resource);
+        }
+
+        if (($length = $position - $offset) > 0) {
+            yield [$offset, $length];
         }
     }
 }

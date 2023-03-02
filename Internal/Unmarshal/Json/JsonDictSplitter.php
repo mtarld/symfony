@@ -51,8 +51,9 @@ final class JsonDictSplitter implements DictSplitterInterface
     public function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
-        $key = null;
+        $offset = 0;
         $firstValueToken = false;
+        $key = null;
 
         foreach ($tokens as $i => $token) {
             if (0 === $i) {
@@ -61,7 +62,6 @@ final class JsonDictSplitter implements DictSplitterInterface
 
             $value = $token[0];
             $position = $token[1];
-            $offset = $offset ?? $position;
 
             if ($firstValueToken) {
                 $firstValueToken = false;
@@ -90,14 +90,6 @@ final class JsonDictSplitter implements DictSplitterInterface
                 continue;
             }
 
-            if ('}' === $value) {
-                if (null !== $key && ($length = $position - $offset) > 0) {
-                    yield $key => [$offset, $length];
-                }
-
-                break;
-            }
-
             if (',' === $value) {
                 if (null !== $key && ($length = $position - $offset) > 0) {
                     yield $key => [$offset, $length];
@@ -110,13 +102,15 @@ final class JsonDictSplitter implements DictSplitterInterface
 
             if (null === $key) {
                 $key = self::$keysCache[$value] = self::$keysCache[$value] ?? json_decode($value, flags: $context['json_decode_flags'] ?? 0);
-
-                continue;
             }
         }
 
-        if (-1 !== $level || '}' !== ($value ?? null)) {
+        if (-1 !== $level || !isset($key, $value, $position) || '}' !== $value) {
             throw new InvalidResourceException($resource);
+        }
+
+        if (($length = $position - $offset) > 0) {
+            yield $key => [$offset, $length];
         }
     }
 }

@@ -20,6 +20,11 @@ use Symfony\Component\Marshaller\Type\TypeHelper;
  */
 final class ObjectHook
 {
+    /**
+     * @var array<string, \ReflectionClass<object>>
+     */
+    private static array $classReflectionsCache = [];
+
     private readonly TypeHelper $typeHelper;
 
     public function __construct(
@@ -57,7 +62,7 @@ final class ObjectHook
             return $context;
         }
 
-        $templates = $this->typeExtractor->extractTemplateFromClass(new \ReflectionClass($genericType));
+        $templates = $this->typeExtractor->extractTemplateFromClass(self::$classReflectionsCache[$type] = self::$classReflectionsCache[$type] ?? new \ReflectionClass($genericType));
 
         if (\count($templates) !== \count($genericParameters)) {
             throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));

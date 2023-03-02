@@ -9,39 +9,32 @@
 
 namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
-use Symfony\Component\Marshaller\Exception\InvalidConstructorArgumentException;
 use Symfony\Component\Marshaller\Exception\LogicException;
-use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
-use Symfony\Component\Marshaller\Exception\UnsupportedModeException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
+use Symfony\Component\Marshaller\Instantiator\InstantiatorInterface;
 use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type\Type;
 use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
 use Symfony\Component\Marshaller\Internal\Type\UnionType;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 final class Unmarshaller
 {
     /**
-     * @var array<string, Type|UnionType>
+     * @var array<string, array<string, mixed>>
      */
-    private static array $typesCache = [];
-
-    /**
-     * @var array<string, Type|UnionType>
-     */
-    private static array $propertyTypesCache = [];
-
-    /**
-     * @var array<string, \ReflectionClass<object>>
-     */
-    private static array $classReflectionsCache = [];
-
-    /**
-     * @var array<string, object>
-     */
-    private static array $instantiatedObjectsCache = [];
+    private static array $cache = [
+        'type' => [],
+        'property_type' => [],
+        'class_reflection' => [],
+        'class_has_property' => [],
+    ];
 
     public function __construct(
         private readonly HookExtractor $hookExtractor,
@@ -49,6 +42,7 @@ final class Unmarshaller
         private readonly DecoderInterface $decoder,
         private readonly ListSplitterInterface $listSplitter,
         private readonly DictSplitterInterface $dictSplitter,
+        private readonly InstantiatorInterface $instantiator,
     ) {
     }
 
@@ -58,28 +52,26 @@ final class Unmarshaller
     public function unmarshal(mixed $resourceOrData, Type|UnionType $type, array $context): mixed
     {
         if ($type instanceof UnionType) {
-            if (!isset($context['union_selector'][(string) $type])) {
+            if (!isset($context['union_selector'][$typeString = (string) $type])) {
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
             }
 
+            if (!isset(self::$cache['type'][$typeString])) {
+                self::$cache['type'][$typeString] = TypeFactory::createFromString($context['union_selector'][$typeString]);
+            }
+
             /** @var Type $type */
-            $type = TypeFactory::createFromString($context['union_selector'][(string) $type]);
+            $type = self::$cache['type'][$typeString];
         }
 
-        $result = match ($context['mode']) {
-            'lazy' => match (true) {
-                $type->isScalar() => $this->lazyUnmarshalScalar($resourceOrData, $type, $context),
-                $type->isCollection() => $this->lazyUnmarshalCollection($resourceOrData, $type, $context),
-                $type->isObject() => $this->lazyUnmarshalObject($resourceOrData, $type, $context),
-                default => throw new UnsupportedTypeException($type),
-            },
-            'eager' => match (true) {
-                $type->isScalar() => $this->unmarshalScalar($resourceOrData, $type, $context),
-                $type->isCollection() => $this->unmarshalCollection($resourceOrData, $type, $context),
-                $type->isObject() => $this->unmarshalObject($resourceOrData, $type, $context),
-                default => throw new UnsupportedTypeException($type),
-            },
-            default => throw new UnsupportedModeException($context['mode']),
+        $lazy = 'lazy' === $context['mode'];
+
+        $result = match (true) {
+            $type->isScalar() => $this->unmarshalScalar($lazy, $resourceOrData, $type, $context),
+            $type->isCollection() => $this->unmarshalCollection($lazy, $resourceOrData, $type, $context),
+            $type->isObject() => $this->unmarshalObject($lazy, $resourceOrData, $type, $context),
+
+            default => throw new UnsupportedTypeException($type),
         };
 
         if (null === $result && !$type->isNullable()) {
@@ -92,45 +84,47 @@ final class Unmarshaller
     /**
      * @param array<string, mixed> $context
      */
-    private function unmarshalScalar(mixed $scalar, Type $type, array $context): int|string|bool|float|null
+    private function unmarshalScalar(bool $lazy, mixed $resourceOrData, Type $type, array $context): int|string|bool|float|null
     {
-        if (null === $scalar) {
+        $data = $lazy ? $this->decoder->decode($resourceOrData, $context['boundary'][0], $context['boundary'][1], $context) : $resourceOrData;
+
+        if (null === $data) {
             return null;
         }
 
         return match ($type->name()) {
-            'int' => (int) $scalar,
-            'float' => (float) $scalar,
-            'string' => (string) $scalar,
-            'bool' => (bool) $scalar,
+            'int' => (int) $data,
+            'float' => (float) $data,
+            'string' => (string) $data,
+            'bool' => (bool) $data,
             default => throw new LogicException(sprintf('Cannot cast scalar to "%s".', $type->name())),
         };
     }
 
     /**
-     * @param resource             $resource
      * @param array<string, mixed> $context
-     */
-    private function lazyUnmarshalScalar(mixed $resource, Type $type, array $context): int|string|bool|float|null
-    {
-        return $this->unmarshalScalar($this->decoder->decode($resource, $context['boundary'][0], $context['boundary'][1], $context), $type, $context);
-    }
-
-    /**
-     * @param list<mixed>|array<string, mixed>|null $collection
-     * @param array<string, mixed>                  $context
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
      */
-    private function unmarshalCollection(?array $collection, Type $type, array $context): \Iterator|array|null
+    private function unmarshalCollection(bool $lazy, mixed $resourceOrData, Type $type, array $context): \Iterator|array|null
     {
-        if (null === $collection) {
-            return null;
+        if ($lazy) {
+            $collectionSplitter = $type->isDict() ? $this->dictSplitter : $this->listSplitter;
+
+            if (null === $boundaries = $collectionSplitter->split($resourceOrData, $type, $context)) {
+                return null;
+            }
+
+            $data = $this->lazyUnmarshalCollectionItems($boundaries, $resourceOrData, $type->collectionValueType(), $context);
+        } else {
+            if (null === $resourceOrData) {
+                return null;
+            }
+
+            $data = $this->unmarshalCollectionItems($resourceOrData, $type->collectionValueType(), $context);
         }
 
-        $result = $this->unmarshalCollectionItems($collection, $type->collectionValueType(), $context);
-
-        return $type->isIterable() ? $result : iterator_to_array($result);
+        return $type->isIterable() ? $data : iterator_to_array($data);
     }
 
     /**
@@ -147,28 +141,10 @@ final class Unmarshaller
     }
 
     /**
-     * @param resource             $resource
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
-     */
-    private function lazyUnmarshalCollection(mixed $resource, Type $type, array $context): \Iterator|array|null
-    {
-        $collectionSplitter = $type->isDict() ? $this->dictSplitter : $this->listSplitter;
-
-        if (null === $boundaries = $collectionSplitter->split($resource, $type, $context)) {
-            return null;
-        }
-
-        $result = $this->lazyUnmarshalCollectionItems($boundaries, $resource, $type->collectionValueType(), $context);
-
-        return $type->isIterable() ? $result : iterator_to_array($result);
-    }
-
-    /**
      * @param \Iterator<array{0: int, 1: int}> $boundaries
      * @param resource                         $resource
      * @param array<string, mixed>             $context
+     * @param \Iterator<mixed,mixed>           $boundaries
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
@@ -180,209 +156,96 @@ final class Unmarshaller
     }
 
     /**
-     * @param array<string, mixed>|null $values
-     * @param array<string, mixed>      $context
+     * @param array<string, mixed>               $context
      */
-    private function unmarshalObject(?array $values, Type $type, array $context): ?object
+    private function unmarshalObject(bool $lazy, mixed $resourceOrData, Type $type, array $context): ?object
     {
-        if (null === $values) {
+        /** @var array<string, mixed>|null $data */
+        $data = $lazy ? $this->dictSplitter->split($resourceOrData, $type, $context) : $resourceOrData;
+
+        if (null === $data) {
             return null;
         }
 
-        $typeString = (string) $type;
-
         if (null !== $hook = $this->hookExtractor->extractFromObject($type, $context)) {
             /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
-            $hookResult = $hook($typeString, $context);
+            $hookResult = $hook((string) $type, $context);
 
-            /** @var Type $type */
-            $type = isset($hookResult['type'])
-                ? self::$typesCache[$hookResult['type']] = self::$typesCache[$hookResult['type']] ?? TypeFactory::createFromString($hookResult['type'])
-                : $type;
+            if (isset($hookResult['type'])) {
+                if (!isset(self::$cache['type'][$hookResult['type']])) {
+                    self::$cache['type'][$hookResult['type']] = TypeFactory::createFromString($hookResult['type']);
+                }
+
+                /** @var Type $type */
+                $type = self::$cache['type'][$hookResult['type']];
+            }
 
             $context = $hookResult['context'] ?? $context;
         }
 
-        $reflection = self::$classReflectionsCache[$typeString] = self::$classReflectionsCache[$typeString] ?? new \ReflectionClass($type->className());
+        if (!isset(self::$cache['class_reflection'][$typeString = (string) $type])) {
+            self::$cache['class_reflection'][$typeString] = new \ReflectionClass($type->className());
+        }
+
+        /** @var \ReflectionClass<object> $reflection */
+        $reflection = self::$cache['class_reflection'][$typeString];
 
         /** @var array<string, callable(): mixed> $propertiesValues */
         $propertiesValues = [];
 
-        foreach ($values as $key => $value) {
-            $valueProvider = null;
+        foreach ($data as $k => $v) {
+            $propertyName = $k;
 
-            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
-                /** @var array{name?: string, value?: callable(): mixed, context?: array<string, mixed>} $hookResult */
+            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $k, $context)) {
+                /** @var array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook(
                     $reflection,
-                    $key,
-                    function (string $type, array $context) use ($value): mixed {
-                        if (!isset(self::$typesCache[$type])) {
-                            self::$typesCache[$type] = TypeFactory::createFromString($type);
+                    $k,
+                    function (string $type, array $context) use ($v, $resourceOrData, $lazy): mixed {
+                        if (!isset(self::$cache['type'][$type])) {
+                            self::$cache['type'][$type] = TypeFactory::createFromString($type);
                         }
 
-                        return $this->unmarshal($value, self::$typesCache[$type], $context);
+                        if ($lazy) {
+                            return $this->unmarshal($resourceOrData, self::$cache['type'][$type], ['boundary' => $v] + $context);
+                        }
+
+                        return $this->unmarshal($v, self::$cache['type'][$type], $context);
                     },
                     $context,
                 );
 
-                $key = $hookResult['name'] ?? $key;
-                $valueProvider = $hookResult['value'] ?? $valueProvider;
+                $propertyName = $hookResult['name'] ?? $propertyName;
                 $context = $hookResult['context'] ?? $context;
             }
 
-            if (!$reflection->hasProperty($key)) {
+            if (!isset(self::$cache['class_has_property'][$propertyIdentifier = $typeString.$propertyName])) {
+                self::$cache['class_has_property'][$propertyIdentifier] = $reflection->hasProperty($propertyName);
+            }
+
+            if (!self::$cache['class_has_property'][$propertyIdentifier]) {
                 continue;
             }
 
-            if (null === $valueProvider) {
-                self::$propertyTypesCache[$key] = self::$propertyTypesCache[$key] ?? TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key)));
-                $valueProvider = fn () => $this->unmarshal($value, self::$propertyTypesCache[$key], $context);
+            if (isset($hookResult['value_provider'])) {
+                $propertiesValues[$propertyName] = $hookResult['value_provider'];
+
+                continue;
             }
 
-            $propertiesValues[$key] = $valueProvider;
+            if (!isset(self::$cache['property_type'][$propertyIdentifier])) {
+                self::$cache['property_type'][$propertyIdentifier] = TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($propertyName)));
+            }
+
+            $propertiesValues[$propertyName] = $lazy
+                ? fn () => $this->unmarshal($resourceOrData, self::$cache['property_type'][$propertyIdentifier], ['boundary' => $v] + $context)
+                : fn () => $this->unmarshal($v, self::$cache['property_type'][$propertyIdentifier], $context);
         }
 
         if (isset($context['instantiator'])) {
             return $context['instantiator']($reflection, $propertiesValues, $context);
         }
 
-        return $this->instantiateObject($reflection, $propertiesValues, $context);
-    }
-
-    /**
-     * @param resource             $resource
-     * @param array<string, mixed> $context
-     */
-    private function lazyUnmarshalObject(mixed $resource, Type $type, array $context): ?object
-    {
-        if (null === $boundaries = $this->dictSplitter->split($resource, $type, $context)) {
-            return null;
-        }
-
-        $typeString = (string) $type;
-
-        if (null !== $hook = $this->hookExtractor->extractFromObject($type, $context)) {
-            /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
-            $hookResult = $hook($typeString, $context);
-
-            /** @var Type $type */
-            $type = isset($hookResult['type'])
-                ? self::$typesCache[$hookResult['type']] = self::$typesCache[$hookResult['type']] ?? TypeFactory::createFromString($hookResult['type'])
-                : $type;
-
-            $context = $hookResult['context'] ?? $context;
-        }
-
-        $reflection = self::$classReflectionsCache[$typeString] = self::$classReflectionsCache[$typeString] ?? new \ReflectionClass($type->className());
-
-        /** @var array<string, callable(): mixed> $propertiesValues */
-        $propertiesValues = [];
-
-        foreach ($boundaries as $key => $boundary) {
-            $valueProvider = null;
-
-            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $key, $context)) {
-                /** @var array{name?: string, value?: callable(): mixed, context?: array<string, mixed>} $hookResult */
-                $hookResult = $hook(
-                    $reflection,
-                    $key,
-                    function (string $type, array $context) use ($resource, $boundary): mixed {
-                        if (!isset(self::$typesCache[$type])) {
-                            self::$typesCache[$type] = TypeFactory::createFromString($type);
-                        }
-
-                        return $this->unmarshal($resource, self::$typesCache[$type], ['boundary' => $boundary] + $context);
-                    },
-                    $context,
-                );
-
-                $key = $hookResult['name'] ?? $key;
-                $value = $hookResult['value'] ?? $valueProvider;
-                $context = $hookResult['context'] ?? $context;
-            }
-
-            if (!$reflection->hasProperty($key)) {
-                continue;
-            }
-
-            if (null === $valueProvider) {
-                self::$propertyTypesCache[$key] = self::$propertyTypesCache[$key] ?? TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($key)));
-                $valueProvider = fn () => $this->unmarshal($resource, self::$propertyTypesCache[$key], ['boundary' => $boundary] + $context);
-            }
-
-            $propertiesValues[$key] = $valueProvider;
-        }
-
-        if (isset($context['instantiator'])) {
-            return $context['instantiator']($reflection, $propertiesValues, $context);
-        }
-
-        return $this->instantiateObject($reflection, $propertiesValues, $context);
-    }
-
-    /**
-     * @param \ReflectionClass<object>         $class
-     * @param array<string, callable(): mixed> $propertiesValues
-     * @param array<string, mixed>             $context
-     *
-     * @throws InvalidConstructorArgumentException
-     */
-    private function instantiateObject(\ReflectionClass $class, array $propertiesValues, array $context): object
-    {
-        if (isset(self::$instantiatedObjectsCache[$className = $class->getName()])) {
-            $object = clone self::$instantiatedObjectsCache[$className];
-        } else {
-            if (null === $constructor = $class->getConstructor()) {
-                $object = new ($class->getName())();
-            } elseif (!$constructor->isPublic()) {
-                $object = $class->newInstanceWithoutConstructor();
-            } else {
-                $parameters = [];
-                $validContructor = true;
-
-                foreach ($constructor->getParameters() as $parameter) {
-                    if ($parameter->isDefaultValueAvailable()) {
-                        $parameters[] = $parameter->getDefaultValue();
-
-                        continue;
-                    }
-
-                    if ($parameter->getType()?->allowsNull()) {
-                        $parameters[] = null;
-
-                        continue;
-                    }
-
-                    $exception = new InvalidConstructorArgumentException($parameter->getName(), $class->getName());
-                    if (!($context['collect_errors'] ?? false)) {
-                        throw $exception;
-                    }
-
-                    $context['collected_errors'][] = $exception;
-                    $validContructor = false;
-                }
-
-                $object = ($validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor());
-            }
-
-            self::$instantiatedObjectsCache[$className] = $object;
-        }
-
-        foreach ($propertiesValues as $property => $value) {
-            try {
-                $object->{$property} = $value();
-            } catch (\TypeError $e) {
-                $exception = new UnexpectedTypeException($e->getMessage());
-
-                if (!($context['collect_errors'] ?? false)) {
-                    throw $exception;
-                }
-
-                $context['collected_errors'][] = $exception;
-            }
-        }
-
-        return $object;
+        return ($this->instantiator)($reflection, $propertiesValues, $context);
     }
 }

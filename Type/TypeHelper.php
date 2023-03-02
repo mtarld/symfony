@@ -20,6 +20,11 @@ use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 final class TypeHelper
 {
     /**
+     * @var array<string, array{genericType: string, genericParameters: list<string>}>
+     */
+    private static array $genericsCache = [];
+
+    /**
      * @param array<string, string> $genericTypes
      */
     public function replaceGenericTypes(string $type, array $genericTypes): string
@@ -48,9 +53,13 @@ final class TypeHelper
      */
     public function extractGenerics(string $type): array
     {
+        if (isset(self::$genericsCache[$type])) {
+            return self::$genericsCache[$type];
+        }
+
         $results = [];
         if (!preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $type, $results)) {
-            return [
+            return self::$genericsCache[$type] = [
                 'genericType' => $type,
                 'genericParameters' => [],
             ];
@@ -86,7 +95,7 @@ final class TypeHelper
 
         $genericParameters[] = $currentGenericParameter;
 
-        return [
+        return self::$genericsCache[$type] = [
             'genericType' => $genericType,
             'genericParameters' => $genericParameters,
         ];

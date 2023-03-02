@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * This file is part of the Symfony package.
  * (c) Fabien Potencier <fabien@symfony.com>
@@ -14,6 +12,9 @@ namespace Symfony\Component\Marshaller\Internal\Type;
 use Symfony\Component\Marshaller\Exception\InvalidTypeException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ */
 abstract class TypeFactory
 {
     /**

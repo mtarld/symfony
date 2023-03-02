@@ -34,7 +34,7 @@ final class Marshaller implements MarshallerInterface
         private readonly iterable $marshalContextBuilders,
         private readonly iterable $generationContextBuilders,
         private readonly iterable $unmarshalContextBuilders,
-        private readonly string $cacheDir,
+        private readonly string $templateCacheDir,
     ) {
     }
 
@@ -47,7 +47,7 @@ final class Marshaller implements MarshallerInterface
         $rawContext = $this->buildMarshalContext($type, $context);
 
         // if template does not exist, it'll be generated therefore raw context must be filled accordingly
-        if (!file_exists(sprintf('%s/%s.%s.php', $this->cacheDir, md5($type), $format))) {
+        if (!file_exists(sprintf('%s/%s.%s.php', $this->templateCacheDir, md5($type), $format))) {
             $rawContext = $this->buildGenerationContext($type, $context, $rawContext);
         }
 
@@ -73,7 +73,7 @@ final class Marshaller implements MarshallerInterface
     {
         $context = $context ?? new Context();
         $rawContext += [
-            'cache_dir' => $this->cacheDir,
+            'cache_dir' => $this->templateCacheDir,
             'type' => $type,
         ];
 
@@ -96,7 +96,7 @@ final class Marshaller implements MarshallerInterface
             'hooks' => [
                 'object' => (new MarshalHook\ObjectHook($this->typeExtractor))(...),
                 'property' => (new MarshalHook\PropertyHook($this->typeExtractor))(...),
-                'type' => (new MarshalHook\TypeHook($this->typeExtractor))(...),
+                // 'type' => (new MarshalHook\TypeHook($this->typeExtractor))(...), // TODO remove
             ],
         ];
 
@@ -117,6 +117,7 @@ final class Marshaller implements MarshallerInterface
         $context = $context ?? new Context();
         $rawContext += [
             'hooks' => [
+                // TODO from context builder?
                 'object' => (new UnmarshalHook\ObjectHook($this->typeExtractor))(...),
                 'property' => (new UnmarshalHook\PropertyHook($this->typeExtractor))(...),
             ],

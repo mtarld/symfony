@@ -9,8 +9,8 @@
 
 namespace Symfony\Component\Marshaller;
 
-use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
+use Symfony\Component\Marshaller\Exception\UnsupportedModeException;
 use Symfony\Component\Marshaller\Internal\Ast\Compiler;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ArgumentsNode;
 use Symfony\Component\Marshaller\Internal\Ast\Node\ClosureNode;
@@ -95,13 +95,6 @@ if (!\function_exists('unmarshal')) {
         $context['boundary'] = $context['boundary'] ?? [0, -1];
         $context['mode'] = $context['mode'] ?? 'lazy';
 
-        // $context['mode'] = 'eager';
-        // $context['instantiator'] = static function ($r, $p, $c) {
-        //     dd($r, $p, $c);
-        //     return ($r->getName())::createLazyGhost($p);
-        // };
-        // $context['instantiator'] = null;
-
         $unmarshaller = UnmarshallerFactory::create($format);
         $type = TypeFactory::createFromString($type);
 
@@ -112,7 +105,7 @@ if (!\function_exists('unmarshal')) {
                 $type,
                 $context,
             ),
-            default => throw new InvalidArgumentException(sprintf('Invalid "%s" mode.', $mode)),
+            default => throw new UnsupportedModeException($mode),
         };
 
         if (isset($errors) && [] !== $errors) {
