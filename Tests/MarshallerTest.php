@@ -95,7 +95,10 @@ final class MarshallerTest extends TestCase
                 \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods::doubleAndCastToString(\$data, \$context), \$context["json_encode_flags"] ?? 0));
             };
 
-            PHP, 'int', new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])), ];
+            PHP,
+            'int',
+            new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])),
+        ];
 
         yield [
             <<<PHP
@@ -109,7 +112,9 @@ final class MarshallerTest extends TestCase
                 \\fwrite(\$resource, \json_encode(\$foo, \$context["json_encode_flags"] ?? 0));
             };
 
-            PHP, 'int', new Context(new HookOption([
+            PHP,
+            'int',
+            new Context(new HookOption([
                 'int' => static function (string $type, string $accessor, array $context): array {
                     return [
                         'type' => 'string',
@@ -117,7 +122,8 @@ final class MarshallerTest extends TestCase
                         'context' => $context,
                     ];
                 },
-            ])), ];
+            ])),
+        ];
 
         yield [
             <<<PHP
@@ -136,7 +142,9 @@ final class MarshallerTest extends TestCase
                 \\fwrite(\$resource, "}");
             };
 
-            PHP, ClassicDummy::class, new Context(new HookOption([
+            PHP,
+            ClassicDummy::class,
+            new Context(new HookOption([
                 'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
                     return [
                         'name' => 'foo',
@@ -145,7 +153,8 @@ final class MarshallerTest extends TestCase
                         'context' => $context,
                     ];
                 },
-            ])), ];
+            ])),
+        ];
 
         yield [
             <<<PHP
@@ -164,7 +173,10 @@ final class MarshallerTest extends TestCase
                 \\fwrite(\$resource, "}");
             };
 
-            PHP, DummyWithNameAttributes::class, null, ];
+            PHP,
+            DummyWithNameAttributes::class,
+            null,
+        ];
 
         yield [
             <<<PHP
@@ -183,7 +195,10 @@ final class MarshallerTest extends TestCase
                 \\fwrite(\$resource, "}");
             };
 
-            PHP, DummyWithFormatterAttributes::class, null, ];
+            PHP,
+            DummyWithFormatterAttributes::class,
+            null,
+        ];
     }
 
     /**

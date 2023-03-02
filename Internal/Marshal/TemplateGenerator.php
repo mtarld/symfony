@@ -63,7 +63,7 @@ final class TemplateGenerator
         return [
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), $accessor),
-                $this->nodes(TypeFactory::createFromString('null'), new ScalarNode(null), $context),
+                $this->scalarNodes($accessor),
                 $nodes,
             ),
         ];
@@ -78,7 +78,7 @@ final class TemplateGenerator
     {
         return match (true) {
             $type instanceof UnionType => $this->unionNodes($type, $accessor, $context),
-            $type->isScalar(), $type->isNull() => $this->scalarNodes($type, $accessor, $context),
+            $type->isScalar(), $type->isNull() => $this->scalarNodes($accessor),
             $type->isObject() => $this->objectNodes($type, $accessor, $context),
             $type->isList() => $this->listNodes($type, $accessor, $context),
             $type->isDict() => $this->dictNodes($type, $accessor, $context),
@@ -121,14 +121,12 @@ final class TemplateGenerator
     }
 
     /**
-     * @param array<string, mixed> $context
-     *
      * @return list<NodeInterface>
      */
-    public function scalarNodes(Type $type, NodeInterface $accessor, array $context): array
+    public function scalarNodes(NodeInterface $accessor): array
     {
         return [
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->syntax->escapeNode($accessor)])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->syntax->encodeValueNode($accessor)])),
         ];
     }
 
@@ -172,7 +170,7 @@ final class TemplateGenerator
             new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
             new ForEachNode($accessor, $keyName, $valueName, [
-                new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->syntax->escapeNode(new VariableNode($keyName)))),
+                new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->syntax->escapeStringNode(new VariableNode($keyName)))),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
                     new VariableNode($prefixName),
                     $this->syntax->startDictKeyString(),
@@ -194,7 +192,7 @@ final class TemplateGenerator
      */
     private function objectNodes(Type $type, NodeInterface $accessor, array $context): array
     {
-        if (null !== $hook = $this->hookExtractor->forObject($type, $context)) {
+        if (null !== $hook = $this->hookExtractor->forObject($type->className(), $context)) {
             $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
 
             /** @var Type $type */

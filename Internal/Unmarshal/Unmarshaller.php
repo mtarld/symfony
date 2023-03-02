@@ -167,7 +167,7 @@ final class Unmarshaller
             return null;
         }
 
-        if (null !== $hook = $this->hookExtractor->forObject($type, $context)) {
+        if (null !== $hook = $this->hookExtractor->forObject($type->className(), $context)) {
             /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
             $hookResult = $hook((string) $type, $context);
 

@@ -22,7 +22,11 @@ final class JsonDecoder implements DecoderInterface
 {
     public function decode(mixed $resource, int $offset, int $length, array $context): mixed
     {
-        if (false === $content = stream_get_contents($resource, $length, $offset)) {
+        try {
+            if (false === $content = stream_get_contents($resource, $length, $offset)) {
+                throw new \RuntimeException();
+            }
+        } catch (\Throwable) {
             throw new RuntimeException('Cannot read JSON resource.');
         }
 

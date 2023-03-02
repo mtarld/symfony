@@ -33,14 +33,11 @@ final class HookExtractor
     }
 
     /**
+     * @param class-string         $className
      * @param array<string, mixed> $context
      */
-    public function forObject(Type $type, array $context): ?callable
+    public function forObject(string $className, array $context): ?callable
     {
-        if (isset($context['hooks']['?'.($className = $type->className())]) && $type->isNullable()) {
-            return $context['hooks']['?'.$className];
-        }
-
         if (isset($context['hooks'][$className])) {
             return $context['hooks'][$className];
         }

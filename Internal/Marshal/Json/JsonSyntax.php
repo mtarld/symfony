@@ -9,6 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Marshal\Json;
 
+use Symfony\Component\Marshaller\Exception\RuntimeException;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\ArrayAccessNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\FunctionNode;
@@ -36,7 +37,7 @@ final class JsonSyntax implements SyntaxInterface
 
     public function endDictKeyString(): string
     {
-        return '"';
+        return '":';
     }
 
     public function startListString(): string
@@ -56,10 +57,27 @@ final class JsonSyntax implements SyntaxInterface
 
     public function escapeString(string $string): string
     {
-        return json_encode($string) ?: $string;
+        $encoded = json_encode($string);
+        if (false === $encoded) {
+            throw new RuntimeException(sprintf('Cannot encode "%s"', $string));
+        }
+
+        return substr($encoded, 1, -1);
     }
 
-    public function escapeNode(NodeInterface $node): NodeInterface
+    public function escapeStringNode(NodeInterface $node): NodeInterface
+    {
+        return new FunctionNode('\substr', [
+            new FunctionNode('\json_encode', [
+                $node,
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+            ]),
+            new ScalarNode(1),
+            new ScalarNode(-1),
+        ]);
+    }
+
+    public function encodeValueNode(NodeInterface $node): NodeInterface
     {
         return new FunctionNode('\json_encode', [
             $node,

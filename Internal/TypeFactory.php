@@ -20,7 +20,7 @@ abstract class TypeFactory
     /**
      * @var array<string, Type|UnionType>
      */
-    private static array $typesCache = [];
+    private static array $cache = [];
 
     private function __construct()
     {
@@ -28,8 +28,8 @@ abstract class TypeFactory
 
     public static function createFromString(string $string): Type|UnionType
     {
-        if (isset(self::$typesCache[$string])) {
-            return self::$typesCache[$string];
+        if (isset(self::$cache[$cacheKey = $string])) {
+            return self::$cache[$cacheKey];
         }
 
         $currentTypeString = '';
@@ -87,11 +87,11 @@ abstract class TypeFactory
                 $types[] = new Type('null');
             }
 
-            return self::$typesCache[$string] = new UnionType($types);
+            return self::$cache[$cacheKey] = new UnionType($types);
         }
 
         if ('null' === $string) {
-            return self::$typesCache[$string] = new Type('null');
+            return self::$cache[$cacheKey] = new Type('null');
         }
 
         if ($isNullable = str_starts_with($string, '?')) {
@@ -103,11 +103,11 @@ abstract class TypeFactory
         }
 
         if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
-            return self::$typesCache[$string] = new Type($string, $isNullable);
+            return self::$cache[$cacheKey] = new Type($string, $isNullable);
         }
 
         if (class_exists($string) || interface_exists($string)) {
-            return self::$typesCache[$string] = new Type('object', $isNullable, $string);
+            return self::$cache[$cacheKey] = new Type('object', $isNullable, $string);
         }
 
         $results = [];
@@ -154,7 +154,7 @@ abstract class TypeFactory
                 $className = $genericType;
             }
 
-            return self::$typesCache[$string] = new Type(
+            return self::$cache[$cacheKey] = new Type(
                 name: $type,
                 isNullable: $isNullable,
                 isGeneric: true,
@@ -163,6 +163,6 @@ abstract class TypeFactory
             );
         }
 
-        return self::$typesCache[$string] = new Type($string, $isNullable);
+        return self::$cache[$cacheKey] = new Type($string, $isNullable);
     }
 }

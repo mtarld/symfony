@@ -32,5 +32,7 @@ interface SyntaxInterface
 
     public function escapeString(string $string): string;
 
-    public function escapeNode(NodeInterface $node): NodeInterface;
+    public function escapeStringNode(NodeInterface $node): NodeInterface;
+
+    public function encodeValueNode(NodeInterface $node): NodeInterface;
 }
