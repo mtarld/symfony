@@ -11,7 +11,7 @@ namespace Symfony\Component\Marshaller\Tests\Hook\Unmarshal;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
-use Symfony\Component\Marshaller\Hook\Unmarshal\PropertyHook;
+null
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;

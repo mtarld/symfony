@@ -7,14 +7,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Internal\Unmarshal;
+namespace Symfony\Component\Marshaller\Internal\Marshal;
 
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
 use Symfony\Component\Marshaller\Internal\HookExtractor;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDecoder;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDictSplitter;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonLexer;
-use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonListSplitter;
+use Symfony\Component\Marshaller\Internal\Marshal\Json\JsonSyntax;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
@@ -22,13 +19,13 @@ use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
  *
  * @internal
  */
-abstract class UnmarshallerFactory
+final class TemplateGeneratorFactory
 {
     private function __construct()
     {
     }
 
-    public static function create(string $format): Unmarshaller
+    public static function create(string $format): TemplateGenerator
     {
         return match ($format) {
             'json' => self::json(),
@@ -36,17 +33,13 @@ abstract class UnmarshallerFactory
         };
     }
 
-    private static function json(): Unmarshaller
+    private static function json(): TemplateGenerator
     {
-        $lexer = new JsonLexer();
-
-        return new Unmarshaller(
+        return new TemplateGenerator(
             hookExtractor: new HookExtractor(),
             reflectionTypeExtractor: new ReflectionTypeExtractor(),
-            decoder: new JsonDecoder(),
-            listSplitter: new JsonListSplitter($lexer),
-            dictSplitter: new JsonDictSplitter($lexer),
-            instantiator: new Instantiator(),
+            typeSorter: new TypeSorter(),
+            syntax: new JsonSyntax(),
         );
     }
 }

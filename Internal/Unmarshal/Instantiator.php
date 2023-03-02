@@ -21,13 +21,21 @@ use Symfony\Component\Marshaller\Instantiator\InstantiatorInterface;
 final class Instantiator implements InstantiatorInterface
 {
     /**
-     * @var array<string, object>
+     * @var array<class-string, object>
      */
     private static array $cache = [];
 
+    /**
+     * @template T of object
+     *
+     * @param \ReflectionClass<T> $class
+     *
+     * @return T
+     */
     public function __invoke(\ReflectionClass $class, array $propertiesValues, array $context): object
     {
         if (isset(self::$cache[$className = $class->getName()])) {
+            /** @var T $object */
             $object = clone self::$cache[$className];
         } else {
             if (null === $constructor = $class->getConstructor()) {

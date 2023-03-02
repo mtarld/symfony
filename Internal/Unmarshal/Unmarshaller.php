@@ -13,10 +13,10 @@ use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Instantiator\InstantiatorInterface;
-use Symfony\Component\Marshaller\Internal\Hook\HookExtractor;
-use Symfony\Component\Marshaller\Internal\Type\Type;
-use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
-use Symfony\Component\Marshaller\Internal\Type\UnionType;
+use Symfony\Component\Marshaller\Internal\HookExtractor;
+use Symfony\Component\Marshaller\Internal\Type;
+use Symfony\Component\Marshaller\Internal\TypeFactory;
+use Symfony\Component\Marshaller\Internal\UnionType;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
@@ -156,7 +156,7 @@ final class Unmarshaller
     }
 
     /**
-     * @param array<string, mixed>               $context
+     * @param array<string, mixed> $context
      */
     private function unmarshalObject(bool $lazy, mixed $resourceOrData, Type $type, array $context): ?object
     {
@@ -167,7 +167,7 @@ final class Unmarshaller
             return null;
         }
 
-        if (null !== $hook = $this->hookExtractor->extractFromObject($type, $context)) {
+        if (null !== $hook = $this->hookExtractor->forObject($type, $context)) {
             /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
             $hookResult = $hook((string) $type, $context);
 
@@ -196,7 +196,7 @@ final class Unmarshaller
         foreach ($data as $k => $v) {
             $propertyName = $k;
 
-            if (null !== $hook = $this->hookExtractor->extractFromKey($reflection->getName(), $k, $context)) {
+            if (null !== $hook = $this->hookExtractor->forKey($reflection->getName(), $k, $context)) {
                 /** @var array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook(
                     $reflection,

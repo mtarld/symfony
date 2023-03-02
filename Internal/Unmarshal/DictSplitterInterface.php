@@ -9,7 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
-use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

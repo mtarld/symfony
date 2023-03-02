@@ -11,15 +11,15 @@ namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Exception\UnsupportedModeException;
-use Symfony\Component\Marshaller\Internal\Ast\Compiler;
-use Symfony\Component\Marshaller\Internal\Ast\Node\ArgumentsNode;
-use Symfony\Component\Marshaller\Internal\Ast\Node\ClosureNode;
-use Symfony\Component\Marshaller\Internal\Ast\Node\ExpressionNode;
-use Symfony\Component\Marshaller\Internal\Ast\Node\PhpDocNode;
-use Symfony\Component\Marshaller\Internal\Ast\Node\ReturnNode;
-use Symfony\Component\Marshaller\Internal\Ast\Node\VariableNode;
-use Symfony\Component\Marshaller\Internal\Template\TemplateGeneratorFactory;
-use Symfony\Component\Marshaller\Internal\Type\TypeFactory;
+use Symfony\Component\Marshaller\Internal\Marshal\Compiler;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\ArgumentsNode;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\ClosureNode;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\ExpressionNode;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\PhpDocNode;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\ReturnNode;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\VariableNode;
+use Symfony\Component\Marshaller\Internal\Marshal\TemplateGeneratorFactory;
+use Symfony\Component\Marshaller\Internal\TypeFactory;
 use Symfony\Component\Marshaller\Internal\Unmarshal\DecoderFactory;
 use Symfony\Component\Marshaller\Internal\Unmarshal\UnmarshallerFactory;
 

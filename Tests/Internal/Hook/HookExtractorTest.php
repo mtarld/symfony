@@ -31,7 +31,7 @@ final class HookExtractorTest extends TestCase
         $property->method('getName')->willReturn('bar');
         $property->method('getDeclaringClass')->willReturn($class);
 
-        $this->assertSame($expectedHook, (new HookExtractor())->extractFromProperty($property, ['hooks' => $hooks]));
+        $this->assertSame($expectedHook, (new HookExtractor())->forProperty($property, ['hooks' => $hooks]));
     }
 
     /**
@@ -152,11 +152,11 @@ final class HookExtractorTest extends TestCase
 
         $hookExtractor = new HookExtractor();
 
-        $this->assertSame($barHook, $hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithProperty));
-        $this->assertSame($barHook, $hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithProperty));
-        $this->assertSame($fooHook, $hookExtractor->extractFromKey('class', 'foo', $contextWithProperty));
+        $this->assertSame($barHook, $hookExtractor->forKey('unexistingClass', 'foo', $contextWithProperty));
+        $this->assertSame($barHook, $hookExtractor->forKey('class', 'unexistingKey', $contextWithProperty));
+        $this->assertSame($fooHook, $hookExtractor->forKey('class', 'foo', $contextWithProperty));
 
-        $this->assertNull($hookExtractor->extractFromKey('unexistingClass', 'foo', $contextWithoutProperty));
-        $this->assertNull($hookExtractor->extractFromKey('class', 'unexistingKey', $contextWithoutProperty));
+        $this->assertNull($hookExtractor->forKey('unexistingClass', 'foo', $contextWithoutProperty));
+        $this->assertNull($hookExtractor->forKey('class', 'unexistingKey', $contextWithoutProperty));
     }
 }

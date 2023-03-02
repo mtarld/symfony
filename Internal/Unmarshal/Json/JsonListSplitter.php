@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Internal\Unmarshal\Json;
 
 use Symfony\Component\Marshaller\Exception\InvalidResourceException;
-use Symfony\Component\Marshaller\Internal\Type\Type;
+use Symfony\Component\Marshaller\Internal\Type;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\ListSplitterInterface;
 
