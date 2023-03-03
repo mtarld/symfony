@@ -94,8 +94,9 @@ if (!\function_exists('unmarshal')) {
 
         $context['boundary'] = $context['boundary'] ?? [0, -1];
         $context['mode'] = $context['mode'] ?? 'lazy';
+        $context['validate'] = true;
 
-        $unmarshaller = UnmarshallerFactory::create($format);
+        $unmarshaller = UnmarshallerFactory::create($format, $context);
         $type = TypeFactory::createFromString($type);
 
         $result = match ($mode = $context['mode'] ?? 'lazy') {

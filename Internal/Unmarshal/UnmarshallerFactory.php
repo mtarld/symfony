@@ -15,6 +15,7 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDecoder;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDictSplitter;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonLexer;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonListSplitter;
+use Symfony\Component\Marshaller\Internal\Unmarshal\Json\ValidatingJsonLexer;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
 /**
@@ -28,17 +29,24 @@ abstract class UnmarshallerFactory
     {
     }
 
-    public static function create(string $format): Unmarshaller
+    /**
+     * @param array<string, mixed> $context
+     */
+    public static function create(string $format, array $context): Unmarshaller
     {
         return match ($format) {
-            'json' => self::json(),
+            'json' => self::json($context['validate'] ?? false),
             default => throw new UnsupportedFormatException($format),
         };
     }
 
-    private static function json(): Unmarshaller
+    private static function json(bool $validate): Unmarshaller
     {
         $lexer = new JsonLexer();
+        if ($validate) {
+            // TODO test in "functional" way
+            $lexer = new ValidatingJsonLexer($lexer);
+        }
 
         return new Unmarshaller(
             hookExtractor: new HookExtractor(),

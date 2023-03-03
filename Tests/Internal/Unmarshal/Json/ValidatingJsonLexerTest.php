@@ -59,6 +59,7 @@ final class ValidatingJsonLexerTest extends TestCase
         $this->expectException(InvalidResourceException::class);
 
         iterator_to_array((new ValidatingJsonLexer(new JsonLexer()))->tokens(fopen($file, 'r'), 0, -1, []));
+        dump(file_get_contents($file));
     }
 
     /**
