@@ -20,8 +20,10 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 final class JsonLexer implements LexerInterface
 {
     private const MAX_CHUNK_LENGTH = 8192;
+
     private const WHITESPACE_CHARS = [' ' => true, "\r" => true, "\t" => true, "\n" => true];
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
+    private const EMPTY_TOKENS = ['' => true, "\xEF\xBB\xBF" => true];
 
     public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
     {
@@ -35,10 +37,16 @@ final class JsonLexer implements LexerInterface
 
         rewind($resource);
 
+        // TODO validate opt in
+
         $toReadLength = $length;
 
         while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
-            if (false === $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
+            try {
+                if (false === $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
+                    throw new \RuntimeException();
+                }
+            } catch (\Throwable) {
                 throw new RuntimeException('Cannot read JSON resource.');
             }
 
@@ -75,7 +83,9 @@ final class JsonLexer implements LexerInterface
 
                 if (isset(self::STRUCTURE_CHARS[$byte]) || isset(self::WHITESPACE_CHARS[$byte])) {
                     if ('' !== $token) {
-                        yield [$token, $currentTokenPosition];
+                        if (!isset(self::EMPTY_TOKENS[$token])) {
+                            yield [$token, $currentTokenPosition];
+                        }
 
                         $currentTokenPosition += \strlen($token);
                         $token = '';
@@ -96,6 +106,10 @@ final class JsonLexer implements LexerInterface
             }
 
             $offset += $bufferLength;
+        }
+
+        if (!isset(self::EMPTY_TOKENS[$token])) {
+            yield [$token, $currentTokenPosition];
         }
     }
 }

@@ -23,4 +23,3 @@ final class JsonSyntaxTest extends TestCase
         $this->assertSame('f\\\\\"oo', $jsonSyntax->escapeString('f\\"oo'));
     }
 }
-

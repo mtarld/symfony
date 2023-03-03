@@ -12,7 +12,6 @@ namespace Symfony\Component\Marshaller\Tests\Internal\Marshal\Json;
 use PHPUnit\Framework\TestCase;
 
 use function Symfony\Component\Marshaller\marshal;
-use function Symfony\Component\Marshaller\marshal_generate;
 
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
@@ -90,4 +89,3 @@ final class MarshalTest extends TestCase
         return stream_get_contents($resource);
     }
 }
-
