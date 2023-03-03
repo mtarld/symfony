@@ -37,8 +37,6 @@ final class JsonLexer implements LexerInterface
 
         rewind($resource);
 
-        // TODO validate opt in
-
         $toReadLength = $length;
 
         while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {

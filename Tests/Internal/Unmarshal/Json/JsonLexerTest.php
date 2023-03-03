@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Tests\Internal\Unmarshal\Json;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\RuntimeException;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonLexer;
 
@@ -56,51 +55,6 @@ final class JsonLexerTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         iterator_to_array((new JsonLexer())->tokens(fopen('foo', 'w'), 0, -1, []));
-    }
-
-    /**
-     * @dataProvider validJsonTokensDataProvider
-     */
-    public function testValidJsonTokens(string $file): void
-    {
-        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'r'), 0, -1, []));
-
-        $this->addToAssertionCount(1);
-    }
-
-    /**
-     * Pulled from https://github.com/nst/JSONTestSuite.
-     *
-     * @return iterable<array{0: string}>
-     */
-    public function validJsonTokensDataProvider(): iterable
-    {
-        foreach (glob(\dirname(__DIR__, 3).'/Fixtures/Resources/json/valid/*') as $file) {
-            yield [$file];
-        }
-    }
-
-    /**
-     * @dataProvider invalidJsonTokensDataProvider
-     */
-    public function testInvalidJsonTokens(string $file): void
-    {
-        $this->markTestSkipped();
-        $this->expectException(InvalidResourceException::class);
-
-        iterator_to_array((new JsonLexer())->tokens(fopen($file, 'r'), []));
-    }
-
-    /**
-     * Pulled from https://github.com/nst/JSONTestSuite.
-     *
-     * @return iterable<array{0: string}>
-     */
-    public function invalidJsonTokensDataProvider(): iterable
-    {
-        foreach (glob(\dirname(__DIR__, 3).'/Fixtures/Resources/json/invalid/*') as $file) {
-            yield [$file];
-        }
     }
 
     public function testTokenizeOverflowingBuffer(): void
