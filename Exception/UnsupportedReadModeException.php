@@ -12,10 +12,10 @@ namespace Symfony\Component\Marshaller\Exception;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class UnsupportedModeException extends InvalidArgumentException
+final class UnsupportedReadModeException extends InvalidArgumentException
 {
     public function __construct(string $mode)
     {
-        parent::__construct(sprintf('"%s" mode is not supported.', $mode));
+        parent::__construct(sprintf('"%s" read mode is not supported.', $mode));
     }
 }

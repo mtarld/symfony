@@ -26,7 +26,7 @@ final class ModeContextBuilder implements UnmarshalContextBuilderInterface
             return $rawContext;
         }
 
-        $rawContext['mode'] = $unmarshalModeOption->mode;
+        $rawContext['read_mode'] = $unmarshalModeOption->mode;
 
         return $rawContext;
     }

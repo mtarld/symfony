@@ -42,7 +42,7 @@ final class MarshalTest extends TestCase
      */
     public function testMarshal(mixed $data, string $type = null): void
     {
-        $this->assertSame(json_encode($data), $this->marshalAsString($data, context: (null !== $type) ? ['type' => $type] : []));
+        $this->assertSame(json_encode($data), $this->marshalAsString($data, (null !== $type) ? ['type' => $type] : []));
     }
 
     /**
@@ -72,17 +72,17 @@ final class MarshalTest extends TestCase
     public function testMarshalWithJsonEncodeFlags(): void
     {
         $this->assertSame('"123"', $this->marshalAsString('123'));
-        $this->assertSame('123', $this->marshalAsString('123', context: ['json_encode_flags' => \JSON_NUMERIC_CHECK]));
+        $this->assertSame('123', $this->marshalAsString('123', ['json_encode_flags' => \JSON_NUMERIC_CHECK]));
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function marshalAsString(mixed $data, string $format = 'json', array $context = []): string
+    private function marshalAsString(mixed $data, array $context = []): string
     {
         /** @var resource $resource */
         $resource = fopen('php://temp', 'w');
-        marshal($data, $resource, $format, $context);
+        marshal($data, $resource, 'json', $context);
 
         rewind($resource);
 

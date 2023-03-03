@@ -1,11 +1,6 @@
 # TODO
 
 ## Unmarshal
-- validate JSON
-- eager/lazy mode
-- JSON pointer
-- improve perf of lazy mode
-- test that the Relation test case is working (marshal and unmarshal, functionally)
 - bench in CI
 
 ## Common
@@ -25,3 +20,4 @@
 - maybe groups?
 - maybe ignore?
 - add extra data?
+- maybe JSON pointer?

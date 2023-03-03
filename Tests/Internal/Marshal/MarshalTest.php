@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Marshaller\Tests\Internal;
+namespace Symfony\Component\Marshaller\Tests\Internal\Marshal;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;

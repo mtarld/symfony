@@ -71,7 +71,7 @@ final class Instantiator implements InstantiatorInterface
                 $object = ($validContructor ? $class->newInstanceArgs($parameters) : $class->newInstanceWithoutConstructor());
             }
 
-            self::$cache[$className] = $object;
+            self::$cache[$className] = clone $object;
         }
 
         foreach ($propertiesValues as $property => $value) {

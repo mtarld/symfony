@@ -14,6 +14,11 @@ use Symfony\Component\Marshaller\Internal\Type;
 use Symfony\Component\Marshaller\Internal\Unmarshal\DictSplitterInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 final class JsonDictSplitter implements DictSplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
@@ -105,11 +110,11 @@ final class JsonDictSplitter implements DictSplitterInterface
             }
         }
 
-        if (-1 !== $level || !isset($key, $value, $position) || '}' !== $value) {
+        if (-1 !== $level || !isset($value, $position) || '}' !== $value) {
             throw new InvalidResourceException($resource);
         }
 
-        if (($length = $position - $offset) > 0) {
+        if (null !== $key && ($length = $position - $offset) > 0) {
             yield $key => [$offset, $length];
         }
     }

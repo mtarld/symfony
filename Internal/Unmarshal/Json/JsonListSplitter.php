@@ -14,6 +14,11 @@ use Symfony\Component\Marshaller\Internal\Type;
 use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 use Symfony\Component\Marshaller\Internal\Unmarshal\ListSplitterInterface;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 final class JsonListSplitter implements ListSplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];

@@ -35,7 +35,7 @@ abstract class UnmarshallerFactory
     public static function create(string $format, array $context): Unmarshaller
     {
         return match ($format) {
-            'json' => self::json($context['validate'] ?? false),
+            'json' => self::json($context['validate_stream'] ?? false),
             default => throw new UnsupportedFormatException($format),
         };
     }
@@ -44,7 +44,6 @@ abstract class UnmarshallerFactory
     {
         $lexer = new JsonLexer();
         if ($validate) {
-            // TODO test in "functional" way
             $lexer = new ValidatingJsonLexer($lexer);
         }
 

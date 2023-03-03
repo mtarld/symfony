@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller;
 
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
-use Symfony\Component\Marshaller\Exception\UnsupportedModeException;
+use Symfony\Component\Marshaller\Exception\UnsupportedReadModeException;
 use Symfony\Component\Marshaller\Internal\Marshal\Compiler;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\ArgumentsNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\ClosureNode;
@@ -93,20 +93,19 @@ if (!\function_exists('unmarshal')) {
         }
 
         $context['boundary'] = $context['boundary'] ?? [0, -1];
-        $context['mode'] = $context['mode'] ?? 'lazy';
-        $context['validate'] = true;
+        $context['read_mode'] = $context['read_mode'] ?? 'lazy';
 
         $unmarshaller = UnmarshallerFactory::create($format, $context);
         $type = TypeFactory::createFromString($type);
 
-        $result = match ($mode = $context['mode'] ?? 'lazy') {
+        $result = match ($mode = $context['read_mode'] ?? 'lazy') {
             'lazy' => $unmarshaller->unmarshal($resource, $type, $context),
             'eager' => $unmarshaller->unmarshal(
                 DecoderFactory::create($format)->decode($resource, $context['boundary'][0], $context['boundary'][1], $context),
                 $type,
                 $context,
             ),
-            default => throw new UnsupportedModeException($mode),
+            default => throw new UnsupportedReadModeException($mode),
         };
 
         if (isset($errors) && [] !== $errors) {

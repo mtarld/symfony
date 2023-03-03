@@ -18,6 +18,11 @@ use Symfony\Component\Marshaller\Internal\Marshal\Node\VariableNode;
 use Symfony\Component\Marshaller\Internal\Marshal\NodeInterface;
 use Symfony\Component\Marshaller\Internal\Marshal\SyntaxInterface;
 
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
+ */
 final class JsonSyntax implements SyntaxInterface
 {
     public function startDictString(): string

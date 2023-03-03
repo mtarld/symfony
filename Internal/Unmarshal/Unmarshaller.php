@@ -64,7 +64,7 @@ final class Unmarshaller
             $type = self::$cache['type'][$typeString];
         }
 
-        $lazy = 'lazy' === $context['mode'];
+        $lazy = 'lazy' === $context['read_mode'];
 
         $result = match (true) {
             $type->isScalar() => $this->unmarshalScalar($lazy, $resourceOrData, $type, $context),
