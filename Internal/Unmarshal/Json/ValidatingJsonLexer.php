@@ -57,135 +57,167 @@ final class ValidatingJsonLexer implements LexerInterface
     {
         $expectedType = self::VALUE;
 
-        $structureStack = [];
-        $structureStackPointer = -1;
-
-        $shouldBeDictKeyStack = [];
-        $shouldBeDictKeyStackPointer = -1;
+        $structureStack = $shouldBeDictKeyStack = [];
+        $structurePointer = $shouldBeDictKeyPointer = -1;
 
         foreach ($this->lexer->tokens($resource, $offset, $length, $context) as $i => [$token, $offset]) {
             if ('{' === $token) {
-                $type = self::DICT_START;
-                $nextExpectedType = self::DICT_END | self::KEY;
-
-                ++$structureStackPointer;
-                $structureStack[$structureStackPointer] = 'dict';
-
-                ++$shouldBeDictKeyStackPointer;
-                $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer] = true;
-            } elseif ('}' === $token) {
-                if (-1 === $structureStackPointer || -1 === $shouldBeDictKeyStackPointer) {
+                if (!(self::DICT_START & $expectedType)) {
                     throw new InvalidResourceException($resource);
                 }
 
-                $type = self::DICT_END;
+                $structureStack[++$structurePointer] = 'dict';
+                $shouldBeDictKeyStack[++$shouldBeDictKeyPointer] = true;
 
-                --$structureStackPointer;
-                --$shouldBeDictKeyStackPointer;
+                $expectedType = self::DICT_END | self::KEY;
 
-                if (-1 === $structureStackPointer) {
-                    $nextExpectedType = self::END;
-                } elseif ('dict' === $structureStack[$structureStackPointer]) {
-                    if ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer]) {
-                        $nextExpectedType = self::COLUMN;
-                    } else {
-                        $nextExpectedType = self::DICT_END | self::COMMA;
-                    }
+                yield [$token, $offset];
 
-                    $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer] = !$shouldBeDictKey;
+                continue;
+            }
+
+            if ('}' === $token) {
+                if (!(self::DICT_END & $expectedType) || -1 === $structurePointer || -1 === $shouldBeDictKeyPointer) {
+                    throw new InvalidResourceException($resource);
+                }
+
+                --$structurePointer;
+                --$shouldBeDictKeyPointer;
+
+                if (-1 === $structurePointer) {
+                    $expectedType = self::END;
+                } elseif ('dict' === $structureStack[$structurePointer]) {
+                    $expectedType = ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyPointer]) ? self::COLUMN : self::DICT_END | self::COMMA;
+                    $shouldBeDictKeyStack[$shouldBeDictKeyPointer] = !$shouldBeDictKey;
                 } else {
-                    $nextExpectedType = self::LIST_END | self::COMMA;
+                    $expectedType = self::LIST_END | self::COMMA;
                 }
-            } elseif ('[' === $token) {
-                $type = self::LIST_START;
-                $nextExpectedType = self::LIST_END | self::VALUE;
 
-                ++$structureStackPointer;
-                $structureStack[$structureStackPointer] = 'list';
-            } elseif (']' === $token) {
-                $type = self::LIST_END;
-                if (-1 === $structureStackPointer) {
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if ('[' === $token) {
+                if (!(self::LIST_START & $expectedType)) {
                     throw new InvalidResourceException($resource);
                 }
 
-                --$structureStackPointer;
+                $expectedType = self::LIST_END | self::VALUE;
 
-                if (-1 === $structureStackPointer) {
-                    $nextExpectedType = self::END;
-                } elseif ('dict' === $structureStack[$structureStackPointer]) {
-                    if ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer]) {
-                        $nextExpectedType = self::COLUMN;
-                    } else {
-                        $nextExpectedType = self::DICT_END | self::COMMA;
-                    }
+                $structureStack[++$structurePointer] = 'list';
 
-                    $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer] = !$shouldBeDictKey;
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if (']' === $token) {
+                if (!(self::LIST_END & $expectedType) || -1 === $structurePointer) {
+                    throw new InvalidResourceException($resource);
+                }
+
+                --$structurePointer;
+
+                if (-1 === $structurePointer) {
+                    $expectedType = self::END;
+                } elseif ('dict' === $structureStack[$structurePointer]) {
+                    $expectedType = ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyPointer]) ? self::COLUMN : self::DICT_END | self::COMMA;
+                    $shouldBeDictKeyStack[$shouldBeDictKeyPointer] = !$shouldBeDictKey;
                 } else {
-                    $nextExpectedType = self::LIST_END | self::COMMA;
+                    $expectedType = self::LIST_END | self::COMMA;
                 }
-            } elseif (',' === $token) {
-                $type = self::COMMA;
 
-                if (-1 === $structureStackPointer) {
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if (',' === $token) {
+                if (!(self::COMMA & $expectedType) || -1 === $structurePointer) {
                     throw new InvalidResourceException($resource);
                 }
 
-                $nextExpectedType = 'dict' === $structureStack[$structureStackPointer] ? self::KEY : self::VALUE;
-            } elseif (':' === $token) {
-                $type = self::COLUMN;
+                $expectedType = 'dict' === $structureStack[$structurePointer] ? self::KEY : self::VALUE;
 
-                if ('dict' !== ($structureStack[$structureStackPointer] ?? null)) {
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if (':' === $token) {
+                if (!(self::COLUMN & $expectedType) || 'dict' !== ($structureStack[$structurePointer] ?? null)) {
                     throw new InvalidResourceException($resource);
                 }
 
-                $nextExpectedType = self::VALUE;
-            } else {
-                if (!isset(self::$validScalarCache[$token])) {
-                    try {
-                        json_decode($token, associative: true, flags: ($context['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
+                $expectedType = self::VALUE;
 
-                        self::$validScalarCache[$token] = true;
-                    } catch (\JsonException) {
-                        self::$validScalarCache[$token] = false;
-                    }
-                }
+                yield [$token, $offset];
 
-                if (!self::$validScalarCache[$token]) {
-                    throw new InvalidResourceException($resource);
-                }
+                continue;
+            }
 
-                if (-1 === $structureStackPointer) {
-                    $type = self::VALUE;
-                    $nextExpectedType = self::END;
-                } elseif ('dict' === $structureStack[$structureStackPointer]) {
-                    if ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer]) {
-                        if (!isset(self::$validKeyCache[$token])) {
-                            self::$validKeyCache[$token] = str_starts_with($token, '"') && str_ends_with($token, '"');
-                        }
+            if (!isset(self::$validScalarCache[$token])) {
+                try {
+                    json_decode($token, associative: true, flags: ($context['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
 
-                        if (!self::$validKeyCache[$token]) {
-                            throw new InvalidResourceException($resource);
-                        }
-
-                        $type = self::KEY;
-                        $nextExpectedType = self::COLUMN;
-                    } else {
-                        $type = self::VALUE;
-                        $nextExpectedType = self::DICT_END | self::COMMA;
-                    }
-
-                    $shouldBeDictKeyStack[$shouldBeDictKeyStackPointer] = !$shouldBeDictKey;
-                } else {
-                    $type = self::VALUE;
-                    $nextExpectedType = self::LIST_END | self::COMMA;
+                    self::$validScalarCache[$token] = true;
+                } catch (\JsonException) {
+                    self::$validScalarCache[$token] = false;
                 }
             }
 
-            if (!($type & $expectedType)) {
+            if (!self::$validScalarCache[$token]) {
                 throw new InvalidResourceException($resource);
             }
 
-            $expectedType = $nextExpectedType;
+            if (-1 === $structurePointer) {
+                if (!(self::VALUE & $expectedType)) {
+                    throw new InvalidResourceException($resource);
+                }
+
+                $expectedType = self::END;
+
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if ('dict' === $structureStack[$structurePointer]) {
+                if ($shouldBeDictKey = $shouldBeDictKeyStack[$shouldBeDictKeyPointer]) {
+                    if (!(self::KEY & $expectedType)) {
+                        throw new InvalidResourceException($resource);
+                    }
+
+                    if (!isset(self::$validKeyCache[$token])) {
+                        self::$validKeyCache[$token] = str_starts_with($token, '"') && str_ends_with($token, '"');
+                    }
+
+                    if (!self::$validKeyCache[$token]) {
+                        throw new InvalidResourceException($resource);
+                    }
+
+                    $expectedType = self::COLUMN;
+                } else {
+                    if (!(self::VALUE & $expectedType)) {
+                        throw new InvalidResourceException($resource);
+                    }
+
+                    $expectedType = self::DICT_END | self::COMMA;
+                }
+
+                $shouldBeDictKeyStack[$shouldBeDictKeyPointer] = !$shouldBeDictKey;
+
+                yield [$token, $offset];
+
+                continue;
+            }
+
+            if (!(self::VALUE & $expectedType)) {
+                throw new InvalidResourceException($resource);
+            }
+
+            $expectedType = self::LIST_END | self::COMMA;
 
             yield [$token, $offset];
         }
