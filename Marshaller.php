@@ -96,7 +96,6 @@ final class Marshaller implements MarshallerInterface
             'hooks' => [
                 'object' => (new MarshalHook\ObjectHook($this->typeExtractor))(...),
                 'property' => (new MarshalHook\PropertyHook($this->typeExtractor))(...),
-                // 'type' => (new MarshalHook\TypeHook($this->typeExtractor))(...), // TODO remove
             ],
         ];
 

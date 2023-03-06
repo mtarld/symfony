@@ -4,7 +4,6 @@
 - bench in CI
 
 ## Common
-- validate reflection factory
 - DSL instead of options?
 - maybe move hooks out from Marshaller? (no new anymore)
 

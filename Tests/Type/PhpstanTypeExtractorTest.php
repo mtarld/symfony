@@ -149,7 +149,7 @@ final class PhpstanTypeExtractorTest extends TestCase
         yield ['callable', 'callable'];
         yield ['array', 'array'];
         yield ['array', 'list'];
-        yield ['array', 'iterable'];
+        yield ['iterable', 'iterable'];
         yield ['array', 'nonEmptyArray'];
         yield ['array', 'nonEmptyList'];
         yield ['null', 'null'];
