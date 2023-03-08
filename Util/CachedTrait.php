@@ -14,7 +14,7 @@ use Psr\Cache\CacheItemPoolInterface;
 
 trait CachedTrait
 {
-    private readonly CacheItemPoolInterface $cacheItemPool;
+    private readonly CacheItemPoolInterface|null $cacheItemPool;
 
     /**
      * @var array<string, mixed>
@@ -32,6 +32,10 @@ trait CachedTrait
     {
         if (isset($this->localCache[$key])) {
             return $this->localCache[$key];
+        }
+
+        if (null === $this->cacheItemPool) {
+            return $this->localCache[$key] = $getValue();
         }
 
         try {

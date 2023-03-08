@@ -15,7 +15,6 @@ use Symfony\Component\Marshaller\Exception\InvalidResourceException;
 use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
 use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
-use Symfony\Component\Marshaller\Exception\UnsupportedReadModeException;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithConstructorWithRequiredValues;
 
@@ -82,13 +81,6 @@ final class UnmarshalTest extends TestCase
         $this->expectException(UnsupportedFormatException::class);
 
         unmarshal(fopen('php://memory', 'w+'), 'int', 'unknown', []);
-    }
-
-    public function testThrowOnUnknownReadMode(): void
-    {
-        $this->expectException(UnsupportedReadModeException::class);
-
-        unmarshal(fopen('php://memory', 'w+'), 'int', 'json', ['read_mode' => 'foo']);
     }
 
     public function testThrowWhenNotCollecting(): void

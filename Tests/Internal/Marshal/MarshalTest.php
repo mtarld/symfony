@@ -22,49 +22,42 @@ final class MarshalTest extends TestCase
     {
         parent::setUp();
 
-        $this->cacheDir = sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
+        $this->cacheDir = sprintf('%s/symfony_marshaller', sys_get_temp_dir());
 
         if (is_dir($this->cacheDir)) {
-            array_map('unlink', glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
+            array_map('unlink', glob($this->cacheDir.'/*'));
             rmdir($this->cacheDir);
         }
     }
 
     public function testCreateCacheFile(): void
     {
-        $cacheFileCount = \count(glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
-
         marshal(1, fopen('php://temp', 'w'), 'json', []);
 
-        $this->assertCount($cacheFileCount + 1, glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
+        $this->assertCount(1, glob($this->cacheDir.'/*'));
     }
 
     public function testCreateCacheFileInCustomDirectory(): void
     {
-        $cacheDir = sys_get_temp_dir().\DIRECTORY_SEPARATOR.uniqid('symfony_marshaller_test_');
+        $cacheDir = sprintf('%s/%s', sys_get_temp_dir(), uniqid('symfony_marshaller_'));
 
         if (file_exists($cacheDir)) {
-            array_map('unlink', glob($cacheDir.\DIRECTORY_SEPARATOR.'*'));
+            array_map('unlink', glob($cacheDir.'/*'));
             rmdir($cacheDir);
         }
 
         marshal(1, fopen('php://temp', 'w'), 'json', ['cache_dir' => $cacheDir]);
 
         $this->assertFileExists($cacheDir);
-        $this->assertCount(1, glob($cacheDir.\DIRECTORY_SEPARATOR.'*'));
+        $this->assertCount(1, glob($cacheDir.'/*'));
 
-        array_map('unlink', glob($cacheDir.\DIRECTORY_SEPARATOR.'*'));
+        array_map('unlink', glob($cacheDir.'/*'));
         rmdir($cacheDir);
     }
 
     public function testCreateCacheFileOnlyIfNotExists(): void
     {
-        $cacheFilename = sprintf('%s%s%s.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5('int'));
+        $cacheFilename = sprintf('%s/%s.json.php', $this->cacheDir, md5('int'));
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }

@@ -26,15 +26,10 @@ final class MarshalUnmarshalTest extends TestCase
     {
         parent::setUp();
 
-        $this->cacheDir = sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
+        $this->cacheDir = sprintf('%s/marshal', sys_get_temp_dir());
 
         if (is_dir($this->cacheDir)) {
-            array_map('unlink', glob($this->cacheDir.\DIRECTORY_SEPARATOR.'*'));
+            array_map('unlink', glob($this->cacheDir.'/*'));
             rmdir($this->cacheDir);
         }
     }

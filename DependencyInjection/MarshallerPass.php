@@ -26,10 +26,7 @@ final class MarshallerPass implements CompilerPassInterface
             return;
         }
 
-        $marshallerDefinition = $container->getDefinition('marshaller');
-
-        $marshallerDefinition->replaceArgument(1, $this->findAndSortTaggedServices('marshaller.context_builder.marshal', $container));
-        $marshallerDefinition->replaceArgument(2, $this->findAndSortTaggedServices('marshaller.context_builder.generation', $container));
-        $marshallerDefinition->replaceArgument(3, $this->findAndSortTaggedServices('marshaller.context_builder.unmarshal', $container));
+        $container->getDefinition('marshaller')
+            ->replaceArgument(0, $this->findAndSortTaggedServices('marshaller.context_builder', $container));
     }
 }

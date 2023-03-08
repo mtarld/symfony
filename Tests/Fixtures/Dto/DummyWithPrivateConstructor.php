@@ -5,7 +5,7 @@ namespace Symfony\Component\Marshaller\Tests\Fixtures\Dto;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
 
 #[Marshallable]
-final class DummyWithPrivateConstructor
+class DummyWithPrivateConstructor
 {
     public int $id = 1;
 

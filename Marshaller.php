@@ -9,15 +9,9 @@
 
 namespace Symfony\Component\Marshaller;
 
-use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\ContextBuilder\GenerationContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\ContextBuilder\MarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\ContextBuilder\UnmarshalContextBuilderInterface;
-use Symfony\Component\Marshaller\Context\Option\TypeOption;
-use Symfony\Component\Marshaller\Hook\Marshal as MarshalHook;
-use Symfony\Component\Marshaller\Hook\Unmarshal as UnmarshalHook;
+use Symfony\Component\Marshaller\Context\ContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\ContextInterface;
 use Symfony\Component\Marshaller\Stream\StreamInterface;
-use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -25,107 +19,42 @@ use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 final class Marshaller implements MarshallerInterface
 {
     /**
-     * @param iterable<MarshalContextBuilderInterface>    $marshalContextBuilders
-     * @param iterable<GenerationContextBuilderInterface> $generationContextBuilders
-     * @param iterable<UnmarshalContextBuilderInterface>  $unmarshalContextBuilders
+     * @param iterable<ContextBuilderInterface> $contextBuilders
      */
     public function __construct(
-        private readonly TypeExtractorInterface $typeExtractor,
-        private readonly iterable $marshalContextBuilders,
-        private readonly iterable $generationContextBuilders,
-        private readonly iterable $unmarshalContextBuilders,
+        private readonly iterable $contextBuilders,
         private readonly string $templateCacheDir,
     ) {
     }
 
-    public function marshal(mixed $data, string $format, StreamInterface $output, Context $context = null): void
+    public function marshal(mixed $data, string $format, StreamInterface $output, ContextInterface|array $context = []): void
     {
-        /** @var TypeOption|null $typeOption */
-        $typeOption = $context?->get(TypeOption::class);
-        $type = $typeOption?->type ?? get_debug_type($data);
-
-        $rawContext = $this->buildMarshalContext($type, $context);
-
-        // if template does not exist, it'll be generated therefore raw context must be filled accordingly
-        if (!file_exists(sprintf('%s/%s.%s.php', $this->templateCacheDir, md5($type), $format))) {
-            $rawContext = $this->buildGenerationContext($type, $context, $rawContext);
+        if ($context instanceof ContextInterface) {
+            $context = $context->toArray();
         }
 
-        marshal($data, $output->resource(), $format, $rawContext);
-    }
+        $context['type'] = $context['type'] ?? get_debug_type($data);
+        $context['cache_dir'] = $context['cache_dir'] ?? $this->templateCacheDir;
 
-    public function generate(string $type, string $format, Context $context = null): string
-    {
-        return marshal_generate($type, $format, $this->buildGenerationContext($type, $context));
-    }
+        $templateExists = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, md5($context['type']), $format));
 
-    public function unmarshal(StreamInterface $input, string $type, string $format, Context $context = null): mixed
-    {
-        return unmarshal($input->resource(), $type, $format, $this->buildUnmarshalContext($type, $context));
-    }
-
-    /**
-     * @param array<string, mixed> $rawContext
-     *
-     * @return array<string, mixed>
-     */
-    private function buildMarshalContext(string $type, ?Context $context, array $rawContext = []): array
-    {
-        $context = $context ?? new Context();
-        $rawContext += [
-            'cache_dir' => $this->templateCacheDir,
-            'type' => $type,
-        ];
-
-        foreach ($this->marshalContextBuilders as $builder) {
-            $rawContext = $builder->build($type, $context, $rawContext);
+        foreach ($this->contextBuilders as $contextBuilder) {
+            $context = $contextBuilder->buildMarshalContext($context, !$templateExists);
         }
 
-        return $rawContext;
+        marshal($data, $output->resource(), $format, $context);
     }
 
-    /**
-     * @param array<string, mixed> $rawContext
-     *
-     * @return array<string, mixed>
-     */
-    private function buildGenerationContext(string $type, ?Context $context, array $rawContext = []): array
+    public function unmarshal(StreamInterface $input, string $type, string $format, ContextInterface|array $context = []): mixed
     {
-        $context = $context ?? new Context();
-        $rawContext += [
-            'hooks' => [
-                'object' => (new MarshalHook\ObjectHook($this->typeExtractor))(...),
-                'property' => (new MarshalHook\PropertyHook($this->typeExtractor))(...),
-            ],
-        ];
-
-        foreach ($this->generationContextBuilders as $builder) {
-            $rawContext = $builder->build($type, $context, $rawContext);
+        if ($context instanceof ContextInterface) {
+            $context = $context->toArray();
         }
 
-        return $rawContext;
-    }
-
-    /**
-     * @param array<string, mixed> $rawContext
-     *
-     * @return array<string, mixed>
-     */
-    private function buildUnmarshalContext(string $type, ?Context $context, array $rawContext = []): array
-    {
-        $context = $context ?? new Context();
-        $rawContext += [
-            'hooks' => [
-                // TODO from context builder?
-                'object' => (new UnmarshalHook\ObjectHook($this->typeExtractor))(...),
-                'property' => (new UnmarshalHook\PropertyHook($this->typeExtractor))(...),
-            ],
-        ];
-
-        foreach ($this->unmarshalContextBuilders as $builder) {
-            $rawContext = $builder->build($type, $context, $rawContext);
+        foreach ($this->contextBuilders as $contextBuilder) {
+            $context = $contextBuilder->buildUnmarshalContext($context);
         }
 
-        return $rawContext;
+        return unmarshal($input->resource(), $type, $format, $context);
     }
 }

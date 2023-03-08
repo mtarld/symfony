@@ -31,7 +31,7 @@ final class LazyObjectCacheWarmer implements CacheWarmerInterface
         }
 
         foreach ($this->marshallableResolver->resolve() as $class => $_) {
-            $path = sprintf('%s/%s.php', $this->cacheDir, md5($class));
+            $path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($class));
             if (file_exists($path)) {
                 continue;
             }

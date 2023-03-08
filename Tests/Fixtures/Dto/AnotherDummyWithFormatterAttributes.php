@@ -6,7 +6,7 @@ use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
 
 #[Marshallable]
-final class AnotherDummyWithFormatterAttributes
+class AnotherDummyWithFormatterAttributes
 {
     public int $id = 1;
 

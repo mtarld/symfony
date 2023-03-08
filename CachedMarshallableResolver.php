@@ -21,9 +21,8 @@ final class CachedMarshallableResolver implements MarshallableResolverInterface
 
     public function __construct(
         private readonly MarshallableResolverInterface $resolver,
-        CacheItemPoolInterface $cacheItemPool,
+        private readonly CacheItemPoolInterface|null $cacheItemPool = null,
     ) {
-        $this->cacheItemPool = $cacheItemPool;
     }
 
     public function resolve(): \Generator

@@ -64,12 +64,10 @@ final class Unmarshaller
             $type = self::$cache['type'][$typeString];
         }
 
-        $lazy = 'lazy' === $context['read_mode'];
-
         $result = match (true) {
-            $type->isScalar() => $this->unmarshalScalar($lazy, $resourceOrData, $type, $context),
-            $type->isCollection() => $this->unmarshalCollection($lazy, $resourceOrData, $type, $context),
-            $type->isObject() => $this->unmarshalObject($lazy, $resourceOrData, $type, $context),
+            $type->isScalar() => $this->unmarshalScalar($context['lazy_reading'], $resourceOrData, $type, $context),
+            $type->isCollection() => $this->unmarshalCollection($context['lazy_reading'], $resourceOrData, $type, $context),
+            $type->isObject() => $this->unmarshalObject($context['lazy_reading'], $resourceOrData, $type, $context),
 
             default => throw new UnsupportedTypeException($type),
         };

@@ -42,7 +42,7 @@ final class PropertyHook
      * @param callable(string, array<string, mixed>): mixed $value
      * @param array<string, mixed>                          $context
      *
-     * @return array{name?: string, value?: callable(): mixed, context?: array<string, mixed>}
+     * @return array{name?: string, value_provider?: callable(): mixed}
      */
     public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array
     {

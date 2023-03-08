@@ -6,7 +6,7 @@ use Symfony\Component\Marshaller\Attribute\Marshallable;
 use Symfony\Component\Marshaller\Attribute\Name;
 
 #[Marshallable]
-final class AnotherDummyWithNameAttributes
+class AnotherDummyWithNameAttributes
 {
     public int $id = 1;
 

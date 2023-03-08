@@ -1,7 +1,19 @@
 {
     "name": "symfony/marshaller",
     "type": "library",
+    "description": "Provides powerful methods to marshal/unmarshal data structures into/from structured stream like JSON.",
+    "homepage": "https://symfony.com",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Mathias Arlaud",
+            "email": "mathias.arlaud@gmail.com"
+        },
+        {
+            "name": "Symfony Community",
+            "homepage": "https://symfony.com/contributors"
+        }
+    ],
     "require": {
         "php": ">=8.1",
         "phpstan/phpdoc-parser": "^1.13",
@@ -10,9 +22,6 @@
         "psr/log": "^3.0",
         "symfony/var-exporter": "^6.2"
     },
-    "require-dev": {
-        "symfony/cache": "^6.2"
-    },
     "suggest": {
         "psr/cache-implementation": "To cache results"
     },
@@ -20,5 +29,6 @@
         "psr-4": { "Symfony\\Component\\Marshaller\\": "" },
         "files": [ "Resources/functions.php" ],
         "exclude-from-classmap": [ "Tests/" ]
-    }
+    },
+    "minimum-stability": "dev"
 }

@@ -6,7 +6,7 @@ use Symfony\Component\Marshaller\Attribute\Formatter;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
 
 #[Marshallable]
-final class DummyWithFormatterAttributes
+class DummyWithFormatterAttributes
 {
     #[Formatter(
         marshal: [self::class, 'doubleAndCastToString'],

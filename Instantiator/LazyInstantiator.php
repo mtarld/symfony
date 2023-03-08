@@ -9,7 +9,7 @@
 
 namespace Symfony\Component\Marshaller\Instantiator;
 
-use Symfony\Component\Marshaller\Exception\RuntimeException;
+use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -40,11 +40,16 @@ final class LazyInstantiator implements InstantiatorInterface
         }
 
         if (!isset(self::$lazyClassesLoaded[$className]) && !class_exists(self::$lazyClassesCache[$className])) {
-            if (!file_exists(sprintf('%s/%s.php', $this->cacheDir, md5($className)))) {
-                throw new RuntimeException(sprintf('Cannot find any lazy ghost class for "%s"', $className));
+            if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($className)))) {
+                if (!file_exists($this->cacheDir)) {
+                    mkdir($this->cacheDir, recursive: true);
+                }
+
+                $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+                file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($class)));
             }
 
-            eval(file_get_contents(sprintf('%s/%s.php', $this->cacheDir, md5($className))));
+            eval(file_get_contents(sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($className))));
 
             self::$lazyClassesLoaded[$className] = true;
         }

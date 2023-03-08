@@ -10,318 +10,231 @@
 namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Marshaller\Context\Context;
-use Symfony\Component\Marshaller\Context\ContextBuilder\Generation as GenerationContextBuilder;
-use Symfony\Component\Marshaller\Context\ContextBuilder\Marshal as MarshalContextBuilder;
-use Symfony\Component\Marshaller\Context\ContextBuilder\Unmarshal as UnmarshalContextBuilder;
-use Symfony\Component\Marshaller\Context\Option\CollectErrorsOption;
-use Symfony\Component\Marshaller\Context\Option\HookOption;
-use Symfony\Component\Marshaller\Context\Option\JsonEncodeFlagsOption;
-use Symfony\Component\Marshaller\Context\Option\TypeFormatterOption;
-use Symfony\Component\Marshaller\Context\Option\TypeOption;
-use Symfony\Component\Marshaller\Context\Option\UnionSelectorOption;
-use Symfony\Component\Marshaller\Exception\PartialUnmarshalException;
-use Symfony\Component\Marshaller\Exception\UnexpectedTypeException;
+use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Marshaller\Context\ContextBuilder\FormatterAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\HookContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\InstantiatorContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\NameAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilderInterface;
+use Symfony\Component\Marshaller\Context\MarshalContext;
+use Symfony\Component\Marshaller\Context\UnmarshalContext;
+use Symfony\Component\Marshaller\Hook\Marshal as MarshalHook;
+use Symfony\Component\Marshaller\Hook\Unmarshal as UnmarshalHook;
+use Symfony\Component\Marshaller\Instantiator\LazyInstantiator;
 use Symfony\Component\Marshaller\MarshallableResolver;
 use Symfony\Component\Marshaller\Marshaller;
+use Symfony\Component\Marshaller\MarshallerInterface;
 use Symfony\Component\Marshaller\Stream\MemoryStream;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
-use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
+use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithGenerics;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 use Symfony\Component\Marshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
-use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
 
 final class MarshallerTest extends TestCase
 {
-    private string $cacheDir;
+    private string $templateCacheDir;
+    private string $lazyObjectCacheDir;
+
+    private MarshallerInterface $marshaller;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->cacheDir = sys_get_temp_dir().'/symfony_marshaller';
-    }
+        $this->templateCacheDir = sprintf('%s/symfony_marshaller_template', sys_get_temp_dir());
 
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        if (is_dir($this->cacheDir)) {
-            array_map('unlink', glob($this->cacheDir.'/*'));
-            rmdir($this->cacheDir);
+        if (is_dir($this->templateCacheDir)) {
+            array_map('unlink', glob($this->templateCacheDir.'/*'));
+            rmdir($this->templateCacheDir);
         }
+
+        $this->lazyObjectCacheDir = sprintf('%s/symfony_marshaller_lazy_object', sys_get_temp_dir());
+
+        if (is_dir($this->lazyObjectCacheDir)) {
+            array_map('unlink', glob($this->lazyObjectCacheDir.'/*'));
+            rmdir($this->lazyObjectCacheDir);
+        }
+
+        $this->marshaller = $this->createMarshaller();
     }
 
-    /**
-     * @dataProvider marshalGenerateDataProvider
-     */
-    public function testMarshalGenerate(string $expectedSource, string $type, ?Context $context): void
+    public function testMarshal(): void
     {
-        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+        $this->marshaller->marshal(1, 'json', $output = new MemoryStream(), []);
 
-        $marshalGenerationContextBuilders = [
-            new GenerationContextBuilder\HookContextBuilder(),
-            new GenerationContextBuilder\TypeFormatterContextBuilder(),
-            new GenerationContextBuilder\CachedNameAttributeContextBuilder(
-                new GenerationContextBuilder\NameAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
-                new ArrayAdapter(),
-            ),
-            new GenerationContextBuilder\CachedFormatterAttributeContextBuilder(
-                new GenerationContextBuilder\FormatterAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
-                new ArrayAdapter(),
-            ),
-        ];
-
-        $this->assertSame($expectedSource, (new Marshaller($typeExtractor, [], $marshalGenerationContextBuilders, [], $this->cacheDir))->generate($type, 'json', $context));
+        $this->assertSame('1', (string) $output);
     }
 
-    /**
-     * @return iterable<array{0: string, 1: string, 2: Context}>
-     */
-    public function marshalGenerateDataProvider(): iterable
+    public function testMarshalOverrideType(): void
     {
-        yield [
-            <<<PHP
-            <?php
+        $this->marshaller->marshal(['foo' => 'bar'], 'json', $output = new MemoryStream(), ['type' => 'array<int, string>']);
 
-            /**
-             * @param int \$data
-             * @param resource \$resource
-             */
-            return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods::doubleAndCastToString(\$data, \$context), \$context["json_encode_flags"] ?? 0));
-            };
-
-            PHP,
-            'int',
-            new Context(new TypeFormatterOption(['int' => DummyWithMethods::doubleAndCastToString(...)])),
-        ];
-
-        yield [
-            <<<PHP
-            <?php
-
-            /**
-             * @param int \$data
-             * @param resource \$resource
-             */
-            return static function (mixed \$data, \$resource, array \$context): void {
-                \\fwrite(\$resource, \json_encode(\$foo, \$context["json_encode_flags"] ?? 0));
-            };
-
-            PHP,
-            'int',
-            new Context(new HookOption([
-                'int' => static function (string $type, string $accessor, array $context): array {
-                    return [
-                        'type' => 'string',
-                        'accessor' => '$foo',
-                        'context' => $context,
-                    ];
-                },
-            ])),
-        ];
-
-        yield [
-            <<<PHP
-            <?php
-
-            /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
-             * @param resource \$resource
-             */
-            return static function (mixed \$data, \$resource, array \$context): void {
-                \$object_0 = \$data;
-                \\fwrite(\$resource, "{\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, ",\"foo\":");
-                \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, "}");
-            };
-
-            PHP,
-            ClassicDummy::class,
-            new Context(new HookOption([
-                'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                    return [
-                        'name' => 'foo',
-                        'type' => 'string',
-                        'accessor' => '$bar',
-                        'context' => $context,
-                    ];
-                },
-            ])),
-        ];
-
-        yield [
-            <<<PHP
-            <?php
-
-            /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes \$data
-             * @param resource \$resource
-             */
-            return static function (mixed \$data, \$resource, array \$context): void {
-                \$object_0 = \$data;
-                \\fwrite(\$resource, "{\"@id\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->id, \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, "}");
-            };
-
-            PHP,
-            DummyWithNameAttributes::class,
-            null,
-        ];
-
-        yield [
-            <<<PHP
-            <?php
-
-            /**
-             * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes \$data
-             * @param resource \$resource
-             */
-            return static function (mixed \$data, \$resource, array \$context): void {
-                \$object_0 = \$data;
-                \\fwrite(\$resource, "{\"id\":");
-                \\fwrite(\$resource, \json_encode(Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes::doubleAndCastToString(\$object_0->id, \$context), \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, ",\"name\":");
-                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
-                \\fwrite(\$resource, "}");
-            };
-
-            PHP,
-            DummyWithFormatterAttributes::class,
-            null,
-        ];
+        $this->assertSame('["bar"]', (string) $output);
     }
 
-    /**
-     * @dataProvider marshalDataProvider
-     */
-    public function testMarshal(string $expectedMarshalled, mixed $data, ?Context $context): void
+    public function testMarshalOverrideCacheDir(): void
     {
-        $marshalContextBuilders = [
-            new MarshalContextBuilder\JsonEncodeFlagsContextBuilder(),
-        ];
+        $cacheDir = sprintf('%s/%s', sys_get_temp_dir(), uniqid('symfony_marshaller_tmp_'));
 
-        $marshaller = new Marshaller($this->createStub(TypeExtractorInterface::class), $marshalContextBuilders, [], [], $this->cacheDir);
+        $this->marshaller->marshal('foo', 'json', $output = new MemoryStream(), ['cache_dir' => $cacheDir]);
 
-        $marshaller->marshal($data, 'json', $output = new MemoryStream(), $context);
-        $this->assertSame($expectedMarshalled, (string) $output);
+        $this->assertCount(1, glob($cacheDir.'/*'));
+
+        array_map('unlink', glob($cacheDir.'/*'));
+        rmdir($cacheDir);
     }
 
-    /**
-     * @return iterable<array{0: string, 1: mixed, 2: ?Context}>
-     */
-    public function marshalDataProvider(): iterable
+    public function testMarshalCastContext(): void
     {
-        yield ['"1"', '1', null];
-        yield ['1', '1', new Context(new JsonEncodeFlagsOption(\JSON_NUMERIC_CHECK))];
-        yield ['["bar"]', ['foo' => 'bar'], new Context(new TypeOption('array<int, string>'))];
+        $this->marshaller->marshal('123', 'json', $output = new MemoryStream(), (new MarshalContext())->withJsonEncodeFlags(\JSON_NUMERIC_CHECK));
+
+        $this->assertSame('123', (string) $output);
     }
 
-    /**
-     * @dataProvider unmarshalDataProvider
-     */
-    public function testUnmarshal(mixed $expectedUnmarshalled, string $content, string $type, ?Context $context): void
+    public function testMarshalCheckThatTemplateNotExist(): void
     {
-        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+        $contextBuilder = $this->createMock(ContextBuilderInterface::class);
+        $contextBuilder
+            ->expects($this->exactly(2))
+            ->method('buildMarshalContext')
+            ->withConsecutive(
+                [['type' => 'int', 'cache_dir' => $this->templateCacheDir], true],
+                [['type' => 'int', 'cache_dir' => $this->templateCacheDir], false],
+            )
+            ->willReturn(['type' => 'int', 'cache_dir' => $this->templateCacheDir]);
 
-        $unmarshalContextBuilders = [
-            new UnmarshalContextBuilder\HookContextBuilder(),
-            new UnmarshalContextBuilder\CollectErrorsContextBuilder(),
-            new UnmarshalContextBuilder\UnionSelectorContextBuilder(),
-            new UnmarshalContextBuilder\CachedNameAttributeContextBuilder(
-                new UnmarshalContextBuilder\NameAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
-                new ArrayAdapter(),
-            ),
-            new UnmarshalContextBuilder\CachedFormatterAttributeContextBuilder(
-                new UnmarshalContextBuilder\FormatterAttributeContextBuilder(new MarshallableResolver([__DIR__.'/Fixtures'])),
-                new ArrayAdapter(),
-            ),
-        ];
+        $marshaller = new Marshaller([$contextBuilder], $this->templateCacheDir);
 
-        $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
+        $marshaller->marshal(1, 'json', new MemoryStream(), []);
+        $marshaller->marshal(1, 'json', new MemoryStream(), []);
+    }
 
+    public function testMarshalReadNameAttribute(): void
+    {
+        $this->marshaller->marshal(new DummyWithNameAttributes(), 'json', $output = new MemoryStream());
+
+        $this->assertSame('{"@id":1,"name":"dummy"}', (string) $output);
+    }
+
+    public function testMarshalReadFormatterAttribute(): void
+    {
+        $this->marshaller->marshal(new DummyWithFormatterAttributes(), 'json', $output = new MemoryStream());
+
+        $this->assertSame('{"id":"2","name":"dummy"}', (string) $output);
+    }
+
+    public function testMarshalReadGenerics(): void
+    {
+        $dummy = new DummyWithGenerics();
+        $dummy->dummies = [new DummyWithNameAttributes(), new DummyWithNameAttributes()];
+
+        $this->marshaller->marshal($dummy, 'json', $output = new MemoryStream(), [
+            'type' => sprintf('%s<%s>', DummyWithGenerics::class, DummyWithNameAttributes::class),
+        ]);
+
+        $this->assertSame('{"dummies":[{"@id":1,"name":"dummy"},{"@id":1,"name":"dummy"}]}', (string) $output);
+    }
+
+    public function testUnmarshal(): void
+    {
         $input = new MemoryStream();
-        fwrite($input->resource(), $content);
+
+        fwrite($input->resource(), '"foo"');
         rewind($input->resource());
 
-        $result = $marshaller->unmarshal($input, $type, 'json', $context);
+        $result = $this->marshaller->unmarshal($input, 'string', 'json');
 
-        $this->assertEquals($expectedUnmarshalled, $result);
+        $this->assertEquals('foo', $result);
     }
 
-    /**
-     * @return iterable<array{0: mixed, 1: string, 2: string, 3: ?Context}>
-     */
-    public function unmarshalDataProvider(): iterable
+    public function testUnmarshalCastContext(): void
     {
-        yield [1, '1', 'int', null];
-        yield [1, '"1"', 'int|string', new Context(new UnionSelectorOption(['int|string' => 'int']))];
-
-        $dummy = new ClassicDummy();
-        $dummy->name = 'HOOK_RESULT';
-
-        yield [$dummy, '{"name": "the name"}', ClassicDummy::class, new Context(new HookOption([
-            'property' => static function (\ReflectionClass $class, object $object, string $key, callable $value, array $context): void {
-                if ('name' === $key) {
-                    $object->{$key} = 'HOOK_RESULT';
-                }
-            },
-        ]))];
-
-        $dummy = new DummyWithNameAttributes();
-        $dummy->id = 123;
-
-        yield [$dummy, '{"@id": 123}', DummyWithNameAttributes::class, null];
-
-        $dummy = new DummyWithFormatterAttributes();
-        $dummy->id = 10;
-
-        yield [$dummy, '{"id": 20}', DummyWithFormatterAttributes::class, null];
-    }
-
-    public function testPartiallyUnmarshal(): void
-    {
-        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
-
-        $unmarshalContextBuilders = [
-            new UnmarshalContextBuilder\HookContextBuilder(),
-            new UnmarshalContextBuilder\CollectErrorsContextBuilder(),
-        ];
-
-        $marshaller = new Marshaller($typeExtractor, [], [], $unmarshalContextBuilders, $this->cacheDir);
-
         $input = new MemoryStream();
-        fwrite($input->resource(), '[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]');
+
+        fwrite($input->resource(), '123456789012345678901234567890');
         rewind($input->resource());
 
-        try {
-            $marshaller->unmarshal($input, sprintf('array<int, %s>', ClassicDummy::class), 'json', new Context(new HookOption([
-                sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $reflection, object $object, string $key, callable $value, array $context): void {
-                    $name = $value('string', $context);
-                    $object->name = 'ok' === $name ? 'ok' : new \stdClass();
-                },
-            ]), new CollectErrorsOption()));
+        $result = $this->marshaller->unmarshal($input, 'string', 'json', (new UnmarshalContext())->withJsonDecodeFlags(\JSON_BIGINT_AS_STRING));
 
-            $this->fail(sprintf('"%s" has not been thrown.', PartialUnmarshalException::class));
-        } catch (PartialUnmarshalException $e) {
-            $okDummy = new ClassicDummy();
-            $okDummy->name = 'ok';
+        $this->assertEquals('123456789012345678901234567890', $result);
+    }
 
-            $koDummy = new ClassicDummy();
+    public function testUnmarshalReadNameAttribute(): void
+    {
+        $input = new MemoryStream();
 
-            $this->assertEquals([$okDummy, $koDummy, $okDummy, $koDummy], $e->unmarshalled);
+        fwrite($input->resource(), '{"@id":1,"name":"dummy"}');
+        rewind($input->resource());
 
-            $this->assertCount(2, $e->errors);
-            $this->assertContainsOnlyInstancesOf(UnexpectedTypeException::class, $e->errors);
-        }
+        $expectedResult = new DummyWithNameAttributes();
+        $result = $this->marshaller->unmarshal($input, DummyWithNameAttributes::class, 'json', ['instantiator' => 'eager']);
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    public function testUnmarshalReadFormatterAttribute(): void
+    {
+        $input = new MemoryStream();
+
+        fwrite($input->resource(), '{"id":"2","name":"dummy"}');
+        rewind($input->resource());
+
+        $expectedResult = new DummyWithFormatterAttributes();
+        $result = $this->marshaller->unmarshal($input, DummyWithFormatterAttributes::class, 'json', ['instantiator' => 'eager']);
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    public function testUnmarshalReadGenerics(): void
+    {
+        $input = new MemoryStream();
+
+        fwrite($input->resource(), '{"dummies":[{"@id":1,"name":"dummy"},{"@id":1,"name":"dummy"}]}');
+        rewind($input->resource());
+
+        $expectedResult = new DummyWithGenerics();
+        $expectedResult->dummies = [new DummyWithNameAttributes(), new DummyWithNameAttributes()];
+
+        $result = $this->marshaller->unmarshal($input, sprintf('%s<%s>', DummyWithGenerics::class, DummyWithNameAttributes::class), 'json', ['instantiator' => 'eager']);
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    public function testUnmarshalInstantiateLazyObject(): void
+    {
+        $input = new MemoryStream();
+
+        fwrite($input->resource(), '{"id":1,"name":"dummy"}');
+        rewind($input->resource());
+
+        $result = $this->marshaller->unmarshal($input, DummyWithNameAttributes::class, 'json', ['instantiator' => 'lazy']);
+
+        $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', DummyWithNameAttributes::class));
+
+        $this->assertInstanceof($lazyClassName, $result);
+        $this->assertSame(1, $result->id);
+    }
+
+    private function createMarshaller(): MarshallerInterface
+    {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+        $marshallableResolver = new MarshallableResolver([__DIR__.'/Fixtures']);
+        $cacheItemPool = $this->createStub(CacheItemPoolInterface::class);
+
+        $contextBuilders = [
+            new FormatterAttributeContextBuilder($marshallableResolver, $cacheItemPool),
+            new NameAttributeContextBuilder($marshallableResolver, $cacheItemPool),
+            new HookContextBuilder([
+                'object' => (new MarshalHook\ObjectHook($typeExtractor))(...),
+                'property' => (new MarshalHook\PropertyHook($typeExtractor))(...),
+            ], [
+                'object' => (new UnmarshalHook\ObjectHook($typeExtractor))(...),
+                'property' => (new UnmarshalHook\PropertyHook($typeExtractor))(...),
+            ]),
+            new InstantiatorContextBuilder(new LazyInstantiator($this->lazyObjectCacheDir)),
+        ];
+
+        return new Marshaller($contextBuilders, $this->templateCacheDir);
     }
 }

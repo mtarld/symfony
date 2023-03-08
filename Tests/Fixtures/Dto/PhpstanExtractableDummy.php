@@ -9,7 +9,7 @@ use Symfony\Component\Marshaller\Attribute\Marshallable;
  * @template Tv of object
  */
 #[Marshallable]
-final class PhpstanExtractableDummy extends AbstractDummy
+class PhpstanExtractableDummy extends AbstractDummy
 {
     /** @var mixed */
     public $mixed;

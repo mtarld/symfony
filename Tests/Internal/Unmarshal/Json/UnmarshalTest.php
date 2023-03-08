@@ -22,8 +22,8 @@ final class UnmarshalTest extends TestCase
     {
         $expected = json_decode($json, associative: true);
 
-        $this->assertSame($expected, $this->unmarshalString($json, $type, ['read_mode' => 'eager']));
-        $this->assertSame($expected, $this->unmarshalString($json, $type, ['read_mode' => 'lazy']));
+        $this->assertSame($expected, $this->unmarshalString($json, $type, ['lazy_reading' => true]));
+        $this->assertSame($expected, $this->unmarshalString($json, $type, ['lazy_reading' => false]));
     }
 
     /**

@@ -11,13 +11,13 @@ namespace Symfony\Component\Marshaller\Tests\Cache;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
-use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
+use Symfony\Component\Marshaller\Cache\LazyObjectCacheWarmer;
 use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithMethods;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithQuotes;
 
-final class TemplateCacheWarmerTest extends TestCase
+final class LazyObjectCacheWarmerTest extends TestCase
 {
     private string $cacheDir;
 
@@ -25,7 +25,7 @@ final class TemplateCacheWarmerTest extends TestCase
     {
         parent::setUp();
 
-        $this->cacheDir = sprintf('%s/symfony_marshaller_template', sys_get_temp_dir());
+        $this->cacheDir = sprintf('%s/symfony_marshaller_lazy_object', sys_get_temp_dir());
 
         if (is_dir($this->cacheDir)) {
             array_map('unlink', glob($this->cacheDir.'/*'));
@@ -33,30 +33,20 @@ final class TemplateCacheWarmerTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider warmUpDataProvider
-     *
-     * @param list<string> $expectedClasses
-     */
-    public function testWarmUp(array $expectedClasses, bool $nullableData): void
+    public function testWarmUp(): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
         $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
 
-        (new TemplateCacheWarmer($marshallableResolver, [], $this->cacheDir, ['json'], $nullableData))->warmUp('useless');
+        (new LazyObjectCacheWarmer($marshallableResolver, $this->cacheDir))->warmUp('useless');
 
-        $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.json.php', $this->cacheDir, md5($c)), $expectedClasses);
+        $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.php', $this->cacheDir, md5($c)), [
+            ClassicDummy::class,
+            DummyWithQuotes::class,
+            DummyWithMethods::class,
+        ]);
 
         $this->assertSame($expectedTemplates, glob($this->cacheDir.'/*'));
-    }
-
-    /**
-     * @return iterable<array{0: list<string>, 1: bool}>
-     */
-    public function warmUpDataProvider(): iterable
-    {
-        yield [[ClassicDummy::class, DummyWithMethods::class, '?'.DummyWithQuotes::class], false];
-        yield [['?'.ClassicDummy::class, DummyWithMethods::class, '?'.DummyWithQuotes::class], true];
     }
 
     /**

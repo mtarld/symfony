@@ -13,9 +13,12 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Marshaller\Attribute\Marshallable;
+use Symfony\Component\Marshaller\Context\ContextBuilderInterface;
 use Symfony\Component\Marshaller\Exception\ExceptionInterface;
+
+use function Symfony\Component\Marshaller\marshal_generate;
+
 use Symfony\Component\Marshaller\MarshallableResolverInterface;
-use Symfony\Component\Marshaller\MarshallerInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -23,12 +26,13 @@ use Symfony\Component\Marshaller\MarshallerInterface;
 final class TemplateCacheWarmer implements CacheWarmerInterface
 {
     /**
-     * @param list<string> $formats
+     * @param iterable<ContextBuilderInterface> $contextBuilders
+     * @param list<string>                      $formats
      */
     public function __construct(
         private readonly MarshallableResolverInterface $marshallableResolver,
-        private readonly MarshallerInterface $marshaller,
-        private readonly string $cacheDir,
+        private readonly iterable $contextBuilders,
+        private readonly string $templateCacheDir,
         private readonly array $formats,
         private readonly bool $nullableData,
         private readonly LoggerInterface $logger = new NullLogger(),
@@ -56,26 +60,37 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
      */
     private function warmClass(string $class, Marshallable $attribute, string $format): void
     {
-        $path = sprintf('%s/%s.%s.php', $this->cacheDir, md5($class), $format);
-        if (file_exists($path)) {
-            return;
-        }
-
-        if (!file_exists($this->cacheDir)) {
-            mkdir($this->cacheDir, recursive: true);
-        }
-
         if ($attribute->nullable ?? $this->nullableData) {
             $class = '?'.$class;
         }
 
+        $path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, md5($class), $format);
+        if (file_exists($path)) {
+            return;
+        }
+
+        if (!file_exists($this->templateCacheDir)) {
+            mkdir($this->templateCacheDir, recursive: true);
+        }
+
         try {
-            file_put_contents($path, $this->marshaller->generate($class, $format));
+            file_put_contents($path, $this->generateTemplate($class, $format));
         } catch (ExceptionInterface $e) {
             $this->logger->debug('Cannot generate template for "{class}": {exception}', [
                 'class' => $class,
                 'exception' => $e,
             ]);
         }
+    }
+
+    private function generateTemplate(string $class, string $format): string
+    {
+        $context = ['cache_dir' => $this->templateCacheDir];
+
+        foreach ($this->contextBuilders as $contextBuilder) {
+            $context = $contextBuilder->buildMarshalContext($context, true);
+        }
+
+        return marshal_generate($class, $format, $context);
     }
 }

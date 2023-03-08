@@ -6,7 +6,7 @@ use Symfony\Component\Marshaller\Attribute\Marshallable;
 use Symfony\Component\Marshaller\Attribute\Name;
 
 #[Marshallable]
-final class DummyWithQuotes
+class DummyWithQuotes
 {
     #[Name('"name"')]
     public string $name = '"quoted" dummy';

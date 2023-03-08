@@ -9,6 +9,6 @@ use Symfony\Component\Marshaller\Attribute\Marshallable;
  * @template Tk of object
  */
 #[Marshallable]
-final class NonUniqueTemplatePhpstanExtractableDummy
+class NonUniqueTemplatePhpstanExtractableDummy
 {
 }
