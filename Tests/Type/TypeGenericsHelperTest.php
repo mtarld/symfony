@@ -11,9 +11,9 @@ namespace Symfony\Component\Marshaller\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\InvalidTypeException;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
-final class TypeHelperTest extends TestCase
+final class TypeGenericsHelperTest extends TestCase
 {
     /**
      * @dataProvider replaceGenericTypesDataProvider
@@ -22,7 +22,7 @@ final class TypeHelperTest extends TestCase
      */
     public function testReplaceGenericTypes(string $expectedType, string $type, array $genericTypes): void
     {
-        $this->assertSame($expectedType, (new TypeHelper())->replaceGenericTypes($type, $genericTypes));
+        $this->assertSame($expectedType, (new TypeGenericsHelper())->replaceGenericTypes($type, $genericTypes));
     }
 
     /**
@@ -49,7 +49,10 @@ final class TypeHelperTest extends TestCase
      */
     public function testExtractGenerics(string $expectedGenericType, array $expectedGenericParameters, string $type): void
     {
-        $this->assertSame(['genericType' => $expectedGenericType, 'genericParameters' => $expectedGenericParameters], (new TypeHelper())->extractGenerics($type));
+        $this->assertSame(
+            ['genericType' => $expectedGenericType, 'genericParameters' => $expectedGenericParameters],
+            (new TypeGenericsHelper())->extractGenerics($type),
+        );
     }
 
     /**
@@ -66,6 +69,6 @@ final class TypeHelperTest extends TestCase
     {
         $this->expectException(InvalidTypeException::class);
 
-        (new TypeHelper())->extractGenerics('Foo<int, Bar<string>', '$accessor', []);
+        (new TypeGenericsHelper())->extractGenerics('Foo<int, Bar<string>', '$accessor', []);
     }
 }

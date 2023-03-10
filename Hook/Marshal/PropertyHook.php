@@ -11,7 +11,7 @@ namespace Symfony\Component\Marshaller\Hook\Marshal;
 
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -20,7 +20,7 @@ use Symfony\Component\Marshaller\Type\TypeHelper;
  */
 final class PropertyHook
 {
-    private TypeHelper|null $typeHelper = null;
+    private TypeGenericsHelper|null $typeGenericsHelper = null;
 
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
@@ -79,8 +79,8 @@ final class PropertyHook
         }
 
         if ([] !== ($genericTypes = $context['_symfony']['marshal']['generic_parameter_types'][$propertyClass] ?? [])) {
-            $this->typeHelper = $this->typeHelper ?? new TypeHelper();
-            $type = $this->typeHelper->replaceGenericTypes($type, $genericTypes);
+            $this->typeGenericsHelper = $this->typeGenericsHelper ?? new TypeGenericsHelper();
+            $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
         }
 
         return $type;

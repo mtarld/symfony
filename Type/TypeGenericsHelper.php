@@ -16,8 +16,7 @@ use Symfony\Component\Marshaller\Exception\InvalidTypeException;
  *
  * @internal
  */
-// TODO move to util and rename TypeGenericsHelper
-final class TypeHelper
+final class TypeGenericsHelper
 {
     /**
      * @var array<string, array{genericType: string, genericParameters: list<string>}>

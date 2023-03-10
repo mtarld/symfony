@@ -11,7 +11,7 @@ namespace Symfony\Component\Marshaller\Hook\Marshal;
 
 use Symfony\Component\Marshaller\Exception\InvalidArgumentException;
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -20,12 +20,12 @@ use Symfony\Component\Marshaller\Type\TypeHelper;
  */
 final class ObjectHook
 {
-    private readonly TypeHelper $typeHelper;
+    private readonly TypeGenericsHelper $typeGenericsHelper;
 
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
     ) {
-        $this->typeHelper = new TypeHelper();
+        $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
     /**
@@ -49,7 +49,7 @@ final class ObjectHook
      */
     private function addGenericParameterTypes(string $type, array $context): array
     {
-        $generics = $this->typeHelper->extractGenerics($type);
+        $generics = $this->typeGenericsHelper->extractGenerics($type);
 
         $genericType = $generics['genericType'];
         $genericParameters = $generics['genericParameters'];

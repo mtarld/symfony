@@ -10,7 +10,7 @@
 namespace Symfony\Component\Marshaller\Hook\Unmarshal;
 
 use Symfony\Component\Marshaller\Type\TypeExtractorInterface;
-use Symfony\Component\Marshaller\Type\TypeHelper;
+use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -19,7 +19,7 @@ use Symfony\Component\Marshaller\Type\TypeHelper;
  */
 final class PropertyHook
 {
-    private readonly TypeHelper $typeHelper;
+    private readonly TypeGenericsHelper $typeGenericsHelper;
 
     /**
      * @var array<string, string>
@@ -34,7 +34,7 @@ final class PropertyHook
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
     ) {
-        $this->typeHelper = new TypeHelper();
+        $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
     /**
@@ -58,7 +58,7 @@ final class PropertyHook
             $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
 
             if (isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])) {
-                $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
+                $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
             }
 
             return [
@@ -78,7 +78,7 @@ final class PropertyHook
             isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])
             && $propertyFormatterReflection->getClosureScopeClass()?->getName() === $propertyClass
         ) {
-            $valueType = $this->typeHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
+            $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
         }
 
         return [
