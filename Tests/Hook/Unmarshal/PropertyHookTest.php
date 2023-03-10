@@ -29,8 +29,7 @@ final class PropertyHookTest extends TestCase
             '_symfony' => [
                 'unmarshal' => [
                     'property_name' => [
-                        // TODO ClassicDummy[@id]
-                        ClassicDummy::class => ['@id' => 'id'],
+                        sprintf('%s[@id]', ClassicDummy::class) => 'id',
                     ],
                 ],
             ],

@@ -37,8 +37,8 @@ final class NameAttributeContextBuilderTest extends TestCase
                 ],
                 'unmarshal' => [
                     'property_name' => [
-                        DummyWithNameAttributes::class => ['@id' => 'id'],
-                        AnotherDummyWithNameAttributes::class => ['call_me_with' => 'name'],
+                        sprintf('%s[@id]', DummyWithNameAttributes::class) => 'id',
+                        sprintf('%s[call_me_with]', AnotherDummyWithNameAttributes::class) => 'name',
                     ],
                 ],
             ],

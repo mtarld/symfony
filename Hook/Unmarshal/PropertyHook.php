@@ -47,7 +47,7 @@ final class PropertyHook
     public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array
     {
         $propertyClass = $class->getName();
-        $propertyName = $context['_symfony']['unmarshal']['property_name'][$propertyClass][$key] ?? $key;
+        $propertyName = $context['_symfony']['unmarshal']['property_name'][sprintf('%s[%s]', $propertyClass, $key)] ?? $key;
         $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
         if (!self::$classPropertiesCache[$cacheKey] = self::$classPropertiesCache[$cacheKey] ?? $class->hasProperty($propertyName)) {

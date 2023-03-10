@@ -89,7 +89,7 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
                 $context['_symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
-                $context['_symfony']['unmarshal']['property_name'][$property->getDeclaringClass()->getName()][$attributeInstance->name] = $property->getName();
+                $context['_symfony']['unmarshal']['property_name'][sprintf('%s[%s]', $property->getDeclaringClass()->getName(), $attributeInstance->name)] = $property->getName();
 
                 break;
             }
