@@ -12,7 +12,6 @@ namespace Symfony\Component\Marshaller\Internal\Marshal;
 use Symfony\Component\Marshaller\Exception\CircularReferenceException;
 use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\AssignNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\ExpressionNode;
@@ -40,7 +39,6 @@ final class TemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly HookExtractor $hookExtractor,
         private readonly ReflectionTypeExtractor $reflectionTypeExtractor,
         private readonly TypeSorter $typeSorter,
         private readonly SyntaxInterface $syntax,
@@ -192,7 +190,15 @@ final class TemplateGenerator
      */
     private function objectNodes(Type $type, NodeInterface $accessor, array $context): array
     {
-        if (null !== $hook = $this->hookExtractor->forObject($type->className(), $context)) {
+        $hook = null;
+
+        if (isset($context['hooks']['marshal'][$className = $type->className()])) {
+            $hook = $context['hooks']['marshal'][$className];
+        } elseif (isset($context['hooks']['marshal']['object'])) {
+            $hook = $context['hooks']['marshal']['object'];
+        }
+
+        if (null !== $hook) {
             $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
 
             /** @var Type $type */
@@ -229,7 +235,15 @@ final class TemplateGenerator
             $propertyAccessor = new PropertyNode(new VariableNode($objectName), $property->getName());
             $propertyContext = $context;
 
-            if (null !== $hook = $this->hookExtractor->forProperty($property, $context)) {
+            $hook = null;
+
+            if (isset($context['hooks']['marshal'][$className.'::$'.$propertyName])) {
+                $hook = $context['hooks']['marshal'][$className.'::$'.$propertyName];
+            } elseif (isset($context['hooks']['marshal']['property'])) {
+                $hook = $context['hooks']['marshal']['property'];
+            }
+
+            if (null !== $hook) {
                 $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
 
                 $propertyName = $hookResult['name'] ?? $propertyName;

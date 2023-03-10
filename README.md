@@ -1,12 +1,6 @@
 # TODO
 
-## Marshal
-- micro optim to beat json_encode -> store syntax result in the template generator
-
-## Unmarshal
-
 ## Common
-- hook -> marshal/unmarshal
 - determine which services and classes are internal
 - move TemplateCacheWarmer into FrameworkBundle
 - create config tree in FrameworkBundle

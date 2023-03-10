@@ -72,13 +72,17 @@ final class MarshalUnmarshalTest extends TestCase
         $dummy->name = '200';
 
         yield [$dummy, DummyWithFormatterAttributes::class, ['hooks' => [
-            sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                'name' => '@name',
-                'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+            'marshal' => [
+                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
+                    'name' => '@name',
+                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+                ],
             ],
-            sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
-                'name' => 'name',
-                'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+            'unmarshal' => [
+                sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
+                    'name' => 'name',
+                    'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+                ],
             ],
         ]]];
     }
@@ -119,13 +123,17 @@ final class MarshalUnmarshalTest extends TestCase
         yield ['{"foo":1,"bar":2,"baz":null}', 'array<string, ?int>'];
         yield ['{"id":100,"name":"Dummy"}', ClassicDummy::class];
         yield ['{"id":200,"@name":100}', DummyWithFormatterAttributes::class, ['hooks' => [
-            sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                'name' => '@name',
-                'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+            'marshal' => [
+                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
+                    'name' => '@name',
+                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+                ],
             ],
-            sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
-                'name' => 'name',
-                'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+            'unmarshal' => [
+                sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
+                    'name' => 'name',
+                    'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+                ],
             ],
         ]]];
     }

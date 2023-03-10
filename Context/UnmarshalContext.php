@@ -67,7 +67,7 @@ class UnmarshalContext implements ContextInterface
     public function withHook(string $hookName, callable $hook): self
     {
         $hooks = $this->options['hooks'] ?? [];
-        $hooks[$hookName] = $hook;
+        $hooks['unmarshal'][$hookName] = $hook;
 
         return new self(['hooks' => $hooks] + $this->options);
     }

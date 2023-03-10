@@ -18,7 +18,7 @@ final class MarshalContextTest extends TestCase
     {
         $hook = static function () {};
 
-        $context = (new MarshalContext(['constructor_option' => true, 'hooks' => ['constructor_hook' => $hook]]))
+        $context = (new MarshalContext(['constructor_option' => true, 'hooks' => ['marshal' => ['constructor_hook' => $hook]]]))
             ->withType('TYPE')
             ->withJsonEncodeFlags(123)
             ->withUnionSelector(['int|string' => 'int'])
@@ -30,12 +30,14 @@ final class MarshalContextTest extends TestCase
 
         $this->assertSame([
             'hooks' => [
-                'constructor_hook' => $hook,
-                'object' => $hook,
-                'className' => $hook,
-                'property' => $hook,
-                'className::$propertyName' => $hook,
-                'other_hook' => $hook,
+                'marshal' => [
+                    'constructor_hook' => $hook,
+                    'object' => $hook,
+                    'className' => $hook,
+                    'property' => $hook,
+                    'className::$propertyName' => $hook,
+                    'other_hook' => $hook,
+                ],
             ],
             'union_selector' => ['int|string' => 'int'],
             'json_encode_flags' => 123,

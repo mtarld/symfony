@@ -18,7 +18,7 @@ final class UnmarshalContextTest extends TestCase
     {
         $hook = static function () {};
 
-        $context = (new UnmarshalContext(['constructor_option' => true, 'hooks' => ['constructor_hook' => $hook]]))
+        $context = (new UnmarshalContext(['constructor_option' => true, 'hooks' => ['unmarshal' => ['constructor_hook' => $hook]]]))
             ->withCollectErrors()
             ->withJsonDecodeFlags(123)
             ->withUnionSelector(['int|string' => 'int'])
@@ -34,12 +34,14 @@ final class UnmarshalContextTest extends TestCase
             'instantiator' => 'lazy',
             'lazy_reading' => false,
             'hooks' => [
-                'constructor_hook' => $hook,
-                'object' => $hook,
-                'className' => $hook,
-                'property' => $hook,
-                'className::$propertyName' => $hook,
-                'other_hook' => $hook,
+                'unmarshal' => [
+                    'constructor_hook' => $hook,
+                    'object' => $hook,
+                    'className' => $hook,
+                    'property' => $hook,
+                    'className::$propertyName' => $hook,
+                    'other_hook' => $hook,
+                ],
             ],
             'union_selector' => ['int|string' => 'int'],
             'json_decode_flags' => 123,

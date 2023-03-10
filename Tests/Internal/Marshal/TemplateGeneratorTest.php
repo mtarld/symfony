@@ -13,7 +13,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Marshaller\Exception\CircularReferenceException;
 use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
-use Symfony\Component\Marshaller\Internal\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\AssignNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\BinaryNode;
 use Symfony\Component\Marshaller\Internal\Marshal\Node\ExpressionNode;
@@ -56,7 +55,6 @@ final class TemplateGeneratorTest extends TestCase
         $syntax->method('encodeValueNode')->willReturnCallback(fn (NodeInterface $n) => new FunctionNode('ENCODE', [$n]));
 
         $this->templateGenerator = new TemplateGenerator(
-            new HookExtractor(),
             new ReflectionTypeExtractor(),
             new TypeSorter(),
             $syntax,
@@ -197,13 +195,15 @@ final class TemplateGeneratorTest extends TestCase
     {
         $context = [
             'hooks' => [
-                'object' => static function (string $type, string $accessor, array $context): array {
-                    return [
-                        'type' => ConstructorPropertyPromotedDummy::class,
-                        'accessor' => '$ACCESSOR',
-                        'context' => ['CONTEXT'],
-                    ];
-                },
+                'marshal' => [
+                    'object' => static function (string $type, string $accessor, array $context): array {
+                        return [
+                            'type' => ConstructorPropertyPromotedDummy::class,
+                            'accessor' => '$ACCESSOR',
+                            'context' => ['CONTEXT'],
+                        ];
+                    },
+                ],
             ],
         ];
 
@@ -226,24 +226,26 @@ final class TemplateGeneratorTest extends TestCase
         $context = [
             'custom_context_value' => true,
             'hooks' => [
-                ClassicDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
-                    ++$hookCallCount;
+                'marshal' => [
+                    ClassicDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
+                        ++$hookCallCount;
 
-                    $this->assertSame(ClassicDummy::class, $type);
-                    $this->assertSame('$accessor', $accessor);
-                    $this->assertArrayHasKey('custom_context_value', $context);
+                        $this->assertSame(ClassicDummy::class, $type);
+                        $this->assertSame('$accessor', $accessor);
+                        $this->assertArrayHasKey('custom_context_value', $context);
 
-                    return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
-                },
-                ConstructorPropertyPromotedDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
-                    ++$hookCallCount;
+                        return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
+                    },
+                    ConstructorPropertyPromotedDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
+                        ++$hookCallCount;
 
-                    $this->assertSame(ConstructorPropertyPromotedDummy::class, $type);
-                    $this->assertSame('$accessor', $accessor);
-                    $this->assertArrayHasKey('custom_context_value', $context);
+                        $this->assertSame(ConstructorPropertyPromotedDummy::class, $type);
+                        $this->assertSame('$accessor', $accessor);
+                        $this->assertArrayHasKey('custom_context_value', $context);
 
-                    return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
-                },
+                        return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
+                    },
+                ],
             ],
         ];
 
@@ -260,14 +262,16 @@ final class TemplateGeneratorTest extends TestCase
     {
         $context = [
             'hooks' => [
-                'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                    return [
-                        'name' => 'NAME',
-                        'type' => 'string',
-                        'accessor' => '$ACCESSOR',
-                        'context' => ['CONTEXT'],
-                    ];
-                },
+                'marshal' => [
+                    'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                        return [
+                            'name' => 'NAME',
+                            'type' => 'string',
+                            'accessor' => '$ACCESSOR',
+                            'context' => ['CONTEXT'],
+                        ];
+                    },
+                ],
             ],
         ];
 
@@ -295,34 +299,36 @@ final class TemplateGeneratorTest extends TestCase
         $context = [
             'custom_context_value' => true,
             'hooks' => [
-                sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
-                    ++$hookCallCount;
+                'marshal' => [
+                    sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
+                        ++$hookCallCount;
 
-                    $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'id'), $property);
-                    $this->assertSame('$object_0->id', $accessor);
-                    $this->assertArrayHasKey('custom_context_value', $context);
+                        $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'id'), $property);
+                        $this->assertSame('$object_0->id', $accessor);
+                        $this->assertArrayHasKey('custom_context_value', $context);
 
-                    return [
-                        'name' => 'name',
-                        'type' => 'string',
-                        'accessor' => '$accessor',
-                        'context' => [],
-                    ];
-                },
-                sprintf('%s::$name', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
-                    ++$hookCallCount;
+                        return [
+                            'name' => 'name',
+                            'type' => 'string',
+                            'accessor' => '$accessor',
+                            'context' => [],
+                        ];
+                    },
+                    sprintf('%s::$name', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
+                        ++$hookCallCount;
 
-                    $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'name'), $property);
-                    $this->assertSame('$object_0->name', $accessor);
-                    $this->assertArrayHasKey('custom_context_value', $context);
+                        $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'name'), $property);
+                        $this->assertSame('$object_0->name', $accessor);
+                        $this->assertArrayHasKey('custom_context_value', $context);
 
-                    return [
-                        'name' => 'name',
-                        'type' => 'string',
-                        'accessor' => '$accessor',
-                        'context' => [],
-                    ];
-                },
+                        return [
+                            'name' => 'name',
+                            'type' => 'string',
+                            'accessor' => '$accessor',
+                            'context' => [],
+                        ];
+                    },
+                ],
             ],
         ];
 

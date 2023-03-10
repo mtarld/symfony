@@ -59,16 +59,18 @@ final class UnmarshalTest extends TestCase
 
         $value = $this->unmarshalString('{"@id": 123, "name": "thename"}', ClassicDummy::class, 'json', [
             'hooks' => [
-                sprintf('%s[@id]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                    return [
-                        'name' => 'id',
-                    ];
-                },
-                sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                    return [
-                        'value_provider' => fn () => 'HOOK_VALUE',
-                    ];
-                },
+                'unmarshal' => [
+                    sprintf('%s[@id]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
+                        return [
+                            'name' => 'id',
+                        ];
+                    },
+                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
+                        return [
+                            'value_provider' => fn () => 'HOOK_VALUE',
+                        ];
+                    },
+                ],
             ],
         ]);
         $expectedObject->name = 'HOOK_VALUE';
@@ -96,13 +98,15 @@ final class UnmarshalTest extends TestCase
             $this->unmarshalString('[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]', sprintf('array<int, %s>', ClassicDummy::class), context: [
                 'collect_errors' => true,
                 'hooks' => [
-                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                        $ok = $value('string', $context);
+                    'unmarshal' => [
+                        sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
+                            $ok = $value('string', $context);
 
-                        return [
-                            'value_provider' => fn () => 'ok' === $ok ? 'ok' : new \DateTimeImmutable(),
-                        ];
-                    },
+                            return [
+                                'value_provider' => fn () => 'ok' === $ok ? 'ok' : new \DateTimeImmutable(),
+                            ];
+                        },
+                    ],
                 ],
             ]);
 

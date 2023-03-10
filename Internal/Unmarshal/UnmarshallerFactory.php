@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Internal\Unmarshal;
 
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
-use Symfony\Component\Marshaller\Internal\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDecoder;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonDictSplitter;
 use Symfony\Component\Marshaller\Internal\Unmarshal\Json\JsonLexer;
@@ -48,7 +47,6 @@ abstract class UnmarshallerFactory
         }
 
         return new Unmarshaller(
-            hookExtractor: new HookExtractor(),
             reflectionTypeExtractor: new ReflectionTypeExtractor(),
             decoder: new JsonDecoder(),
             listSplitter: new JsonListSplitter($lexer),

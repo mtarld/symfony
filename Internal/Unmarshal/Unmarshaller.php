@@ -13,7 +13,6 @@ use Symfony\Component\Marshaller\Exception\LogicException;
 use Symfony\Component\Marshaller\Exception\UnexpectedValueException;
 use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 use Symfony\Component\Marshaller\Instantiator\InstantiatorInterface;
-use Symfony\Component\Marshaller\Internal\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Type;
 use Symfony\Component\Marshaller\Internal\TypeFactory;
 use Symfony\Component\Marshaller\Internal\UnionType;
@@ -37,7 +36,6 @@ final class Unmarshaller
     ];
 
     public function __construct(
-        private readonly HookExtractor $hookExtractor,
         private readonly ReflectionTypeExtractor $reflectionTypeExtractor,
         private readonly DecoderInterface $decoder,
         private readonly ListSplitterInterface $listSplitter,
@@ -165,7 +163,15 @@ final class Unmarshaller
             return null;
         }
 
-        if (null !== $hook = $this->hookExtractor->forObject($type->className(), $context)) {
+        $hook = null;
+
+        if (isset($context['hooks']['unmarshal'][$className = $type->className()])) {
+            $hook = $context['hooks']['unmarshal'][$className];
+        } elseif (isset($context['hooks']['unmarshal']['object'])) {
+            $hook = $context['hooks']['unmarshal']['object'];
+        }
+
+        if (null !== $hook) {
             /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
             $hookResult = $hook((string) $type, $context);
 
@@ -192,9 +198,17 @@ final class Unmarshaller
         $propertiesValues = [];
 
         foreach ($data as $k => $v) {
+            $hook = null;
+
+            if (isset($context['hooks']['unmarshal'][($className = $reflection->getName()).'['.$k.']'])) {
+                $hook = $context['hooks']['unmarshal'][$className.'['.$k.']'];
+            } elseif (isset($context['hooks']['unmarshal']['property'])) {
+                $hook = $context['hooks']['unmarshal']['property'];
+            }
+
             $propertyName = $k;
 
-            if (null !== $hook = $this->hookExtractor->forKey($reflection->getName(), $k, $context)) {
+            if (null !== $hook) {
                 /** @var array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook(
                     $reflection,

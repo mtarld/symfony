@@ -19,12 +19,8 @@ final class HookContextBuilderTest extends TestCase
         $hook = static function () {};
         $contextBuilder = new HookContextBuilder(['object' => $hook], ['object' => $hook]);
 
-        $expectedContext = [
-            'hooks' => ['object' => $hook],
-        ];
-
-        $this->assertSame($expectedContext, $contextBuilder->buildMarshalContext([], true));
-        $this->assertSame($expectedContext, $contextBuilder->buildUnmarshalContext([]));
+        $this->assertSame(['hooks' => ['marshal' => ['object' => $hook]]], $contextBuilder->buildMarshalContext([], true));
+        $this->assertSame(['hooks' => ['unmarshal' => ['object' => $hook]]], $contextBuilder->buildUnmarshalContext([]));
     }
 
     public function testSkipWhenWontGenerateTemplate(): void

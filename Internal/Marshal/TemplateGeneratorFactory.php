@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Internal\Marshal;
 
 use Symfony\Component\Marshaller\Exception\UnsupportedFormatException;
-use Symfony\Component\Marshaller\Internal\HookExtractor;
 use Symfony\Component\Marshaller\Internal\Marshal\Json\JsonSyntax;
 use Symfony\Component\Marshaller\Type\ReflectionTypeExtractor;
 
@@ -36,7 +35,6 @@ final class TemplateGeneratorFactory
     private static function json(): TemplateGenerator
     {
         return new TemplateGenerator(
-            hookExtractor: new HookExtractor(),
             reflectionTypeExtractor: new ReflectionTypeExtractor(),
             typeSorter: new TypeSorter(),
             syntax: new JsonSyntax(),

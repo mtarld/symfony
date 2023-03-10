@@ -290,13 +290,15 @@ final class MarshalGenerateTest extends TestCase
 
             PHP, ClassicDummy::class, [
                 'hooks' => [
-                    sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                        return [
-                            'name' => 'foo',
-                            'type' => 'string',
-                            'accessor' => '$bar',
-                        ];
-                    },
+                    'marshal' => [
+                        sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                            return [
+                                'name' => 'foo',
+                                'type' => 'string',
+                                'accessor' => '$bar',
+                            ];
+                        },
+                    ],
                 ],
             ],
         ];
