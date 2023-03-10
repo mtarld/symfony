@@ -30,7 +30,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
         }
 
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addMarshalPropertyFormatters($className, $context);
+            $context = $this->addPropertyFormatters($className, $context);
         }
 
         return $context;
@@ -39,7 +39,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
     public function buildUnmarshalContext(array $context): array
     {
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addUnmarshalPropertyFormatters($className, $context);
+            $context = $this->addPropertyFormatters($className, $context);
         }
 
         return $context;
@@ -51,7 +51,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    private function addMarshalPropertyFormatters(string $className, array $context): array
+    private function addPropertyFormatters(string $className, array $context): array
     {
         foreach ((new \ReflectionClass($className))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
@@ -64,37 +64,11 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
                 if (null !== $attributeInstance->marshal) {
-                    $context['_symfony']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshal;
+                    $context['_symfony']['property_formatter'][$propertyIdentifier]['marshal'] = $attributeInstance->marshal;
                 }
-
-                break;
-            }
-        }
-
-        return $context;
-    }
-
-    /**
-     * @param class-string         $className
-     * @param array<string, mixed> $context
-     *
-     * @return array<string, mixed>
-     */
-    private function addUnmarshalPropertyFormatters(string $className, array $context): array
-    {
-        foreach ((new \ReflectionClass($className))->getProperties() as $property) {
-            foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
-                    continue;
-                }
-
-                $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-
-                /** @var Formatter $attributeInstance */
-                $attributeInstance = $attribute->newInstance();
 
                 if (null !== $attributeInstance->unmarshal) {
-                    $context['_symfony']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshal;
+                    $context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal'] = $attributeInstance->unmarshal;
                 }
 
                 break;

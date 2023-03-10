@@ -25,16 +25,12 @@ final class Formatter
         public readonly string|array|null $marshal = null,
         public readonly string|array|null $unmarshal = null,
     ) {
-        if (null !== $marshal) {
-            if (!\is_callable($marshal)) {
-                throw new InvalidArgumentException(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', self::class));
-            }
+        if (null !== $marshal && !\is_callable($marshal)) {
+            throw new InvalidArgumentException(sprintf('Parameter "$marshal" of attribute "%s" must be a valid callable.', self::class));
         }
 
-        if (null !== $unmarshal) {
-            if (!\is_callable($unmarshal)) {
-                throw new InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
-            }
+        if (null !== $unmarshal && !\is_callable($unmarshal)) {
+            throw new InvalidArgumentException(sprintf('Parameter "$unmarshal" of attribute "%s" must be a valid callable.', self::class));
         }
     }
 }

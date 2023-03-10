@@ -78,11 +78,11 @@ final class PropertyHookTest extends TestCase
     public function updateTypeAccessorAndContextFromFormatterDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
-        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)]];
+        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => ['marshal' => DummyWithMethods::doubleAndCastToString(...)]]];
         yield [
             'string',
             sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
-            [sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...)],
+            [sprintf('%s::$id', ClassicDummy::class) => ['marshal' => DummyWithMethods::doubleAndCastToString(...)]],
         ];
     }
 
@@ -96,7 +96,7 @@ final class PropertyHookTest extends TestCase
         $context = [
             '_symfony' => [
                 'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => $formatter,
+                    sprintf('%s::$id', ClassicDummy::class) => ['marshal' => $formatter],
                 ],
             ],
         ];
@@ -141,7 +141,9 @@ final class PropertyHookTest extends TestCase
                     DummyWithMethods::class => ['U' => 'int'],
                 ],
                 'property_formatter' => [
-                    sprintf('%s::$id', DummyWithMethods::class) => DummyWithMethods::doubleAndCastToString(...),
+                    sprintf('%s::$id', DummyWithMethods::class) => [
+                        'marshal' => DummyWithMethods::doubleAndCastToString(...),
+                    ],
                 ],
             ],
         ];
@@ -164,7 +166,9 @@ final class PropertyHookTest extends TestCase
                     ClassicDummy::class => ['T' => 'string'],
                 ],
                 'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...),
+                    sprintf('%s::$id', ClassicDummy::class) => [
+                        'marshal' => DummyWithMethods::doubleAndCastToString(...),
+                    ],
                 ],
             ],
         ];

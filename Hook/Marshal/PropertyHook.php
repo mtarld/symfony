@@ -36,8 +36,8 @@ final class PropertyHook
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
-        $propertyFormatter = isset($context['_symfony']['property_formatter'][$propertyIdentifier])
-            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]))
+        $propertyFormatter = isset($context['_symfony']['property_formatter'][$propertyIdentifier]['marshal'])
+            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]['marshal']))
             : null;
 
         return [

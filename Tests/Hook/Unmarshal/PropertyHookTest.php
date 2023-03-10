@@ -97,7 +97,9 @@ final class PropertyHookTest extends TestCase
         $context = [
             '_symfony' => [
                 'property_formatter' => [
-                   sprintf('%s::$name', ClassicDummy::class) => fn (int $v, array $c): string => (string) $v,
+                    sprintf('%s::$name', ClassicDummy::class) => [
+                        'unmarshal' => fn (int $v, array $c): string => (string) $v,
+                    ],
                 ],
             ],
         ];
@@ -125,7 +127,9 @@ final class PropertyHookTest extends TestCase
                     DummyWithFormatterAttributes::class => ['T' => 'string'],
                 ],
                 'property_formatter' => [
-                   sprintf('%s::$name', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
+                    sprintf('%s::$name', DummyWithFormatterAttributes::class) => [
+                        'unmarshal' => DummyWithFormatterAttributes::doubleAndCastToString(...),
+                    ],
                 ],
             ],
         ];
@@ -153,7 +157,9 @@ final class PropertyHookTest extends TestCase
                     DummyWithQuotes::class => ['T' => 'string'],
                 ],
                 'property_formatter' => [
-                   sprintf('%s::$name', DummyWithQuotes::class) => fn (mixed $v, array $c): string => (string) $v,
+                    sprintf('%s::$name', DummyWithQuotes::class) => [
+                        'unmarshal' => fn (mixed $v, array $c): string => (string) $v,
+                    ],
                 ],
             ],
         ];
@@ -170,7 +176,9 @@ final class PropertyHookTest extends TestCase
         $context = [
             '_symfony' => [
                 'property_formatter' => [
-                    sprintf('%s::$name', ClassicDummy::class) => fn (string $v, array $c): string => strtoupper($v),
+                    sprintf('%s::$name', ClassicDummy::class) => [
+                        'unmarshal' => fn (string $v, array $c): string => strtoupper($v),
+                    ],
                 ],
             ],
         ];

@@ -31,13 +31,15 @@ final class LazyObjectCacheWarmer implements CacheWarmerInterface
         }
 
         foreach ($this->marshallableResolver->resolve() as $class => $_) {
-            $path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($class));
-            if (file_exists($path)) {
+            if (file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($class)))) {
                 continue;
             }
 
-            $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $class));
-            file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost(new \ReflectionClass($class))));
+            file_put_contents($path, sprintf(
+                'class %s%s',
+                sprintf('%sGhost', preg_replace('/\\\\/', '', $class)),
+                ProxyHelper::generateLazyGhost(new \ReflectionClass($class)),
+            ));
         }
 
         return [];
@@ -45,6 +47,6 @@ final class LazyObjectCacheWarmer implements CacheWarmerInterface
 
     public function isOptional(): bool
     {
-        return false;
+        return true;
     }
 }

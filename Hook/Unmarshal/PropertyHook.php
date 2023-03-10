@@ -54,7 +54,7 @@ final class PropertyHook
             return [];
         }
 
-        if (!isset($context['_symfony']['property_formatter'][$propertyIdentifier])) {
+        if (!isset($context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal'])) {
             $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
 
             if (isset($context['_symfony']['generic_parameter_types'][$propertyClass])) {
@@ -67,9 +67,9 @@ final class PropertyHook
             ];
         }
 
-        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['property_formatter'][$propertyIdentifier]));
+        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal']));
 
-        $propertyFormatter = \Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]);
+        $propertyFormatter = \Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal']);
         $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
 
         $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);

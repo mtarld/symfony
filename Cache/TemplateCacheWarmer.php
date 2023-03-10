@@ -32,7 +32,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
     public function __construct(
         private readonly MarshallableResolverInterface $marshallableResolver,
         private readonly iterable $contextBuilders,
-        private readonly string $templateCacheDir,
+        private readonly string $cacheDir,
         private readonly array $formats,
         private readonly bool $nullableData,
         private readonly LoggerInterface $logger = new NullLogger(),
@@ -52,7 +52,7 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
 
     public function isOptional(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -64,28 +64,24 @@ final class TemplateCacheWarmer implements CacheWarmerInterface
             $class = '?'.$class;
         }
 
-        $path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, md5($class), $format);
-        if (file_exists($path)) {
+        if (file_exists($path = sprintf('%s%s%s.%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($class), $format))) {
             return;
         }
 
-        if (!file_exists($this->templateCacheDir)) {
-            mkdir($this->templateCacheDir, recursive: true);
+        if (!file_exists($this->cacheDir)) {
+            mkdir($this->cacheDir, recursive: true);
         }
 
         try {
             file_put_contents($path, $this->generateTemplate($class, $format));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate template for "{class}": {exception}', [
-                'class' => $class,
-                'exception' => $e,
-            ]);
+            $this->logger->debug('Cannot generate template for "{class}": {exception}', ['class' => $class, 'exception' => $e]);
         }
     }
 
     private function generateTemplate(string $class, string $format): string
     {
-        $context = ['cache_dir' => $this->templateCacheDir];
+        $context = ['cache_dir' => $this->cacheDir];
 
         foreach ($this->contextBuilders as $contextBuilder) {
             $context = $contextBuilder->buildMarshalContext($context, true);

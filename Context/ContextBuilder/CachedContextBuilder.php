@@ -41,7 +41,7 @@ final class CachedContextBuilder implements ContextBuilderInterface
 
     public function buildUnmarshalContext(array $context): array
     {
-        $cachedContext = $this->getCached($this->cacheKey.'_unmarshal', fn (): array => $this->contextBuilder->buildUnmarshalContext($context));
+        $cachedContext = $this->getCached($this->cacheKey.'_unmarshal', fn () => $this->contextBuilder->buildUnmarshalContext($context));
 
         if (isset($cachedContext['_symfony'][$this->contextKey])) {
             $context['_symfony'][$this->contextKey] = $cachedContext['_symfony'][$this->contextKey];
