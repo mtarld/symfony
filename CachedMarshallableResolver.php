@@ -25,8 +25,15 @@ final class CachedMarshallableResolver implements MarshallableResolverInterface
     ) {
     }
 
-    public function resolve(): \Generator
+    public function resolve(): iterable
     {
-        yield from $this->getCached('marshaller.marshallable', fn () => iterator_to_array($this->resolver->resolve()));
+        yield from $this->getCached('marshaller.marshallable', function (): array {
+            $marshallables = [];
+            foreach ($this->resolver->resolve() as $class => $marshallable) {
+                $marshallables[$class] = $marshallable;
+            }
+
+            return $marshallables;
+        });
     }
 }

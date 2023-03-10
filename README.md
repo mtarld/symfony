@@ -4,7 +4,6 @@
 - bench in CI
 
 ## Common
-- remove 'marshal/unmarshal' context level? or set hook in that level
 - try to factorize cached context builder
 ---
 - determine which services and classes are internal

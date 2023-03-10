@@ -64,7 +64,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
                 if (null !== $attributeInstance->marshal) {
-                    $context['_symfony']['marshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshal;
+                    $context['_symfony']['property_formatter'][$propertyIdentifier] = $attributeInstance->marshal;
                 }
 
                 break;
@@ -94,7 +94,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
                 $attributeInstance = $attribute->newInstance();
 
                 if (null !== $attributeInstance->unmarshal) {
-                    $context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshal;
+                    $context['_symfony']['property_formatter'][$propertyIdentifier] = $attributeInstance->unmarshal;
                 }
 
                 break;

@@ -30,7 +30,7 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
         }
 
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addMarshalPropertyNames($className, $context);
+            $context = $this->addPropertyNames($className, $context);
         }
 
         return $context;
@@ -39,7 +39,7 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
     public function buildUnmarshalContext(array $context): array
     {
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addUnmarshalPropertyNames($className, $context);
+            $context = $this->addPropertyNames($className, $context);
         }
 
         return $context;
@@ -51,7 +51,7 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    private function addMarshalPropertyNames(string $className, array $context): array
+    private function addPropertyNames(string $className, array $context): array
     {
         foreach ((new \ReflectionClass($className))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
@@ -63,36 +63,10 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-
-                $context['_symfony']['marshal']['property_name'][$propertyIdentifier] = $attributeInstance->name;
-
-                break;
-            }
-        }
-
-        return $context;
-    }
-
-    /**
-     * @param class-string         $className
-     * @param array<string, mixed> $context
-     *
-     * @return array<string, mixed>
-     */
-    private function addUnmarshalPropertyNames(string $className, array $context): array
-    {
-        foreach ((new \ReflectionClass($className))->getProperties() as $property) {
-            foreach ($property->getAttributes() as $attribute) {
-                if (Name::class !== $attribute->getName()) {
-                    continue;
-                }
-
-                /** @var Name $attributeInstance */
-                $attributeInstance = $attribute->newInstance();
+                $context['_symfony']['property_name'][$propertyIdentifier] = $attributeInstance->name;
 
                 $keyIdentifier = sprintf('%s[%s]', $property->getDeclaringClass()->getName(), $attributeInstance->name);
-
-                $context['_symfony']['unmarshal']['property_name'][$keyIdentifier] = $property->getName();
+                $context['_symfony']['property_name'][$keyIdentifier] = $property->getName();
 
                 break;
             }

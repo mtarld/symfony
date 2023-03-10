@@ -30,9 +30,7 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'marshal' => [
-                    'property_name' => $propertyNames,
-                ],
+                'property_name' => $propertyNames,
             ],
         ];
 
@@ -64,9 +62,7 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'marshal' => [
-                    'property_formatter' => $propertyFormatters,
-                ],
+                'property_formatter' => $propertyFormatters,
             ],
         ];
 
@@ -99,10 +95,8 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'marshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => $formatter,
-                    ],
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => $formatter,
                 ],
             ],
         ];
@@ -142,14 +136,12 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'marshal' => [
-                    'generic_parameter_types' => [
-                        ClassicDummy::class => ['T' => 'string'],
-                        DummyWithMethods::class => ['U' => 'int'],
-                    ],
-                    'property_formatter' => [
-                        sprintf('%s::$id', DummyWithMethods::class) => DummyWithMethods::doubleAndCastToString(...),
-                    ],
+                'generic_parameter_types' => [
+                    ClassicDummy::class => ['T' => 'string'],
+                    DummyWithMethods::class => ['U' => 'int'],
+                ],
+                'property_formatter' => [
+                    sprintf('%s::$id', DummyWithMethods::class) => DummyWithMethods::doubleAndCastToString(...),
                 ],
             ],
         ];
@@ -168,13 +160,11 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'marshal' => [
-                    'generic_parameter_types' => [
-                        ClassicDummy::class => ['T' => 'string'],
-                    ],
-                    'property_formatter' => [
-                        sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...),
-                    ],
+                'generic_parameter_types' => [
+                    ClassicDummy::class => ['T' => 'string'],
+                ],
+                'property_formatter' => [
+                    sprintf('%s::$id', ClassicDummy::class) => DummyWithMethods::doubleAndCastToString(...),
                 ],
             ],
         ];

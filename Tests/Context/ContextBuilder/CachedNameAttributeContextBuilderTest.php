@@ -22,13 +22,7 @@ final class CachedNameAttributeContextBuilderTest extends TestCase
         $contextBuilder
             ->expects($this->once())
             ->method('buildMarshalContext')
-            ->willReturn([
-                '_symfony' => [
-                    'marshal' => [
-                        'property_name' => 'marshal_property_name',
-                    ],
-                ],
-            ]);
+            ->willReturn(['_symfony' => ['property_name' => 'marshal_property_name']]);
 
         $cachePool = $this->createMock(CacheItemPoolInterface::class);
         $cachePool->expects($this->once())->method('getItem');
@@ -36,23 +30,8 @@ final class CachedNameAttributeContextBuilderTest extends TestCase
 
         $contextBuilder = new CachedNameAttributeContextBuilder($contextBuilder, $cachePool);
 
-        $this->assertSame([
-            'not_cached' => 1,
-            '_symfony' => [
-                'marshal' => [
-                    'property_name' => 'marshal_property_name',
-                ],
-            ],
-        ], $contextBuilder->buildMarshalContext(['not_cached' => 1], true));
-
-        $this->assertSame([
-            'not_cached' => 2,
-            '_symfony' => [
-                'marshal' => [
-                    'property_name' => 'marshal_property_name',
-                ],
-            ],
-        ], $contextBuilder->buildMarshalContext(['not_cached' => 2], true));
+        $this->assertSame(['not_cached' => 1, '_symfony' => ['property_name' => 'marshal_property_name']], $contextBuilder->buildMarshalContext(['not_cached' => 1], true));
+        $this->assertSame(['not_cached' => 2, '_symfony' => ['property_name' => 'marshal_property_name']], $contextBuilder->buildMarshalContext(['not_cached' => 2], true));
 
         $contextBuilder->buildUnmarshalContext([]);
     }
@@ -63,13 +42,7 @@ final class CachedNameAttributeContextBuilderTest extends TestCase
         $contextBuilder
             ->expects($this->once())
             ->method('buildUnmarshalContext')
-            ->willReturn([
-                '_symfony' => [
-                    'unmarshal' => [
-                        'property_name' => 'unmarshal_property_name',
-                    ],
-                ],
-            ]);
+            ->willReturn(['_symfony' => ['property_name' => 'unmarshal_property_name']]);
 
         $contextBuilder->method('buildUnmarshalContext')->willReturn([]);
 
@@ -79,22 +52,7 @@ final class CachedNameAttributeContextBuilderTest extends TestCase
 
         $contextBuilder = new CachedNameAttributeContextBuilder($contextBuilder, $cachePool);
 
-        $this->assertSame([
-            'not_cached' => 1,
-            '_symfony' => [
-                'unmarshal' => [
-                    'property_name' => 'unmarshal_property_name',
-                ],
-            ],
-        ], $contextBuilder->buildUnmarshalContext(['not_cached' => 1]));
-
-        $this->assertSame([
-            'not_cached' => 2,
-            '_symfony' => [
-                'unmarshal' => [
-                    'property_name' => 'unmarshal_property_name',
-                ],
-            ],
-        ], $contextBuilder->buildUnmarshalContext(['not_cached' => 2]));
+        $this->assertSame(['not_cached' => 1, '_symfony' => ['property_name' => 'unmarshal_property_name']], $contextBuilder->buildUnmarshalContext(['not_cached' => 1]));
+        $this->assertSame(['not_cached' => 2, '_symfony' => ['property_name' => 'unmarshal_property_name']], $contextBuilder->buildUnmarshalContext(['not_cached' => 2]));
     }
 }

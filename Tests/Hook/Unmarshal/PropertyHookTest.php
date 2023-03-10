@@ -27,10 +27,8 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'property_name' => [
-                        sprintf('%s[@id]', ClassicDummy::class) => 'id',
-                    ],
+                'property_name' => [
+                    sprintf('%s[@id]', ClassicDummy::class) => 'id',
                 ],
             ],
         ];
@@ -69,10 +67,8 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'generic_parameter_types' => [
-                        DummyWithGenerics::class => ['T' => ClassicDummy::class],
-                    ],
+                'generic_parameter_types' => [
+                    DummyWithGenerics::class => ['T' => ClassicDummy::class],
                 ],
             ],
         ];
@@ -100,10 +96,8 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'property_formatter' => [
-                       sprintf('%s::$name', ClassicDummy::class) => fn (int $v, array $c): string => (string) $v,
-                    ],
+                'property_formatter' => [
+                   sprintf('%s::$name', ClassicDummy::class) => fn (int $v, array $c): string => (string) $v,
                 ],
             ],
         ];
@@ -127,13 +121,11 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'generic_parameter_types' => [
-                        DummyWithFormatterAttributes::class => ['T' => 'string'],
-                    ],
-                    'property_formatter' => [
-                       sprintf('%s::$name', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
-                    ],
+                'generic_parameter_types' => [
+                    DummyWithFormatterAttributes::class => ['T' => 'string'],
+                ],
+                'property_formatter' => [
+                   sprintf('%s::$name', DummyWithFormatterAttributes::class) => DummyWithFormatterAttributes::doubleAndCastToString(...),
                 ],
             ],
         ];
@@ -157,13 +149,11 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'generic_parameter_types' => [
-                        DummyWithQuotes::class => ['T' => 'string'],
-                    ],
-                    'property_formatter' => [
-                       sprintf('%s::$name', DummyWithQuotes::class) => fn (mixed $v, array $c): string => (string) $v,
-                    ],
+                'generic_parameter_types' => [
+                    DummyWithQuotes::class => ['T' => 'string'],
+                ],
+                'property_formatter' => [
+                   sprintf('%s::$name', DummyWithQuotes::class) => fn (mixed $v, array $c): string => (string) $v,
                 ],
             ],
         ];
@@ -179,10 +169,8 @@ final class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'unmarshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$name', ClassicDummy::class) => fn (string $v, array $c): string => strtoupper($v),
-                    ],
+                'property_formatter' => [
+                    sprintf('%s::$name', ClassicDummy::class) => fn (string $v, array $c): string => strtoupper($v),
                 ],
             ],
         ];

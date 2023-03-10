@@ -25,9 +25,9 @@ final class MarshallableResolver implements MarshallableResolverInterface
     }
 
     /**
-     * @return \Generator<class-string, Marshallable>
+     * @return iterable<class-string, Marshallable>
      */
-    public function resolve(): \Generator
+    public function resolve(): iterable
     {
         foreach ($this->fromPaths($this->paths) as $class) {
             if ($class->isAbstract() || $class->isInterface() || $class->isTrait()) {
@@ -54,9 +54,9 @@ final class MarshallableResolver implements MarshallableResolverInterface
     /**
      * @param list<string> $paths
      *
-     * @return \Generator<\ReflectionClass<object>>
+     * @return iterable<\ReflectionClass<object>>
      */
-    private function fromPaths(array $paths): \Generator
+    private function fromPaths(array $paths): iterable
     {
         $includedFiles = [];
 

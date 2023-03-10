@@ -21,7 +21,7 @@ final class CachedMarshallableResolverTest extends TestCase
     public function testHitLocalCache(): void
     {
         $resolver = $this->createMock(MarshallableResolverInterface::class);
-        $resolver->expects($this->once())->method('resolve')->willReturn($this->getMarshallable());
+        $resolver->method('resolve')->willReturn(new \ArrayIterator(['Foo' => null, 'Bar' => null]));
 
         $cachePool = $this->createMock(CacheItemPoolInterface::class);
         $cachePool->expects($this->once())->method('getItem');
@@ -54,7 +54,7 @@ final class CachedMarshallableResolverTest extends TestCase
     public function testCacheException(): void
     {
         $resolver = $this->createMock(MarshallableResolverInterface::class);
-        $resolver->expects($this->once())->method('resolve')->willReturn($this->getMarshallable());
+        $resolver->method('resolve')->willReturn(new \ArrayIterator(['Foo' => null, 'Bar' => null]));
 
         $cachePool = $this->createMock(CacheItemPoolInterface::class);
         $cachePool->expects($this->once())->method('getItem')->willThrowException($this->createStub(CacheException::class));
@@ -64,14 +64,5 @@ final class CachedMarshallableResolverTest extends TestCase
 
         $this->assertSame(['Foo' => null, 'Bar' => null], iterator_to_array($cachedResolver->resolve()));
         iterator_to_array($cachedResolver->resolve());
-    }
-
-    /**
-     * @return \Generator<string, null>
-     */
-    private function getMarshallable(): \Generator
-    {
-        yield 'Foo' => null;
-        yield 'Bar' => null;
     }
 }

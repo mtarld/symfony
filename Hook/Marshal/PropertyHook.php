@@ -36,8 +36,8 @@ final class PropertyHook
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
 
-        $propertyFormatter = isset($context['_symfony']['marshal']['property_formatter'][$propertyIdentifier])
-            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['marshal']['property_formatter'][$propertyIdentifier]))
+        $propertyFormatter = isset($context['_symfony']['property_formatter'][$propertyIdentifier])
+            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]))
             : null;
 
         return [
@@ -55,8 +55,8 @@ final class PropertyHook
     {
         $name = $property->getName();
 
-        if (isset($context['_symfony']['marshal']['property_name'][$propertyIdentifier])) {
-            $name = $context['_symfony']['marshal']['property_name'][$propertyIdentifier];
+        if (isset($context['_symfony']['property_name'][$propertyIdentifier])) {
+            $name = $context['_symfony']['property_name'][$propertyIdentifier];
         }
 
         return $name;
@@ -78,7 +78,7 @@ final class PropertyHook
             $propertyClass = null;
         }
 
-        if ([] !== ($genericTypes = $context['_symfony']['marshal']['generic_parameter_types'][$propertyClass] ?? [])) {
+        if ([] !== ($genericTypes = $context['_symfony']['generic_parameter_types'][$propertyClass] ?? [])) {
             $this->typeGenericsHelper = $this->typeGenericsHelper ?? new TypeGenericsHelper();
             $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
         }

@@ -47,18 +47,18 @@ final class PropertyHook
     public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array
     {
         $propertyClass = $class->getName();
-        $propertyName = $context['_symfony']['unmarshal']['property_name'][sprintf('%s[%s]', $propertyClass, $key)] ?? $key;
+        $propertyName = $context['_symfony']['property_name'][sprintf('%s[%s]', $propertyClass, $key)] ?? $key;
         $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
         if (!self::$classPropertiesCache[$cacheKey] = self::$classPropertiesCache[$cacheKey] ?? $class->hasProperty($propertyName)) {
             return [];
         }
 
-        if (!isset($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier])) {
+        if (!isset($context['_symfony']['property_formatter'][$propertyIdentifier])) {
             $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
 
-            if (isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])) {
-                $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
+            if (isset($context['_symfony']['generic_parameter_types'][$propertyClass])) {
+                $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['generic_parameter_types'][$propertyClass]);
             }
 
             return [
@@ -67,18 +67,18 @@ final class PropertyHook
             ];
         }
 
-        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier]));
+        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['property_formatter'][$propertyIdentifier]));
 
-        $propertyFormatter = \Closure::fromCallable($context['_symfony']['unmarshal']['property_formatter'][$propertyIdentifier]);
+        $propertyFormatter = \Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]);
         $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
 
         $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
 
         if (
-            isset($context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass])
+            isset($context['_symfony']['generic_parameter_types'][$propertyClass])
             && $propertyFormatterReflection->getClosureScopeClass()?->getName() === $propertyClass
         ) {
-            $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['unmarshal']['generic_parameter_types'][$propertyClass]);
+            $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['generic_parameter_types'][$propertyClass]);
         }
 
         return [

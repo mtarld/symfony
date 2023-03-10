@@ -30,7 +30,7 @@ final class ObjectHookTest extends TestCase
 
         $hookResult = (new ObjectHook($typeExtractor))($type, '$accessor', []);
 
-        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['_symfony']['marshal']['generic_parameter_types'] ?? []);
+        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['_symfony']['generic_parameter_types'] ?? []);
     }
 
     /**

@@ -10,7 +10,6 @@
 namespace Symfony\Component\Marshaller\Tests\Cache;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Marshaller\Attribute\Marshallable;
 use Symfony\Component\Marshaller\Cache\LazyObjectCacheWarmer;
 use Symfony\Component\Marshaller\MarshallableResolverInterface;
 use Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy;
@@ -36,7 +35,11 @@ final class LazyObjectCacheWarmerTest extends TestCase
     public function testWarmUp(): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+        $marshallableResolver->method('resolve')->willReturn(new \ArrayIterator([
+            ClassicDummy::class => null,
+            DummyWithQuotes::class => null,
+            DummyWithMethods::class => null,
+        ]));
 
         (new LazyObjectCacheWarmer($marshallableResolver, $this->cacheDir))->warmUp('useless');
 
@@ -47,15 +50,5 @@ final class LazyObjectCacheWarmerTest extends TestCase
         ]);
 
         $this->assertSame($expectedTemplates, glob($this->cacheDir.'/*'));
-    }
-
-    /**
-     * @return \Generator<string, Marshallable>
-     */
-    private function getMarshallable(): \Generator
-    {
-        yield ClassicDummy::class => new Marshallable();
-        yield DummyWithQuotes::class => new Marshallable(true);
-        yield DummyWithMethods::class => new Marshallable(false);
     }
 }

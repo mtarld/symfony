@@ -31,8 +31,8 @@ final class CachedNameAttributeContextBuilder implements ContextBuilderInterface
     {
         $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildMarshalContext($context, $willGenerateTemplate));
 
-        if (isset($cachedContext['_symfony']['marshal']['property_name'])) {
-            $context['_symfony']['marshal']['property_name'] = $cachedContext['_symfony']['marshal']['property_name'];
+        if (isset($cachedContext['_symfony']['property_name'])) {
+            $context['_symfony']['property_name'] = $cachedContext['_symfony']['property_name'];
         }
 
         return $context;
@@ -42,8 +42,8 @@ final class CachedNameAttributeContextBuilder implements ContextBuilderInterface
     {
         $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildUnmarshalContext($context));
 
-        if (isset($cachedContext['_symfony']['unmarshal']['property_name'])) {
-            $context['_symfony']['unmarshal']['property_name'] = $cachedContext['_symfony']['unmarshal']['property_name'];
+        if (isset($cachedContext['_symfony']['property_name'])) {
+            $context['_symfony']['property_name'] = $cachedContext['_symfony']['property_name'];
         }
 
         return $context;

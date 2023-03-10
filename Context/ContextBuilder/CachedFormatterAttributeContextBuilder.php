@@ -31,8 +31,8 @@ final class CachedFormatterAttributeContextBuilder implements ContextBuilderInte
     {
         $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildMarshalContext($context, $willGenerateTemplate));
 
-        if (isset($cachedContext['_symfony']['marshal']['property_formatter'])) {
-            $context['_symfony']['marshal']['property_formatter'] = $cachedContext['_symfony']['marshal']['property_formatter'];
+        if (isset($cachedContext['_symfony']['property_formatter'])) {
+            $context['_symfony']['property_formatter'] = $cachedContext['_symfony']['property_formatter'];
         }
 
         return $context;
@@ -42,8 +42,8 @@ final class CachedFormatterAttributeContextBuilder implements ContextBuilderInte
     {
         $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildUnmarshalContext($context));
 
-        if (isset($cachedContext['_symfony']['unmarshal']['property_formatter'])) {
-            $context['_symfony']['unmarshal']['property_formatter'] = $cachedContext['_symfony']['unmarshal']['property_formatter'];
+        if (isset($cachedContext['_symfony']['property_formatter'])) {
+            $context['_symfony']['property_formatter'] = $cachedContext['_symfony']['property_formatter'];
         }
 
         return $context;

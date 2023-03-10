@@ -17,45 +17,28 @@ use Symfony\Component\Marshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
 final class NameAttributeContextBuilderTest extends TestCase
 {
-    public function testAddPropertyNameToMarshalContext(): void
+    public function testAddPropertyNameToContext(): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+        $marshallableResolver->method('resolve')->willReturn(new \ArrayIterator([
+            DummyWithNameAttributes::class => null,
+            AnotherDummyWithNameAttributes::class => null,
+        ]));
 
         $contextBuilder = new NameAttributeContextBuilder($marshallableResolver);
 
         $expectedContext = [
             '_symfony' => [
-                'marshal' => [
-                    'property_name' => [
-                        sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
-                        sprintf('%s::$name', AnotherDummyWithNameAttributes::class) => 'call_me_with',
-                    ],
+                'property_name' => [
+                    sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
+                    sprintf('%s[@id]', DummyWithNameAttributes::class) => 'id',
+                    sprintf('%s::$name', AnotherDummyWithNameAttributes::class) => 'call_me_with',
+                    sprintf('%s[call_me_with]', AnotherDummyWithNameAttributes::class) => 'name',
                 ],
             ],
         ];
 
         $this->assertSame($expectedContext, $contextBuilder->buildMarshalContext([], true));
-    }
-
-    public function testAddPropertyNameToUnmarshalContext(): void
-    {
-        $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
-
-        $contextBuilder = new NameAttributeContextBuilder($marshallableResolver);
-
-        $expectedContext = [
-            '_symfony' => [
-                'unmarshal' => [
-                    'property_name' => [
-                        sprintf('%s[@id]', DummyWithNameAttributes::class) => 'id',
-                        sprintf('%s[call_me_with]', AnotherDummyWithNameAttributes::class) => 'name',
-                    ],
-                ],
-            ],
-        ];
-
         $this->assertSame($expectedContext, $contextBuilder->buildUnmarshalContext([]));
     }
 
@@ -64,14 +47,5 @@ final class NameAttributeContextBuilderTest extends TestCase
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
 
         $this->assertSame([], (new NameAttributeContextBuilder($marshallableResolver))->buildMarshalContext([], false));
-    }
-
-    /**
-     * @return \Generator<class-string, null>
-     */
-    private function getMarshallable(): \Generator
-    {
-        yield DummyWithNameAttributes::class => null;
-        yield AnotherDummyWithNameAttributes::class => null;
     }
 }

@@ -41,7 +41,11 @@ final class TemplateCacheWarmerTest extends TestCase
     public function testWarmUp(array $expectedClasses, bool $nullableData): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+        $marshallableResolver->method('resolve')->willReturn(new \ArrayIterator([
+            ClassicDummy::class => new Marshallable(),
+            DummyWithQuotes::class => new Marshallable(true),
+            DummyWithMethods::class => new Marshallable(false),
+        ]));
 
         (new TemplateCacheWarmer($marshallableResolver, [], $this->cacheDir, ['json'], $nullableData))->warmUp('useless');
 
@@ -57,15 +61,5 @@ final class TemplateCacheWarmerTest extends TestCase
     {
         yield [[ClassicDummy::class, DummyWithMethods::class, '?'.DummyWithQuotes::class], false];
         yield [['?'.ClassicDummy::class, DummyWithMethods::class, '?'.DummyWithQuotes::class], true];
-    }
-
-    /**
-     * @return \Generator<string, Marshallable>
-     */
-    private function getMarshallable(): \Generator
-    {
-        yield ClassicDummy::class => new Marshallable();
-        yield DummyWithQuotes::class => new Marshallable(true);
-        yield DummyWithMethods::class => new Marshallable(false);
     }
 }

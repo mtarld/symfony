@@ -20,17 +20,18 @@ final class FormatterAttributeContextBuilderTest extends TestCase
     public function testAddPropertyFormattersToMarshalContext(): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+        $marshallableResolver->method('resolve')->willReturn(new \ArrayIterator([
+            DummyWithFormatterAttributes::class => null,
+            AnotherDummyWithFormatterAttributes::class => null,
+        ]));
 
         $contextBuilder = new FormatterAttributeContextBuilder($marshallableResolver);
 
         $expectedContext = [
             '_symfony' => [
-                'marshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', DummyWithFormatterAttributes::class) => [DummyWithFormatterAttributes::class, 'doubleAndCastToString'],
-                        sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [AnotherDummyWithFormatterAttributes::class, 'uppercase'],
-                    ],
+                'property_formatter' => [
+                    sprintf('%s::$id', DummyWithFormatterAttributes::class) => [DummyWithFormatterAttributes::class, 'doubleAndCastToString'],
+                    sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [AnotherDummyWithFormatterAttributes::class, 'uppercase'],
                 ],
             ],
         ];
@@ -41,17 +42,18 @@ final class FormatterAttributeContextBuilderTest extends TestCase
     public function testAddPropertyFormattersToUnmarshalContext(): void
     {
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
-        $marshallableResolver->method('resolve')->willReturn($this->getMarshallable());
+        $marshallableResolver->method('resolve')->willReturn(new \ArrayIterator([
+            DummyWithFormatterAttributes::class => null,
+            AnotherDummyWithFormatterAttributes::class => null,
+        ]));
 
         $contextBuilder = new FormatterAttributeContextBuilder($marshallableResolver);
 
         $expectedContext = [
             '_symfony' => [
-                'unmarshal' => [
-                    'property_formatter' => [
-                        sprintf('%s::$id', DummyWithFormatterAttributes::class) => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
-                        sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
-                    ],
+                'property_formatter' => [
+                    sprintf('%s::$id', DummyWithFormatterAttributes::class) => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
+                    sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
                 ],
             ],
         ];
@@ -64,14 +66,5 @@ final class FormatterAttributeContextBuilderTest extends TestCase
         $marshallableResolver = $this->createStub(MarshallableResolverInterface::class);
 
         $this->assertSame([], (new FormatterAttributeContextBuilder($marshallableResolver))->buildMarshalContext([], false));
-    }
-
-    /**
-     * @return \Generator<class-string, null>
-     */
-    private function getMarshallable(): \Generator
-    {
-        yield DummyWithFormatterAttributes::class => null;
-        yield AnotherDummyWithFormatterAttributes::class => null;
     }
 }

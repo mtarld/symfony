@@ -17,7 +17,7 @@ use Symfony\Component\Marshaller\Attribute\Marshallable;
 interface MarshallableResolverInterface
 {
     /**
-     * @return \Generator<class-string, Marshallable>
+     * @return iterable<class-string, Marshallable>
      */
-    public function resolve(): \Generator;
+    public function resolve(): iterable;
 }
