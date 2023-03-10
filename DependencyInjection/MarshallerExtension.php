@@ -17,6 +17,8 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Marshaller\Cache\LazyObjectCacheWarmer;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\CachedMarshallableResolver;
+use Symfony\Component\Marshaller\Context\ContextBuilder\CachedFormatterAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\CachedNameAttributeContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\FormatterAttributeContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\HookContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\InstantiatorContextBuilder;
@@ -74,13 +76,6 @@ final class MarshallerExtension extends Extension
         //
         // Context builders
         //
-        $container->register('marshaller.context_builder.formatter_attribute', FormatterAttributeContextBuilder::class)
-            ->setArguments([
-                new Reference('marshaller.marshallable_resolver'),
-                new Reference('cache.marshaller'),
-            ])
-            ->addTag('marshaller.context_builder');
-
         $container->register('marshaller.context_builder.hook', HookContextBuilder::class)
             ->setArguments([
                 new TaggedIteratorArgument('marshaller.hook.marshal', 'name'),
@@ -97,9 +92,29 @@ final class MarshallerExtension extends Extension
         $container->register('marshaller.context_builder.name_attribute', NameAttributeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.marshallable_resolver'),
+            ])
+            ->addTag('marshaller.context_builder');
+
+        $container->register('marshaller.context_builder.name_attribute.cached', CachedNameAttributeContextBuilder::class)
+            ->setDecoratedService('marshaller.context_builder.name_attribute')
+            ->setArguments([
+                new Reference('.inner'),
+                new Reference('cache.marshaller'),
+            ]);
+
+        $container->register('marshaller.context_builder.formatter_attribute', FormatterAttributeContextBuilder::class)
+            ->setArguments([
+                new Reference('marshaller.marshallable_resolver'),
                 new Reference('cache.marshaller'),
             ])
             ->addTag('marshaller.context_builder');
+
+        $container->register('marshaller.context_builder.formatter_attribute.cached', CachedFormatterAttributeContextBuilder::class)
+            ->setDecoratedService('marshaller.context_builder.formatter_attribute')
+            ->setArguments([
+                new Reference('.inner'),
+                new Reference('cache.marshaller'),
+            ]);
 
         //
         // Hooks

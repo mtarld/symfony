@@ -4,11 +4,12 @@
 - bench in CI
 
 ## Common
-- remove 'marshal/unmarshal' context level?
-
+- remove 'marshal/unmarshal' context level? or set hook in that level
+- try to factorize cached context builder
+---
 - determine which services and classes are internal
 - re read and uniformize variable names (className/class for example)
-
+---
 - move TemplateCacheWarmer into FrameworkBundle
 - create config tree in FrameworkBundle
 - create a marshaller.php in FrameworkBundle and remove the MarshallerExtension
