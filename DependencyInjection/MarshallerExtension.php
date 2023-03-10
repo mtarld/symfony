@@ -11,14 +11,14 @@ namespace Symfony\Component\Marshaller\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Marshaller\Cache\LazyObjectCacheWarmer;
 use Symfony\Component\Marshaller\Cache\TemplateCacheWarmer;
 use Symfony\Component\Marshaller\CachedMarshallableResolver;
-use Symfony\Component\Marshaller\Context\ContextBuilder\CachedFormatterAttributeContextBuilder;
-use Symfony\Component\Marshaller\Context\ContextBuilder\CachedNameAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\CachedContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\FormatterAttributeContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\HookContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\InstantiatorContextBuilder;
@@ -95,11 +95,13 @@ final class MarshallerExtension extends Extension
             ])
             ->addTag('marshaller.context_builder');
 
-        $container->register('marshaller.context_builder.name_attribute.cached', CachedNameAttributeContextBuilder::class)
+        $container->register('marshaller.context_builder.name_attribute.cached', CachedContextBuilder::class)
             ->setDecoratedService('marshaller.context_builder.name_attribute')
             ->setArguments([
                 new Reference('.inner'),
-                new Reference('cache.marshaller'),
+                'marshaller.context.name_attribute',
+                'property_name',
+                new Reference('cache.marshaller', ContainerInterface::IGNORE_ON_INVALID_REFERENCE),
             ]);
 
         $container->register('marshaller.context_builder.formatter_attribute', FormatterAttributeContextBuilder::class)
@@ -109,11 +111,13 @@ final class MarshallerExtension extends Extension
             ])
             ->addTag('marshaller.context_builder');
 
-        $container->register('marshaller.context_builder.formatter_attribute.cached', CachedFormatterAttributeContextBuilder::class)
+        $container->register('marshaller.context_builder.formatter_attribute.cached', CachedContextBuilder::class)
             ->setDecoratedService('marshaller.context_builder.formatter_attribute')
             ->setArguments([
                 new Reference('.inner'),
-                new Reference('cache.marshaller'),
+                'marshaller.context.formatter_attribute',
+                'property_formatter',
+                new Reference('cache.marshaller', ContainerInterface::IGNORE_ON_INVALID_REFERENCE),
             ]);
 
         //
@@ -178,7 +182,7 @@ final class MarshallerExtension extends Extension
                 new Parameter('marshaller.cache_dir.template'),
                 new Parameter('marshaller.marshallable_formats'),
                 new Parameter('marshaller.marshallable_nullable_data'),
-                new Reference('logger'),
+                new Reference('logger', ContainerInterface::IGNORE_ON_INVALID_REFERENCE),
             ])
             ->addTag('kernel.cache_warmer');
 

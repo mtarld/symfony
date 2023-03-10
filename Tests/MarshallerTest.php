@@ -10,9 +10,7 @@
 namespace Symfony\Component\Marshaller\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\Marshaller\Context\ContextBuilder\CachedFormatterAttributeContextBuilder;
-use Symfony\Component\Marshaller\Context\ContextBuilder\CachedNameAttributeContextBuilder;
+use Symfony\Component\Marshaller\Context\ContextBuilder\CachedContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\FormatterAttributeContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\HookContextBuilder;
 use Symfony\Component\Marshaller\Context\ContextBuilder\InstantiatorContextBuilder;
@@ -222,11 +220,10 @@ final class MarshallerTest extends TestCase
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
         $marshallableResolver = new MarshallableResolver([__DIR__.'/Fixtures']);
-        $cacheItemPool = $this->createStub(CacheItemPoolInterface::class);
 
         $contextBuilders = [
-            new CachedFormatterAttributeContextBuilder(new FormatterAttributeContextBuilder($marshallableResolver, $cacheItemPool)),
-            new CachedNameAttributeContextBuilder(new NameAttributeContextBuilder($marshallableResolver, $cacheItemPool)),
+            new CachedContextBuilder(new FormatterAttributeContextBuilder($marshallableResolver), 'property_formatter', 'formatter'),
+            new CachedContextBuilder(new NameAttributeContextBuilder($marshallableResolver), 'property_name', 'name'),
             new HookContextBuilder([
                 'object' => (new MarshalHook\ObjectHook($typeExtractor))(...),
                 'property' => (new MarshalHook\PropertyHook($typeExtractor))(...),

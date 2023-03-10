@@ -16,23 +16,24 @@ use Symfony\Component\Marshaller\Util\CachedTrait;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class CachedNameAttributeContextBuilder implements ContextBuilderInterface
+final class CachedContextBuilder implements ContextBuilderInterface
 {
     use CachedTrait;
-    private const CACHE_KEY = 'marshaller.context.name_attribute';
 
     public function __construct(
         private readonly ContextBuilderInterface $contextBuilder,
+        private readonly string $contextKey,
+        private readonly string $cacheKey,
         private readonly CacheItemPoolInterface|null $cacheItemPool = null,
     ) {
     }
 
     public function buildMarshalContext(array $context, bool $willGenerateTemplate): array
     {
-        $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildMarshalContext($context, $willGenerateTemplate));
+        $cachedContext = $this->getCached($this->cacheKey.'_marshal', fn () => $this->contextBuilder->buildMarshalContext($context, $willGenerateTemplate));
 
-        if (isset($cachedContext['_symfony']['property_name'])) {
-            $context['_symfony']['property_name'] = $cachedContext['_symfony']['property_name'];
+        if (isset($cachedContext['_symfony'][$this->contextKey])) {
+            $context['_symfony'][$this->contextKey] = $cachedContext['_symfony'][$this->contextKey];
         }
 
         return $context;
@@ -40,10 +41,10 @@ final class CachedNameAttributeContextBuilder implements ContextBuilderInterface
 
     public function buildUnmarshalContext(array $context): array
     {
-        $cachedContext = $this->getCached(self::CACHE_KEY, fn (): array => $this->contextBuilder->buildUnmarshalContext($context));
+        $cachedContext = $this->getCached($this->cacheKey.'_unmarshal', fn (): array => $this->contextBuilder->buildUnmarshalContext($context));
 
-        if (isset($cachedContext['_symfony']['property_name'])) {
-            $context['_symfony']['property_name'] = $cachedContext['_symfony']['property_name'];
+        if (isset($cachedContext['_symfony'][$this->contextKey])) {
+            $context['_symfony'][$this->contextKey] = $cachedContext['_symfony'][$this->contextKey];
         }
 
         return $context;

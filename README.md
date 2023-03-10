@@ -4,11 +4,8 @@
 - bench in CI
 
 ## Common
-- try to factorize cached context builder
----
-- determine which services and classes are internal
 - re read and uniformize variable names (className/class for example)
----
+- determine which services and classes are internal
 - move TemplateCacheWarmer into FrameworkBundle
 - create config tree in FrameworkBundle
 - create a marshaller.php in FrameworkBundle and remove the MarshallerExtension
