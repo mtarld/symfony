@@ -40,7 +40,7 @@ final class MarshalGenerateTest extends TestCase
              * @param null \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, \\json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
@@ -57,7 +57,7 @@ final class MarshalGenerateTest extends TestCase
              * @param int \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
@@ -74,7 +74,7 @@ final class MarshalGenerateTest extends TestCase
              * @param string \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
@@ -91,7 +91,7 @@ final class MarshalGenerateTest extends TestCase
              * @param bool \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
             };
 
@@ -108,7 +108,7 @@ final class MarshalGenerateTest extends TestCase
              * @param array<int, int> \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, "[");
                 \$prefix_0 = "";
                 foreach (\$data as \$value_0) {
@@ -132,7 +132,7 @@ final class MarshalGenerateTest extends TestCase
              * @param array<string, int> \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, "{");
                 \$prefix_0 = "";
                 foreach (\$data as \$key_0 => \$value_0) {
@@ -157,7 +157,7 @@ final class MarshalGenerateTest extends TestCase
              * @param iterable<int, int> \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, "[");
                 \$prefix_0 = "";
                 foreach (\$data as \$value_0) {
@@ -181,7 +181,7 @@ final class MarshalGenerateTest extends TestCase
              * @param iterable<string, int> \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, "{");
                 \$prefix_0 = "";
                 foreach (\$data as \$key_0 => \$value_0) {
@@ -206,7 +206,7 @@ final class MarshalGenerateTest extends TestCase
              * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"id\":");
                 \\fwrite(\$resource, \json_encode(\$object_0->id, \$context["json_encode_flags"] ?? 0));
@@ -228,7 +228,7 @@ final class MarshalGenerateTest extends TestCase
              * @param array<int, Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy> \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \\fwrite(\$resource, "[");
                 \$prefix_0 = "";
                 foreach (\$data as \$value_0) {
@@ -258,7 +258,7 @@ final class MarshalGenerateTest extends TestCase
              * @param ?int \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 if (null === \$data) {
                     \\fwrite(\$resource, \\json_encode(\$data, \$context["json_encode_flags"] ?? 0));
                 } else {
@@ -279,7 +279,7 @@ final class MarshalGenerateTest extends TestCase
              * @param Symfony\Component\Marshaller\Tests\Fixtures\Dto\ClassicDummy \$data
              * @param resource \$resource
              */
-            return static function (mixed \$data, \$resource, array \$context): void {
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \$object_0 = \$data;
                 \\fwrite(\$resource, "{\"foo\":");
                 \\fwrite(\$resource, \json_encode(\$bar, \$context["json_encode_flags"] ?? 0));

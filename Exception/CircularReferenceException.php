@@ -14,6 +14,9 @@ namespace Symfony\Component\Marshaller\Exception;
  */
 final class CircularReferenceException extends UnexpectedValueException
 {
+    /**
+     * @param class-string $className
+     */
     public function __construct(string $className)
     {
         parent::__construct(sprintf('A circular reference has been detected on class "%s".', $className));

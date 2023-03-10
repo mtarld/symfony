@@ -14,22 +14,18 @@ use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-final class PropertyHook
+final class PropertyHook implements PropertyHookInterface
 {
     private readonly TypeGenericsHelper $typeGenericsHelper;
 
     /**
-     * @var array<string, string>
+     * @var array{value_type: array<string, string>, class_has_property: array<string, bool>}
      */
-    private static array $valueTypesCache = [];
-
-    /**
-     * @var array<string, bool>
-     */
-    private static array $classPropertiesCache = [];
+    private static array $cache = [
+        'value_type' => [],
+        'class_has_property' => [],
+    ];
 
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
@@ -37,25 +33,18 @@ final class PropertyHook
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    /**
-     * @param \ReflectionClass<object>                      $class
-     * @param callable(string, array<string, mixed>): mixed $value
-     * @param array<string, mixed>                          $context
-     *
-     * @return array{name?: string, value_provider?: callable(): mixed}
-     */
     public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array
     {
         $propertyClass = $class->getName();
         $propertyName = $context['_symfony']['property_name'][sprintf('%s[%s]', $propertyClass, $key)] ?? $key;
         $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
 
-        if (!self::$classPropertiesCache[$cacheKey] = self::$classPropertiesCache[$cacheKey] ?? $class->hasProperty($propertyName)) {
+        if (!self::$cache['class_has_property'][$cacheKey] = self::$cache['class_has_property'][$cacheKey] ?? $class->hasProperty($propertyName)) {
             return [];
         }
 
         if (!isset($context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal'])) {
-            $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
+            $valueType = self::$cache['value_type'][$cacheKey] = self::$cache['value_type'][$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
 
             if (isset($context['_symfony']['generic_parameter_types'][$propertyClass])) {
                 $valueType = $this->typeGenericsHelper->replaceGenericTypes($valueType, $context['_symfony']['generic_parameter_types'][$propertyClass]);
@@ -72,7 +61,7 @@ final class PropertyHook
         $propertyFormatter = \Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]['unmarshal']);
         $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
 
-        $valueType = self::$valueTypesCache[$cacheKey] = self::$valueTypesCache[$cacheKey] ?? $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
+        $valueType = self::$cache['value_type'][$cacheKey] = self::$cache['value_type'][$cacheKey] ?? $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);
 
         if (
             isset($context['_symfony']['generic_parameter_types'][$propertyClass])

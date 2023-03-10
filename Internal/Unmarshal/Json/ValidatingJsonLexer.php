@@ -20,14 +20,12 @@ use Symfony\Component\Marshaller\Internal\Unmarshal\LexerInterface;
 final class ValidatingJsonLexer implements LexerInterface
 {
     /**
-     * @var array<string, bool>
+     * @var array{valid_scalar: array<string, bool>, valid_key: array<string, bool>}
      */
-    private static array $validScalarCache = [];
-
-    /**
-     * @var array<string, bool>
-     */
-    private static array $validKeyCache = [];
+    private static array $cache = [
+        'valid_scalar' => [],
+        'valid_key' => [],
+    ];
 
     private const DICT_START = 1;
     private const DICT_END = 2;
@@ -157,17 +155,17 @@ final class ValidatingJsonLexer implements LexerInterface
                 continue;
             }
 
-            if (!isset(self::$validScalarCache[$token])) {
+            if (!isset(self::$cache['valid_scalar'][$token])) {
                 try {
                     json_decode($token, associative: true, flags: ($context['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
 
-                    self::$validScalarCache[$token] = true;
+                    self::$cache['valid_scalar'][$token] = true;
                 } catch (\JsonException) {
-                    self::$validScalarCache[$token] = false;
+                    self::$cache['valid_scalar'][$token] = false;
                 }
             }
 
-            if (!self::$validScalarCache[$token]) {
+            if (!self::$cache['valid_scalar'][$token]) {
                 throw new InvalidResourceException($resource);
             }
 
@@ -189,11 +187,11 @@ final class ValidatingJsonLexer implements LexerInterface
                         throw new InvalidResourceException($resource);
                     }
 
-                    if (!isset(self::$validKeyCache[$token])) {
-                        self::$validKeyCache[$token] = str_starts_with($token, '"') && str_ends_with($token, '"');
+                    if (!isset(self::$cache['valid_key'][$token])) {
+                        self::$cache['valid_key'][$token] = str_starts_with($token, '"') && str_ends_with($token, '"');
                     }
 
-                    if (!self::$validKeyCache[$token]) {
+                    if (!self::$cache['valid_key'][$token]) {
                         throw new InvalidResourceException($resource);
                     }
 

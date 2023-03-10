@@ -15,10 +15,8 @@ use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-final class PropertyHook
+final class PropertyHook implements PropertyHookInterface
 {
     private TypeGenericsHelper|null $typeGenericsHelper = null;
 
@@ -27,11 +25,6 @@ final class PropertyHook
     ) {
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return array{name: string, type: string, accessor: string, context: array<string, mixed>}
-     */
     public function __invoke(\ReflectionProperty $property, string $accessor, array $context): array
     {
         $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());

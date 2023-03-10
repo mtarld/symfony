@@ -20,7 +20,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
     public function extractFromProperty(\ReflectionProperty $property): string
     {
         if (null === $type = $property->getType()) {
-            throw MissingTypeException::createForProperty($property);
+            throw MissingTypeException::forProperty($property);
         }
 
         return $this->extractFromReflection($type, $property->getDeclaringClass());
@@ -32,7 +32,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
 
         if (null === $type = $function->getReturnType()) {
-            throw MissingTypeException::createForFunctionReturn($function);
+            throw MissingTypeException::forFunctionReturn($function);
         }
 
         return $this->extractFromReflection($type, $declaringClass);
@@ -46,7 +46,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
 
         if (null === $type = $parameter->getType()) {
-            throw MissingTypeException::createForFunctionParameter($parameter);
+            throw MissingTypeException::forFunctionParameter($parameter);
         }
 
         return $this->extractFromReflection($type, $declaringClass);

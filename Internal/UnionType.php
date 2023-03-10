@@ -30,7 +30,7 @@ final class UnionType implements \Stringable
     }
 
     /**
-     * @param callable(Type): mixed $callable
+     * @param callable(Type): bool $callable
      */
     public function atLeastOneTypeIs(callable $callable): bool
     {

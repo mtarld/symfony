@@ -11,8 +11,6 @@ namespace Symfony\Component\Marshaller\Context;
 
 class MarshalContext implements ContextInterface
 {
-    use ContextTrait;
-
     /**
      * @param array<string, mixed> $options
      */
@@ -21,29 +19,34 @@ class MarshalContext implements ContextInterface
     ) {
     }
 
-    public function withType(string $type): static
+    public function toArray(): array
     {
-        return $this->with('type', $type);
+        return $this->options;
     }
 
-    public function withJsonEncodeFlags(int $flags): static
+    public function withType(string $type): self
     {
-        return $this->with('json_encode_flags', $flags);
+        return new self(['type' => $type] + $this->options);
+    }
+
+    public function withJsonEncodeFlags(int $flags): self
+    {
+        return new self(['json_encode_flags' => $flags] + $this->options);
     }
 
     /**
      * @param array<string, string> $unionSelector
      */
-    public function withUnionSelector(array $unionSelector): static
+    public function withUnionSelector(array $unionSelector): self
     {
-        return $this->with('union_selector', $unionSelector);
+        return new self(['union_selector' => $unionSelector] + $this->options);
     }
 
     /**
      * @param callable(string, string, array<string, mixed>): array{type: string, accessor: string, context: array<string, mixed>} $hook
      * @param class-string|null                                                                                                    $className
      */
-    public function withObjectHook(callable $hook, string $className = null): static
+    public function withObjectHook(callable $hook, string $className = null): self
     {
         $hookName = $className ?? 'object';
 
@@ -54,18 +57,18 @@ class MarshalContext implements ContextInterface
      * @param callable(\ReflectionProperty, string, array<string, mixed>): array{name: string, type: string, accessor: string, context: array<string, mixed>} $hook
      * @param class-string|null                                                                                                                               $className
      */
-    public function withPropertyHook(callable $hook, string $className = null, string $propertyName = null): static
+    public function withPropertyHook(callable $hook, string $className = null, string $propertyName = null): self
     {
         $hookName = null !== $className && null !== $propertyName ? sprintf('%s::$%s', $className, $propertyName) : 'property';
 
         return $this->withHook($hookName, $hook);
     }
 
-    public function withHook(string $hookName, callable $hook): static
+    public function withHook(string $hookName, callable $hook): self
     {
         $hooks = $this->options['hooks'] ?? [];
         $hooks[$hookName] = $hook;
 
-        return $this->with('hooks', $hooks);
+        return new self(['hooks' => $hooks] + $this->options);
     }
 }

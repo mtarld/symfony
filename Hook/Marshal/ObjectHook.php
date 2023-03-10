@@ -15,10 +15,8 @@ use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @internal
  */
-final class ObjectHook
+final class ObjectHook implements ObjectHookInterface
 {
     private readonly TypeGenericsHelper $typeGenericsHelper;
 
@@ -28,11 +26,6 @@ final class ObjectHook
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return array{type: string, accessor: string, context: array<string, mixed>}
-     */
     public function __invoke(string $type, string $accessor, array $context): array
     {
         return [

@@ -47,7 +47,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
             return $this->decoratedTypeExtractor->extractFromProperty($property);
         }
 
-        return $this->phpstanTypeHelper->getType($typeNode, $property->getDeclaringClass()->getName(), $this->getTemplateNodes($property->getDeclaringClass()));
+        return $this->phpstanTypeHelper->getType($typeNode, $property->getDeclaringClass(), $this->getTemplateNodes($property->getDeclaringClass()));
     }
 
     public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string
@@ -61,7 +61,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
             throw new UnexpectedValueException(sprintf('"%s()" does not have any declaring class.', $function->getName()));
         }
 
-        return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
+        return $this->phpstanTypeHelper->getType($typeNode, $declaringClass, $this->getTemplateNodes($declaringClass));
     }
 
     public function extractFromFunctionParameter(\ReflectionParameter $parameter): string
@@ -77,7 +77,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
             throw new UnexpectedValueException(sprintf('"%s()" does not have any declaring class.', $function->getName()));
         }
 
-        return $this->phpstanTypeHelper->getType($typeNode, $declaringClass->getName(), $this->getTemplateNodes($declaringClass));
+        return $this->phpstanTypeHelper->getType($typeNode, $declaringClass, $this->getTemplateNodes($declaringClass));
     }
 
     private function getTypeNode(\ReflectionProperty|\ReflectionFunctionAbstract|\ReflectionParameter $reflection): ?TypeNode

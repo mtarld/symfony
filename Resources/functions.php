@@ -31,6 +31,7 @@ if (!\function_exists('marshal')) {
     function marshal(mixed $data, $resource, string $format, array $context = []): void
     {
         $type = $context['type'] ?? get_debug_type($data);
+
         $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_marshaller';
         $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, md5($type), $format);
 
@@ -39,8 +40,7 @@ if (!\function_exists('marshal')) {
                 mkdir($cacheDir, recursive: true);
             }
 
-            $template = marshal_generate($type, $format, $context);
-            file_put_contents($cacheFilename, $template);
+            file_put_contents($cacheFilename, marshal_generate($type, $format, $context));
         }
 
         (require $cacheFilename)($data, $resource, $context);
@@ -54,7 +54,6 @@ if (!\function_exists('marshal_generate')) {
     function marshal_generate(string $type, string $format, array $context = []): string
     {
         $compiler = new Compiler();
-        $type = TypeFactory::createFromString($type);
         $accessor = new VariableNode('data');
 
         $context = $context + [
@@ -62,14 +61,14 @@ if (!\function_exists('marshal_generate')) {
             'variable_counters' => [],
         ];
 
-        $compiler->compile(new PhpDocNode([sprintf('@param %s $data', (string) $type), '@param resource $resource']));
+        $compiler->compile(new PhpDocNode([sprintf('@param %s $data', $type), '@param resource $resource']));
         $phpDoc = $compiler->source();
         $compiler->reset();
 
-        $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => null, 'context' => 'array']);
+        $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
 
         $compiler->indent();
-        $bodyNodes = TemplateGeneratorFactory::create($format)->generate($type, $accessor, $context);
+        $bodyNodes = TemplateGeneratorFactory::create($format)->generate(TypeFactory::createFromString($type), $accessor, $context);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

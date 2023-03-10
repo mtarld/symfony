@@ -30,16 +30,14 @@ final class InstantiatorContextBuilder implements ContextBuilderInterface
 
     public function buildUnmarshalContext(array $context): array
     {
-        $instantiator = $context['instantiator'] ?? null;
-
-        if (\is_callable($instantiator)) {
+        if (\is_callable($instantiator = $context['instantiator'] ?? null)) {
             return $context;
         }
 
         $context['instantiator'] = match ($instantiator) {
-            null, 'lazy' => ($this->lazyObjectInstantiator)(...),
+            'lazy', null => ($this->lazyObjectInstantiator)(...),
             'eager' => null,
-            default => throw new InvalidArgumentException('Context "instantiator" should be "lazy", "eager", or a valid callable.'),
+            default => throw new InvalidArgumentException('Context value "instantiator" must be "lazy", "eager", or a valid callable.'),
         };
 
         return $context;

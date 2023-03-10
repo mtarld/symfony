@@ -14,6 +14,9 @@ namespace Symfony\Component\Marshaller\Exception;
  */
 final class InvalidConstructorArgumentException extends InvalidArgumentException
 {
+    /**
+     * @param class-string $className
+     */
     public function __construct(string $parameter, string $className)
     {
         parent::__construct(sprintf('Parameter "%s" of "%s" constructor must either have a default value or be nullable.', $parameter, $className));

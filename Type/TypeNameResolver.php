@@ -33,21 +33,19 @@ final class TypeNameResolver
     }
 
     /**
-     * @param class-string $className
-     * @param list<string> $templateNames
+     * @param \ReflectionClass<object> $class
+     * @param list<string>             $templateNames
      */
-    public static function createForClass(string $className, array $templateNames): self
+    public static function createForClass(\ReflectionClass $class, array $templateNames): self
     {
-        $reflection = new \ReflectionClass($className);
-        $context = (new ContextFactory())->createFromReflector($reflection);
-
+        $context = (new ContextFactory())->createFromReflector($class);
         $namespace = $context->getNamespace();
 
         /** @var array<string, class-string> $uses */
         $uses = $context->getNamespaceAliases();
 
         /** @var class-string $className */
-        $className = str_replace($namespace.'\\', '', $reflection->getName());
+        $className = str_replace($namespace.'\\', '', $class->getName());
 
         return new self($className, $namespace, $uses, $templateNames);
     }
@@ -65,14 +63,14 @@ final class TypeNameResolver
      */
     public function resolveParentClass(): string
     {
-        $rootClass = $this->resolveRootClass();
+        $rootClassName = $this->resolveRootClass();
 
-        if (false === $parentReflection = (new \ReflectionClass($rootClass))->getParentClass()) {
-            throw new LogicException(sprintf('"%s" class do not extend any class.', $rootClass));
+        if (false === $parentClass = (new \ReflectionClass($rootClassName))->getParentClass()) {
+            throw new LogicException(sprintf('"%s" class do not extend any class.', $rootClassName));
         }
 
         /** @var class-string $parentClassName */
-        $parentClassName = str_replace($this->namespace.'\\', '', $parentReflection->getName());
+        $parentClassName = str_replace($this->namespace.'\\', '', $parentClass->getName());
 
         return $this->resolve($parentClassName);
     }

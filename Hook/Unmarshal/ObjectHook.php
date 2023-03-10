@@ -18,12 +18,14 @@ use Symfony\Component\Marshaller\Type\TypeGenericsHelper;
  *
  * @internal
  */
-final class ObjectHook
+final class ObjectHook implements ObjectHookInterface
 {
     /**
-     * @var array<string, \ReflectionClass<object>>
+     * @var array{class_reflection: array<string, \ReflectionClass<object>>}
      */
-    private static array $classReflectionsCache = [];
+    private static array $cache = [
+        'class_reflection' => [],
+    ];
 
     private readonly TypeGenericsHelper $typeGenericsHelper;
 
@@ -33,11 +35,6 @@ final class ObjectHook
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return array{type: string, context: array<string, mixed>}
-     */
     public function __invoke(string $type, array $context): array
     {
         return [
@@ -62,7 +59,11 @@ final class ObjectHook
             return $context;
         }
 
-        $templates = $this->typeExtractor->extractTemplateFromClass(self::$classReflectionsCache[$type] = self::$classReflectionsCache[$type] ?? new \ReflectionClass($genericType));
+        if (!isset(self::$cache['class_reflection'][$type])) {
+            self::$cache['class_reflection'][$type] = self::$cache['class_reflection'][$type] ?? new \ReflectionClass($genericType);
+        }
+
+        $templates = $this->typeExtractor->extractTemplateFromClass(self::$cache['class_reflection'][$type]);
 
         if (\count($templates) !== \count($genericParameters)) {
             throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));

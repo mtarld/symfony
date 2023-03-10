@@ -11,8 +11,6 @@ namespace Symfony\Component\Marshaller\Context;
 
 class UnmarshalContext implements ContextInterface
 {
-    use ContextTrait;
-
     /**
      * @param array<string, mixed> $options
      */
@@ -21,29 +19,34 @@ class UnmarshalContext implements ContextInterface
     ) {
     }
 
-    public function withCollectErrors(bool $collectErrors = true): static
+    public function toArray(): array
     {
-        return $this->with('collect_errors', $collectErrors);
+        return $this->options;
     }
 
-    public function withJsonDecodeFlags(int $flags): static
+    public function withCollectErrors(bool $collectErrors = true): self
     {
-        return $this->with('json_decode_flags', $flags);
+        return new self(['collect_errors' => $collectErrors] + $this->options);
+    }
+
+    public function withJsonDecodeFlags(int $flags): self
+    {
+        return new self(['json_decode_flags' => $flags] + $this->options);
     }
 
     /**
      * @param array<string, string> $unionSelector
      */
-    public function withUnionSelector(array $unionSelector): static
+    public function withUnionSelector(array $unionSelector): self
     {
-        return $this->with('union_selector', $unionSelector);
+        return new self(['union_selector' => $unionSelector] + $this->options);
     }
 
     /**
      * @param callable(string, array<string, mixed>): array{type: string, context: array<string, mixed>} $hook
      * @param class-string|null                                                                          $className
      */
-    public function withObjectHook(callable $hook, string $className = null): static
+    public function withObjectHook(callable $hook, string $className = null): self
     {
         $hookName = $className ?? 'object';
 
@@ -54,39 +57,39 @@ class UnmarshalContext implements ContextInterface
      * @param callable(\ReflectionClass<object>, string, callable(): mixed, array<string, mixed>): array{name?: string, value?: callable(): mixed, context?: array<string, mixed>} $hook
      * @param class-string|null                                                                                                                                                    $className
      */
-    public function withPropertyHook(callable $hook, string $className = null, string $propertyName = null): static
+    public function withPropertyHook(callable $hook, string $className = null, string $propertyName = null): self
     {
         $hookName = null !== $className && null !== $propertyName ? sprintf('%s::$%s', $className, $propertyName) : 'property';
 
         return $this->withHook($hookName, $hook);
     }
 
-    public function withHook(string $hookName, callable $hook): static
+    public function withHook(string $hookName, callable $hook): self
     {
         $hooks = $this->options['hooks'] ?? [];
         $hooks[$hookName] = $hook;
 
-        return $this->with('hooks', $hooks);
+        return new self(['hooks' => $hooks] + $this->options);
     }
 
-    public function withEagerReading(): static
+    public function withEagerReading(): self
     {
-        return $this->with('lazy_reading', false);
+        return new self(['lazy_reading' => false] + $this->options);
     }
 
-    public function withLazyReading(): static
+    public function withLazyReading(): self
     {
-        return $this->with('lazy_reading', true);
+        return new self(['lazy_reading' => true] + $this->options);
     }
 
-    public function withEagerInstantiation(): static
+    public function withEagerInstantiation(): self
     {
-        return $this->with('instantiator', 'eager');
+        return new self(['instantiator' => 'eager'] + $this->options);
     }
 
-    public function withLazyInstantiation(): static
+    public function withLazyInstantiation(): self
     {
-        return $this->with('instantiator', 'lazy');
+        return new self(['instantiator' => 'lazy'] + $this->options);
     }
 
     /**
@@ -94,8 +97,8 @@ class UnmarshalContext implements ContextInterface
      *
      * @param callable(\ReflectionClass<T>, array<string, mixed>, array<string, mixed>): T $instantiator
      */
-    public function withCustomInstantiator(callable $instantiator): static
+    public function withCustomInstantiator(callable $instantiator): self
     {
-        return $this->with('instantiator', $instantiator);
+        return new self(['instantiator' => $instantiator] + $this->options);
     }
 }

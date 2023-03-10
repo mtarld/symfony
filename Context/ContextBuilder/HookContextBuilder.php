@@ -32,12 +32,12 @@ final class HookContextBuilder implements ContextBuilderInterface
             return $context;
         }
 
-        return $this->addHooks($this->marshalHooks, $context);
+        return $this->addHooksToContext($this->marshalHooks, $context);
     }
 
     public function buildUnmarshalContext(array $context): array
     {
-        return $this->addHooks($this->unmarshalHooks, $context);
+        return $this->addHooksToContext($this->unmarshalHooks, $context);
     }
 
     /**
@@ -46,7 +46,7 @@ final class HookContextBuilder implements ContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    private function addHooks(iterable $hooks, array $context): array
+    private function addHooksToContext(iterable $hooks, array $context): array
     {
         foreach ($hooks as $hookName => $hook) {
             if (!isset($context['hooks'][$hookName])) {

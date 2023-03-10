@@ -25,7 +25,7 @@ final class MissingTypeExceptionTest extends TestCase
 
         $this->assertSame(
             'Type of "class::$property" property has not been defined.',
-            MissingTypeException::createForProperty($property)->getMessage(),
+            MissingTypeException::forProperty($property)->getMessage(),
         );
     }
 }

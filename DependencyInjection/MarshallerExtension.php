@@ -81,19 +81,19 @@ final class MarshallerExtension extends Extension
                 new TaggedIteratorArgument('marshaller.hook.marshal', 'name'),
                 new TaggedIteratorArgument('marshaller.hook.unmarshal', 'name'),
             ])
-            ->addTag('marshaller.context_builder');
+            ->addTag('marshaller.context_builder', ['priority' => -1024]);
 
         $container->register('marshaller.context_builder.instantiator', InstantiatorContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.instantiator.lazy'),
             ])
-            ->addTag('marshaller.context_builder');
+            ->addTag('marshaller.context_builder', ['priority' => -1024]);
 
         $container->register('marshaller.context_builder.name_attribute', NameAttributeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.marshallable_resolver'),
             ])
-            ->addTag('marshaller.context_builder');
+            ->addTag('marshaller.context_builder', ['priority' => -1024]);
 
         $container->register('marshaller.context_builder.name_attribute.cached', CachedContextBuilder::class)
             ->setDecoratedService('marshaller.context_builder.name_attribute')
@@ -107,7 +107,6 @@ final class MarshallerExtension extends Extension
         $container->register('marshaller.context_builder.formatter_attribute', FormatterAttributeContextBuilder::class)
             ->setArguments([
                 new Reference('marshaller.marshallable_resolver'),
-                new Reference('cache.marshaller'),
             ])
             ->addTag('marshaller.context_builder');
 

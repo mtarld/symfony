@@ -29,14 +29,20 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
             return $context;
         }
 
-        foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addPropertyFormatters($className, $context);
-        }
-
-        return $context;
+        return $this->addPropertyFormattersToContext($context);
     }
 
     public function buildUnmarshalContext(array $context): array
+    {
+        return $this->addPropertyFormattersToContext($context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>
+     */
+    private function addPropertyFormattersToContext(array $context): array
     {
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
             $context = $this->addPropertyFormatters($className, $context);
@@ -63,6 +69,7 @@ final class FormatterAttributeContextBuilder implements ContextBuilderInterface
 
                 /** @var Formatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
+
                 if (null !== $attributeInstance->marshal) {
                     $context['_symfony']['property_formatter'][$propertyIdentifier]['marshal'] = $attributeInstance->marshal;
                 }

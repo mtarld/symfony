@@ -30,14 +30,14 @@ use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 final class PhpstanTypeHelper
 {
     /**
-     * @param class-string               $class
+     * @param \ReflectionClass<object>   $declaringClass
      * @param list<TemplateTagValueNode> $templateNodes
      */
-    public function getType(TypeNode $typeNode, string $class, array $templateNodes): string
+    public function getType(TypeNode $typeNode, \ReflectionClass $declaringClass, array $templateNodes): string
     {
         $templateNodeNames = array_map(fn (TemplateTagValueNode $t): string => $t->name, $templateNodes);
 
-        return $this->extractType($typeNode, TypeNameResolver::createForClass($class, $templateNodeNames));
+        return $this->extractType($typeNode, TypeNameResolver::createForClass($declaringClass, $templateNodeNames));
     }
 
     private function extractType(TypeNode $node, TypeNameResolver $nameResolver): string

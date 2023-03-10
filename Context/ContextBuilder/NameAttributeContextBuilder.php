@@ -29,14 +29,20 @@ final class NameAttributeContextBuilder implements ContextBuilderInterface
             return $context;
         }
 
-        foreach ($this->marshallableResolver->resolve() as $className => $_) {
-            $context = $this->addPropertyNames($className, $context);
-        }
-
-        return $context;
+        return $this->addPropertyNamesToContext($context);
     }
 
     public function buildUnmarshalContext(array $context): array
+    {
+        return $this->addPropertyNamesToContext($context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>
+     */
+    private function addPropertyNamesToContext(array $context): array
     {
         foreach ($this->marshallableResolver->resolve() as $className => $_) {
             $context = $this->addPropertyNames($className, $context);

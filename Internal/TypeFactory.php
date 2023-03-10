@@ -14,6 +14,8 @@ use Symfony\Component\Marshaller\Exception\UnsupportedTypeException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @internal
  */
 abstract class TypeFactory
 {

@@ -17,9 +17,11 @@ use Symfony\Component\VarExporter\ProxyHelper;
 final class LazyInstantiator implements InstantiatorInterface
 {
     /**
-     * @var array<string, class-string>
+     * @var array{lazy_class_name: array<string, class-string>}
      */
-    private static array $lazyClassesCache = [];
+    private static array $cache = [
+        'lazy_class_name' => [],
+    ];
 
     /**
      * @var array<string, bool>
@@ -33,13 +35,13 @@ final class LazyInstantiator implements InstantiatorInterface
 
     public function __invoke(\ReflectionClass $class, array $propertiesValues, array $context): object
     {
-        if (!isset(self::$lazyClassesCache[$className = $class->getName()])) {
+        if (!isset(self::$cache['lazy_class_name'][$className = $class->getName()])) {
             /** @var class-string $lazyClassName */
             $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
-            self::$lazyClassesCache[$className] = $lazyClassName;
+            self::$cache['lazy_class_name'][$className] = $lazyClassName;
         }
 
-        if (!isset(self::$lazyClassesLoaded[$className]) && !class_exists(self::$lazyClassesCache[$className])) {
+        if (!isset(self::$lazyClassesLoaded[$className]) && !class_exists(self::$cache['lazy_class_name'][$className])) {
             if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($className)))) {
                 if (!file_exists($this->cacheDir)) {
                     mkdir($this->cacheDir, recursive: true);
@@ -54,7 +56,7 @@ final class LazyInstantiator implements InstantiatorInterface
             self::$lazyClassesLoaded[$className] = true;
         }
 
-        $lazyGhost = self::$lazyClassesCache[$className]::createLazyGhost($propertiesValues);
+        $lazyGhost = self::$cache['lazy_class_name'][$className]::createLazyGhost($propertiesValues);
 
         return $lazyGhost;
     }

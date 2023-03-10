@@ -19,12 +19,12 @@ final class MissingTypeException extends InvalidArgumentException
         parent::__construct(sprintf('Type of "%s" %s has not been defined.', $path, $type));
     }
 
-    public static function createForProperty(\ReflectionProperty $property): self
+    public static function forProperty(\ReflectionProperty $property): self
     {
         return new self(sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName()), 'property');
     }
 
-    public static function createForFunctionReturn(\ReflectionFunctionAbstract $function): self
+    public static function forFunctionReturn(\ReflectionFunctionAbstract $function): self
     {
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
@@ -36,7 +36,7 @@ final class MissingTypeException extends InvalidArgumentException
         return new self($path, 'return');
     }
 
-    public static function createForFunctionParameter(\ReflectionParameter $parameter): self
+    public static function forFunctionParameter(\ReflectionParameter $parameter): self
     {
         $function = $parameter->getDeclaringFunction();
 
