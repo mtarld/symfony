@@ -36,6 +36,9 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\Compiler\RegisterReverseContainerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Dotenv\Dotenv;
+use Symfony\Component\Encoder\DependencyInjection\EncodablePass;
+use Symfony\Component\Encoder\DependencyInjection\EncoderPass;
+use Symfony\Component\Encoder\DependencyInjection\RuntimeServicesPass;
 use Symfony\Component\ErrorHandler\ErrorHandler;
 use Symfony\Component\EventDispatcher\DependencyInjection\RegisterListenersPass;
 use Symfony\Component\Form\DependencyInjection\FormPass;
@@ -51,6 +54,7 @@ use Symfony\Component\HttpKernel\DependencyInjection\RegisterLocaleAwareServices
 use Symfony\Component\HttpKernel\DependencyInjection\RemoveEmptyControllerArgumentLocatorsPass;
 use Symfony\Component\HttpKernel\DependencyInjection\ResettableServicePass;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Json\DependencyInjection\JsonPass;
 use Symfony\Component\Messenger\DependencyInjection\MessengerPass;
 use Symfony\Component\Mime\DependencyInjection\AddMimeTypeGuesserPass;
 use Symfony\Component\PropertyInfo\DependencyInjection\PropertyInfoPass;
@@ -150,6 +154,12 @@ class FrameworkBundle extends Bundle
         $this->addCompilerPassIfExists($container, TranslationDumperPass::class);
         $container->addCompilerPass(new FragmentRendererPass());
         $this->addCompilerPassIfExists($container, SerializerPass::class);
+        // must be registered before the EncoderPass, JsonPass, and RuntimeServicesPass
+        $this->addCompilerPassIfExists($container, EncodablePass::class, priority: 16);
+        // must be registered before the EncoderPass, and JsonPass
+        $this->addCompilerPassIfExists($container, RuntimeServicesPass::class, priority: 8);
+        $this->addCompilerPassIfExists($container, EncoderPass::class);
+        $this->addCompilerPassIfExists($container, JsonPass::class);
         $this->addCompilerPassIfExists($container, PropertyInfoPass::class);
         $container->addCompilerPass(new ControllerArgumentValueResolverPass());
         $container->addCompilerPass(new CachePoolPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 32);

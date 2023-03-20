@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.1
+---
+
+* Register Json and Encoder services
+
 7.0
 ---
 

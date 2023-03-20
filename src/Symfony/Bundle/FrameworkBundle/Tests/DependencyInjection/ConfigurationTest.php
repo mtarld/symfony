@@ -780,6 +780,10 @@ class ConfigurationTest extends TestCase
             'remote-event' => [
                 'enabled' => false,
             ],
+            'encoder' => [
+                'enabled' => false,
+                'encodable_paths' => [],
+            ],
         ];
     }
 }

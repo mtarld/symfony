@@ -95,6 +95,7 @@ use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\HttpKernel\Log\DebugLoggerConfigurator;
+use Symfony\Component\Json\JsonEncoder;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Lock\PersistingStoreInterface;
@@ -386,6 +387,10 @@ class FrameworkExtension extends Extension
                 ->clearTag('kernel.event_subscriber');
 
             $container->removeDefinition('console.command.serializer_debug');
+        }
+
+        if ($this->readConfigEnabled('encoder', $container, $config['encoder'])) {
+            $this->registerEncoderConfiguration($config['encoder'], $container, $loader);
         }
 
         if ($propertyInfoEnabled) {
@@ -1921,6 +1926,28 @@ class FrameworkExtension extends Extension
         if (isset($config['default_context']) && $config['default_context']) {
             $container->setParameter('serializer.default_context', $config['default_context']);
         }
+    }
+
+    private function registerEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    {
+        $loader->load('encoder.php');
+
+        $container->setParameter('encoder.encodable_paths', $config['encodable_paths']);
+
+        foreach ($config['encodable_paths'] as $path) {
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $container->fileExists($path, '/\.php$/');
+        }
+
+        if (class_exists(JsonEncoder::class)) {
+            $loader->load('json.php');
+        }
+
+        // temporary as TypeInfo component is not created yet
+        $loader->load('type_info.php');
     }
 
     private function registerPropertyInfoConfiguration(ContainerBuilder $container, PhpFileLoader $loader): void
