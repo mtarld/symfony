@@ -23,6 +23,7 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\RateLimiter\Policy\TokenBucketLimiter;
@@ -738,6 +739,14 @@ class ConfigurationTest extends TestCase
             ],
             'remote-event' => [
                 'enabled' => false,
+            ],
+            'ser_des' => [
+                'enabled' => !class_exists(FullStack::class) && class_exists(Serializer::class),
+                'serializable_paths' => [],
+                'template_warm_up' => [
+                    'nullable_data' => false,
+                    'formats' => [],
+                ],
             ],
         ];
     }
