@@ -52,6 +52,9 @@ use Symfony\Component\HttpKernel\DependencyInjection\RegisterLocaleAwareServices
 use Symfony\Component\HttpKernel\DependencyInjection\RemoveEmptyControllerArgumentLocatorsPass;
 use Symfony\Component\HttpKernel\DependencyInjection\ResettableServicePass;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\JsonEncoder\DependencyInjection\JsonEncodablePass;
+use Symfony\Component\JsonEncoder\DependencyInjection\JsonEncoderPass;
+use Symfony\Component\JsonEncoder\DependencyInjection\RuntimeServicesPass;
 use Symfony\Component\Messenger\DependencyInjection\MessengerPass;
 use Symfony\Component\Mime\DependencyInjection\AddMimeTypeGuesserPass;
 use Symfony\Component\PropertyInfo\DependencyInjection\PropertyInfoPass;
@@ -151,6 +154,11 @@ class FrameworkBundle extends Bundle
         $this->addCompilerPassIfExists($container, TranslationDumperPass::class);
         $container->addCompilerPass(new FragmentRendererPass());
         $this->addCompilerPassIfExists($container, SerializerPass::class);
+        // must be registered before the JsonEncoderPass, and RuntimeServicesPass
+        $this->addCompilerPassIfExists($container, JsonEncodablePass::class, priority: 16);
+        // must be registered before the JsonEncoderPass
+        $this->addCompilerPassIfExists($container, RuntimeServicesPass::class, priority: 8);
+        $this->addCompilerPassIfExists($container, JsonEncoderPass::class);
         $this->addCompilerPassIfExists($container, PropertyInfoPass::class);
         $container->addCompilerPass(new ControllerArgumentValueResolverPass());
         $container->addCompilerPass(new CachePoolPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 32);

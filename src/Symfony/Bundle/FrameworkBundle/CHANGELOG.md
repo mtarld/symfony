@@ -6,6 +6,7 @@ CHANGELOG
 
  * Move the Router `cache_dir` to `kernel.build_dir`
  * Deprecate the `router.cache_dir` config option
+ * Register JsonEncoder services
 
 7.0
 ---

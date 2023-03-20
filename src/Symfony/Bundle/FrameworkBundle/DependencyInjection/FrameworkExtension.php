@@ -95,6 +95,7 @@ use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\HttpKernel\Log\DebugLoggerConfigurator;
+use Symfony\Component\JsonEncoder\JsonEncoder;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Lock\PersistingStoreInterface;
@@ -386,6 +387,10 @@ class FrameworkExtension extends Extension
                 ->clearTag('kernel.event_subscriber');
 
             $container->removeDefinition('console.command.serializer_debug');
+        }
+
+        if ($this->readConfigEnabled('json_encoder', $container, $config['json_encoder'])) {
+            $this->registerJsonEncoderConfiguration($config['json_encoder'], $container, $loader);
         }
 
         if ($propertyInfoEnabled) {
@@ -1923,6 +1928,26 @@ class FrameworkExtension extends Extension
             $arguments = $container->getDefinition('serializer.normalizer.object')->getArguments();
             $context = ($arguments[6] ?? $defaultContext) + ['max_depth_handler' => new Reference($config['max_depth_handler'])];
             $container->getDefinition('serializer.normalizer.object')->setArgument(6, $context);
+        }
+    }
+
+    private function registerJsonEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    {
+        if (!class_exists(JsonEncoder::class)) {
+            throw new LogicException('JsonEncoder support cannot be enabled as the JsonEncoder component is not installed. Try running "composer require symfony/json-encoder".');
+        }
+
+        $loader->load('json_encoder.php');
+        $loader->load('type_info.php'); // temporary as TypeInfo component is not created yet
+
+        $container->setParameter('json_encoder.encodable_paths', $config['encodable_paths']);
+
+        foreach ($config['encodable_paths'] as $path) {
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $container->fileExists($path, '/\.php$/');
         }
     }
 

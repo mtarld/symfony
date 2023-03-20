@@ -2296,6 +2296,12 @@ abstract class FrameworkExtensionTestCase extends TestCase
         );
     }
 
+    public function testJsonEncoderEnabled()
+    {
+        $container = $this->createContainerFromFile('json_encoder');
+        $this->assertTrue($container->has('json_encoder.encoder'));
+    }
+
     protected function createContainer(array $data = [])
     {
         return new ContainerBuilder(new EnvPlaceholderParameterBag(array_merge([
