@@ -56,6 +56,7 @@ use Symfony\Component\HttpKernel\DependencyInjection\RegisterLocaleAwareServices
 use Symfony\Component\HttpKernel\DependencyInjection\RemoveEmptyControllerArgumentLocatorsPass;
 use Symfony\Component\HttpKernel\DependencyInjection\ResettableServicePass;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Marshaller\DependencyInjection\MarshallerPass;
 use Symfony\Component\Messenger\DependencyInjection\MessengerPass;
 use Symfony\Component\Mime\DependencyInjection\AddMimeTypeGuesserPass;
 use Symfony\Component\PropertyInfo\DependencyInjection\PropertyInfoPass;
@@ -173,6 +174,7 @@ class FrameworkBundle extends Bundle
         $container->addCompilerPass(new RegisterReverseContainerPass(true));
         $container->addCompilerPass(new RegisterReverseContainerPass(false), PassConfig::TYPE_AFTER_REMOVING);
         $container->addCompilerPass(new RemoveUnusedSessionMarshallingHandlerPass());
+        $this->addCompilerPassIfExists($container, MarshallerPass::class);
 
         if ($container->getParameter('kernel.debug')) {
             $container->addCompilerPass(new EnableLoggerDebugModePass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, -33);

@@ -83,6 +83,7 @@
         "symfony/ldap": "self.version",
         "symfony/lock": "self.version",
         "symfony/mailer": "self.version",
+        "symfony/marshaller": "self.version",
         "symfony/messenger": "self.version",
         "symfony/mime": "self.version",
         "symfony/monolog-bridge": "self.version",
@@ -180,7 +181,8 @@
             "Symfony\\Component\\": "src/Symfony/Component/"
         },
         "files": [
-            "src/Symfony/Component/String/Resources/functions.php"
+            "src/Symfony/Component/String/Resources/functions.php",
+            "src/Symfony/Component/Marshaller/Resources/functions.php"
         ],
         "classmap": [
             "src/Symfony/Component/Cache/Traits/ValueWrapper.php"

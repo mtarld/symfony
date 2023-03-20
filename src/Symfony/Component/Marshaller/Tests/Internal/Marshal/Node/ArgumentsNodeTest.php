@@ -1,0 +1,28 @@
+<?php
+
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Symfony\Component\Marshaller\Tests\Internal\Marshal\Node;
+
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Marshaller\Internal\Marshal\Compiler;
+use Symfony\Component\Marshaller\Internal\Marshal\Node\ArgumentsNode;
+
+class ArgumentsNodeTest extends TestCase
+{
+    public function testCompile()
+    {
+        (new ArgumentsNode(['foo' => '?int']))->compile($compiler = new Compiler());
+        $this->assertSame('?int $foo', $compiler->source());
+
+        (new ArgumentsNode(['foo' => 'string', 'bar' => null]))->compile($compiler = new Compiler());
+        $this->assertSame('string $foo, $bar', $compiler->source());
+    }
+}

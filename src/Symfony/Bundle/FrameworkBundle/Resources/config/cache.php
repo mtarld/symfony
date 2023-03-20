@@ -76,6 +76,11 @@ return static function (ContainerConfigurator $container) {
             ->private()
             ->tag('cache.pool')
 
+        ->set('cache.marshaller')
+            ->parent('cache.system')
+            ->private()
+            ->tag('cache.pool')
+
         ->set('cache.adapter.system', AdapterInterface::class)
             ->abstract()
             ->factory([AbstractAdapter::class, 'createSystemCache'])

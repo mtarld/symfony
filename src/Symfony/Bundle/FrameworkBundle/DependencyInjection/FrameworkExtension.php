@@ -15,6 +15,8 @@ use Composer\InstalledVersions;
 use Doctrine\Common\Annotations\Reader;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
+use Symfony\Component\Marshaller\Context\ContextBuilderInterface;
+use Symfony\Component\Marshaller\MarshallerInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use PhpParser\Parser;
@@ -37,8 +39,8 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\ChainAdapter;
 use Symfony\Component\Cache\Adapter\TagAwareAdapter;
 use Symfony\Component\Cache\DependencyInjection\CachePoolPass;
-use Symfony\Component\Cache\Marshaller\DefaultMarshaller;
-use Symfony\Component\Cache\Marshaller\MarshallerInterface;
+use Symfony\Component\Cache\Marshaller\DefaultMarshaller as CacheDefaultMarshaller;
+use Symfony\Component\Cache\Marshaller\MarshallerInterface as CacheMarshallerInterface;
 use Symfony\Component\Cache\ResettableInterface;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -597,6 +599,10 @@ class FrameworkExtension extends Extension
             $this->registerHtmlSanitizerConfiguration($config['html_sanitizer'], $container, $loader);
         }
 
+        if ($this->readConfigEnabled('marshaller', $container, $config['marshaller'])) {
+            $this->registerMarshallerConfiguration($config['marshaller'], $container, $loader);
+        }
+
         $this->addAnnotatedClassesToCompile([
             '**\\Controller\\',
             '**\\Entity\\',
@@ -652,7 +658,7 @@ class FrameworkExtension extends Extension
         $container->registerForAutoconfiguration(ResetInterface::class)
             ->addTag('kernel.reset', ['method' => 'reset']);
 
-        if (!interface_exists(MarshallerInterface::class)) {
+        if (!interface_exists(CacheMarshallerInterface::class)) {
             $container->registerForAutoconfiguration(ResettableInterface::class)
                 ->addTag('kernel.reset', ['method' => 'reset']);
         }
@@ -689,6 +695,8 @@ class FrameworkExtension extends Extension
             ->addTag('mime.mime_type_guesser');
         $container->registerForAutoconfiguration(LoggerAwareInterface::class)
             ->addMethodCall('setLogger', [new Reference('logger')]);
+        $container->registerForAutoconfiguration(ContextBuilderInterface::class)
+            ->addTag('marshaller.context_builder');
 
         $container->registerAttributeForAutoconfiguration(AsEventListener::class, static function (ChildDefinition $definition, AsEventListener $attribute, \ReflectionClass|\ReflectionMethod $reflector) {
             $tagAttributes = get_object_vars($attribute);
@@ -2265,7 +2273,7 @@ class FrameworkExtension extends Extension
 
     private function registerCacheConfiguration(array $config, ContainerBuilder $container): void
     {
-        if (!class_exists(DefaultMarshaller::class)) {
+        if (!class_exists(CacheDefaultMarshaller::class)) {
             $container->removeDefinition('cache.default_marshaller');
         }
 
@@ -2990,6 +2998,19 @@ class FrameworkExtension extends Extension
                 $container->registerAliasForArgument($sanitizerId, HtmlSanitizerInterface::class, $sanitizerName);
             }
         }
+    }
+
+    private function registerMarshallerConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    {
+        if (!interface_exists(MarshallerInterface::class)) {
+            throw new LogicException('Marshaller support cannot be enabled as the Marshaller component is not installed. Try running "composer require symfony/marshaller');
+        }
+
+        $container->setParameter('marshaller.marshallable_paths', $config['marshallable_paths']);
+        $container->setParameter('marshaller.template_warm_up.formats', $config['template_warm_up']['formats']);
+        $container->setParameter('marshaller.template_warm_up.nullable_data', $config['template_warm_up']['nullable_data']);
+
+        $loader->load('marshaller.php');
     }
 
     private function resolveTrustedHeaders(array $headers): int

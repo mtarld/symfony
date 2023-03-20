@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
@@ -185,6 +186,7 @@ class Configuration implements ConfigurationInterface
         $this->addHtmlSanitizerSection($rootNode, $enableIfStandalone);
         $this->addWebhookSection($rootNode, $enableIfStandalone);
         $this->addRemoteEventSection($rootNode, $enableIfStandalone);
+        $this->addMarshallerSection($rootNode, $enableIfStandalone);
 
         return $treeBuilder;
     }
@@ -2380,6 +2382,41 @@ class Configuration implements ConfigurationInterface
                                         ->info('The maximum length allowed for the sanitized input.')
                                         ->defaultValue(0)
                                     ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addMarshallerSection(ArrayNodeDefinition $rootNode, callable $enableIfStandalone): void
+    {
+        $rootNode
+            ->children()
+                ->arrayNode('marshaller')
+                    ->info('Marshaller configuration')
+                    ->{$enableIfStandalone('symfony/marshaller', Marshaller::class)}()
+                    ->fixXmlConfig('marshallable_path')
+                    ->children()
+                        ->arrayNode('marshallable_paths')
+                            ->info('Defines where the marshaller should look to find marshallable classes.')
+                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
+                            ->prototype('scalar')->end()
+                        ->end()
+                        ->arrayNode('template_warm_up')
+                            ->addDefaultsIfNotSet()
+                            ->fixXmlConfig('format')
+                            ->children()
+                                ->arrayNode('formats')
+                                    ->info('Defines the formats that will be handled.')
+                                    ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
+                                    ->prototype('scalar')->end()
+                                ->end()
+                                ->booleanNode('nullable_data')
+                                    ->info('Defines if nullable data should be handled by default.')
+                                    ->defaultFalse()
                                 ->end()
                             ->end()
                         ->end()

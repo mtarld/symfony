@@ -23,6 +23,7 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Marshaller\Marshaller;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\RateLimiter\Policy\TokenBucketLimiter;
@@ -700,6 +701,14 @@ class ConfigurationTest extends TestCase
             ],
             'remote-event' => [
                 'enabled' => false,
+            ],
+            'marshaller' => [
+                'enabled' => !class_exists(FullStack::class) && class_exists(Marshaller::class),
+                'marshallable_paths' => [],
+                'template_warm_up' => [
+                    'nullable_data' => false,
+                    'formats' => [],
+                ],
             ],
         ];
     }
