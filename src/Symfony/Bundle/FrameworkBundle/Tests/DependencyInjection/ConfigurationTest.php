@@ -612,6 +612,11 @@ class ConfigurationTest extends TestCase
                 'enabled' => true,
                 'enable_attributes' => !class_exists(FullStack::class),
                 'mapping' => ['paths' => []],
+                'serializable_paths' => [],
+                'formats' => ['json'],
+                'max_variants' => 32,
+                'lazy_deserialization' => false,
+                'lazy_instantiation' => false,
             ],
             'property_access' => [
                 'enabled' => true,
