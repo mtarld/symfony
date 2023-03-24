@@ -14,7 +14,7 @@ namespace Symfony\Component\SerDes\Context;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 interface ContextBuilderInterface
 {

@@ -18,7 +18,7 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 final class NameAttributeContextBuilder implements ContextBuilderInterface
 {
