@@ -11,7 +11,8 @@
 
 namespace Symfony\Component\SerDes;
 
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Context\ContextInterface;
 use Symfony\Component\SerDes\Stream\StreamInterface;
 
@@ -23,10 +24,12 @@ use Symfony\Component\SerDes\Stream\StreamInterface;
 final class Serializer implements SerializerInterface
 {
     /**
-     * @param iterable<ContextBuilderInterface> $contextBuilders
+     * @param iterable<SerializeContextBuilderInterface>   $serializeContextBuilders
+     * @param iterable<DeserializeContextBuilderInterface> $deserializeContextBuilders
      */
     public function __construct(
-        private readonly iterable $contextBuilders,
+        private readonly iterable $serializeContextBuilders,
+        private readonly iterable $deserializeContextBuilders,
         private readonly string $templateCacheDir,
     ) {
     }
@@ -43,11 +46,10 @@ final class Serializer implements SerializerInterface
 
         $context['type'] = $context['type'] ?? get_debug_type($data);
         $context['cache_dir'] = $context['cache_dir'] ?? $this->templateCacheDir;
+        $context['template_exists'] = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, md5($context['type']), $format));
 
-        $templateExists = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, md5($context['type']), $format));
-
-        foreach ($this->contextBuilders as $contextBuilder) {
-            $context = $contextBuilder->buildSerializeContext($context, !$templateExists);
+        foreach ($this->serializeContextBuilders as $contextBuilder) {
+            $context = $contextBuilder->build($context);
         }
 
         serialize($data, $output, $format, $context);
@@ -63,8 +65,8 @@ final class Serializer implements SerializerInterface
             $input = $input->resource();
         }
 
-        foreach ($this->contextBuilders as $contextBuilder) {
-            $context = $contextBuilder->buildDeserializeContext($context);
+        foreach ($this->deserializeContextBuilders as $contextBuilder) {
+            $context = $contextBuilder->build($context);
         }
 
         return deserialize($input, $type, $format, $context);

@@ -9,47 +9,34 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Context\ContextBuilder;
+namespace Symfony\Component\SerDes\Context\ContextBuilder\Serialize;
 
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-final class HookContextBuilder implements ContextBuilderInterface
+final class SerializeHookContextBuilder implements SerializeContextBuilderInterface
 {
     /**
      * @param iterable<string, callable> $serializeHooks
-     * @param iterable<string, callable> $deserializeHooks
      */
     public function __construct(
         private readonly iterable $serializeHooks,
-        private readonly iterable $deserializeHooks,
     ) {
     }
 
-    public function buildSerializeContext(array $context, bool $willGenerateTemplate): array
+    public function build(array $context): array
     {
-        if (!$willGenerateTemplate) {
+        if (true === ($context['template_exists'] ?? false)) {
             return $context;
         }
 
         foreach ($this->serializeHooks as $hookName => $hook) {
             if (!isset($context['hooks']['serialize'][$hookName])) {
                 $context['hooks']['serialize'][$hookName] = $hook;
-            }
-        }
-
-        return $context;
-    }
-
-    public function buildDeserializeContext(array $context): array
-    {
-        foreach ($this->deserializeHooks as $hookName => $hook) {
-            if (!isset($context['hooks']['deserialize'][$hookName])) {
-                $context['hooks']['deserialize'][$hookName] = $hook;
             }
         }
 

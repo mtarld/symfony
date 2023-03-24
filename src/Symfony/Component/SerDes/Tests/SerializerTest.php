@@ -12,12 +12,14 @@
 namespace Symfony\Component\SerDes\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Context\ContextBuilder\CachedContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\FormatterAttributeContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\HookContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\InstantiatorContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\NameAttributeContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeHookContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeHookContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Context\DeserializeContext;
 use Symfony\Component\SerDes\Context\SerializeContext;
 use Symfony\Component\SerDes\Hook\Deserialize as DeserializeHook;
@@ -107,20 +109,23 @@ class SerializerTest extends TestCase
 
     public function testSerializeCheckThatTemplateNotExist()
     {
-        $contextBuilder = $this->createMock(ContextBuilderInterface::class);
+        $contextBuilder = $this->createMock(SerializeContextBuilderInterface::class);
         $contextBuilder
-            ->expects($this->exactly(2))
-            ->method('buildSerializeContext')
-            ->withConsecutive(
-                [['type' => 'int', 'cache_dir' => $this->templateCacheDir], true],
-                [['type' => 'int', 'cache_dir' => $this->templateCacheDir], false],
-            )
+            ->expects($this->once())
+            ->method('build')
+            ->with(['type' => 'int', 'cache_dir' => $this->templateCacheDir, 'template_exists' => false])
             ->willReturn(['type' => 'int', 'cache_dir' => $this->templateCacheDir]);
 
-        $serializer = new Serializer([$contextBuilder], $this->templateCacheDir);
+        (new Serializer([$contextBuilder], [], $this->templateCacheDir))->serialize(1, 'json', new MemoryStream());
 
-        $serializer->serialize(1, 'json', new MemoryStream(), []);
-        $serializer->serialize(1, 'json', new MemoryStream(), []);
+        $contextBuilder = $this->createMock(SerializeContextBuilderInterface::class);
+        $contextBuilder
+            ->expects($this->once())
+            ->method('build')
+            ->with(['type' => 'int', 'cache_dir' => $this->templateCacheDir, 'template_exists' => true])
+            ->willReturn(['type' => 'int', 'cache_dir' => $this->templateCacheDir]);
+
+        (new Serializer([$contextBuilder], [], $this->templateCacheDir))->serialize(1, 'json', new MemoryStream());
     }
 
     public function testSerializeReadNameAttribute()
@@ -246,19 +251,25 @@ class SerializerTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
         $serializableResolver = new SerializableResolver([__DIR__.'/Fixtures']);
 
-        $contextBuilders = [
-            new CachedContextBuilder(new FormatterAttributeContextBuilder($serializableResolver), 'property_formatter', 'formatter'),
-            new CachedContextBuilder(new NameAttributeContextBuilder($serializableResolver), 'property_name', 'name'),
-            new HookContextBuilder([
+        $serializeContextBuilders = [
+            new SerializeFormatterAttributeContextBuilder($serializableResolver),
+            new SerializeNameAttributeContextBuilder($serializableResolver),
+            new SerializeHookContextBuilder([
                 'object' => (new SerializeHook\ObjectHook($typeExtractor))(...),
                 'property' => (new SerializeHook\PropertyHook($typeExtractor))(...),
-            ], [
+            ]),
+        ];
+
+        $deserializeContextBuilders = [
+            new DeserializeFormatterAttributeContextBuilder($serializableResolver),
+            new DeserializeNameAttributeContextBuilder($serializableResolver),
+            new DeserializeHookContextBuilder([
                 'object' => (new DeserializeHook\ObjectHook($typeExtractor))(...),
                 'property' => (new DeserializeHook\PropertyHook($typeExtractor))(...),
             ]),
-            new InstantiatorContextBuilder(new LazyInstantiator($this->lazyObjectCacheDir)),
+            new DeserializeInstantiatorContextBuilder(new LazyInstantiator($this->lazyObjectCacheDir)),
         ];
 
-        return new Serializer($contextBuilders, $this->templateCacheDir);
+        return new Serializer($serializeContextBuilders, $deserializeContextBuilders, $this->templateCacheDir);
     }
 }

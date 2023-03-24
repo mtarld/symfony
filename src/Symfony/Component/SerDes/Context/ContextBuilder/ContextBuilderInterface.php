@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Context;
+namespace Symfony\Component\SerDes\Context\ContextBuilder;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -23,12 +23,5 @@ interface ContextBuilderInterface
      *
      * @return array<string, mixed>
      */
-    public function buildSerializeContext(array $context, bool $willGenerateTemplate): array;
-
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return array<string, mixed>
-     */
-    public function buildDeserializeContext(array $context): array;
+    public function build(array $context): array;
 }

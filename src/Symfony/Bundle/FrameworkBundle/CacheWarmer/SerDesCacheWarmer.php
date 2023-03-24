@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\SerDes\Attribute\Serializable;
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Exception\ExceptionInterface;
 use Symfony\Component\SerDes\SerializableResolverInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
@@ -30,8 +30,8 @@ use function Symfony\Component\SerDes\serialize_generate;
 final class SerDesCacheWarmer implements CacheWarmerInterface
 {
     /**
-     * @param iterable<ContextBuilderInterface> $contextBuilders
-     * @param list<string>                      $formats
+     * @param iterable<SerializeContextBuilderInterface> $contextBuilders
+     * @param list<string>                               $formats
      */
     public function __construct(
         private readonly SerializableResolverInterface $serializableResolver,
@@ -84,10 +84,13 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
         }
 
         try {
-            $context = ['cache_dir' => $this->templateCacheDir];
+            $context = [
+                'cache_dir' => $this->templateCacheDir,
+                'template_exists' => false,
+            ];
 
             foreach ($this->contextBuilders as $contextBuilder) {
-                $context = $contextBuilder->buildSerializeContext($context, true);
+                $context = $contextBuilder->build($context, true);
             }
 
             file_put_contents($path, serialize_generate($class, $format, $context));
