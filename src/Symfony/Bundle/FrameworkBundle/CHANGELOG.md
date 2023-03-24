@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.0
+---
+
+ * Register SerDes services
+
 6.3
 ---
 

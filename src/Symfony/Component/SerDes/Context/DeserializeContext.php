@@ -17,7 +17,7 @@ use Symfony\Component\SerDes\Hook\Deserialize\PropertyHookInterface;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 class DeserializeContext implements ContextInterface
 {

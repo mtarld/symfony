@@ -16,7 +16,7 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class Formatter
