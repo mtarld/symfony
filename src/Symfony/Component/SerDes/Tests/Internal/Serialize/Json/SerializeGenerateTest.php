@@ -13,6 +13,7 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize\Json;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 use function Symfony\Component\SerDes\serialize_generate;
 
@@ -196,6 +197,23 @@ class SerializeGenerateTest extends TestCase
 
             PHP,
             'iterable<string, int>',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data->value, \$context["json_encode_flags"] ?? 0));
+            };
+
+            PHP,
+            DummyBackedEnum::class,
             [],
         ];
 

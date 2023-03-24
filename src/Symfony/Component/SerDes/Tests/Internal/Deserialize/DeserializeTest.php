@@ -19,11 +19,17 @@ use Symfony\Component\SerDes\Exception\UnexpectedTypeException;
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithConstructorWithRequiredValues;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 use function Symfony\Component\SerDes\deserialize;
 
 class DeserializeTest extends TestCase
 {
+    public function testDeserializeScalar()
+    {
+        $this->assertEquals(1, $this->deserializeString('1', 'int'));
+    }
+
     public function testDeserializeUnionType()
     {
         $this->assertSame([1, 2, 3], $this->deserializeString('[1, "2", "3"]', 'array<int, int|string>', context: ['union_selector' => ['int|string' => 'int']]));
@@ -47,6 +53,11 @@ class DeserializeTest extends TestCase
         }
 
         $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $result);
+    }
+
+    public function testDeserializeEnum()
+    {
+        $this->assertEquals(DummyBackedEnum::ONE, $this->deserializeString('1', DummyBackedEnum::class));
     }
 
     public function testDeserializeObject()
