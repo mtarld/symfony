@@ -14,6 +14,7 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize\Json;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithQuotes;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 use function Symfony\Component\SerDes\serialize;
 
@@ -53,6 +54,7 @@ class SerializeTest extends TestCase
         yield [.01];
         yield [false];
         yield [new ClassicDummy()];
+        yield [DummyBackedEnum::ONE];
         yield [new DummyWithQuotes()];
         yield [[1, 2, 3], 'array<int, int>'];
         yield [[1, 2, 3.12], 'array<int, int|float>'];

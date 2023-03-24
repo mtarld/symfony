@@ -34,6 +34,7 @@ use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ConstructorPropertyPromotedDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithNotPublicProperty;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 
 class TemplateGeneratorTest extends TestCase
@@ -150,6 +151,16 @@ class TemplateGeneratorTest extends TestCase
             ]),
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('END_DICT')])),
         ], $this->templateGenerator->generate(TypeFactory::createFromString('array<string, int>'), new VariableNode('accessor'), []));
+    }
+
+    public function testGenerateEnum()
+    {
+        $this->assertEquals([
+            new ExpressionNode(new FunctionNode('\fwrite', [
+                new VariableNode('resource'),
+                new FunctionNode('ENCODE', [new PropertyNode(new VariableNode('accessor'), 'value')]),
+            ])),
+        ], $this->templateGenerator->generate(TypeFactory::createFromString(DummyBackedEnum::class), new VariableNode('accessor'), []));
     }
 
     public function testGenerateObject()

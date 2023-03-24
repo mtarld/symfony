@@ -80,6 +80,7 @@ final class TemplateGenerator
             $type instanceof UnionType => $this->unionNodes($type, $accessor, $context),
             $type->isScalar(), $type->isNull() => $this->scalarNodes($accessor),
             $type->isObject() => $this->objectNodes($type, $accessor, $context),
+            $type->isEnum() => $this->enumNodes($accessor),
             $type->isList() => $this->listNodes($type, $accessor, $context),
             $type->isDict() => $this->dictNodes($type, $accessor, $context),
             default => throw new UnsupportedTypeException((string) $type),
@@ -271,7 +272,17 @@ final class TemplateGenerator
         return $nodes;
     }
 
-    public function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
+    /**
+     * @return list<NodeInterface>
+     */
+    public function enumNodes(NodeInterface $accessor): array
+    {
+        return [
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->syntax->encodeValueNode(new PropertyNode($accessor, 'value'))])),
+        ];
+    }
+
+    private function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
     {
         if ($type->isNull()) {
             return new BinaryNode('===', new ScalarNode(null), $accessor);
