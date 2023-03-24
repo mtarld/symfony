@@ -27,7 +27,7 @@ use Symfony\Component\SerDes\Internal\TypeFactory;
 
 if (!\function_exists(serialize::class)) {
     /**
-     * @experimental in 6.3
+     * @experimental in 7.0
      *
      * @param array<string, mixed> $context
      * @param resource             $resource
@@ -53,7 +53,7 @@ if (!\function_exists(serialize::class)) {
 
 if (!\function_exists(serialize_generate::class)) {
     /**
-     * @experimental in 6.3
+     * @experimental in 7.0
      *
      * @param array<string, mixed> $context
      */

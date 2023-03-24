@@ -16,7 +16,7 @@ use Symfony\Component\SerDes\Exception\RuntimeException;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 class Stream implements StreamInterface
 {

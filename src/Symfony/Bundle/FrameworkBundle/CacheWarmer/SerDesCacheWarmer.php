@@ -25,7 +25,7 @@ use function Symfony\Component\SerDes\serialize_generate;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 6.3
+ * @experimental in 7.0
  */
 final class SerDesCacheWarmer implements CacheWarmerInterface
 {
