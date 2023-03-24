@@ -11,16 +11,14 @@
 
 namespace Symfony\Component\SerDes;
 
+use Psr\Cache\CacheException;
 use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\SerDes\Util\CachedTrait;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 final class CachedSerializableResolver implements SerializableResolverInterface
 {
-    use CachedTrait;
-
     public function __construct(
         private readonly SerializableResolverInterface $resolver,
         private readonly CacheItemPoolInterface|null $cacheItemPool = null,
@@ -29,13 +27,24 @@ final class CachedSerializableResolver implements SerializableResolverInterface
 
     public function resolve(): iterable
     {
-        yield from $this->getCached('ser_des.serializable', function (): array {
-            $serializables = [];
-            foreach ($this->resolver->resolve() as $class => $serializable) {
-                $serializables[$class] = $serializable;
-            }
+        if (null === $this->cacheItemPool) {
+            yield from $this->resolver->resolve();
 
-            return $serializables;
-        });
+            return;
+        }
+
+        try {
+            $item = $this->cacheItemPool->getItem('ser_des.serializable');
+        } catch (CacheException) {
+            yield from $this->resolver->resolve();
+
+            return;
+        }
+
+        if (!$item->isHit()) {
+            $item->set(iterator_to_array($this->resolver->resolve()));
+        }
+
+        yield from $item->get();
     }
 }

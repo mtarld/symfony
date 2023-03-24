@@ -16,6 +16,8 @@ use Doctrine\Common\Annotations\Reader;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
 use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\SerializerInterface as SerDesSerializerInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
@@ -664,8 +666,10 @@ class FrameworkExtension extends Extension
             ->addTag('mime.mime_type_guesser');
         $container->registerForAutoconfiguration(LoggerAwareInterface::class)
             ->addMethodCall('setLogger', [new Reference('logger')]);
-        $container->registerForAutoconfiguration(ContextBuilderInterface::class)
-            ->addTag('ser_des.context_builder');
+        $container->registerForAutoconfiguration(SerializeContextBuilderInterface::class)
+            ->addTag('ser_des.context_builder.serialize');
+        $container->registerForAutoconfiguration(DeserializeContextBuilderInterface::class)
+            ->addTag('ser_des.context_builder.deserialize');
 
         $container->registerAttributeForAutoconfiguration(AsEventListener::class, static function (ChildDefinition $definition, AsEventListener $attribute, \ReflectionClass|\ReflectionMethod $reflector) {
             $tagAttributes = get_object_vars($attribute);

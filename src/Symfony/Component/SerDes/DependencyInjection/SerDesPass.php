@@ -31,6 +31,7 @@ final class SerDesPass implements CompilerPassInterface
         }
 
         $container->getDefinition('ser_des.serializer')
-            ->replaceArgument(0, $this->findAndSortTaggedServices('ser_des.context_builder', $container));
+            ->replaceArgument(0, $this->findAndSortTaggedServices('ser_des.context_builder.serialize', $container))
+            ->replaceArgument(1, $this->findAndSortTaggedServices('ser_des.context_builder.deserialize', $container));
     }
 }

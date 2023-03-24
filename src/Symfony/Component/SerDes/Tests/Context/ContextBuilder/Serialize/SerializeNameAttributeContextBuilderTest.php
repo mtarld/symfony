@@ -9,15 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder;
+namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Serialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Context\ContextBuilder\NameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
 use Symfony\Component\SerDes\SerializableResolverInterface;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\AnotherDummyWithNameAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
-class NameAttributeContextBuilderTest extends TestCase
+class SerializeNameAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyNameToContext()
     {
@@ -27,27 +27,24 @@ class NameAttributeContextBuilderTest extends TestCase
             AnotherDummyWithNameAttributes::class => null,
         ]));
 
-        $contextBuilder = new NameAttributeContextBuilder($serializableResolver);
+        $contextBuilder = new SerializeNameAttributeContextBuilder($serializableResolver);
 
         $expectedContext = [
             '_symfony' => [
                 'property_name' => [
                     sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
-                    sprintf('%s[@id]', DummyWithNameAttributes::class) => 'id',
                     sprintf('%s::$name', AnotherDummyWithNameAttributes::class) => 'call_me_with',
-                    sprintf('%s[call_me_with]', AnotherDummyWithNameAttributes::class) => 'name',
                 ],
             ],
         ];
 
-        $this->assertSame($expectedContext, $contextBuilder->buildSerializeContext([], true));
-        $this->assertSame($expectedContext, $contextBuilder->buildDeserializeContext([]));
+        $this->assertSame($expectedContext, $contextBuilder->build([]));
     }
 
     public function testSkipWhenWontGenerateTemplate()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
 
-        $this->assertSame([], (new NameAttributeContextBuilder($serializableResolver))->buildSerializeContext([], false));
+        $this->assertSame(['template_exists' => true], (new SerializeNameAttributeContextBuilder($serializableResolver))->build(['template_exists' => true]));
     }
 }

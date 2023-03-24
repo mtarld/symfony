@@ -13,11 +13,13 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerDesCacheWarmer;
 use Symfony\Component\SerDes\CachedSerializableResolver;
-use Symfony\Component\SerDes\Context\ContextBuilder\CachedContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\FormatterAttributeContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\HookContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\InstantiatorContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\NameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeHookContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeHookContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Instantiator\LazyInstantiator;
 use Symfony\Component\SerDes\SerializableResolver;
 use Symfony\Component\SerDes\SerializableResolverInterface;
@@ -39,7 +41,8 @@ return static function (ContainerConfigurator $container) {
         // Serializer
         ->set('ser_des.serializer', Serializer::class)
             ->args([
-                tagged_iterator('ser_des.context_builder'),
+                tagged_iterator('ser_des.context_builder.serialize'),
+                tagged_iterator('ser_des.context_builder.deserialize'),
                 param('ser_des.cache_dir.template')
             ])
         ->alias(SerializerInterface::class, 'ser_des.serializer')
@@ -60,48 +63,47 @@ return static function (ContainerConfigurator $container) {
         ->alias('ser_des.type_extractor', 'ser_des.type_extractor.reflection')
 
         // Context builders
-        ->set('ser_des.context_builder.hook', HookContextBuilder::class)
+        ->set('ser_des.context_builder.serialize.hook', SerializeHookContextBuilder::class)
             ->args([
                 tagged_iterator('ser_des.hook.serialize', 'name'),
+            ])
+            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
+
+        ->set('ser_des.context_builder.serialize.name_attribute', SerializeNameAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
+
+        ->set('ser_des.context_builder.serialize.formatter_attribute', SerializeFormatterAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
+
+        ->set('ser_des.context_builder.deserialize.hook', DeserializeHookContextBuilder::class)
+            ->args([
                 tagged_iterator('ser_des.hook.deserialize', 'name'),
             ])
-            ->tag('ser_des.context_builder', ['priority' => -1024])
+            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
-        ->set('ser_des.context_builder.instantiator', InstantiatorContextBuilder::class)
+        ->set('ser_des.context_builder.deserialize.name_attribute', DeserializeNameAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
+
+        ->set('ser_des.context_builder.deserialize.formatter_attribute', DeserializeFormatterAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
+
+        ->set('ser_des.context_builder.deserialize.instantiator', DeserializeInstantiatorContextBuilder::class)
             ->args([
                 service('ser_des.instantiator.lazy'),
             ])
-            ->tag('ser_des.context_builder', ['priority' => -1024])
-
-        ->set('ser_des.context_builder.name_attribute', NameAttributeContextBuilder::class)
-            ->args([
-                service('ser_des.serializable_resolver'),
-            ])
-            ->tag('ser_des.context_builder', ['priority' => -1024])
-
-        ->set('ser_des.context_builder.name_attribute.cached', CachedContextBuilder::class)
-            ->decorate('ser_des.context_builder.name_attribute')
-            ->args([
-                service('ser_des.context_builder.name_attribute.cached.inner'),
-                'property_name',
-                'ser_des.context.name_attribute',
-                service('cache.ser_des')->ignoreOnInvalid(),
-            ])
-
-        ->set('ser_des.context_builder.formatter_attribute', FormatterAttributeContextBuilder::class)
-            ->args([
-                service('ser_des.serializable_resolver'),
-            ])
-            ->tag('ser_des.context_builder', ['priority' => -1024])
-
-        ->set('ser_des.context_builder.formatter_attribute.cached', CachedContextBuilder::class)
-            ->decorate('ser_des.context_builder.formatter_attribute')
-            ->args([
-                service('ser_des.context_builder.formatter_attribute.cached.inner'),
-                'property_formatter',
-                'ser_des.context.formatter_attribute',
-                service('cache.ser_des')->ignoreOnInvalid(),
-            ])
+            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
         // Hooks
         ->set('ser_des.hook.serialize.object', SerializeHook\ObjectHook::class)
