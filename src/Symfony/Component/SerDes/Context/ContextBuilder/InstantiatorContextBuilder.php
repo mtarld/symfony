@@ -39,8 +39,8 @@ final class InstantiatorContextBuilder implements ContextBuilderInterface
         }
 
         $context['instantiator'] = match ($instantiator) {
-            'lazy', null => ($this->lazyObjectInstantiator)(...),
-            'eager' => null,
+            'eager', null => null,
+            'lazy' => ($this->lazyObjectInstantiator)(...),
             default => throw new InvalidArgumentException('Context value "instantiator" must be "lazy", "eager", or a valid callable.'),
         };
 
