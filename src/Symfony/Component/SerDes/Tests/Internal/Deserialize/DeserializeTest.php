@@ -141,12 +141,12 @@ class DeserializeTest extends TestCase
     {
         $this->expectException(InvalidResourceException::class);
 
-        $this->deserializeString('{[]}', ClassicDummy::class, context: ['validate_stream' => true]);
+        $this->deserializeString('{[]}', ClassicDummy::class, context: ['lazy_reading' => true, 'validate_stream' => true]);
     }
 
     public function testNotThrowWhenNotValidateInvalidStream()
     {
-        $this->deserializeString('{[]}', ClassicDummy::class);
+        $this->deserializeString('{[]}', ClassicDummy::class, context: ['lazy_reading' => true]);
         $this->addToAssertionCount(1);
     }
 

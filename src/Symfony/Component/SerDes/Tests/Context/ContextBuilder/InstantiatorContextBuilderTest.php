@@ -18,12 +18,12 @@ use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
 
 class InstantiatorContextBuilderTest extends TestCase
 {
-    public function testAddLazyInstantiatorToContextByDefault()
+    public function testAddEagerInstantiatorToContextByDefault()
     {
         $instantiator = $this->createStub(InstantiatorInterface::class);
         $context = [];
 
-        $this->assertEquals(['instantiator' => $instantiator(...)], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
+        $this->assertEquals(['instantiator' => null], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
     }
 
     public function testAddLazyInstantiatorToContext()
