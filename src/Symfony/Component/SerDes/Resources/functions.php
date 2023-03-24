@@ -100,7 +100,7 @@ if (!\function_exists(deserialize::class)) {
         }
 
         $context['boundary'] = $context['boundary'] ?? [0, -1];
-        $context['lazy_reading'] = $context['lazy_reading'] ?? true;
+        $context['lazy_reading'] = $context['lazy_reading'] ?? false;
 
         $deserializer = DeserializerFactory::create($format, $context);
         $type = TypeFactory::createFromString($type);
