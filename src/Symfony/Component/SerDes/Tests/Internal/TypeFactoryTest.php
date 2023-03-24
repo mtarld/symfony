@@ -19,6 +19,7 @@ use Symfony\Component\SerDes\Internal\Type;
 use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 class TypeFactoryTest extends TestCase
 {
@@ -46,6 +47,10 @@ class TypeFactoryTest extends TestCase
         // object types
         yield [new Type('object', className: ClassicDummy::class), ClassicDummy::class];
         yield [new Type('object', isNullable: true, className: ClassicDummy::class), '?'.ClassicDummy::class];
+
+        // enum types
+        yield [new Type('enum', className: DummyBackedEnum::class), DummyBackedEnum::class];
+        yield [new Type('enum', isNullable: true, className: DummyBackedEnum::class), '?'.DummyBackedEnum::class];
 
         // generic types
         yield [new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]), ClassicDummy::class.'<int>'];

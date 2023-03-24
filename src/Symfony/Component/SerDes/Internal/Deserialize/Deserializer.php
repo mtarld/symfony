@@ -67,6 +67,7 @@ final class Deserializer
         $result = match (true) {
             $type->isScalar() => $this->deserializeScalar($context['lazy_reading'], $resourceOrData, $type, $context),
             $type->isCollection() => $this->deserializeCollection($context['lazy_reading'], $resourceOrData, $type, $context),
+            $type->isEnum() => $this->deserializeEnum($context['lazy_reading'], $resourceOrData, $type, $context),
             $type->isObject() => $this->deserializeObject($context['lazy_reading'], $resourceOrData, $type, $context),
 
             default => throw new UnsupportedTypeException($type),
@@ -150,6 +151,24 @@ final class Deserializer
     {
         foreach ($boundaries as $key => $boundary) {
             yield $key => $this->deserialize($resource, $type, ['boundary' => $boundary] + $context);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function deserializeEnum(bool $lazy, mixed $resourceOrData, Type $type, array $context): \BackedEnum
+    {
+        $data = $lazy ? $this->decoder->decode($resourceOrData, $context['boundary'][0], $context['boundary'][1], $context) : $resourceOrData;
+
+        if (null === $data) {
+            return null;
+        }
+
+        try {
+            return ($type->className())::from($data);
+        } catch (\ValueError $e) {
+            throw new UnexpectedValueException(sprintf('Unexpected "%s" value for "%s" backed enumeration.', $data, $type));
         }
     }
 

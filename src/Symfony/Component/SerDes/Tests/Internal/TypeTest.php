@@ -17,6 +17,7 @@ use Symfony\Component\SerDes\Exception\LogicException;
 use Symfony\Component\SerDes\Internal\Type;
 use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 class TypeTest extends TestCase
 {
@@ -44,6 +45,10 @@ class TypeTest extends TestCase
         // object types
         yield [ClassicDummy::class, new Type('object', className: ClassicDummy::class)];
         yield ['?'.ClassicDummy::class, new Type('object', isNullable: true, className: ClassicDummy::class)];
+
+        // enum types
+        yield [DummyBackedEnum::class, new Type('enum', className: DummyBackedEnum::class)];
+        yield ['?'.DummyBackedEnum::class, new Type('enum', isNullable: true, className: DummyBackedEnum::class)];
 
         // generic types
         yield [ClassicDummy::class.'<int>', new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')])];
@@ -120,7 +125,7 @@ class TypeTest extends TestCase
     public function testCannotGetClassNameOnNonObject()
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Cannot get class on "int" type as it\'s not an object.');
+        $this->expectExceptionMessage('Cannot get class on "int" type as it\'s not an object nor an enum.');
 
         (new Type('int'))->className();
     }

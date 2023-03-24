@@ -64,8 +64,8 @@ final class Type implements \Stringable
      */
     public function className(): string
     {
-        if (!$this->isObject()) {
-            throw new LogicException(sprintf('Cannot get class on "%s" type as it\'s not an object.', $this->name));
+        if (!$this->isObject() && !$this->isEnum()) {
+            throw new LogicException(sprintf('Cannot get class on "%s" type as it\'s not an object nor an enum.', $this->name));
         }
 
         /** @var class-string $className */
@@ -95,6 +95,11 @@ final class Type implements \Stringable
     public function isObject(): bool
     {
         return 'object' === $this->name;
+    }
+
+    public function isEnum(): bool
+    {
+        return 'enum' === $this->name;
     }
 
     public function isGeneric(): bool
@@ -158,7 +163,7 @@ final class Type implements \Stringable
         $nullablePrefix = $this->isNullable() ? '?' : '';
 
         $name = $this->name();
-        if ($this->isObject()) {
+        if ($this->isObject() || $this->isEnum()) {
             $name = $this->className();
         }
 

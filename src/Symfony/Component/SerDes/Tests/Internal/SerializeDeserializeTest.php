@@ -14,6 +14,7 @@ namespace Symfony\Component\SerDes\Tests\Internal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 use function Symfony\Component\SerDes\deserialize;
 use function Symfony\Component\SerDes\serialize;
@@ -60,12 +61,8 @@ class SerializeDeserializeTest extends TestCase
         yield ['foo', 'string'];
         yield [[1, 2, null], 'array<int, ?int>'];
         yield [['foo' => 1, 'bar' => 2, 'baz' => null], 'array<string, ?int>'];
-
-        $dummy = new ClassicDummy();
-        $dummy->id = 100;
-        $dummy->name = 'Dummy';
-
-        yield [$dummy, ClassicDummy::class];
+        yield [DummyBackedEnum::ONE, DummyBackedEnum::class];
+        yield [new ClassicDummy(), ClassicDummy::class];
 
         $dummy = new DummyWithFormatterAttributes();
         $dummy->id = 200;

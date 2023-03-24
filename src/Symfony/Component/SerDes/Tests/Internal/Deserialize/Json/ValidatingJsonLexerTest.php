@@ -29,12 +29,12 @@ class ValidatingJsonLexerTest extends TestCase
         $this->assertSame([['1', 0]], iterator_to_array((new ValidatingJsonLexer(new JsonLexer()))->tokens($resource, 0, -1, [])));
     }
 
-    public function testThrowOnInvalidJsonTokens(string $file)
+    public function testThrowOnInvalidJsonTokens()
     {
         $this->expectException(InvalidResourceException::class);
 
-        $resource = fopen('php://temp');
-        fwrite('{"foo}');
+        $resource = fopen('php://temp', 'w');
+        fwrite($resource, '{"foo}');
         rewind($resource);
 
         iterator_to_array((new ValidatingJsonLexer(new JsonLexer()))->tokens($resource, 0, -1, []));
