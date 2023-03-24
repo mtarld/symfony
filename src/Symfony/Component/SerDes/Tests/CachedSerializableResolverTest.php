@@ -20,21 +20,6 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 
 class CachedSerializableResolverTest extends TestCase
 {
-    public function testHitLocalCache()
-    {
-        $resolver = $this->createMock(SerializableResolverInterface::class);
-        $resolver->method('resolve')->willReturn(new \ArrayIterator(['Foo' => null, 'Bar' => null]));
-
-        $cachePool = $this->createMock(CacheItemPoolInterface::class);
-        $cachePool->expects($this->once())->method('getItem');
-        $cachePool->expects($this->once())->method('save');
-
-        $cachedResolver = new CachedSerializableResolver($resolver, $cachePool);
-
-        $this->assertSame(['Foo' => null, 'Bar' => null], iterator_to_array($cachedResolver->resolve()));
-        iterator_to_array($cachedResolver->resolve());
-    }
-
     public function testHitCachePool()
     {
         $resolver = $this->createMock(SerializableResolverInterface::class);
@@ -44,8 +29,8 @@ class CachedSerializableResolverTest extends TestCase
         $cacheItem->method('isHit')->willReturn(true);
         $cacheItem->method('get')->willReturn(['Foo' => null]);
 
-        $cachePool = $this->createMock(CacheItemPoolInterface::class);
-        $cachePool->expects($this->once())->method('getItem')->willReturn($cacheItem);
+        $cachePool = $this->createStub(CacheItemPoolInterface::class);
+        $cachePool->method('getItem')->willReturn($cacheItem);
 
         $cachedResolver = new CachedSerializableResolver($resolver, $cachePool);
 
@@ -55,11 +40,11 @@ class CachedSerializableResolverTest extends TestCase
 
     public function testCacheException()
     {
-        $resolver = $this->createMock(SerializableResolverInterface::class);
+        $resolver = $this->createStub(SerializableResolverInterface::class);
         $resolver->method('resolve')->willReturn(new \ArrayIterator(['Foo' => null, 'Bar' => null]));
 
         $cachePool = $this->createMock(CacheItemPoolInterface::class);
-        $cachePool->expects($this->once())->method('getItem')->willThrowException($this->createStub(CacheException::class));
+        $cachePool->method('getItem')->willThrowException($this->createStub(CacheException::class));
         $cachePool->expects($this->never())->method('save');
 
         $cachedResolver = new CachedSerializableResolver($resolver, $cachePool);

@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Context\ContextBuilder;
+namespace Symfony\Component\SerDes\Context\ContextBuilder\Deserialize;
 
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
 use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
 
@@ -20,19 +20,14 @@ use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
  *
  * @experimental in 7.0
  */
-final class InstantiatorContextBuilder implements ContextBuilderInterface
+final class DeserializeInstantiatorContextBuilder implements DeserializeContextBuilderInterface
 {
     public function __construct(
         private readonly InstantiatorInterface $lazyObjectInstantiator,
     ) {
     }
 
-    public function buildSerializeContext(array $context, bool $willGenerateTemplate): array
-    {
-        return $context;
-    }
-
-    public function buildDeserializeContext(array $context): array
+    public function build(array $context): array
     {
         if (\is_callable($instantiator = $context['instantiator'] ?? null)) {
             return $context;

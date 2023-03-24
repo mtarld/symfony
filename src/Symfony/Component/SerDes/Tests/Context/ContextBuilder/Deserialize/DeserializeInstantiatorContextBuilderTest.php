@@ -9,21 +9,21 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder;
+namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Deserialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Context\ContextBuilder\InstantiatorContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
 use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
 
-class InstantiatorContextBuilderTest extends TestCase
+class DeserializeInstantiatorContextBuilderTest extends TestCase
 {
     public function testAddEagerInstantiatorToContextByDefault()
     {
         $instantiator = $this->createStub(InstantiatorInterface::class);
         $context = [];
 
-        $this->assertEquals(['instantiator' => null], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
+        $this->assertEquals(['instantiator' => null], (new DeserializeInstantiatorContextBuilder($instantiator))->build($context));
     }
 
     public function testAddLazyInstantiatorToContext()
@@ -31,7 +31,7 @@ class InstantiatorContextBuilderTest extends TestCase
         $instantiator = $this->createStub(InstantiatorInterface::class);
         $context = ['instantiator' => 'lazy'];
 
-        $this->assertEquals(['instantiator' => $instantiator(...)], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
+        $this->assertEquals(['instantiator' => $instantiator(...)], (new DeserializeInstantiatorContextBuilder($instantiator))->build($context));
     }
 
     public function testAddEagerInstantiatorToContext()
@@ -39,7 +39,7 @@ class InstantiatorContextBuilderTest extends TestCase
         $instantiator = $this->createStub(InstantiatorInterface::class);
         $context = ['instantiator' => 'eager'];
 
-        $this->assertSame(['instantiator' => null], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
+        $this->assertSame(['instantiator' => null], (new DeserializeInstantiatorContextBuilder($instantiator))->build($context));
     }
 
     public function testAddCustomInstantiatorToContext()
@@ -49,7 +49,7 @@ class InstantiatorContextBuilderTest extends TestCase
 
         $context = ['instantiator' => $customInstantiator];
 
-        $this->assertSame(['instantiator' => $customInstantiator], (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context));
+        $this->assertSame(['instantiator' => $customInstantiator], (new DeserializeInstantiatorContextBuilder($instantiator))->build($context));
     }
 
     public function testThrowIfInvalidInstantiator()
@@ -59,13 +59,6 @@ class InstantiatorContextBuilderTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        (new InstantiatorContextBuilder($instantiator))->buildDeserializeContext($context);
-    }
-
-    public function testSkipWhenSerialize()
-    {
-        $instantiator = $this->createStub(InstantiatorInterface::class);
-
-        $this->assertSame([], (new InstantiatorContextBuilder($instantiator))->buildSerializeContext([], false));
+        (new DeserializeInstantiatorContextBuilder($instantiator))->build($context);
     }
 }

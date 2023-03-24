@@ -9,15 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder;
+namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Serialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Context\ContextBuilder\FormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
 use Symfony\Component\SerDes\SerializableResolverInterface;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\AnotherDummyWithFormatterAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 
-class FormatterAttributeContextBuilderTest extends TestCase
+class SerializeFormatterAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyFormattersToContext()
     {
@@ -27,31 +27,28 @@ class FormatterAttributeContextBuilderTest extends TestCase
             AnotherDummyWithFormatterAttributes::class => null,
         ]));
 
-        $contextBuilder = new FormatterAttributeContextBuilder($serializableResolver);
+        $contextBuilder = new SerializeFormatterAttributeContextBuilder($serializableResolver);
 
         $expectedContext = [
             '_symfony' => [
                 'property_formatter' => [
                     sprintf('%s::$id', DummyWithFormatterAttributes::class) => [
                         'serialize' => [DummyWithFormatterAttributes::class, 'doubleAndCastToString'],
-                        'deserialize' => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
                     ],
                     sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [
                         'serialize' => [AnotherDummyWithFormatterAttributes::class, 'uppercase'],
-                        'deserialize' => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
                     ],
                 ],
             ],
         ];
 
-        $this->assertSame($expectedContext, $contextBuilder->buildSerializeContext([], true));
-        $this->assertSame($expectedContext, $contextBuilder->buildDeserializeContext([]));
+        $this->assertSame($expectedContext, $contextBuilder->build([]));
     }
 
     public function testSkipWhenWontGenerateTemplate()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
 
-        $this->assertSame([], (new FormatterAttributeContextBuilder($serializableResolver))->buildSerializeContext([], false));
+        $this->assertSame(['template_exists' => true], (new SerializeFormatterAttributeContextBuilder($serializableResolver))->build(['template_exists' => true]));
     }
 }
