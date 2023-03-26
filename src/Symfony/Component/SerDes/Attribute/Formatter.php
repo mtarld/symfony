@@ -22,12 +22,12 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 final class Formatter
 {
     /**
-     * @param string|array{0: string, 1: string}|null $onSerialize
-     * @param string|array{0: string, 1: string}|null $onDeserialize
+     * @param callable|null $onSerialize
+     * @param callable|null $onDeserialize
      */
     public function __construct(
-        public readonly string|array|null $onSerialize = null,
-        public readonly string|array|null $onDeserialize = null,
+        public readonly mixed $onSerialize = null,
+        public readonly mixed $onDeserialize = null,
     ) {
         if (null !== $onSerialize && !\is_callable($onSerialize)) {
             throw new InvalidArgumentException(sprintf('Parameter "$onSerialize" of attribute "%s" must be a valid callable.', self::class));
