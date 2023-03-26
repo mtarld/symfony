@@ -33,8 +33,8 @@ use Symfony\Component\SerDes\Hook\Deserialize as DeserializeHook;
 
 return static function (ContainerConfigurator $container) {
     $container->parameters()
-        ->set('ser_des.cache_dir.template', '%kernel.cache_dir%/ser_des/template')
-        ->set('ser_des.cache_dir.lazy_object', '%kernel.cache_dir%/ser_des/lazy_object')
+        ->set('.ser_des.cache_dir.template', '%kernel.cache_dir%/ser_des/template')
+        ->set('.ser_des.cache_dir.lazy_object', '%kernel.cache_dir%/ser_des/lazy_object')
     ;
 
     $container->services()
@@ -43,7 +43,7 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 tagged_iterator('ser_des.context_builder.serialize'),
                 tagged_iterator('ser_des.context_builder.deserialize'),
-                param('ser_des.cache_dir.template')
+                param('.ser_des.cache_dir.template')
             ])
         ->alias(SerializerInterface::class, 'ser_des.serializer')
 
@@ -148,7 +148,7 @@ return static function (ContainerConfigurator $container) {
         // Object instantiators
         ->set('ser_des.instantiator.lazy', LazyInstantiator::class)
             ->args([
-                param('ser_des.cache_dir.lazy_object'),
+                param('.ser_des.cache_dir.lazy_object'),
             ])
 
         // Cache
@@ -156,8 +156,8 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('ser_des.serializable_resolver'),
                 tagged_iterator('ser_des.context_builder'),
-                param('ser_des.cache_dir.template'),
-                param('ser_des.cache_dir.lazy_object'),
+                param('.ser_des.cache_dir.template'),
+                param('.ser_des.cache_dir.lazy_object'),
                 param('ser_des.template_warm_up.formats'),
                 param('ser_des.template_warm_up.nullable_data'),
                 service('logger')->ignoreOnInvalid(),

@@ -42,7 +42,12 @@ final class CachedSerializableResolver implements SerializableResolverInterface
         }
 
         if (!$item->isHit()) {
-            $item->set(iterator_to_array($this->resolver->resolve()));
+            $serializables = [];
+            foreach ($this->resolver->resolve() as $class => $serializable) {
+                $serializables[$class] = $serializable;
+            }
+
+            $item->set($serializables);
         }
 
         yield from $item->get();

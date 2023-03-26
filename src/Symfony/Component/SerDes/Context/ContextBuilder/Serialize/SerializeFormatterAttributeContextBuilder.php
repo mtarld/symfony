@@ -23,7 +23,7 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 final class SerializeFormatterAttributeContextBuilder implements SerializeContextBuilderInterface
 {
     /**
-     * @var array<string, callable>
+     * @var array<string, array{serialize: callable}>
      */
     private static ?array $cache = null;
 
@@ -56,7 +56,7 @@ final class SerializeFormatterAttributeContextBuilder implements SerializeContex
     /**
      * @param class-string $className
      *
-     * @return array<string, callable>
+     * @return array<string, array{serialize: callable}>
      */
     private function propertyFormatters(string $className): array
     {
