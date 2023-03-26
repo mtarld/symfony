@@ -20,6 +20,7 @@ use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyUnitEnum;
 
 class TypeFactoryTest extends TestCase
 {
@@ -139,5 +140,12 @@ class TypeFactoryTest extends TestCase
         $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
 
         TypeFactory::createFromString('array');
+    }
+
+    public function testCreateThrowOnUnitEnum()
+    {
+        $this->expectException(InvalidTypeException::class);
+
+        TypeFactory::createFromString(DummyUnitEnum::class);
     }
 }
