@@ -54,7 +54,7 @@ class SerializeDeserializeTest extends TestCase
     /**
      * @return iterable<array{0: mixed, 1: string, 2: array<string, mixed>}>
      */
-    public function serializeDeserializeDataProvider(): iterable
+    public static function serializeDeserializeDataProvider(): iterable
     {
         yield [1, 'int'];
         yield [null, '?int'];
@@ -111,7 +111,7 @@ class SerializeDeserializeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string, 2: array<string, mixed>}>
      */
-    public function deserializeSerializeDataProvider(): iterable
+    public static function deserializeSerializeDataProvider(): iterable
     {
         yield ['1', 'int'];
         yield ['null', '?int'];

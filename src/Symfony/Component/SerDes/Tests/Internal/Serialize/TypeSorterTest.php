@@ -36,7 +36,7 @@ class TypeSorterTest extends TestCase
     /**
      * @return iterable<array{0: list<string>, 1: list<string>}
      */
-    public function sortByPrecisionDataProvider(): iterable
+    public static function sortByPrecisionDataProvider(): iterable
     {
         yield [['int', 'string'], ['int', 'string']];
         yield [['int'], ['int', 'int']];
@@ -67,7 +67,7 @@ class TypeSorterTest extends TestCase
     /**
      * @return iterable<array{0: bool, 1: list<Type>}
      */
-    public function throwIfSameHierarchicalLevelDataProvider(): iterable
+    public static function throwIfSameHierarchicalLevelDataProvider(): iterable
     {
         yield [false, [new Type('object', className: Leaf::class), new Type('int')]];
         yield [false, [new Type('object', className: Branch::class), new Type('object', className: Root::class), new Type('object', className: Leaf::class)]];

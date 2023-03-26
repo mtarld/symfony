@@ -46,7 +46,7 @@ class PropertyHookTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: array<class-string, array<string, string>>}>
      */
-    public function updateNameDataProvider(): iterable
+    public static function updateNameDataProvider(): iterable
     {
         yield ['id', []];
         yield ['id', [ClassicDummy::class => ['name' => 'identifier']]];
@@ -81,7 +81,7 @@ class PropertyHookTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: array<class-string, array<string, callable>}>>
      */
-    public function updateTypeAccessorAndContextFromFormatterDataProvider(): iterable
+    public static function updateTypeAccessorAndContextFromFormatterDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
         yield ['int', '$accessor', [ClassicDummy::class => ['name' => DummyWithMethods::doubleAndCastToString(...)]]];
@@ -118,7 +118,7 @@ class PropertyHookTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: callable}>
      */
-    public function throwWhenWrongFormatterDataProvider(): iterable
+    public static function throwWhenWrongFormatterDataProvider(): iterable
     {
         yield [
             sprintf('Property formatter "%s::$id" must be a static method.', ClassicDummy::class),

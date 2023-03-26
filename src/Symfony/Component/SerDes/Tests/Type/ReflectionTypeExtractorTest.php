@@ -132,7 +132,7 @@ class ReflectionTypeExtractorTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string}>
      */
-    public function typesDataProvider(): iterable
+    public static function typesDataProvider(): iterable
     {
         yield ['mixed', 'mixed'];
         yield ['int', 'int'];

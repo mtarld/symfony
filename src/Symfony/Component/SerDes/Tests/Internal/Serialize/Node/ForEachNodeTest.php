@@ -35,7 +35,7 @@ class ForEachNodeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: NodeInterface, 2: ?string, 3: string, 4: list<NodeInterface>}>
      */
-    public function compileDataProvider(): iterable
+    public static function compileDataProvider(): iterable
     {
         yield [
             <<<PHP

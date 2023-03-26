@@ -31,7 +31,7 @@ class DeserializeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string}>
      */
-    public function deserializeDataProvider(): iterable
+    public static function deserializeDataProvider(): iterable
     {
         yield ['1', 'int'];
         yield ['"foo"', 'string'];

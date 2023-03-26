@@ -135,7 +135,7 @@ class PhpstanTypeExtractorTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string, 2: bool}>
      */
-    public function typesDataProvider(): iterable
+    public static function typesDataProvider(): iterable
     {
         yield ['mixed', 'mixed'];
         yield ['bool', 'bool'];
