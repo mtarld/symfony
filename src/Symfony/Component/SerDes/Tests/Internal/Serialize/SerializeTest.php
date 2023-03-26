@@ -59,7 +59,7 @@ class SerializeTest extends TestCase
 
     public function testCreateCacheFileOnlyIfNotExists()
     {
-        $cacheFilename = sprintf('%s/%s.json.php', $this->cacheDir, md5('int'));
+        $cacheFilename = sprintf('%s/%s.json.php', $this->cacheDir, hash('xxh128', 'int'));
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }

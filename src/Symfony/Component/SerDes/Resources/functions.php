@@ -37,7 +37,7 @@ if (!\function_exists(serialize::class)) {
         $type = $context['type'] ?? get_debug_type($data);
 
         $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_ser_des';
-        $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, md5($type), $format);
+        $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $type), $format);
 
         if (!file_exists($cacheFilename)) {
             if (!file_exists($cacheDir)) {
