@@ -46,7 +46,7 @@ final class LazyInstantiator implements InstantiatorInterface
         }
 
         if (!isset(self::$lazyClassesLoaded[$className]) && !class_exists(self::$cache['lazy_class_name'][$className])) {
-            if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($className)))) {
+            if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
                 if (!file_exists($this->cacheDir)) {
                     mkdir($this->cacheDir, recursive: true);
                 }
@@ -55,7 +55,7 @@ final class LazyInstantiator implements InstantiatorInterface
                 file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($class)));
             }
 
-            eval(file_get_contents(sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, md5($className))));
+            eval(file_get_contents(sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className))));
 
             self::$lazyClassesLoaded[$className] = true;
         }
