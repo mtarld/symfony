@@ -23,7 +23,7 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 final class DeserializeNameAttributeContextBuilder implements DeserializeContextBuilderInterface
 {
     /**
-     * @var array<string, string>
+     * @var array<class-string, array<string, string>>|null
      */
     private static ?array $cache = null;
 
@@ -44,7 +44,7 @@ final class DeserializeNameAttributeContextBuilder implements DeserializeContext
             self::$cache = $propertyNames;
         }
 
-        $context['_symfony']['property_name'] = self::$cache;
+        $context['_symfony']['deserialize']['property_name'] = self::$cache;
 
         return $context;
     }
@@ -52,7 +52,7 @@ final class DeserializeNameAttributeContextBuilder implements DeserializeContext
     /**
      * @param class-string $className
      *
-     * @return array<string, string>
+     * @return array<class-string, array<string, string>>
      */
     private function propertyNames(string $className): array
     {
@@ -67,7 +67,7 @@ final class DeserializeNameAttributeContextBuilder implements DeserializeContext
                 /** @var Name $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
 
-                $propertyNames[sprintf('%s[%s]', $property->getDeclaringClass()->getName(), $attributeInstance->name)] = $property->getName();
+                $propertyNames[$property->getDeclaringClass()->getName()][$attributeInstance->name] = $property->getName();
 
                 break;
             }
