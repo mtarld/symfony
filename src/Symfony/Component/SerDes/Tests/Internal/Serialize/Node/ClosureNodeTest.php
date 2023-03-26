@@ -35,7 +35,7 @@ class ClosureNodeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: ArgumentsNode, 2: ?string, 3: bool, 4: list<NodeInterface>}>
      */
-    public function compileDataProvider(): iterable
+    public static function compileDataProvider(): iterable
     {
         yield [
             <<<PHP

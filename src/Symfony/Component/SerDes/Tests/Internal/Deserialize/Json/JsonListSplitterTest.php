@@ -50,7 +50,7 @@ class JsonListSplitterTest extends TestCase
     /**
      * @return iterable<array{0: list<array{0: int, 1: int}>, 1: list<array{0: string, 1: int}>}>
      */
-    public function splitDataProvider(): iterable
+    public static function splitDataProvider(): iterable
     {
         yield [[], [['[', 0], [']', 1]]];
         yield [[[1, 3]], [['[', 0], ['100', 1], [']', 4]]];
@@ -79,7 +79,7 @@ class JsonListSplitterTest extends TestCase
     /**
      * @return iterable<array{0: list<array{0: string, 1: int}>}>
      */
-    public function splitInvalidDataProvider(): iterable
+    public static function splitInvalidDataProvider(): iterable
     {
         yield [[['[', 0], ['100', 1]]];
         yield [[['[', 0], ['[', 1], [']', 2]]];

@@ -38,7 +38,7 @@ class ObjectHookTest extends TestCase
     /**
      * @return iterable<array{0: array<class-string, array<string, string>>, 1: string, 2: list<string>}>
      */
-    public function addGenericParameterTypesDataProvider(): iterable
+    public static function addGenericParameterTypesDataProvider(): iterable
     {
         yield [[], 'int', []];
         yield [[], 'Foo<int>', ['T']];

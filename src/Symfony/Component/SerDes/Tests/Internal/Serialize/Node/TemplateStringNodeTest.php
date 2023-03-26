@@ -32,7 +32,7 @@ class TemplateStringNodeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: list<string|VariableNode>}>
      */
-    public function compileDataProvider(): iterable
+    public static function compileDataProvider(): iterable
     {
         yield ['""', []];
         yield ['"foobar"', ['foo', 'bar']];

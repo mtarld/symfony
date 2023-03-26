@@ -30,7 +30,7 @@ class JsonLexerTest extends TestCase
     /**
      * @return iterable<array{0: list<string>, 1: string}>
      */
-    public function tokensDataProvider(): iterable
+    public static function tokensDataProvider(): iterable
     {
         yield [[['1', 0]], '1'];
         yield [[['false', 0]], 'false'];

@@ -45,7 +45,7 @@ class SerializeTest extends TestCase
     /**
      * @return iterable<array{0: mixed, 1: string?}>
      */
-    public function serializeDataProvider(): iterable
+    public static function serializeDataProvider(): iterable
     {
         yield [1];
         yield ['1'];

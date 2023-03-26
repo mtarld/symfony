@@ -32,7 +32,7 @@ class TypeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: Type|UnionType}>
      */
-    public function toStringDataProvider(): iterable
+    public static function toStringDataProvider(): iterable
     {
         // scalar types
         yield ['null', new Type('null')];
@@ -163,7 +163,7 @@ class TypeTest extends TestCase
     /**
      * @return iterable<array{type: Type, scalar: bool, null: bool, object: bool, collection: bool, list: bool, dict: bool}>
      */
-    public function isserDataProvider(): iterable
+    public static function isserDataProvider(): iterable
     {
         yield ['type' => new Type('int'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
         yield ['type' => new Type('string'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
