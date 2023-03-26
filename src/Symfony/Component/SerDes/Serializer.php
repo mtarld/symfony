@@ -46,7 +46,7 @@ final class Serializer implements SerializerInterface
 
         $context['type'] = $context['type'] ?? get_debug_type($data);
         $context['cache_dir'] = $context['cache_dir'] ?? $this->templateCacheDir;
-        $context['template_exists'] = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, md5($context['type']), $format));
+        $context['template_exists'] = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, hash('xxh128', $context['type']), $format));
 
         foreach ($this->serializeContextBuilders as $contextBuilder) {
             $context = $contextBuilder->build($context);
