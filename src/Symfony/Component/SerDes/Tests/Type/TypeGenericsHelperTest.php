@@ -30,7 +30,7 @@ class TypeGenericsHelperTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string, 2: array<string, string>}>
      */
-    public function replaceGenericTypesDataProvider(): iterable
+    public static function replaceGenericTypesDataProvider(): iterable
     {
         yield ['T', 'T', []];
         yield ['Foo', 'T', ['T' => 'Foo']];
@@ -60,7 +60,7 @@ class TypeGenericsHelperTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: list<string>, 2: string}>
      */
-    public function extractGenericsDataProvider(): iterable
+    public static function extractGenericsDataProvider(): iterable
     {
         yield ['int', [], 'int'];
         yield ['Foo', ['int'], 'Foo<int>'];

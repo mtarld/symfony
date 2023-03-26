@@ -32,7 +32,7 @@ class SerializeGenerateTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: string, 2: array<string, mixed>}>
      */
-    public function serializeGenerateDataProvider(): iterable
+    public static function serializeGenerateDataProvider(): iterable
     {
         yield [
             <<<PHP

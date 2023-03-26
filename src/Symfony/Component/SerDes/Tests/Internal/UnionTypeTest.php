@@ -42,7 +42,7 @@ class UnionTypeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: UnionType}>
      */
-    public function toStringDataProvider(): iterable
+    public static function toStringDataProvider(): iterable
     {
         yield ['int|string', new UnionType([new Type('int'), new Type('string')])];
         yield ['int|string|null', new UnionType([new Type('int'), new Type('string'), new Type('null')])];

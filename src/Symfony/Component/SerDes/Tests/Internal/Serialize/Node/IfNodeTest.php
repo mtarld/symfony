@@ -37,7 +37,7 @@ class IfNodeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: NodeInterface, 2: list<NodeInterface>, 3: list<NodeInterface>, 4: list<array{condition: NodeInterface, body: list<NodeInterface>}>}>
      */
-    public function compileDataProvider(): iterable
+    public static function compileDataProvider(): iterable
     {
         yield [
             <<<PHP

@@ -35,7 +35,7 @@ class OptimizerTest extends TestCase
     /**
      * @return iterable<array{0: list<NodeInterface>, 1: list<NodeInterface>}>
      */
-    public function mergeStringFwritesDataProvider(): iterable
+    public static function mergeStringFwritesDataProvider(): iterable
     {
         $createFwriteExpression = fn (NodeInterface $content) => new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $content]));
 

@@ -35,7 +35,7 @@ class TypeFactoryTest extends TestCase
     /**
      * @return iterable<array{0: Type|UnionType, 1: string}>
      */
-    public function createFromStringDataProvider(): iterable
+    public static function createFromStringDataProvider(): iterable
     {
         // scalar types
         yield [new Type('null'), 'null'];

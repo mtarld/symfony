@@ -67,7 +67,7 @@ class SerDesCacheWarmerTest extends TestCase
     /**
      * @return iterable<array{0: list<string>, 1: bool}>
      */
-    public function warmUpTemplateDataProvider(): iterable
+    public static function warmUpTemplateDataProvider(): iterable
     {
         yield [[DummyWithMethods::class, '?'.DummyWithQuotes::class, ClassicDummy::class], false];
         yield [[DummyWithMethods::class, '?'.DummyWithQuotes::class, '?'.ClassicDummy::class], true];

@@ -41,7 +41,7 @@ class SerializeGenerateTest extends TestCase
     /**
      * @return iterable<array{0: ?string, 1: string}>
      */
-    public function checkForCircularReferencesDataProvider(): iterable
+    public static function checkForCircularReferencesDataProvider(): iterable
     {
         yield [null, ClassicDummy::class];
         yield [null, sprintf('array<int, %s>', ClassicDummy::class)];

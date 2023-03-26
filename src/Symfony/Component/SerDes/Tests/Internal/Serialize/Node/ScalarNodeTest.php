@@ -30,7 +30,7 @@ class ScalarNodeTest extends TestCase
     /**
      * @return iterable<array{0: string, 1: mixed}>
      */
-    public function compileDataProvider(): iterable
+    public static function compileDataProvider(): iterable
     {
         yield ['null', null];
         yield ['123', 123];
