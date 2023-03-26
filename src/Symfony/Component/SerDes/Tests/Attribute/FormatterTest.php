@@ -49,18 +49,4 @@ class FormatterTest extends TestCase
 
         $this->addToAssertionCount(4);
     }
-
-    public function testCannotCreateWithInvalidOnSerializeCallable()
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new Formatter(onSerialize: []);
-    }
-
-    public function testCannotCreateWithInvalidOnDeserializeCallable()
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new Formatter(onDeserialize: []);
-    }
 }

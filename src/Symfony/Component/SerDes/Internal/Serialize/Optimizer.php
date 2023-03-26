@@ -72,8 +72,13 @@ final class Optimizer
                 continue;
             }
 
-            /** @var ExpressionNode<FunctionNode> $node */
-            $stringContent = $stringContent.$node->node->parameters[1]->value;
+            /**
+             * @var ExpressionNode<FunctionNode> $node
+             * @var ScalarNode                   $stringParameter
+             */
+            $stringParameter = $node->node->parameters[1];
+
+            $stringContent = $stringContent.$stringParameter->value;
         }
 
         if ('' !== $stringContent) {

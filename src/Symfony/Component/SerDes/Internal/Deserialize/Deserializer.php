@@ -157,7 +157,7 @@ final class Deserializer
     /**
      * @param array<string, mixed> $context
      */
-    private function deserializeEnum(bool $lazy, mixed $resourceOrData, Type $type, array $context): \BackedEnum
+    private function deserializeEnum(bool $lazy, mixed $resourceOrData, Type $type, array $context): ?\BackedEnum
     {
         $data = $lazy ? $this->decoder->decode($resourceOrData, $context['boundary'][0], $context['boundary'][1], $context) : $resourceOrData;
 
