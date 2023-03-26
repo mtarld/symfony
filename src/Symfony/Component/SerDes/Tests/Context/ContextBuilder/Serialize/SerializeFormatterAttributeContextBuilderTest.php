@@ -31,12 +31,14 @@ class SerializeFormatterAttributeContextBuilderTest extends TestCase
 
         $expectedContext = [
             '_symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', DummyWithFormatterAttributes::class) => [
-                        'serialize' => [DummyWithFormatterAttributes::class, 'doubleAndCastToString'],
-                    ],
-                    sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [
-                        'serialize' => [AnotherDummyWithFormatterAttributes::class, 'uppercase'],
+                'serialize' => [
+                    'property_formatter' => [
+                        DummyWithFormatterAttributes::class => [
+                            'id' => [DummyWithFormatterAttributes::class, 'doubleAndCastToString'],
+                        ],
+                        AnotherDummyWithFormatterAttributes::class => [
+                            'name' => [AnotherDummyWithFormatterAttributes::class, 'uppercase'],
+                        ],
                     ],
                 ],
             ],

@@ -42,14 +42,14 @@ final class PropertyHook implements PropertyHookInterface
         $propertyClass = $class->getName();
 
         /** @var string $propertyName */
-        $propertyName = $context['_symfony']['property_name'][sprintf('%s[%s]', $propertyClass, $key)] ?? $key;
-        $cacheKey = $propertyIdentifier = $propertyClass.'::$'.$propertyName;
+        $propertyName = $context['_symfony']['deserialize']['property_name'][$propertyClass][$key] ?? $key;
+        $cacheKey = $propertyClass.'::$'.$propertyName;
 
         if (!self::$cache['class_has_property'][$cacheKey] = self::$cache['class_has_property'][$cacheKey] ?? $class->hasProperty($propertyName)) {
             return [];
         }
 
-        if (!isset($context['_symfony']['property_formatter'][$propertyIdentifier]['deserialize'])) {
+        if (!isset($context['_symfony']['deserialize']['property_formatter'][$propertyClass][$key])) {
             $valueType = self::$cache['value_type'][$cacheKey] = self::$cache['value_type'][$cacheKey] ?? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($propertyClass, $propertyName));
 
             if (isset($context['_symfony']['generic_parameter_types'][$propertyClass])) {
@@ -62,9 +62,9 @@ final class PropertyHook implements PropertyHookInterface
             ];
         }
 
-        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['property_formatter'][$propertyIdentifier]['deserialize']));
+        $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['deserialize']['property_formatter'][$propertyClass][$key]));
 
-        $propertyFormatter = \Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]['deserialize']);
+        $propertyFormatter = \Closure::fromCallable($context['_symfony']['deserialize']['property_formatter'][$propertyClass][$key]);
         $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
 
         $valueType = self::$cache['value_type'][$cacheKey] = self::$cache['value_type'][$cacheKey] ?? $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]);

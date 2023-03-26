@@ -31,9 +31,11 @@ class SerializeNameAttributeContextBuilderTest extends TestCase
 
         $expectedContext = [
             '_symfony' => [
-                'property_name' => [
-                    sprintf('%s::$id', DummyWithNameAttributes::class) => '@id',
-                    sprintf('%s::$name', AnotherDummyWithNameAttributes::class) => 'call_me_with',
+                'serialize' => [
+                    'property_name' => [
+                        DummyWithNameAttributes::class => ['id' => '@id'],
+                        AnotherDummyWithNameAttributes::class => ['name' => 'call_me_with'],
+                    ],
                 ],
             ],
         ];

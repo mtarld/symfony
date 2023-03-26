@@ -29,8 +29,12 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_name' => [
-                    sprintf('%s[@id]', ClassicDummy::class) => 'id',
+                'deserialize' => [
+                    'property_name' => [
+                        ClassicDummy::class => [
+                            '@id' => 'id',
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -98,9 +102,11 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$name', ClassicDummy::class) => [
-                        'deserialize' => fn (int $v, array $c): string => (string) $v,
+                'deserialize' => [
+                    'property_formatter' => [
+                        ClassicDummy::class => [
+                            'name' => fn (int $v, array $c): string => (string) $v,
+                        ],
                     ],
                 ],
             ],
@@ -128,9 +134,11 @@ class PropertyHookTest extends TestCase
                 'generic_parameter_types' => [
                     DummyWithFormatterAttributes::class => ['T' => 'string'],
                 ],
-                'property_formatter' => [
-                    sprintf('%s::$name', DummyWithFormatterAttributes::class) => [
-                        'deserialize' => DummyWithFormatterAttributes::doubleAndCastToString(...),
+                'deserialize' => [
+                    'property_formatter' => [
+                        DummyWithFormatterAttributes::class => [
+                            'name' => DummyWithFormatterAttributes::doubleAndCastToString(...),
+                        ],
                     ],
                 ],
             ],
@@ -158,9 +166,11 @@ class PropertyHookTest extends TestCase
                 'generic_parameter_types' => [
                     DummyWithQuotes::class => ['T' => 'string'],
                 ],
-                'property_formatter' => [
-                    sprintf('%s::$name', DummyWithQuotes::class) => [
-                        'deserialize' => fn (mixed $v, array $c): string => (string) $v,
+                'deserialize' => [
+                    'property_formatter' => [
+                        DummyWithQuotes::class => [
+                            'name' => fn (mixed $v, array $c): string => (string) $v,
+                        ],
                     ],
                 ],
             ],
@@ -177,9 +187,11 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$name', ClassicDummy::class) => [
-                        'deserialize' => fn (string $v, array $c): string => strtoupper($v),
+                'deserialize' => [
+                    'property_formatter' => [
+                        ClassicDummy::class => [
+                            'name' => fn (string $v, array $c): string => strtoupper($v),
+                        ],
                     ],
                 ],
             ],

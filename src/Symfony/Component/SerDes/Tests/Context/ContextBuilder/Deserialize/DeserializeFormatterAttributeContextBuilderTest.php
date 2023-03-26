@@ -31,12 +31,14 @@ class DeserializeFormatterAttributeContextBuilderTest extends TestCase
 
         $expectedContext = [
             '_symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', DummyWithFormatterAttributes::class) => [
-                        'deserialize' => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
-                    ],
-                    sprintf('%s::$name', AnotherDummyWithFormatterAttributes::class) => [
-                        'deserialize' => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
+                'deserialize' => [
+                    'property_formatter' => [
+                        DummyWithFormatterAttributes::class => [
+                            'id' => [DummyWithFormatterAttributes::class, 'divideAndCastToInt'],
+                        ],
+                        AnotherDummyWithFormatterAttributes::class => [
+                            'name' => [AnotherDummyWithFormatterAttributes::class, 'lowercase'],
+                        ],
                     ],
                 ],
             ],
