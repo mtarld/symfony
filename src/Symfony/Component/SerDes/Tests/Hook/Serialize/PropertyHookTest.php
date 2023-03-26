@@ -32,7 +32,9 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_name' => $propertyNames,
+                'serialize' => [
+                    'property_name' => $propertyNames,
+                ],
             ],
         ];
 
@@ -42,13 +44,13 @@ class PropertyHookTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: string, 1: array<string, string>}>
+     * @return iterable<array{0: string, 1: array<class-string, array<string, string>>}>
      */
     public function updateNameDataProvider(): iterable
     {
         yield ['id', []];
-        yield ['id', [sprintf('%s::$name', ClassicDummy::class) => 'identifier']];
-        yield ['identifier', [sprintf('%s::$id', ClassicDummy::class) => 'identifier']];
+        yield ['id', [ClassicDummy::class => ['name' => 'identifier']]];
+        yield ['identifier', [ClassicDummy::class => ['id' => 'identifier']]];
     }
 
     /**
@@ -64,7 +66,9 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_formatter' => $propertyFormatters,
+                'serialize' => [
+                    'property_formatter' => $propertyFormatters,
+                ],
             ],
         ];
 
@@ -75,16 +79,16 @@ class PropertyHookTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: string, 1: array<string, callable>}>
+     * @return iterable<array{0: string, 1: array<class-string, array<string, callable>}>>
      */
     public function updateTypeAccessorAndContextFromFormatterDataProvider(): iterable
     {
         yield ['int', '$accessor', []];
-        yield ['int', '$accessor', [sprintf('%s::$name', ClassicDummy::class) => ['serialize' => DummyWithMethods::doubleAndCastToString(...)]]];
+        yield ['int', '$accessor', [ClassicDummy::class => ['name' => DummyWithMethods::doubleAndCastToString(...)]]];
         yield [
             'string',
             sprintf('%s::doubleAndCastToString($accessor, $context)', DummyWithMethods::class),
-            [sprintf('%s::$id', ClassicDummy::class) => ['serialize' => DummyWithMethods::doubleAndCastToString(...)]],
+            [ClassicDummy::class => ['id' => DummyWithMethods::doubleAndCastToString(...)]],
         ];
     }
 
@@ -97,8 +101,10 @@ class PropertyHookTest extends TestCase
 
         $context = [
             '_symfony' => [
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => ['serialize' => $formatter],
+                'serialize' => [
+                    'property_formatter' => [
+                        ClassicDummy::class => ['id' => $formatter],
+                    ],
                 ],
             ],
         ];
@@ -142,9 +148,11 @@ class PropertyHookTest extends TestCase
                     ClassicDummy::class => ['T' => 'string'],
                     DummyWithMethods::class => ['U' => 'int'],
                 ],
-                'property_formatter' => [
-                    sprintf('%s::$id', DummyWithMethods::class) => [
-                        'serialize' => DummyWithMethods::doubleAndCastToString(...),
+                'serialize' => [
+                    'property_formatter' => [
+                        DummyWithMethods::class => [
+                            'id' => DummyWithMethods::doubleAndCastToString(...),
+                        ],
                     ],
                 ],
             ],
@@ -167,9 +175,11 @@ class PropertyHookTest extends TestCase
                 'generic_parameter_types' => [
                     ClassicDummy::class => ['T' => 'string'],
                 ],
-                'property_formatter' => [
-                    sprintf('%s::$id', ClassicDummy::class) => [
-                        'serialize' => DummyWithMethods::doubleAndCastToString(...),
+                'serialize' => [
+                    'property_formatter' => [
+                        ClassicDummy::class => [
+                            'id' => DummyWithMethods::doubleAndCastToString(...),
+                        ],
                     ],
                 ],
             ],

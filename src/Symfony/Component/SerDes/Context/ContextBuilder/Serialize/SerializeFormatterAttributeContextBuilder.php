@@ -23,7 +23,7 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 final class SerializeFormatterAttributeContextBuilder implements SerializeContextBuilderInterface
 {
     /**
-     * @var array<string, array{serialize: callable}>
+     * @var array<class-string, array<string, callable>>|null
      */
     private static ?array $cache = null;
 
@@ -48,7 +48,7 @@ final class SerializeFormatterAttributeContextBuilder implements SerializeContex
             self::$cache = $propertyFormatters;
         }
 
-        $context['_symfony']['property_formatter'] = self::$cache;
+        $context['_symfony']['serialize']['property_formatter'] = self::$cache;
 
         return $context;
     }
@@ -56,7 +56,7 @@ final class SerializeFormatterAttributeContextBuilder implements SerializeContex
     /**
      * @param class-string $className
      *
-     * @return array<string, array{serialize: callable}>
+     * @return array<class-string, array<string, callable>>
      */
     private function propertyFormatters(string $className): array
     {
@@ -75,7 +75,7 @@ final class SerializeFormatterAttributeContextBuilder implements SerializeContex
                     break;
                 }
 
-                $propertyFormatters[sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName())]['serialize'] = $attributeInstance->onSerialize;
+                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->onSerialize;
 
                 break;
             }

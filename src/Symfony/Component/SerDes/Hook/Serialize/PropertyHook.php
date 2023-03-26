@@ -31,29 +31,26 @@ final class PropertyHook implements PropertyHookInterface
 
     public function __invoke(\ReflectionProperty $property, string $accessor, array $context): array
     {
-        $propertyIdentifier = sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName());
-
-        $propertyFormatter = isset($context['_symfony']['property_formatter'][$propertyIdentifier]['serialize'])
-            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['property_formatter'][$propertyIdentifier]['serialize']))
+        $propertyFormatter = isset($context['_symfony']['serialize']['property_formatter'][$className = $property->getDeclaringClass()->getName()][$name = $property->getName()])
+            ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['serialize']['property_formatter'][$className][$name]))
             : null;
 
         return [
-            'name' => $this->name($property, $propertyIdentifier, $context),
+            'name' => $this->name($property, $className, $name, $context),
             'type' => $this->type($property, $propertyFormatter, $context),
-            'accessor' => $this->accessor($propertyIdentifier, $propertyFormatter, $accessor, $context),
+            'accessor' => $this->accessor($className, $name, $propertyFormatter, $accessor, $context),
             'context' => $context,
         ];
     }
 
     /**
+     * @param class-string         $className
      * @param array<string, mixed> $context
      */
-    private function name(\ReflectionProperty $property, string $propertyIdentifier, array $context): string
+    private function name(\ReflectionProperty $property, string $className, string $name, array $context): string
     {
-        $name = $property->getName();
-
-        if (isset($context['_symfony']['property_name'][$propertyIdentifier])) {
-            $name = $context['_symfony']['property_name'][$propertyIdentifier];
+        if (isset($context['_symfony']['serialize']['property_name'][$className][$name])) {
+            return $context['_symfony']['serialize']['property_name'][$className][$name];
         }
 
         return $name;
@@ -84,27 +81,28 @@ final class PropertyHook implements PropertyHookInterface
     }
 
     /**
+     * @param class-string         $className
      * @param array<string, mixed> $context
      */
-    private function accessor(string $propertyIdentifier, ?\ReflectionFunction $propertyFormatter, string $accessor, array $context): string
+    private function accessor(string $className, string $name, ?\ReflectionFunction $propertyFormatter, string $accessor, array $context): string
     {
         if (null === $propertyFormatter) {
             return $accessor;
         }
 
         if (!$propertyFormatter->getClosureScopeClass()?->hasMethod($propertyFormatter->getName()) || !$propertyFormatter->isStatic()) {
-            throw new InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Property formatter "%s" must be a static method.', sprintf('%s::$%s', $className, $name)));
         }
 
         if (($returnType = $propertyFormatter->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
-            throw new InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', $propertyIdentifier));
+            throw new InvalidArgumentException(sprintf('Return type of property formatter "%s" must not be "void" nor "never".', sprintf('%s::$%s', $className, $name)));
         }
 
         if (null !== ($contextParameter = $propertyFormatter->getParameters()[1] ?? null)) {
             $contextParameterType = $contextParameter->getType();
 
             if (!$contextParameterType instanceof \ReflectionNamedType || 'array' !== $contextParameterType->getName()) {
-                throw new InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', $propertyIdentifier));
+                throw new InvalidArgumentException(sprintf('Second argument of property formatter "%s" must be an array.', sprintf('%s::$%s', $className, $name)));
             }
         }
 

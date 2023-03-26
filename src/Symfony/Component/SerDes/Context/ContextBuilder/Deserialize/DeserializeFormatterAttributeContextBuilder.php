@@ -23,7 +23,7 @@ use Symfony\Component\SerDes\SerializableResolverInterface;
 final class DeserializeFormatterAttributeContextBuilder implements DeserializeContextBuilderInterface
 {
     /**
-     * @var array<string, array{deserialize: callable}>
+     * @var array<class-string, array<string, callable>>|null
      */
     private static ?array $cache = null;
 
@@ -44,7 +44,7 @@ final class DeserializeFormatterAttributeContextBuilder implements DeserializeCo
             self::$cache = $propertyFormatters;
         }
 
-        $context['_symfony']['property_formatter'] = self::$cache;
+        $context['_symfony']['deserialize']['property_formatter'] = self::$cache;
 
         return $context;
     }
@@ -52,7 +52,7 @@ final class DeserializeFormatterAttributeContextBuilder implements DeserializeCo
     /**
      * @param class-string $className
      *
-     * @return array<string, array{deserialize: callable}>
+     * @return array<class-string, array<string, callable>>
      */
     private function propertyFormatters(string $className): array
     {
@@ -71,7 +71,7 @@ final class DeserializeFormatterAttributeContextBuilder implements DeserializeCo
                     break;
                 }
 
-                $propertyFormatters[sprintf('%s::$%s', $property->getDeclaringClass()->getName(), $property->getName())]['deserialize'] = $attributeInstance->onDeserialize;
+                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->onDeserialize;
 
                 break;
             }

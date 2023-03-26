@@ -13,7 +13,6 @@ namespace Symfony\Component\SerDes\Tests\Attribute;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Attribute\Formatter;
-use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 
 class FormatterTest extends TestCase
 {
