@@ -110,8 +110,12 @@ abstract class TypeFactory
             return self::$cache[$cacheKey] = new Type($string, $isNullable);
         }
 
-        if (is_subclass_of($string, \BackedEnum::class)) {
-            return self::$cache[$cacheKey] = new Type('enum', $isNullable, $string);
+        if (is_subclass_of($string, \UnitEnum::class)) {
+            if (is_subclass_of($string, \BackedEnum::class)) {
+                return self::$cache[$cacheKey] = new Type('enum', $isNullable, $string);
+            }
+
+            throw new InvalidTypeException($string);
         }
 
         if (class_exists($string) || interface_exists($string)) {
