@@ -15,8 +15,6 @@ use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerDesCacheWarmer;
 use Symfony\Bundle\FrameworkBundle\Tests\TestCase;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
-use Symfony\Component\SerDes\Tests\Fixtures\Dto\NonNullableDummy;
-use Symfony\Component\SerDes\Tests\Fixtures\Dto\NullableDummy;
 
 class SerDesCacheWarmerTest extends TestCase
 {
@@ -42,53 +40,27 @@ class SerDesCacheWarmerTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider warmUpTemplateDataProvider
-     *
-     * @param list<string> $expectedClasses
-     */
-    public function testWarmUpTemplate(array $expectedClasses, bool $nullableData)
+    public function testWarmUpTemplate()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([
-            NonNullableDummy::class,
-            NullableDummy::class,
-            ClassicDummy::class,
-        ]));
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([ClassicDummy::class]));
 
-        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json'], $nullableData))->warmUp('useless');
+        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json']))->warmUp('useless');
 
-        $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.json.php', $this->templateCacheDir, hash('xxh128', $c)), $expectedClasses);
+        $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.json.php', $this->templateCacheDir, hash('xxh128', $c)), [ClassicDummy::class]);
 
         $this->assertSame($expectedTemplates, glob($this->templateCacheDir.'/*'));
-    }
-
-    /**
-     * @return iterable<array{0: list<string>, 1: bool}>
-     */
-    public static function warmUpTemplateDataProvider(): iterable
-    {
-        yield [[NonNullableDummy::class, '?'.NullableDummy::class, ClassicDummy::class], false];
-        yield [[NonNullableDummy::class, '?'.ClassicDummy::class, '?'.NullableDummy::class], true];
     }
 
     public function testWarmUpLazyObject()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([
-            ClassicDummy::class,
-            NullableDummy::class,
-            NonNullableDummy::class,
-        ]));
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([ClassicDummy::class]));
 
-        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json'], false))->warmUp('useless');
+        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json']))->warmUp('useless');
 
-        $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.php', $this->lazyObjectCacheDir, hash('xxh128', $c)), [
-            NonNullableDummy::class,
-            NullableDummy::class,
-            ClassicDummy::class,
-        ]);
+        $expectedLazyObjects = array_map(fn (string $c): string => sprintf('%s/%s.php', $this->lazyObjectCacheDir, hash('xxh128', $c)), [ClassicDummy::class]);
 
-        $this->assertSame($expectedTemplates, glob($this->lazyObjectCacheDir.'/*'));
+        $this->assertSame($expectedLazyObjects, glob($this->lazyObjectCacheDir.'/*'));
     }
 }
