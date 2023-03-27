@@ -22,10 +22,7 @@ class DeserializeFormatterAttributeContextBuilderTest extends TestCase
     public function testAddPropertyFormattersToContext()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([
-            DummyWithFormatterAttributes::class => null,
-            AnotherDummyWithFormatterAttributes::class => null,
-        ]));
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithFormatterAttributes::class, AnotherDummyWithFormatterAttributes::class]));
 
         $contextBuilder = new DeserializeFormatterAttributeContextBuilder($serializableResolver);
 

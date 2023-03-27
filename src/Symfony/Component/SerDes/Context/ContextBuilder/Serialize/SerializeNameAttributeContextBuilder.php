@@ -41,7 +41,7 @@ final class SerializeNameAttributeContextBuilder implements SerializeContextBuil
         if (null === self::$cache) {
             $propertyNames = [];
 
-            foreach ($this->serializableResolver->resolve() as $className => $_) {
+            foreach ($this->serializableResolver->resolve() as $className) {
                 $propertyNames += $this->propertyNames($className);
             }
 
