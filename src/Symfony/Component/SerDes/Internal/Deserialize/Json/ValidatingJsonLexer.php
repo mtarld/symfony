@@ -189,9 +189,7 @@ final class ValidatingJsonLexer implements LexerInterface
                         throw new InvalidResourceException($resource);
                     }
 
-                    if (!isset(self::$cache['valid_key'][$token])) {
-                        self::$cache['valid_key'][$token] = str_starts_with($token, '"') && str_ends_with($token, '"');
-                    }
+                    self::$cache['valid_key'][$token] ??= str_starts_with($token, '"') && str_ends_with($token, '"');
 
                     if (!self::$cache['valid_key'][$token]) {
                         throw new InvalidResourceException($resource);
