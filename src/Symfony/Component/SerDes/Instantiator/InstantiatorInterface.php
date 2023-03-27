@@ -11,8 +11,7 @@
 
 namespace Symfony\Component\SerDes\Instantiator;
 
-use Symfony\Component\SerDes\Exception\InvalidConstructorArgumentException;
-use Symfony\Component\SerDes\Exception\UnexpectedTypeException;
+use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -30,8 +29,7 @@ interface InstantiatorInterface
      *
      * @return T
      *
-     * @throws InvalidConstructorArgumentException
-     * @throws UnexpectedTypeException
+     * @throws UnexpectedValueException
      */
     public function __invoke(\ReflectionClass $class, array $propertiesValues, array $context): object;
 }
