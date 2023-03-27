@@ -50,6 +50,10 @@ final class PathSerializableResolver implements SerializableResolverInterface
         $includedFiles = [];
 
         foreach ($paths as $path) {
+            if (!is_dir($path)) {
+                continue;
+            }
+
             $phpFiles = new \RegexIterator(
                 new \RecursiveIteratorIterator(
                     new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),

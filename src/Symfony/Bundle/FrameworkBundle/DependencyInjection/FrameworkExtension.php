@@ -3060,9 +3060,16 @@ class FrameworkExtension extends Extension
 
         $container->setParameter('ser_des.serializable_paths', $config['serializable_paths']);
         $container->setParameter('ser_des.template_warm_up.formats', $config['template_warm_up']['formats']);
-        $container->setParameter('ser_des.template_warm_up.accept_null', $config['template_warm_up']['accept_null']);
 
         $loader->load('ser_des.php');
+
+        foreach ($config['serializable_paths'] as $path) {
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $container->fileExists($path, '/\.php$/');
+        }
     }
 
     private function resolveTrustedHeaders(array $headers): int

@@ -159,7 +159,6 @@ return static function (ContainerConfigurator $container) {
                 param('.ser_des.cache_dir.template'),
                 param('.ser_des.cache_dir.lazy_object'),
                 param('ser_des.template_warm_up.formats'),
-                param('ser_des.template_warm_up.accept_null'),
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('kernel.cache_warmer')
