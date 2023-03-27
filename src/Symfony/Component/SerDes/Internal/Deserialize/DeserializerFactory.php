@@ -53,7 +53,6 @@ abstract class DeserializerFactory
             decoder: new JsonDecoder(),
             listSplitter: new JsonListSplitter($lexer),
             dictSplitter: new JsonDictSplitter($lexer),
-            instantiator: new Instantiator(),
         );
     }
 }

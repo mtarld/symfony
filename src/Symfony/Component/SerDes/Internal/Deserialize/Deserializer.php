@@ -14,7 +14,6 @@ namespace Symfony\Component\SerDes\Internal\Deserialize;
 use Symfony\Component\SerDes\Exception\LogicException;
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
-use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
 use Symfony\Component\SerDes\Internal\Type;
 use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Internal\UnionType;
@@ -42,7 +41,6 @@ final class Deserializer
         private readonly DecoderInterface $decoder,
         private readonly ListSplitterInterface $listSplitter,
         private readonly DictSplitterInterface $dictSplitter,
-        private readonly InstantiatorInterface $instantiator,
     ) {
     }
 
@@ -91,13 +89,17 @@ final class Deserializer
             return null;
         }
 
-        return match ($type->name()) {
-            'int' => (int) $data,
-            'float' => (float) $data,
-            'string' => (string) $data,
-            'bool' => (bool) $data,
-            default => throw new LogicException(sprintf('Cannot cast scalar to "%s".', $type->name())),
-        };
+        try {
+            return match ($type->name()) {
+                'int' => (int) $data,
+                'float' => (float) $data,
+                'string' => (string) $data,
+                'bool' => (bool) $data,
+                default => throw new LogicException(sprintf('Unhandled "%s" scalar cast', $type->name())),
+            };
+        } catch (\Throwable) {
+            throw new UnexpectedValueException(sprintf('Cannot cast "%s" to "%s"', get_debug_type($data), (string) $type));
+        }
     }
 
     /**
@@ -279,6 +281,22 @@ final class Deserializer
             return $context['instantiator']($reflection, $propertiesValues, $context);
         }
 
-        return ($this->instantiator)($reflection, $propertiesValues, $context);
+        $object = new ($reflection->getName())();
+
+        foreach ($propertiesValues as $property => $value) {
+            try {
+                $object->{$property} = $value();
+            } catch (\TypeError|UnexpectedValueException $e) {
+                $exception = new UnexpectedValueException($e->getMessage(), previous: $e);
+
+                if (!($context['collect_errors'] ?? false)) {
+                    throw $exception;
+                }
+
+                $context['collected_errors'][] = $exception;
+            }
+        }
+
+        return $object;
     }
 }
