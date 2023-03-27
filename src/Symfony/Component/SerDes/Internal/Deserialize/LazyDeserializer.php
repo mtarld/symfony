@@ -87,11 +87,7 @@ final class LazyDeserializer extends Deserializer
             $reflection,
             $key,
             function (string $type, array $context) use ($resource, $boundary): mixed {
-                if (!isset(self::$cache['type'][$type])) {
-                    self::$cache['type'][$type] = TypeFactory::createFromString($type);
-                }
-
-                return $this->deserialize($resource, self::$cache['type'][$type], ['boundary' => $boundary] + $context);
+                return $this->deserialize($resource, self::$cache['type'][$type] ??= TypeFactory::createFromString($type), ['boundary' => $boundary] + $context);
             },
             $context,
         );

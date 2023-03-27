@@ -51,12 +51,8 @@ class Deserializer
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
             }
 
-            if (!isset(self::$cache['type'][$typeString])) {
-                self::$cache['type'][$typeString] = TypeFactory::createFromString($context['union_selector'][$typeString]);
-            }
-
             /** @var Type $type */
-            $type = self::$cache['type'][$typeString];
+            $type = (self::$cache['type'][$typeString] ??= TypeFactory::createFromString($context['union_selector'][$typeString]));
         }
 
         $result = match (true) {
@@ -151,23 +147,15 @@ class Deserializer
             $hookResult = $hook((string) $type, $context);
 
             if (isset($hookResult['type'])) {
-                if (!isset(self::$cache['type'][$hookResult['type']])) {
-                    self::$cache['type'][$hookResult['type']] = TypeFactory::createFromString($hookResult['type']);
-                }
-
                 /** @var Type $type */
-                $type = self::$cache['type'][$hookResult['type']];
+                $type = (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']));
             }
 
             $context = $hookResult['context'] ?? $context;
         }
 
-        if (!isset(self::$cache['class_reflection'][$typeString = (string) $type])) {
-            self::$cache['class_reflection'][$typeString] = new \ReflectionClass($type->className());
-        }
-
         /** @var \ReflectionClass<object> $reflection */
-        $reflection = self::$cache['class_reflection'][$typeString];
+        $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($type->className()));
 
         /** @var array<string, callable(): mixed> $propertiesValues */
         $propertiesValues = [];
@@ -190,9 +178,7 @@ class Deserializer
                 $context = $hookResult['context'] ?? $context;
             }
 
-            if (!isset(self::$cache['class_has_property'][$propertyIdentifier = $typeString.$propertyName])) {
-                self::$cache['class_has_property'][$propertyIdentifier] = $reflection->hasProperty($propertyName);
-            }
+            self::$cache['class_has_property'][$propertyIdentifier = $typeString.$propertyName] ??= $reflection->hasProperty($propertyName);
 
             if (!self::$cache['class_has_property'][$propertyIdentifier]) {
                 continue;
@@ -204,9 +190,7 @@ class Deserializer
                 continue;
             }
 
-            if (!isset(self::$cache['property_type'][$propertyIdentifier])) {
-                self::$cache['property_type'][$propertyIdentifier] = TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($propertyName)));
-            }
+            self::$cache['property_type'][$propertyIdentifier] ??= TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($propertyName)));
 
             $propertiesValues[$propertyName] = $this->propertyValue(self::$cache['property_type'][$propertyIdentifier], $v, $data, $context);
         }
@@ -247,11 +231,7 @@ class Deserializer
             $reflection,
             $key,
             function (string $type, array $context) use ($value): mixed {
-                if (!isset(self::$cache['type'][$type])) {
-                    self::$cache['type'][$type] = TypeFactory::createFromString($type);
-                }
-
-                return $this->deserialize($value, self::$cache['type'][$type], $context);
+                return $this->deserialize($value, self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $context);
             },
             $context,
         );
