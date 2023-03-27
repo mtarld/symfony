@@ -2517,7 +2517,7 @@ class Configuration implements ConfigurationInterface
                                     ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
                                     ->prototype('scalar')->end()
                                 ->end()
-                                ->booleanNode('nullable_data')
+                                ->booleanNode('accept_null')
                                     ->info('Defines if nullable data should be handled by default.')
                                     ->defaultFalse()
                                 ->end()

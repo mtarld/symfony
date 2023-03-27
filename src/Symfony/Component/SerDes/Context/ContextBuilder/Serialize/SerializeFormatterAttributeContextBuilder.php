@@ -13,7 +13,7 @@ namespace Symfony\Component\SerDes\Context\ContextBuilder\Serialize;
 
 use Symfony\Component\SerDes\Attribute\Formatter;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

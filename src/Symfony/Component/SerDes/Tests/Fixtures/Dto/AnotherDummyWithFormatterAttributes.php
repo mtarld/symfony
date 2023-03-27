@@ -3,9 +3,7 @@
 namespace Symfony\Component\SerDes\Tests\Fixtures\Dto;
 
 use Symfony\Component\SerDes\Attribute\Formatter;
-use Symfony\Component\SerDes\Attribute\Serializable;
 
-#[Serializable]
 class AnotherDummyWithFormatterAttributes
 {
     public int $id = 1;

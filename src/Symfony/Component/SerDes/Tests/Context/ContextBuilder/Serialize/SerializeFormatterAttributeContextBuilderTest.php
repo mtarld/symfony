@@ -13,7 +13,7 @@ namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Serialize;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\AnotherDummyWithFormatterAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 

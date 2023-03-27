@@ -3051,7 +3051,7 @@ class FrameworkExtension extends Extension
 
         $container->setParameter('ser_des.serializable_paths', $config['serializable_paths']);
         $container->setParameter('ser_des.template_warm_up.formats', $config['template_warm_up']['formats']);
-        $container->setParameter('ser_des.template_warm_up.nullable_data', $config['template_warm_up']['nullable_data']);
+        $container->setParameter('ser_des.template_warm_up.accept_null', $config['template_warm_up']['accept_null']);
 
         $loader->load('ser_des.php');
     }

@@ -101,20 +101,20 @@ final class TypeSorter
     }
 
     /**
-     * @param class-string                                                                                                            $class
+     * @param class-string                                                                                                            $className
      * @param array<class-string, array{class: class-string, children?: array{class: class-string, children?: array<string, mixed>}}> $classTree
      */
-    private function depth(string $class, array $classTree, int $depth = 0): int
+    private function depth(string $className, array $classTree, int $depth = 0): int
     {
         foreach ($classTree as $leaf) {
-            if ($leaf['class'] === $class) {
+            if ($leaf['class'] === $className) {
                 return $depth;
             }
         }
 
         $maxDepth = $depth;
         foreach ($classTree as $branch) {
-            $maxDepth = max($this->depth($class, $branch['children'] ?? [], $depth + 1), $maxDepth);
+            $maxDepth = max($this->depth($className, $branch['children'] ?? [], $depth + 1), $maxDepth);
         }
 
         return $maxDepth;
