@@ -37,7 +37,7 @@ final class DeserializeFormatterAttributeContextBuilder implements DeserializeCo
         if (null === self::$cache) {
             $propertyFormatters = [];
 
-            foreach ($this->serializableResolver->resolve() as $className => $_) {
+            foreach ($this->serializableResolver->resolve() as $className) {
                 $propertyFormatters += $this->propertyFormatters($className);
             }
 

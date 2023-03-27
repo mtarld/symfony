@@ -22,10 +22,7 @@ class SerializeNameAttributeContextBuilderTest extends TestCase
     public function testAddPropertyNameToContext()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([
-            DummyWithNameAttributes::class => null,
-            AnotherDummyWithNameAttributes::class => null,
-        ]));
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class]));
 
         $contextBuilder = new SerializeNameAttributeContextBuilder($serializableResolver);
 
@@ -46,6 +43,7 @@ class SerializeNameAttributeContextBuilderTest extends TestCase
     public function testSkipWhenWontGenerateTemplate()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class]));
 
         $this->assertSame(['template_exists' => true], (new SerializeNameAttributeContextBuilder($serializableResolver))->build(['template_exists' => true]));
     }
