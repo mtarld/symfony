@@ -22,10 +22,7 @@ class SerializeFormatterAttributeContextBuilderTest extends TestCase
     public function testAddPropertyFormattersToContext()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([
-            DummyWithFormatterAttributes::class => null,
-            AnotherDummyWithFormatterAttributes::class => null,
-        ]));
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithFormatterAttributes::class, AnotherDummyWithFormatterAttributes::class]));
 
         $contextBuilder = new SerializeFormatterAttributeContextBuilder($serializableResolver);
 
@@ -50,6 +47,7 @@ class SerializeFormatterAttributeContextBuilderTest extends TestCase
     public function testSkipWhenWontGenerateTemplate()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
+        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class]));
 
         $this->assertSame(['template_exists' => true], (new SerializeFormatterAttributeContextBuilder($serializableResolver))->build(['template_exists' => true]));
     }
