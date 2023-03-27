@@ -13,8 +13,7 @@ namespace Symfony\Bundle\FrameworkBundle\CacheWarmer;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
-use Symfony\Component\SerDes\Attribute\Nullable;
+use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Exception\ExceptionInterface;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
@@ -27,7 +26,7 @@ use function Symfony\Component\SerDes\serialize_generate;
  *
  * @experimental in 7.0
  */
-final class SerDesCacheWarmer implements CacheWarmerInterface
+final class SerDesCacheWarmer extends CacheWarmer
 {
     /**
      * @param iterable<SerializeContextBuilderInterface> $contextBuilders
@@ -39,7 +38,6 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
         private readonly array $formats,
-        private readonly bool $nullableData,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }
@@ -67,7 +65,7 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
 
     public function isOptional(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -75,29 +73,6 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
      */
     private function warmClassTemplate(string $className, string $format): void
     {
-        $nullable = $this->nullableData;
-
-        foreach ((new \ReflectionClass($className))->getAttributes() as $attribute) {
-            if (Nullable::class !== $attribute->getName()) {
-                continue;
-            }
-
-            /** @var Nullable $attributeInstance */
-            $attributeInstance = $attribute->newInstance();
-
-            $nullable = $attributeInstance->nullable;
-
-            break;
-        }
-
-        if ($nullable) {
-            $className = '?'.$className;
-        }
-
-        if (file_exists($path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className), $format))) {
-            return;
-        }
-
         try {
             $context = [
                 'cache_dir' => $this->templateCacheDir,
@@ -108,7 +83,9 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
                 $context = $contextBuilder->build($context, true);
             }
 
-            file_put_contents($path, serialize_generate($className, $format, $context));
+            $path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className), $format);
+
+            $this->writeCacheFile($path, serialize_generate($className, $format, $context));
         } catch (ExceptionInterface $e) {
             $this->logger->debug('Cannot generate template for "{className}": {exception}', ['className' => $className, 'exception' => $e]);
         }
@@ -119,33 +96,12 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
      */
     private function warmClassLazyObject(string $className): void
     {
-        if (file_exists($path = sprintf('%s%s%s.php', $this->lazyObjectCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
-            return;
-        }
+        $path = sprintf('%s%s%s.php', $this->lazyObjectCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className));
 
-        file_put_contents($path, sprintf(
+        $this->writeCacheFile($path, sprintf(
             'class %s%s',
             sprintf('%sGhost', preg_replace('/\\\\/', '', $className)),
             ProxyHelper::generateLazyGhost(new \ReflectionClass($className)),
         ));
-    }
-
-    /**
-     * @param class-string $className
-     */
-    private function isTemplateAcceptingNull(string $className): bool
-    {
-        foreach ((new \ReflectionClass($className))->getAttributes() as $attribute) {
-            if (Nullable::class !== $attribute->getName()) {
-                continue;
-            }
-
-            /** @var Nullable $attributeInstance */
-            $attributeInstance = $attribute->newInstance();
-
-            return $attributeInstance->nullable;
-        }
-
-        return $this->nullableData;
     }
 }

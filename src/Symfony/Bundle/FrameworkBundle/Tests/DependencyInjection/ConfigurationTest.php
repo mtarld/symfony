@@ -23,11 +23,11 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\RateLimiter\Policy\TokenBucketLimiter;
 use Symfony\Component\Scheduler\Messenger\SchedulerTransportFactory;
+use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\Uid\Factory\UuidFactory;
 
 class ConfigurationTest extends TestCase
@@ -744,7 +744,6 @@ class ConfigurationTest extends TestCase
                 'enabled' => !class_exists(FullStack::class) && class_exists(Serializer::class),
                 'serializable_paths' => [],
                 'template_warm_up' => [
-                    'accept_null' => false,
                     'formats' => [],
                 ],
             ],

@@ -171,10 +171,10 @@ class FrameworkBundle extends Bundle
         $this->addCompilerPassIfExists($container, MessengerPass::class);
         $this->addCompilerPassIfExists($container, HttpClientPass::class);
         $this->addCompilerPassIfExists($container, AddAutoMappingConfigurationPass::class);
+        $this->addCompilerPassIfExists($container, SerDesPass::class);
         $container->addCompilerPass(new RegisterReverseContainerPass(true));
         $container->addCompilerPass(new RegisterReverseContainerPass(false), PassConfig::TYPE_AFTER_REMOVING);
         $container->addCompilerPass(new RemoveUnusedSessionMarshallingHandlerPass());
-        $this->addCompilerPassIfExists($container, SerDesPass::class);
 
         if ($container->getParameter('kernel.debug')) {
             $container->addCompilerPass(new EnableLoggerDebugModePass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, -33);
