@@ -12,13 +12,11 @@
 namespace Symfony\Component\SerDes\Tests\Internal\Deserialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Exception\InvalidConstructorArgumentException;
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Exception\PartialDeserializationException;
-use Symfony\Component\SerDes\Exception\UnexpectedTypeException;
+use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
-use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithConstructorWithRequiredValues;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 
 use function Symfony\Component\SerDes\deserialize;
@@ -100,9 +98,9 @@ class DeserializeTest extends TestCase
 
     public function testThrowWhenNotCollecting()
     {
-        $this->expectException(InvalidConstructorArgumentException::class);
+        $this->expectException(UnexpectedValueException::class);
 
-        $this->deserializeString('{}', DummyWithConstructorWithRequiredValues::class);
+        $this->deserializeString('{"name": {"foo": "bar"}}', ClassicDummy::class);
     }
 
     public function testThrowPartialWhenCollecting()
@@ -133,7 +131,7 @@ class DeserializeTest extends TestCase
             $this->assertEquals([$okDummy, $koDummy, $okDummy, $koDummy], $e->deserialized);
 
             $this->assertCount(2, $e->errors);
-            $this->assertContainsOnlyInstancesOf(UnexpectedTypeException::class, $e->errors);
+            $this->assertContainsOnlyInstancesOf(UnexpectedValueException::class, $e->errors);
         }
     }
 
