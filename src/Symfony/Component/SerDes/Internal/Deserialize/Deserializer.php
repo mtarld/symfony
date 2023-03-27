@@ -24,12 +24,12 @@ use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
  *
  * @internal
  */
-final class Deserializer
+class Deserializer
 {
     /**
      * @var array<string, array<string, mixed>>
      */
-    private static array $cache = [
+    protected static array $cache = [
         'type' => [],
         'property_type' => [],
         'class_reflection' => [],
@@ -37,17 +37,14 @@ final class Deserializer
     ];
 
     public function __construct(
-        private readonly ReflectionTypeExtractor $reflectionTypeExtractor,
-        private readonly DecoderInterface $decoder,
-        private readonly ListSplitterInterface $listSplitter,
-        private readonly DictSplitterInterface $dictSplitter,
+        protected readonly ReflectionTypeExtractor $reflectionTypeExtractor,
     ) {
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    public function deserialize(mixed $resourceOrData, Type|UnionType $type, array $context): mixed
+    public function deserialize(mixed $data, Type|UnionType $type, array $context): mixed
     {
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][$typeString = (string) $type])) {
@@ -63,10 +60,10 @@ final class Deserializer
         }
 
         $result = match (true) {
-            $type->isScalar() => $this->deserializeScalar($context['lazy_reading'], $resourceOrData, $type, $context),
-            $type->isCollection() => $this->deserializeCollection($context['lazy_reading'], $resourceOrData, $type, $context),
-            $type->isEnum() => $this->deserializeEnum($context['lazy_reading'], $resourceOrData, $type, $context),
-            $type->isObject() => $this->deserializeObject($context['lazy_reading'], $resourceOrData, $type, $context),
+            $type->isScalar() => $this->deserializeScalar($data, $type, $context),
+            $type->isCollection() => $this->deserializeCollection($data, $type, $context),
+            $type->isEnum() => $this->deserializeEnum($data, $type, $context),
+            $type->isObject() => $this->deserializeObject($data, $type, $context),
 
             default => throw new UnsupportedTypeException($type),
         };
@@ -81,10 +78,8 @@ final class Deserializer
     /**
      * @param array<string, mixed> $context
      */
-    private function deserializeScalar(bool $lazy, mixed $resourceOrData, Type $type, array $context): int|string|bool|float|null
+    protected function deserializeScalar(mixed $data, Type $type, array $context): int|string|bool|float|null
     {
-        $data = $lazy ? $this->decoder->decode($resourceOrData, $context['boundary'][0], $context['boundary'][1], $context) : $resourceOrData;
-
         if (null === $data) {
             return null;
         }
@@ -107,62 +102,22 @@ final class Deserializer
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
      */
-    private function deserializeCollection(bool $lazy, mixed $resourceOrData, Type $type, array $context): \Iterator|array|null
+    protected function deserializeCollection(mixed $data, Type $type, array $context): \Iterator|array|null
     {
-        if ($lazy) {
-            $collectionSplitter = $type->isDict() ? $this->dictSplitter : $this->listSplitter;
-
-            if (null === $boundaries = $collectionSplitter->split($resourceOrData, $type, $context)) {
-                return null;
-            }
-
-            $data = $this->lazyDeserializeCollectionItems($boundaries, $resourceOrData, $type->collectionValueType(), $context);
-        } else {
-            if (null === $resourceOrData) {
-                return null;
-            }
-
-            $data = $this->deserializeCollectionItems($resourceOrData, $type->collectionValueType(), $context);
+        if (null === $data) {
+            return null;
         }
+
+        $data = $this->deserializeCollectionItems($data, $type->collectionValueType(), $context);
 
         return $type->isIterable() ? $data : iterator_to_array($data);
     }
 
     /**
-     * @param array<string, mixed>|list<mixed> $collection
-     * @param array<string, mixed>             $context
-     *
-     * @return \Iterator<mixed>|\Iterator<string, mixed>
-     */
-    private function deserializeCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
-    {
-        foreach ($collection as $key => $value) {
-            yield $key => $this->deserialize($value, $type, $context);
-        }
-    }
-
-    /**
-     * @param \Iterator<array{0: int, 1: int}> $boundaries
-     * @param resource                         $resource
-     * @param array<string, mixed>             $context
-     * @param \Iterator<mixed,mixed>           $boundaries
-     *
-     * @return \Iterator<mixed>|\Iterator<string, mixed>
-     */
-    private function lazyDeserializeCollectionItems(\Iterator $boundaries, mixed $resource, Type|UnionType $type, array $context): \Iterator
-    {
-        foreach ($boundaries as $key => $boundary) {
-            yield $key => $this->deserialize($resource, $type, ['boundary' => $boundary] + $context);
-        }
-    }
-
-    /**
      * @param array<string, mixed> $context
      */
-    private function deserializeEnum(bool $lazy, mixed $resourceOrData, Type $type, array $context): ?\BackedEnum
+    protected function deserializeEnum(mixed $data, Type $type, array $context): ?\BackedEnum
     {
-        $data = $lazy ? $this->decoder->decode($resourceOrData, $context['boundary'][0], $context['boundary'][1], $context) : $resourceOrData;
-
         if (null === $data) {
             return null;
         }
@@ -177,11 +132,8 @@ final class Deserializer
     /**
      * @param array<string, mixed> $context
      */
-    private function deserializeObject(bool $lazy, mixed $resourceOrData, Type $type, array $context): ?object
+    protected function deserializeObject(mixed $data, Type $type, array $context): ?object
     {
-        /** @var array<string, mixed>|null $data */
-        $data = $lazy ? $this->dictSplitter->split($resourceOrData, $type, $context) : $resourceOrData;
-
         if (null === $data) {
             return null;
         }
@@ -232,23 +184,7 @@ final class Deserializer
             $propertyName = $k;
 
             if (null !== $hook) {
-                /** @var array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hookResult */
-                $hookResult = $hook(
-                    $reflection,
-                    $k,
-                    function (string $type, array $context) use ($v, $resourceOrData, $lazy): mixed {
-                        if (!isset(self::$cache['type'][$type])) {
-                            self::$cache['type'][$type] = TypeFactory::createFromString($type);
-                        }
-
-                        if ($lazy) {
-                            return $this->deserialize($resourceOrData, self::$cache['type'][$type], ['boundary' => $v] + $context);
-                        }
-
-                        return $this->deserialize($v, self::$cache['type'][$type], $context);
-                    },
-                    $context,
-                );
+                $hookResult = $this->executePropertyHook($hook, $reflection, $k, $v, $data, $context);
 
                 $propertyName = $hookResult['name'] ?? $propertyName;
                 $context = $hookResult['context'] ?? $context;
@@ -272,9 +208,7 @@ final class Deserializer
                 self::$cache['property_type'][$propertyIdentifier] = TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($propertyName)));
             }
 
-            $propertiesValues[$propertyName] = $lazy
-                ? fn () => $this->deserialize($resourceOrData, self::$cache['property_type'][$propertyIdentifier], ['boundary' => $v] + $context)
-                : fn () => $this->deserialize($v, self::$cache['property_type'][$propertyIdentifier], $context);
+            $propertiesValues[$propertyName] = $this->propertyValue(self::$cache['property_type'][$propertyIdentifier], $v, $data, $context);
         }
 
         if (isset($context['instantiator'])) {
@@ -298,5 +232,51 @@ final class Deserializer
         }
 
         return $object;
+    }
+
+    /**
+     * @param callable(\ReflectionClass<object>, string, callable(string, array<string, mixed>): mixed, array<string, mixed>): array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hook
+     * @param \ReflectionClass<object>                                                                                                                                                                                  $reflection
+     * @param array<string, mixed>                                                                                                                                                                                      $context
+     *
+     * @return array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>}
+     */
+    protected function executePropertyHook(callable $hook, \ReflectionClass $reflection, string $key, mixed $value, mixed $data, array $context): array
+    {
+        return $hook(
+            $reflection,
+            $key,
+            function (string $type, array $context) use ($value): mixed {
+                if (!isset(self::$cache['type'][$type])) {
+                    self::$cache['type'][$type] = TypeFactory::createFromString($type);
+                }
+
+                return $this->deserialize($value, self::$cache['type'][$type], $context);
+            },
+            $context,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return callable(): mixed
+     */
+    protected function propertyValue(Type|UnionType $type, mixed $value, mixed $data, array $context): callable
+    {
+        return fn () => $this->deserialize($value, $type, $context);
+    }
+
+    /**
+     * @param array<string, mixed>|list<mixed> $collection
+     * @param array<string, mixed>             $context
+     *
+     * @return \Iterator<mixed>|\Iterator<string, mixed>
+     */
+    private function deserializeCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
+    {
+        foreach ($collection as $key => $value) {
+            yield $key => $this->deserialize($value, $type, $context);
+        }
     }
 }
