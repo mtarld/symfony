@@ -110,7 +110,7 @@ final class JsonDictSplitter implements DictSplitterInterface
             }
 
             if (null === $key) {
-                $key = self::$cache['key'][$value] = self::$cache['key'][$value] ?? json_decode($value, flags: $context['json_decode_flags'] ?? 0);
+                $key = self::$cache['key'][$value] ??= json_decode($value, flags: $context['json_decode_flags'] ?? 0);
             }
         }
 
