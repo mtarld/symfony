@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes;
+namespace Symfony\Component\SerDes\SerializableResolver;
 
 use Psr\Cache\CacheException;
 use Psr\Cache\CacheItemPoolInterface;

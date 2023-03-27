@@ -14,10 +14,10 @@ namespace Symfony\Bundle\FrameworkBundle\CacheWarmer;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
-use Symfony\Component\SerDes\Attribute\Serializable;
+use Symfony\Component\SerDes\Attribute\Nullable;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Exception\ExceptionInterface;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 use function Symfony\Component\SerDes\serialize_generate;
@@ -54,12 +54,12 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
             mkdir($this->lazyObjectCacheDir, recursive: true);
         }
 
-        foreach ($this->serializableResolver->resolve() as $class => $attribute) {
+        foreach ($this->serializableResolver->resolve() as $className) {
             foreach ($this->formats as $format) {
-                $this->warmClassTemplate($class, $attribute, $format);
+                $this->warmClassTemplate($className, $format);
             }
 
-            $this->warmClassLazyObject($class);
+            $this->warmClassLazyObject($className);
         }
 
         return [];
@@ -71,15 +71,30 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
     }
 
     /**
-     * @param class-string $class
+     * @param class-string $className
      */
-    private function warmClassTemplate(string $class, Serializable $attribute, string $format): void
+    private function warmClassTemplate(string $className, string $format): void
     {
-        if ($attribute->nullable ?? $this->nullableData) {
-            $class = '?'.$class;
+        $nullable = $this->nullableData;
+
+        foreach ((new \ReflectionClass($className))->getAttributes() as $attribute) {
+            if (Nullable::class !== $attribute->getName()) {
+                continue;
+            }
+
+            /** @var Nullable $attributeInstance */
+            $attributeInstance = $attribute->newInstance();
+
+            $nullable = $attributeInstance->nullable;
+
+            break;
         }
 
-        if (file_exists($path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, md5($class), $format))) {
+        if ($nullable) {
+            $className = '?'.$className;
+        }
+
+        if (file_exists($path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className), $format))) {
             return;
         }
 
@@ -93,25 +108,44 @@ final class SerDesCacheWarmer implements CacheWarmerInterface
                 $context = $contextBuilder->build($context, true);
             }
 
-            file_put_contents($path, serialize_generate($class, $format, $context));
+            file_put_contents($path, serialize_generate($className, $format, $context));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate template for "{class}": {exception}', ['class' => $class, 'exception' => $e]);
+            $this->logger->debug('Cannot generate template for "{className}": {exception}', ['className' => $className, 'exception' => $e]);
         }
     }
 
     /**
-     * @param class-string $class
+     * @param class-string $className
      */
-    private function warmClassLazyObject(string $class): void
+    private function warmClassLazyObject(string $className): void
     {
-        if (file_exists($path = sprintf('%s%s%s.php', $this->lazyObjectCacheDir, \DIRECTORY_SEPARATOR, md5($class)))) {
+        if (file_exists($path = sprintf('%s%s%s.php', $this->lazyObjectCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
             return;
         }
 
         file_put_contents($path, sprintf(
             'class %s%s',
-            sprintf('%sGhost', preg_replace('/\\\\/', '', $class)),
-            ProxyHelper::generateLazyGhost(new \ReflectionClass($class)),
+            sprintf('%sGhost', preg_replace('/\\\\/', '', $className)),
+            ProxyHelper::generateLazyGhost(new \ReflectionClass($className)),
         ));
+    }
+
+    /**
+     * @param class-string $className
+     */
+    private function isTemplateAcceptingNull(string $className): bool
+    {
+        foreach ((new \ReflectionClass($className))->getAttributes() as $attribute) {
+            if (Nullable::class !== $attribute->getName()) {
+                continue;
+            }
+
+            /** @var Nullable $attributeInstance */
+            $attributeInstance = $attribute->newInstance();
+
+            return $attributeInstance->nullable;
+        }
+
+        return $this->nullableData;
     }
 }

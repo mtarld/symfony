@@ -9,14 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests;
+namespace Symfony\Component\SerDes\Tests\SerializableResolver;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheException;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\SerDes\CachedSerializableResolver;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\CachedSerializableResolver;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
 class CachedSerializableResolverTest extends TestCase
 {

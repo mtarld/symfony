@@ -9,16 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes;
-
-use Symfony\Component\SerDes\Attribute\Serializable;
+namespace Symfony\Component\SerDes\SerializableResolver;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-final class SerializableResolver implements SerializableResolverInterface
+final class PathSerializableResolver implements SerializableResolverInterface
 {
     /**
      * @param list<string> $paths
@@ -29,7 +27,7 @@ final class SerializableResolver implements SerializableResolverInterface
     }
 
     /**
-     * @return iterable<class-string, Serializable>
+     * @return iterable<class-string>
      */
     public function resolve(): iterable
     {
@@ -38,20 +36,7 @@ final class SerializableResolver implements SerializableResolverInterface
                 continue;
             }
 
-            $attributeInstance = null;
-
-            foreach ($class->getAttributes() as $attribute) {
-                if (Serializable::class === $attribute->getName()) {
-                    $attributeInstance = $attribute->newInstance();
-                }
-            }
-
-            /** @var Serializable|null $attributeInstance */
-            if (null === $attributeInstance) {
-                continue;
-            }
-
-            yield $class->getName() => $attributeInstance;
+            yield $class->getName();
         }
     }
 

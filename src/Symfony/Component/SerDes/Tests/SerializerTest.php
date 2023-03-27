@@ -25,7 +25,7 @@ use Symfony\Component\SerDes\Context\SerializeContext;
 use Symfony\Component\SerDes\Hook\Deserialize as DeserializeHook;
 use Symfony\Component\SerDes\Hook\Serialize as SerializeHook;
 use Symfony\Component\SerDes\Instantiator\LazyInstantiator;
-use Symfony\Component\SerDes\SerializableResolver;
+use Symfony\Component\SerDes\SerializableResolver\PathSerializableResolver;
 use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\SerDes\SerializerInterface;
 use Symfony\Component\SerDes\Stream\MemoryStream;
@@ -249,7 +249,7 @@ class SerializerTest extends TestCase
     private function createSerializer(): SerializerInterface
     {
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
-        $serializableResolver = new SerializableResolver([__DIR__.'/Fixtures']);
+        $serializableResolver = new PathSerializableResolver([__DIR__.'/Fixtures']);
 
         $serializeContextBuilders = [
             new SerializeFormatterAttributeContextBuilder($serializableResolver),

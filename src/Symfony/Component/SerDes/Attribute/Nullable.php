@@ -9,19 +9,18 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes;
-
-use Symfony\Component\SerDes\Attribute\Serializable;
+namespace Symfony\Component\SerDes\Attribute;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface SerializableResolverInterface
+#[\Attribute(\Attribute::TARGET_CLASS)]
+final class Nullable
 {
-    /**
-     * @return iterable<class-string, Serializable>
-     */
-    public function resolve(): iterable;
+    public function __construct(
+        public readonly bool $nullable = true,
+    ) {
+    }
 }
