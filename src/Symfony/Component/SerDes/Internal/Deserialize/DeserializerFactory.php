@@ -35,24 +35,31 @@ abstract class DeserializerFactory
      */
     public static function create(string $format, array $context): Deserializer
     {
+        $lazyReading = $context['lazy_reading'] ?? false;
+        $validateStream = $lazyReading && ($context['validate_stream'] ?? false);
+
         return match ($format) {
-            'json' => self::json($context['validate_stream'] ?? false),
+            'json' => self::json($lazyReading, $validateStream),
             default => throw new UnsupportedFormatException($format),
         };
     }
 
-    private static function json(bool $validate): Deserializer
+    private static function json(bool $lazy, bool $validate): Deserializer
     {
-        $lexer = new JsonLexer();
-        if ($validate) {
-            $lexer = new ValidatingJsonLexer($lexer);
+        if ($lazy) {
+            $lexer = new JsonLexer();
+            if ($validate) {
+                $lexer = new ValidatingJsonLexer($lexer);
+            }
+
+            return new LazyDeserializer(
+                reflectionTypeExtractor: new ReflectionTypeExtractor(),
+                decoder: new JsonDecoder(),
+                listSplitter: new JsonListSplitter($lexer),
+                dictSplitter: new JsonDictSplitter($lexer),
+            );
         }
 
-        return new Deserializer(
-            reflectionTypeExtractor: new ReflectionTypeExtractor(),
-            decoder: new JsonDecoder(),
-            listSplitter: new JsonListSplitter($lexer),
-            dictSplitter: new JsonDictSplitter($lexer),
-        );
+        return new Deserializer(new ReflectionTypeExtractor());
     }
 }
