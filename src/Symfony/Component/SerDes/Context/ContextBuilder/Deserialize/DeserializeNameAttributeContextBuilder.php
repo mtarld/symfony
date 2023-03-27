@@ -13,7 +13,7 @@ namespace Symfony\Component\SerDes\Context\ContextBuilder\Deserialize;
 
 use Symfony\Component\SerDes\Attribute\Name;
 use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

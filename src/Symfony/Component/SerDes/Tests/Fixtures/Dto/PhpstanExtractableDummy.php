@@ -2,13 +2,10 @@
 
 namespace Symfony\Component\SerDes\Tests\Fixtures\Dto;
 
-use Symfony\Component\SerDes\Attribute\Serializable;
-
 /**
  * @template Tk of \Stringable
  * @template Tv of object
  */
-#[Serializable]
 class PhpstanExtractableDummy extends AbstractDummy
 {
     /** @var mixed */

@@ -12,7 +12,6 @@
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerDesCacheWarmer;
-use Symfony\Component\SerDes\CachedSerializableResolver;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeFormatterAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeHookContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
@@ -21,8 +20,9 @@ use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatter
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeHookContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Instantiator\LazyInstantiator;
-use Symfony\Component\SerDes\SerializableResolver;
-use Symfony\Component\SerDes\SerializableResolverInterface;
+use Symfony\Component\SerDes\SerializableResolver\CachedSerializableResolver;
+use Symfony\Component\SerDes\SerializableResolver\PathSerializableResolver;
+use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\SerDes\SerializerInterface;
 use Symfony\Component\SerDes\Type\PhpstanTypeExtractor;
@@ -131,13 +131,13 @@ return static function (ContainerConfigurator $container) {
             ->tag('ser_des.hook.deserialize', ['name' => 'property'])
 
         // Serializable resolvers
-        ->set('ser_des.serializable_resolver', SerializableResolver::class)
+        ->set('ser_des.serializable_resolver', PathSerializableResolver::class)
             ->args([
                 param('ser_des.serializable_paths'),
             ])
 
         ->set('ser_des.serializable_resolver.cached', CachedSerializableResolver::class)
-            ->decorate('ser_des.serializable_resolver')
+            ->decorate('ser_des.serializable_resolver', priority: -1024)
             ->args([
                 service('ser_des.serializable_resolver.cached.inner'),
                 service('cache.ser_des')->ignoreOnInvalid(),
@@ -159,7 +159,7 @@ return static function (ContainerConfigurator $container) {
                 param('.ser_des.cache_dir.template'),
                 param('.ser_des.cache_dir.lazy_object'),
                 param('ser_des.template_warm_up.formats'),
-                param('ser_des.template_warm_up.nullable_data'),
+                param('ser_des.template_warm_up.accept_null'),
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('kernel.cache_warmer')
