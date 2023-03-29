@@ -744,7 +744,7 @@ class ConfigurationTest extends TestCase
                 'enabled' => !class_exists(FullStack::class) && class_exists(Serializer::class),
                 'serializable_paths' => [],
                 'template_warm_up' => [
-                    'formats' => [],
+                    'formats' => ['json'],
                 ],
             ],
         ];
