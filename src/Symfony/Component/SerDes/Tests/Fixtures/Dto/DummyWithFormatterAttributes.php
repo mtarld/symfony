@@ -2,14 +2,13 @@
 
 namespace Symfony\Component\SerDes\Tests\Fixtures\Dto;
 
-use Symfony\Component\SerDes\Attribute\Formatter;
+use Symfony\Component\SerDes\Attribute\DeserializeFormatter;
+use Symfony\Component\SerDes\Attribute\SerializeFormatter;
 
 class DummyWithFormatterAttributes
 {
-    #[Formatter(
-        onSerialize: [self::class, 'doubleAndCastToString'],
-        onDeserialize: [self::class, 'divideAndCastToInt'],
-    )]
+    #[SerializeFormatter([self::class, 'doubleAndCastToString'])]
+    #[DeserializeFormatter([self::class, 'divideAndCastToInt'])]
     public int $id = 1;
 
     public string $name = 'dummy';

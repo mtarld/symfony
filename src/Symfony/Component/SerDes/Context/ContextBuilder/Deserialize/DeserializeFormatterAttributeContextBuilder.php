@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\SerDes\Context\ContextBuilder\Deserialize;
 
-use Symfony\Component\SerDes\Attribute\Formatter;
+use Symfony\Component\SerDes\Attribute\DeserializeFormatter;
 use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
@@ -60,18 +60,14 @@ final class DeserializeFormatterAttributeContextBuilder implements DeserializeCo
 
         foreach ((new \ReflectionClass($className))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
+                if (DeserializeFormatter::class !== $attribute->getName()) {
                     continue;
                 }
 
-                /** @var Formatter $attributeInstance */
+                /** @var DeserializeFormatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
 
-                if (null === $attributeInstance->onDeserialize) {
-                    break;
-                }
-
-                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->onDeserialize;
+                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->formatter;
 
                 break;
             }

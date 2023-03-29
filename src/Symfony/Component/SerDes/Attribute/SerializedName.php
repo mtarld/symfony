@@ -17,15 +17,10 @@ namespace Symfony\Component\SerDes\Attribute;
  * @experimental in 7.0
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final class Formatter
+final class SerializedName
 {
-    /**
-     * @param callable(mixed, array<string, mixed>=): mixed|null $onSerialize
-     * @param callable(mixed, array<string, mixed>=): mixed|null $onDeserialize
-     */
     public function __construct(
-        public readonly mixed $onSerialize = null,
-        public readonly mixed $onDeserialize = null,
+        public readonly string $name,
     ) {
     }
 }
