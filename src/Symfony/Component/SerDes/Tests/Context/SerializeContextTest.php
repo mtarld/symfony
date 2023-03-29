@@ -21,6 +21,7 @@ class SerializeContextTest extends TestCase
         $hook = static function () {};
 
         $context = (new SerializeContext(['constructor_option' => true, 'hooks' => ['serialize' => ['constructor_hook' => $hook]]]))
+            ->withForceGenerateTemplate()
             ->withType('TYPE')
             ->withJsonEncodeFlags(123)
             ->withUnionSelector(['int|string' => 'int'])
@@ -42,6 +43,7 @@ class SerializeContextTest extends TestCase
             'union_selector' => ['int|string' => 'int'],
             'json_encode_flags' => 123,
             'type' => 'TYPE',
+            'force_generate_template' => true,
             'constructor_option' => true,
         ], $context->toArray());
     }
