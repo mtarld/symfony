@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\SerDes\Context\ContextBuilder\Serialize;
 
-use Symfony\Component\SerDes\Attribute\Formatter;
+use Symfony\Component\SerDes\Attribute\SerializeFormatter;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
@@ -64,18 +64,14 @@ final class SerializeFormatterAttributeContextBuilder implements SerializeContex
 
         foreach ((new \ReflectionClass($className))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
-                if (Formatter::class !== $attribute->getName()) {
+                if (SerializeFormatter::class !== $attribute->getName()) {
                     continue;
                 }
 
-                /** @var Formatter $attributeInstance */
+                /** @var SerializeFormatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
 
-                if (null === $attributeInstance->onSerialize) {
-                    break;
-                }
-
-                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->onSerialize;
+                $propertyFormatters[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->formatter;
 
                 break;
             }

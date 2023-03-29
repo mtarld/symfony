@@ -2,10 +2,10 @@
 
 namespace Symfony\Component\SerDes\Tests\Fixtures\Dto;
 
-use Symfony\Component\SerDes\Attribute\Name;
+use Symfony\Component\SerDes\Attribute\SerializedName;
 
 class DummyWithQuotes
 {
-    #[Name('"name"')]
+    #[SerializedName('"name"')]
     public string $name = '"quoted" dummy';
 }

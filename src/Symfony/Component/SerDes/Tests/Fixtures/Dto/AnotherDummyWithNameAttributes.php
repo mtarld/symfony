@@ -2,12 +2,12 @@
 
 namespace Symfony\Component\SerDes\Tests\Fixtures\Dto;
 
-use Symfony\Component\SerDes\Attribute\Name;
+use Symfony\Component\SerDes\Attribute\SerializedName;
 
 class AnotherDummyWithNameAttributes
 {
     public int $id = 1;
 
-    #[Name('call_me_with')]
+    #[SerializedName('call_me_with')]
     public string $name = 'dummy';
 }
