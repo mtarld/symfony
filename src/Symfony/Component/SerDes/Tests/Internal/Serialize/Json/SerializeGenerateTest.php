@@ -321,5 +321,33 @@ class SerializeGenerateTest extends TestCase
                 ],
             ],
         ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \$object_0 = \$data;
+                \\fwrite(\$resource, "{\"name\":");
+                \\fwrite(\$resource, \json_encode(\$object_0->name, \$context["json_encode_flags"] ?? 0));
+                \\fwrite(\$resource, "}");
+            };
+
+            PHP, ClassicDummy::class, [
+                'hooks' => [
+                    'serialize' => [
+                        sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                            return [
+                                'accessor' => null,
+                            ];
+                        },
+                    ],
+                ],
+            ],
+        ];
     }
 }
