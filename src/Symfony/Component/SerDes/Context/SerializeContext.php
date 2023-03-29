@@ -34,6 +34,11 @@ class SerializeContext implements ContextInterface
         return $this->options;
     }
 
+    public function withForceGenerateTemplate(bool $forceGenerateTemplate = true): self
+    {
+        return new self(['force_generate_template' => $forceGenerateTemplate] + $this->options);
+    }
+
     public function withType(string $type): self
     {
         return new self(['type' => $type] + $this->options);

@@ -39,7 +39,7 @@ if (!\function_exists(serialize::class)) {
         $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_ser_des';
         $cacheFilename = sprintf('%s%s%s.%s.php', $cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $type), $format);
 
-        if (!file_exists($cacheFilename)) {
+        if (!file_exists($cacheFilename) || ($context['force_generate_template'] ?? false)) {
             if (!file_exists($cacheDir)) {
                 mkdir($cacheDir, recursive: true);
             }
