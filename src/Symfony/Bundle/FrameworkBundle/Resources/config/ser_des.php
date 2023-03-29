@@ -41,10 +41,11 @@ return static function (ContainerConfigurator $container) {
         // Serializer
         ->set('ser_des.serializer', Serializer::class)
             ->args([
-                tagged_iterator('ser_des.context_builder.serialize'),
-                tagged_iterator('ser_des.context_builder.deserialize'),
-                param('.ser_des.cache_dir.template')
+                abstract_arg('serialize context builders'),
+                abstract_arg('deserialize context builders'),
+                param('.ser_des.cache_dir.template'),
             ])
+
         ->alias(SerializerInterface::class, 'ser_des.serializer')
 
         // Type extractors
@@ -65,7 +66,7 @@ return static function (ContainerConfigurator $container) {
         // Context builders
         ->set('ser_des.context_builder.serialize.hook', SerializeHookContextBuilder::class)
             ->args([
-                tagged_iterator('ser_des.hook.serialize', 'name'),
+                abstract_arg('serialize hooks'),
             ])
             ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
 
@@ -83,7 +84,7 @@ return static function (ContainerConfigurator $container) {
 
         ->set('ser_des.context_builder.deserialize.hook', DeserializeHookContextBuilder::class)
             ->args([
-                tagged_iterator('ser_des.hook.deserialize', 'name'),
+                abstract_arg('deserialize hooks'),
             ])
             ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
