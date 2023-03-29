@@ -23,8 +23,10 @@ use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @template T of mixed
  */
-class Deserializer
+abstract class Deserializer
 {
     /**
      * @var array<string, array<string, mixed>>
@@ -42,9 +44,54 @@ class Deserializer
     }
 
     /**
+     * @param T                    $data
      * @param array<string, mixed> $context
      */
-    public function deserialize(mixed $data, Type|UnionType $type, array $context): mixed
+    abstract protected function deserializeScalar(mixed $data, Type $type, array $context): mixed;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     */
+    abstract protected function deserializeEnum(mixed $data, Type $type, array $context): mixed;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<mixed>|null
+     */
+    abstract protected function deserializeList(mixed $data, Type $type, array $context): ?\Iterator;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<string, mixed>|null
+     */
+    abstract protected function deserializeDict(mixed $data, Type $type, array $context): ?\Iterator;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<string, mixed>|array<string, mixed>|null
+     */
+    abstract protected function deserializeObjectProperties(mixed $data, Type $type, array $context): \Iterator|array|null;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     *
+     * @return callable(): mixed
+     */
+    abstract protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     */
+    final public function deserialize(mixed $data, Type|UnionType $type, array $context): mixed
     {
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][$typeString = (string) $type])) {
@@ -55,208 +102,144 @@ class Deserializer
             $type = (self::$cache['type'][$typeString] ??= TypeFactory::createFromString($context['union_selector'][$typeString]));
         }
 
-        $result = match (true) {
-            $type->isScalar() => $this->deserializeScalar($data, $type, $context),
-            $type->isCollection() => $this->deserializeCollection($data, $type, $context),
-            $type->isEnum() => $this->deserializeEnum($data, $type, $context),
-            $type->isObject() => $this->deserializeObject($data, $type, $context),
+        if ($type->isScalar()) {
+            $scalar = $this->deserializeScalar($data, $type, $context);
 
-            default => throw new UnsupportedTypeException($type),
-        };
+            if (null === $scalar) {
+                if (!$type->isNullable()) {
+                    throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
+                }
 
-        if (null === $result && !$type->isNullable()) {
-            throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    protected function deserializeScalar(mixed $data, Type $type, array $context): int|string|bool|float|null
-    {
-        if (null === $data) {
-            return null;
-        }
-
-        try {
-            return match ($type->name()) {
-                'int' => (int) $data,
-                'float' => (float) $data,
-                'string' => (string) $data,
-                'bool' => (bool) $data,
-                default => throw new LogicException(sprintf('Unhandled "%s" scalar cast', $type->name())),
-            };
-        } catch (\Throwable) {
-            throw new UnexpectedValueException(sprintf('Cannot cast "%s" to "%s"', get_debug_type($data), (string) $type));
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<mixed>|\Iterator<string, mixed>|list<mixed>|array<string, mixed>|null
-     */
-    protected function deserializeCollection(mixed $data, Type $type, array $context): \Iterator|array|null
-    {
-        if (null === $data) {
-            return null;
-        }
-
-        $data = $this->deserializeCollectionItems($data, $type->collectionValueType(), $context);
-
-        return $type->isIterable() ? $data : iterator_to_array($data);
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    protected function deserializeEnum(mixed $data, Type $type, array $context): ?\BackedEnum
-    {
-        if (null === $data) {
-            return null;
-        }
-
-        try {
-            return ($type->className())::from($data);
-        } catch (\ValueError $e) {
-            throw new UnexpectedValueException(sprintf('Unexpected "%s" value for "%s" backed enumeration.', $data, $type));
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    protected function deserializeObject(mixed $data, Type $type, array $context): ?object
-    {
-        if (null === $data) {
-            return null;
-        }
-
-        $hook = null;
-
-        if (isset($context['hooks']['deserialize'][$className = $type->className()])) {
-            $hook = $context['hooks']['deserialize'][$className];
-        } elseif (isset($context['hooks']['deserialize']['object'])) {
-            $hook = $context['hooks']['deserialize']['object'];
-        }
-
-        if (null !== $hook) {
-            /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
-            $hookResult = $hook((string) $type, $context);
-
-            if (isset($hookResult['type'])) {
-                /** @var Type $type */
-                $type = (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']));
+                return null;
             }
 
-            $context = $hookResult['context'] ?? $context;
+            try {
+                return match ($type->name()) {
+                    'int' => (int) $scalar,
+                    'float' => (float) $scalar,
+                    'string' => (string) $scalar,
+                    'bool' => (bool) $scalar,
+                    default => throw new LogicException(sprintf('Unhandled "%s" scalar cast', $type->name())),
+                };
+            } catch (\Throwable) {
+                throw new UnexpectedValueException(sprintf('Cannot cast "%s" to "%s"', get_debug_type($scalar), (string) $type));
+            }
         }
 
-        /** @var \ReflectionClass<object> $reflection */
-        $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($type->className()));
+        if ($type->isEnum()) {
+            $enum = $this->deserializeEnum($data, $type, $context);
 
-        /** @var array<string, callable(): mixed> $propertiesValues */
-        $propertiesValues = [];
+            if (null === $enum) {
+                if (!$type->isNullable()) {
+                    throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
+                }
 
-        foreach ($data as $k => $v) {
-            $hook = null;
-
-            if (isset($context['hooks']['deserialize'][($className = $reflection->getName()).'['.$k.']'])) {
-                $hook = $context['hooks']['deserialize'][$className.'['.$k.']'];
-            } elseif (isset($context['hooks']['deserialize']['property'])) {
-                $hook = $context['hooks']['deserialize']['property'];
+                return null;
             }
 
-            $propertyName = $k;
+            try {
+                return ($type->className())::from($enum);
+            } catch (\ValueError $e) {
+                throw new UnexpectedValueException(sprintf('Unexpected "%s" value for "%s" backed enumeration.', $enum, $type));
+            }
+        }
 
-            if (null !== $hook) {
-                $hookResult = $this->executePropertyHook($hook, $reflection, $k, $v, $data, $context);
+        if ($type->isCollection()) {
+            $collection = $type->isList() ? $this->deserializeList($data, $type, $context) : $this->deserializeDict($data, $type, $context);
 
-                $propertyName = $hookResult['name'] ?? $propertyName;
+            if (null === $collection) {
+                if (!$type->isNullable()) {
+                    throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
+                }
+
+                return null;
+            }
+
+            return $type->isIterable() ? $collection : iterator_to_array($collection);
+        }
+
+        if ($type->isObject()) {
+            $objectProperties = $this->deserializeObjectProperties($data, $type, $context);
+
+            if (null === $objectProperties) {
+                if (!$type->isNullable()) {
+                    throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
+                }
+
+                return null;
+            }
+
+            if (null !== $hook = $context['hooks']['deserialize'][$type->className()] ?? $context['hooks']['deserialize']['object'] ?? null) {
+                /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
+                $hookResult = $hook((string) $type, $context);
+
+                if (isset($hookResult['type'])) {
+                    /** @var Type $type */
+                    $type = (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']));
+                }
+
                 $context = $hookResult['context'] ?? $context;
             }
 
-            self::$cache['class_has_property'][$propertyIdentifier = $typeString.$propertyName] ??= $reflection->hasProperty($propertyName);
+            /** @var \ReflectionClass<object> $reflection */
+            $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($type->className()));
 
-            if (!self::$cache['class_has_property'][$propertyIdentifier]) {
-                continue;
-            }
+            /** @var array<string, callable(): mixed> $valueCallables */
+            $valueCallables = [];
 
-            if (isset($hookResult['value_provider'])) {
-                $propertiesValues[$propertyName] = $hookResult['value_provider'];
+            foreach ($objectProperties as $name => $value) {
+                if (null !== $hook = $context['hooks']['deserialize'][$reflection->getName().'['.$name.']'] ?? $context['hooks']['deserialize']['property'] ?? null) {
+                    $hookResult = $hook(
+                        $reflection,
+                        $name,
+                        fn (string $type, array $context) => $this->propertyValueCallable(self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $data, $value, $context)(),
+                        $context,
+                    );
 
-                continue;
-            }
-
-            self::$cache['property_type'][$propertyIdentifier] ??= TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($propertyName)));
-
-            $propertiesValues[$propertyName] = $this->propertyValue(self::$cache['property_type'][$propertyIdentifier], $v, $data, $context);
-        }
-
-        if (isset($context['instantiator'])) {
-            return $context['instantiator']($reflection, $propertiesValues, $context);
-        }
-
-        $object = new ($reflection->getName())();
-
-        foreach ($propertiesValues as $property => $value) {
-            try {
-                $object->{$property} = $value();
-            } catch (\TypeError|UnexpectedValueException $e) {
-                $exception = new UnexpectedValueException($e->getMessage(), previous: $e);
-
-                if (!($context['collect_errors'] ?? false)) {
-                    throw $exception;
+                    $name = $hookResult['name'] ?? $name;
+                    $context = $hookResult['context'] ?? $context;
                 }
 
-                $context['collected_errors'][] = $exception;
+                self::$cache['class_has_property'][$identifier = $typeString.$name] ??= $reflection->hasProperty($name);
+
+                if (!self::$cache['class_has_property'][$identifier]) {
+                    continue;
+                }
+
+                if (isset($hookResult['value_provider'])) {
+                    $valueCallables[$name] = $hookResult['value_provider'];
+
+                    continue;
+                }
+
+                self::$cache['property_type'][$identifier] ??= TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name)));
+
+                $valueCallables[$name] = $this->propertyValueCallable(self::$cache['property_type'][$identifier], $data, $value, $context);
             }
+
+            if (isset($context['instantiator'])) {
+                return $context['instantiator']($reflection, $valueCallables, $context);
+            }
+
+            $object = new ($reflection->getName())();
+
+            foreach ($valueCallables as $name => $callable) {
+                try {
+                    $object->{$name} = $callable();
+                } catch (\TypeError|UnexpectedValueException $e) {
+                    $exception = new UnexpectedValueException($e->getMessage(), previous: $e);
+
+                    if (!($context['collect_errors'] ?? false)) {
+                        throw $exception;
+                    }
+
+                    $context['collected_errors'][] = $exception;
+                }
+            }
+
+            return $object;
         }
 
-        return $object;
-    }
-
-    /**
-     * @param callable(\ReflectionClass<object>, string, callable(string, array<string, mixed>): mixed, array<string, mixed>): array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>} $hook
-     * @param \ReflectionClass<object>                                                                                                                                                                                  $reflection
-     * @param array<string, mixed>                                                                                                                                                                                      $context
-     *
-     * @return array{name?: string, value_provider?: callable(): mixed, context?: array<string, mixed>}
-     */
-    protected function executePropertyHook(callable $hook, \ReflectionClass $reflection, string $key, mixed $value, mixed $data, array $context): array
-    {
-        return $hook(
-            $reflection,
-            $key,
-            function (string $type, array $context) use ($value): mixed {
-                return $this->deserialize($value, self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $context);
-            },
-            $context,
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return callable(): mixed
-     */
-    protected function propertyValue(Type|UnionType $type, mixed $value, mixed $data, array $context): callable
-    {
-        return fn () => $this->deserialize($value, $type, $context);
-    }
-
-    /**
-     * @param array<string, mixed>|list<mixed> $collection
-     * @param array<string, mixed>             $context
-     *
-     * @return \Iterator<mixed>|\Iterator<string, mixed>
-     */
-    private function deserializeCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
-    {
-        foreach ($collection as $key => $value) {
-            yield $key => $this->deserialize($value, $type, $context);
-        }
+        throw new UnsupportedTypeException($type);
     }
 }

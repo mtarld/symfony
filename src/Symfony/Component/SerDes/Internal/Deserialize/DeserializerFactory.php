@@ -60,6 +60,6 @@ abstract class DeserializerFactory
             );
         }
 
-        return new Deserializer(new ReflectionTypeExtractor());
+        return new EagerDeserializer(new ReflectionTypeExtractor());
     }
 }
