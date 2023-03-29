@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\SerDes\Context\ContextBuilder\Serialize;
 
-use Symfony\Component\SerDes\Attribute\Name;
+use Symfony\Component\SerDes\Attribute\SerializedName;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 
@@ -64,11 +64,11 @@ final class SerializeNameAttributeContextBuilder implements SerializeContextBuil
 
         foreach ((new \ReflectionClass($className))->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
-                if (Name::class !== $attribute->getName()) {
+                if (SerializedName::class !== $attribute->getName()) {
                     continue;
                 }
 
-                /** @var Name $attributeInstance */
+                /** @var SerializedName $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
 
                 $propertyNames[$property->getDeclaringClass()->getName()][$property->getName()] = $attributeInstance->name;
