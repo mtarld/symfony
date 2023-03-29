@@ -21,7 +21,7 @@ interface PropertyHookInterface
     /**
      * @param array<string, mixed> $context
      *
-     * @return array{name?: string, type?: string, accessor?: string, context?: array<string, mixed>}
+     * @return array{name?: string, type?: string, accessor?: string|null, context?: array<string, mixed>}
      */
     public function __invoke(\ReflectionProperty $property, string $accessor, array $context): array;
 }

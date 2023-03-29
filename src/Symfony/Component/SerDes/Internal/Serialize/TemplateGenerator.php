@@ -249,6 +249,10 @@ final class TemplateGenerator
             if (null !== $hook) {
                 $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
 
+                if (\array_key_exists('accessor', $hookResult) && null === $hookResult['accessor']) {
+                    continue;
+                }
+
                 $propertyName = $hookResult['name'] ?? $propertyName;
                 $propertyType = $hookResult['type'] ?? $propertyType;
                 $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $propertyAccessor;
