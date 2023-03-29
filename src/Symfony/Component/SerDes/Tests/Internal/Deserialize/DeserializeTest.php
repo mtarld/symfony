@@ -23,24 +23,40 @@ use function Symfony\Component\SerDes\deserialize;
 
 class DeserializeTest extends TestCase
 {
-    public function testDeserializeScalar()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeScalar(callable $deserialize)
     {
-        $this->assertEquals(1, $this->deserializeString('1', 'int'));
+        $this->assertEquals(1, $deserialize('1', 'int'));
     }
 
-    public function testDeserializeUnionType()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeUnionType(callable $deserialize)
     {
-        $this->assertSame([1, 2, 3], $this->deserializeString('[1, "2", "3"]', 'array<int, int|string>', context: ['union_selector' => ['int|string' => 'int']]));
+        $this->assertSame([1, 2, 3], $deserialize('[1, "2", "3"]', 'array<int, int|string>', context: ['union_selector' => ['int|string' => 'int']]));
+        $this->assertEquals(1, $deserialize('1', 'int', context: ['lazy_reading' => true]));
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot guess type to use for "int|string", you may specify a type in "$context[\'union_selector\'][\'int|string\']".');
 
-        $this->assertSame([1, 2, 3], $this->deserializeString('[1, "2", "3"]', 'array<int, int|string>'));
+        $this->assertSame([1, 2, 3], $deserialize('[1, "2", "3"]', 'array<int, int|string>'));
     }
 
-    public function testDeserializeIterable()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeIterable(callable $deserialize)
     {
-        $value = $this->deserializeString('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'iterable<int, iterable<string, int>>');
+        $value = $deserialize('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'iterable<int, iterable<string, int>>');
 
         $this->assertInstanceOf(\Generator::class, $value);
 
@@ -53,14 +69,24 @@ class DeserializeTest extends TestCase
         $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $result);
     }
 
-    public function testDeserializeEnum()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeEnum(callable $deserialize)
     {
-        $this->assertEquals(DummyBackedEnum::ONE, $this->deserializeString('1', DummyBackedEnum::class));
+        $this->assertEquals(DummyBackedEnum::ONE, $deserialize('1', DummyBackedEnum::class));
     }
 
-    public function testDeserializeObject()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeObject(callable $deserialize)
     {
-        $value = $this->deserializeString('{"id": 123, "name": "thename"}', ClassicDummy::class);
+        $value = $deserialize('{"id": 123, "name": "thename"}', ClassicDummy::class);
 
         $expectedObject = new ClassicDummy();
         $expectedObject->id = 123;
@@ -68,7 +94,7 @@ class DeserializeTest extends TestCase
 
         $this->assertEquals($expectedObject, $value);
 
-        $value = $this->deserializeString('{"@id": 123, "name": "thename"}', ClassicDummy::class, 'json', [
+        $value = $deserialize('{"@id": 123, "name": "thename"}', ClassicDummy::class, [
             'hooks' => [
                 'deserialize' => [
                     sprintf('%s[@id]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
@@ -89,24 +115,27 @@ class DeserializeTest extends TestCase
         $this->assertEquals($expectedObject, $value);
     }
 
-    public function testThrowOnUnknownFormat()
-    {
-        $this->expectException(UnsupportedFormatException::class);
-
-        deserialize(fopen('php://memory', 'w+'), 'int', 'unknown', []);
-    }
-
-    public function testThrowWhenNotCollecting()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testThrowWhenNotCollecting(callable $deserialize)
     {
         $this->expectException(UnexpectedValueException::class);
 
-        $this->deserializeString('{"name": {"foo": "bar"}}', ClassicDummy::class);
+        $deserialize('{"name": {"foo": "bar"}}', ClassicDummy::class);
     }
 
-    public function testThrowPartialWhenCollecting()
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testThrowPartialWhenCollecting(callable $deserialize)
     {
         try {
-            $this->deserializeString('[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]', sprintf('array<int, %s>', ClassicDummy::class), context: [
+            $deserialize('[{"name": "ok"}, {"name": "ko"}, {"name": "ok"}, {"name": "ko"}]', sprintf('array<int, %s>', ClassicDummy::class), context: [
                 'collect_errors' => true,
                 'hooks' => [
                     'deserialize' => [
@@ -139,26 +168,79 @@ class DeserializeTest extends TestCase
     {
         $this->expectException(InvalidResourceException::class);
 
-        $this->deserializeString('{[]}', ClassicDummy::class, context: ['lazy_reading' => true, 'validate_stream' => true]);
+        self::deserialize('{[]}', ClassicDummy::class, ['lazy_reading' => true, 'validate_stream' => true]);
     }
 
     public function testNotThrowWhenNotValidateInvalidStream()
     {
-        $this->deserializeString('{[]}', ClassicDummy::class, context: ['lazy_reading' => true]);
+        self::deserialize('{[]}', ClassicDummy::class, ['lazy_reading' => true]);
+
         $this->addToAssertionCount(1);
+    }
+
+    public function testThrowOnUnknownFormat()
+    {
+        $this->expectException(UnsupportedFormatException::class);
+
+        deserialize(fopen('php://memory', 'w+'), 'int', 'unknown', []);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testThrowOnInvalidList(callable $deserialize, bool $lazy)
+    {
+        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
+
+        $deserialize('"foo"', 'array<int, int>', ['lazy_reading' => true]);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testThrowOnInvalidDict(callable $deserialize, bool $lazy)
+    {
+        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
+
+        $deserialize('"foo"', 'array<string, int>', ['lazy_reading' => true]);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testThrowOnInvalidObjectProperties(callable $deserialize, bool $lazy)
+    {
+        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
+
+        $deserialize('"foo"', ClassicDummy::class, ['lazy_reading' => true]);
+    }
+
+    /**
+     * @return iterable<array{0: callable(mixed, string, array<string, mixed>): mixed, 1: bool}>
+     */
+    public static function deserializeDataProvider(): iterable
+    {
+        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, $context), false];
+        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, ['lazy_reading' => true] + $context), true];
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function deserializeString(string $string, string $type, string $format = 'json', array $context = []): mixed
+    private static function deserialize(string $content, string $type, array $context): mixed
     {
         /** @var resource $resource */
         $resource = fopen('php://memory', 'w+');
 
-        fwrite($resource, $string);
+        fwrite($resource, $content);
         rewind($resource);
 
-        return deserialize($resource, $type, $format, $context);
+        return deserialize($resource, $type, 'json', $context);
     }
 }

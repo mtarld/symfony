@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Internal\Deserialize;
 
 use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 
@@ -20,6 +19,8 @@ use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @extends Deserializer<resource>
  */
 final class LazyDeserializer extends Deserializer
 {
@@ -32,73 +33,42 @@ final class LazyDeserializer extends Deserializer
         parent::__construct($reflectionTypeExtractor);
     }
 
-    /**
-     * @param resource $resource
-     */
-    protected function deserializeScalar(mixed $resource, Type $type, array $context): int|string|bool|float|null
+    protected function deserializeScalar(mixed $data, Type $type, array $context): mixed
     {
-        $data = $this->decoder->decode($resource, $context['boundary'][0], $context['boundary'][1], $context);
-
-        return parent::deserializeScalar($data, $type, $context);
+        return $this->decoder->decode($data, $context['boundary'][0], $context['boundary'][1], $context);
     }
 
-    /**
-     * @param resource $resource
-     */
-    protected function deserializeCollection(mixed $resource, Type $type, array $context): \Iterator|array|null
+    protected function deserializeEnum(mixed $data, Type $type, array $context): mixed
     {
-        $collectionSplitter = $type->isDict() ? $this->dictSplitter : $this->listSplitter;
+        return $this->decoder->decode($data, $context['boundary'][0], $context['boundary'][1], $context);
+    }
 
-        if (null === $boundaries = $collectionSplitter->split($resource, $type, $context)) {
+    protected function deserializeList(mixed $data, Type $type, array $context): ?\Iterator
+    {
+        if (null === $boundaries = $this->listSplitter->split($data, $type, $context)) {
             return null;
         }
 
-        $data = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $context);
-
-        return $type->isIterable() ? $data : iterator_to_array($data);
+        return $this->deserializeCollectionItems($data, $boundaries, $type->collectionValueType(), $context);
     }
 
-    /**
-     * @param resource $resource
-     */
-    protected function deserializeEnum(mixed $resource, Type $type, array $context): ?\BackedEnum
+    protected function deserializeDict(mixed $data, Type $type, array $context): ?\Iterator
     {
-        $data = $this->decoder->decode($resource, $context['boundary'][0], $context['boundary'][1], $context);
+        if (null === $boundaries = $this->dictSplitter->split($data, $type, $context)) {
+            return null;
+        }
 
-        return parent::deserializeEnum($data, $type, $context);
+        return $this->deserializeCollectionItems($data, $boundaries, $type->collectionValueType(), $context);
     }
 
-    /**
-     * @param resource $resource
-     */
-    protected function deserializeObject(mixed $resource, Type $type, array $context): ?object
+    protected function deserializeObjectProperties(mixed $data, Type $type, array $context): ?\Iterator
     {
-        $data = $this->dictSplitter->split($resource, $type, $context);
-
-        return parent::deserializeObject($data, $type, $context);
+        return $this->dictSplitter->split($data, $type, $context);
     }
 
-    /**
-     * @param resource $resource
-     */
-    protected function executePropertyHook(callable $hook, \ReflectionClass $reflection, string $key, mixed $boundary, mixed $resource, array $context): array
+    protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable
     {
-        return $hook(
-            $reflection,
-            $key,
-            function (string $type, array $context) use ($resource, $boundary): mixed {
-                return $this->deserialize($resource, self::$cache['type'][$type] ??= TypeFactory::createFromString($type), ['boundary' => $boundary] + $context);
-            },
-            $context,
-        );
-    }
-
-    /**
-     * @param resource $resource
-     */
-    protected function propertyValue(Type|UnionType $type, mixed $boundary, mixed $resource, array $context): callable
-    {
-        return fn () => $this->deserialize($resource, $type, ['boundary' => $boundary] + $context);
+        return fn () => $this->deserialize($data, $type, ['boundary' => $value] + $context);
     }
 
     /**
