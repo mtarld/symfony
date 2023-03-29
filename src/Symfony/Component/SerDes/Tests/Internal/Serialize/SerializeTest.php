@@ -77,6 +77,26 @@ class SerializeTest extends TestCase
         $this->assertSame('CACHED_FILE', $serialized);
     }
 
+    public function testRecreateCacheFileIfForceGenerateTemplate()
+    {
+        $cacheFilename = sprintf('%s/%s.json.php', $this->cacheDir, hash('xxh128', 'int'));
+        if (!file_exists($this->cacheDir)) {
+            mkdir($this->cacheDir, recursive: true);
+        }
+
+        file_put_contents($cacheFilename, '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED_FILE"); };');
+
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'w');
+        serialize(1, $resource, 'json', ['force_generate_template' => true]);
+
+        rewind($resource);
+
+        $serialized = stream_get_contents($resource);
+
+        $this->assertSame('1', $serialized);
+    }
+
     public function testThrowOnUnknownFormat()
     {
         $this->expectException(UnsupportedFormatException::class);
