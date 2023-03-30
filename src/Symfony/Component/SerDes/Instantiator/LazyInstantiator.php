@@ -39,29 +39,25 @@ final class LazyInstantiator implements InstantiatorInterface
 
     public function __invoke(\ReflectionClass $class, array $propertiesValues, array $context): object
     {
-        if (!isset(self::$cache['lazy_class_name'][$className = $class->getName()])) {
-            /** @var class-string $lazyClassName */
-            $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
-            self::$cache['lazy_class_name'][$className] = $lazyClassName;
+        self::$cache['lazy_class_name'][$className = $class->getName()] ??= sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+
+        if (isset(self::$lazyClassesLoaded[$className]) && class_exists(self::$cache['lazy_class_name'][$className])) {
+            return self::$cache['lazy_class_name'][$className]::createLazyGhost($propertiesValues);
         }
 
-        if (!isset(self::$lazyClassesLoaded[$className]) && !class_exists(self::$cache['lazy_class_name'][$className])) {
-            if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
-                if (!file_exists($this->cacheDir)) {
-                    mkdir($this->cacheDir, recursive: true);
-                }
-
-                $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
-                file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($class)));
+        if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
+            if (!file_exists($this->cacheDir)) {
+                mkdir($this->cacheDir, recursive: true);
             }
 
-            eval(file_get_contents(sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className))));
-
-            self::$lazyClassesLoaded[$className] = true;
+            $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+            file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($class)));
         }
 
-        $lazyGhost = self::$cache['lazy_class_name'][$className]::createLazyGhost($propertiesValues);
+        eval(file_get_contents(sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className))));
 
-        return $lazyGhost;
+        self::$lazyClassesLoaded[$className] = true;
+
+        return self::$cache['lazy_class_name'][$className]::createLazyGhost($propertiesValues);
     }
 }
