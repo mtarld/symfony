@@ -22,7 +22,7 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ExpressionNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\PhpDocNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ReturnNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
-use Symfony\Component\SerDes\Internal\Serialize\TemplateGeneratorFactory;
+use Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator\TemplateGeneratorFactory;
 use Symfony\Component\SerDes\Internal\TypeFactory;
 
 if (!\function_exists(serialize::class)) {

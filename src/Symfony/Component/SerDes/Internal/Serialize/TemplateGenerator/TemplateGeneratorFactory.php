@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal\Serialize;
+namespace Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator;
 
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
-use Symfony\Component\SerDes\Internal\Serialize\Json\JsonSyntax;
+use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 
 /**
@@ -36,10 +36,9 @@ final class TemplateGeneratorFactory
 
     private static function json(): TemplateGenerator
     {
-        return new TemplateGenerator(
+        return new JsonTemplateGenerator(
             reflectionTypeExtractor: new ReflectionTypeExtractor(),
             typeSorter: new TypeSorter(),
-            syntax: new JsonSyntax(),
         );
     }
 }
