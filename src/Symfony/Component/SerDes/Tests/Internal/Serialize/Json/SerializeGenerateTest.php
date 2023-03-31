@@ -43,7 +43,7 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fwrite(\$resource, \\json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+                \\fwrite(\$resource, "null");
             };
 
             PHP,
@@ -279,7 +279,7 @@ class SerializeGenerateTest extends TestCase
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
                 if (null === \$data) {
-                    \\fwrite(\$resource, \\json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+                    \\fwrite(\$resource, "null");
                 } else {
                     \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
                 }
