@@ -212,6 +212,8 @@ abstract class TemplateGenerator
     {
         $class = new \ReflectionClass($className);
 
+        $propertiesInfo = [];
+
         foreach ($class->getProperties() as $property) {
             if (!$property->isPublic()) {
                 throw new LogicException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));

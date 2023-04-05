@@ -33,8 +33,6 @@ final class ObjectHook implements ObjectHookInterface
     public function __invoke(string $type, string $accessor, array $context): array
     {
         return [
-            'type' => $type,
-            'accessor' => $accessor,
             'context' => $this->addGenericParameterTypes($type, $context),
         ];
     }

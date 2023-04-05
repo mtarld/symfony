@@ -41,10 +41,19 @@ return static function (ContainerConfigurator $container) {
         // Serializer
         ->set('ser_des.serializer', Serializer::class)
             ->args([
-                abstract_arg('serialize context builders'),
-                abstract_arg('deserialize context builders'),
                 param('.ser_des.cache_dir.template'),
             ])
+            ->call('setSerializeContextBuilders', [[
+                service('.ser_des.context_builder.serialize.hook'),
+                service('.ser_des.context_builder.serialize.name_attribute'),
+                service('.ser_des.context_builder.serialize.formatter_attribute'),
+            ]])
+            ->call('setDeserializeContextBuilders', [[
+                service('.ser_des.context_builder.deserialize.hook'),
+                service('.ser_des.context_builder.deserialize.name_attribute'),
+                service('.ser_des.context_builder.deserialize.formatter_attribute'),
+                service('.ser_des.context_builder.deserialize.instantiator'),
+            ]])
 
         ->alias(SerializerInterface::class, 'ser_des.serializer')
 
@@ -64,72 +73,63 @@ return static function (ContainerConfigurator $container) {
         ->alias('ser_des.type_extractor', 'ser_des.type_extractor.reflection')
 
         // Context builders
-        ->set('ser_des.context_builder.serialize.hook', SerializeHookContextBuilder::class)
-            ->args([
-                abstract_arg('serialize hooks'),
-            ])
-            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
+        ->set('.ser_des.context_builder.serialize.hook', SerializeHookContextBuilder::class)
+            ->args([[
+                'object' => service('ser_des.hook.serialize.object'),
+                'property' => service('ser_des.hook.serialize.property'),
+            ]])
 
-        ->set('ser_des.context_builder.serialize.name_attribute', SerializeNameAttributeContextBuilder::class)
-            ->args([
-                service('ser_des.serializable_resolver'),
-            ])
-            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
-
-        ->set('ser_des.context_builder.serialize.formatter_attribute', SerializeFormatterAttributeContextBuilder::class)
+        ->set('.ser_des.context_builder.serialize.name_attribute', SerializeNameAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
-            ->tag('ser_des.context_builder.serialize', ['priority' => -1024])
 
-        ->set('ser_des.context_builder.deserialize.hook', DeserializeHookContextBuilder::class)
-            ->args([
-                abstract_arg('deserialize hooks'),
-            ])
-            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
-
-        ->set('ser_des.context_builder.deserialize.name_attribute', DeserializeNameAttributeContextBuilder::class)
+        ->set('.ser_des.context_builder.serialize.formatter_attribute', SerializeFormatterAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
-            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
-        ->set('ser_des.context_builder.deserialize.formatter_attribute', DeserializeFormatterAttributeContextBuilder::class)
+        ->set('.ser_des.context_builder.deserialize.hook', DeserializeHookContextBuilder::class)
+            ->args([[
+                'object' => service('ser_des.hook.deserialize.object'),
+                'property' => service('ser_des.hook.deserialize.property'),
+            ]])
+
+        ->set('.ser_des.context_builder.deserialize.name_attribute', DeserializeNameAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
-            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
-        ->set('ser_des.context_builder.deserialize.instantiator', DeserializeInstantiatorContextBuilder::class)
+        ->set('.ser_des.context_builder.deserialize.formatter_attribute', DeserializeFormatterAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+
+        ->set('.ser_des.context_builder.deserialize.instantiator', DeserializeInstantiatorContextBuilder::class)
             ->args([
                 service('ser_des.instantiator.lazy'),
             ])
-            ->tag('ser_des.context_builder.deserialize', ['priority' => -1024])
 
         // Hooks
         ->set('ser_des.hook.serialize.object', SerializeHook\ObjectHook::class)
             ->args([
                 service('ser_des.type_extractor'),
             ])
-            ->tag('ser_des.hook.serialize', ['name' => 'object'])
 
         ->set('ser_des.hook.serialize.property', SerializeHook\PropertyHook::class)
             ->args([
                 service('ser_des.type_extractor'),
             ])
-            ->tag('ser_des.hook.serialize', ['name' => 'property'])
 
         ->set('ser_des.hook.deserialize.object', DeserializeHook\ObjectHook::class)
             ->args([
                 service('ser_des.type_extractor'),
             ])
-            ->tag('ser_des.hook.deserialize', ['name' => 'object'])
 
         ->set('ser_des.hook.deserialize.property', DeserializeHook\PropertyHook::class)
             ->args([
                 service('ser_des.type_extractor'),
             ])
-            ->tag('ser_des.hook.deserialize', ['name' => 'property'])
 
         // Serializable resolvers
         ->set('ser_des.serializable_resolver', PathSerializableResolver::class)

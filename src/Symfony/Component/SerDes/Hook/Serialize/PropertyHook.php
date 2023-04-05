@@ -39,7 +39,6 @@ final class PropertyHook implements PropertyHookInterface
             'name' => $this->name($property, $className, $name, $context),
             'type' => $this->type($property, $propertyFormatter, $context),
             'accessor' => $this->accessor($className, $name, $propertyFormatter, $accessor, $context),
-            'context' => $context,
         ];
     }
 
