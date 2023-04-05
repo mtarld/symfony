@@ -50,14 +50,6 @@ class SerializeContext implements ContextInterface
     }
 
     /**
-     * @param array<string, string> $unionSelector
-     */
-    public function withUnionSelector(array $unionSelector): self
-    {
-        return new self(['union_selector' => $unionSelector] + $this->options);
-    }
-
-    /**
      * @param ObjectHookInterface|callable(string, string, array<string, mixed>): array{type: string, accessor: string, context: array<string, mixed>} $hook
      * @param class-string|null                                                                                                                        $className
      */
