@@ -18,7 +18,7 @@ use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.0
+ * @internal
  */
 final class DeserializeNameAttributeContextBuilder implements DeserializeContextBuilderInterface
 {
