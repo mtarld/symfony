@@ -24,7 +24,6 @@ class SerializeContextTest extends TestCase
             ->withForceGenerateTemplate()
             ->withType('TYPE')
             ->withJsonEncodeFlags(123)
-            ->withUnionSelector(['int|string' => 'int'])
             ->withObjectHook($hook)
             ->withObjectHook($hook, 'className')
             ->withPropertyHook($hook)
@@ -40,7 +39,6 @@ class SerializeContextTest extends TestCase
                     'className::$propertyName' => $hook,
                 ],
             ],
-            'union_selector' => ['int|string' => 'int'],
             'json_encode_flags' => 123,
             'type' => 'TYPE',
             'force_generate_template' => true,
