@@ -56,7 +56,6 @@ use Symfony\Component\HttpKernel\DependencyInjection\RegisterLocaleAwareServices
 use Symfony\Component\HttpKernel\DependencyInjection\RemoveEmptyControllerArgumentLocatorsPass;
 use Symfony\Component\HttpKernel\DependencyInjection\ResettableServicePass;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\SerDes\DependencyInjection\SerDesPass;
 use Symfony\Component\Messenger\DependencyInjection\MessengerPass;
 use Symfony\Component\Mime\DependencyInjection\AddMimeTypeGuesserPass;
 use Symfony\Component\PropertyInfo\DependencyInjection\PropertyInfoPass;
@@ -179,7 +178,6 @@ class FrameworkBundle extends Bundle
         $this->addCompilerPassIfExists($container, MessengerPass::class);
         $this->addCompilerPassIfExists($container, HttpClientPass::class);
         $this->addCompilerPassIfExists($container, AddAutoMappingConfigurationPass::class);
-        $this->addCompilerPassIfExists($container, SerDesPass::class);
         $container->addCompilerPass(new RegisterReverseContainerPass(true));
         $container->addCompilerPass(new RegisterReverseContainerPass(false), PassConfig::TYPE_AFTER_REMOVING);
         $container->addCompilerPass(new RemoveUnusedSessionMarshallingHandlerPass());

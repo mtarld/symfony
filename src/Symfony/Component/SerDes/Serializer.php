@@ -11,8 +11,7 @@
 
 namespace Symfony\Component\SerDes;
 
-use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
-use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
+use Symfony\Component\SerDes\Context\ContextBuilder\ContextBuilderInterface;
 use Symfony\Component\SerDes\Context\ContextInterface;
 use Symfony\Component\SerDes\Stream\StreamInterface;
 
@@ -24,12 +23,16 @@ use Symfony\Component\SerDes\Stream\StreamInterface;
 final class Serializer implements SerializerInterface
 {
     /**
-     * @param iterable<SerializeContextBuilderInterface>   $serializeContextBuilders
-     * @param iterable<DeserializeContextBuilderInterface> $deserializeContextBuilders
+     * @var iterable<ContextBuilderInterface>
      */
+    private iterable $serializeContextBuilders = [];
+
+    /**
+     * @var iterable<ContextBuilderInterface>
+     */
+    private iterable $deserializeContextBuilders = [];
+
     public function __construct(
-        private readonly iterable $serializeContextBuilders,
-        private readonly iterable $deserializeContextBuilders,
         private readonly string $templateCacheDir,
     ) {
     }
@@ -70,5 +73,25 @@ final class Serializer implements SerializerInterface
         }
 
         return deserialize($input, $type, $format, $context);
+    }
+
+    /**
+     * @param iterable<ContextBuilderInterface> $serializeContextBuilders
+     *
+     * @internal
+     */
+    public function setSerializeContextBuilders(iterable $serializeContextBuilders): void
+    {
+        $this->serializeContextBuilders = $serializeContextBuilders;
+    }
+
+    /**
+     * @param iterable<ContextBuilderInterface> $deserializeContextBuilders
+     *
+     * @internal
+     */
+    public function setDeserializeContextBuilders(iterable $deserializeContextBuilders): void
+    {
+        $this->deserializeContextBuilders = $deserializeContextBuilders;
     }
 }
