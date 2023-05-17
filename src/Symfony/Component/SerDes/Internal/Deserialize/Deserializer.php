@@ -13,7 +13,6 @@ namespace Symfony\Component\SerDes\Internal\Deserialize;
 
 use Symfony\Component\SerDes\Exception\LogicException;
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
-use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 use Symfony\Component\SerDes\Internal\Type;
 use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Internal\UnionType;
@@ -83,6 +82,14 @@ abstract class Deserializer
      * @param T                    $data
      * @param array<string, mixed> $context
      *
+     * @return T
+     */
+    abstract protected function deserializeMixed(mixed $data, Type $type, array $context): mixed;
+
+    /**
+     * @param T                    $data
+     * @param array<string, mixed> $context
+     *
      * @return callable(): mixed
      */
     abstract protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable;
@@ -145,7 +152,13 @@ abstract class Deserializer
         }
 
         if ($type->isCollection()) {
-            $collection = $type->isList() ? $this->deserializeList($data, $type, $context) : $this->deserializeDict($data, $type, $context);
+            if ($type->isList()) {
+                $collection = $this->deserializeList($data, $type, $context);
+            } elseif ($type->isDict()) {
+                $collection = $this->deserializeDict($data, $type, $context);
+            } else {
+                $collection = $this->deserializeMixed($data, $type, $context);
+            }
 
             if (null === $collection) {
                 if (!$type->isNullable()) {
@@ -159,6 +172,17 @@ abstract class Deserializer
         }
 
         if ($type->isObject()) {
+            try {
+                $className = $type->className();
+            } catch (LogicException) {
+                $object = new \stdClass();
+                foreach ($this->deserializeMixed($data, $type, $context) as $property => $value) {
+                    $object->{$property} = $value;
+                }
+
+                return $object;
+            }
+
             $objectProperties = $this->deserializeObjectProperties($data, $type, $context);
 
             if (null === $objectProperties) {
@@ -169,7 +193,7 @@ abstract class Deserializer
                 return null;
             }
 
-            if (null !== $hook = $context['hooks']['deserialize'][$type->className()] ?? $context['hooks']['deserialize']['object'] ?? null) {
+            if (null !== $hook = $context['hooks']['deserialize'][$className] ?? $context['hooks']['deserialize']['object'] ?? null) {
                 /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook((string) $type, $context);
 
@@ -182,13 +206,13 @@ abstract class Deserializer
             }
 
             /** @var \ReflectionClass<object> $reflection */
-            $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($type->className()));
+            $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($className));
 
             /** @var array<string, callable(): mixed> $valueCallables */
             $valueCallables = [];
 
             foreach ($objectProperties as $name => $value) {
-                if (null !== $hook = $context['hooks']['deserialize'][$reflection->getName().'['.$name.']'] ?? $context['hooks']['deserialize']['property'] ?? null) {
+                if (null !== $hook = $context['hooks']['deserialize'][$className.'['.$name.']'] ?? $context['hooks']['deserialize']['property'] ?? null) {
                     $hookResult = $hook(
                         $reflection,
                         $name,
@@ -221,7 +245,7 @@ abstract class Deserializer
                 return $context['instantiator']($reflection, $valueCallables, $context);
             }
 
-            $object = new ($reflection->getName())();
+            $object = new $className();
 
             foreach ($valueCallables as $name => $callable) {
                 try {
@@ -240,6 +264,6 @@ abstract class Deserializer
             return $object;
         }
 
-        throw new UnsupportedTypeException($type);
+        return $this->deserializeMixed($data, $type, $context);
     }
 }

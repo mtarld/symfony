@@ -40,6 +40,7 @@ class DeserializeTest extends TestCase
         yield ['null', '?bool'];
         yield ['[[1, 2], [3, null], null]', 'array<int, ?array<int, ?int>>'];
         yield ['{"foo": {"bar": 1, "baz": null}, "foo2": null}', 'array<string, ?array<string, ?int>>'];
+        yield ['{"foo": {"bar": 1, "baz": null}, "foo2": null}', 'mixed'];
     }
 
     public function testDeserializeWithJsonDecodeFlags()

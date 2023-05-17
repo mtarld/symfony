@@ -130,6 +130,13 @@ final class JsonTemplateGenerator extends TemplateGenerator
         return $nodes;
     }
 
+    protected function mixedNodes(NodeInterface $accessor, array $context): array
+    {
+        return [
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->encodeValueNode($accessor)])),
+        ];
+    }
+
     private function encodeValueNode(NodeInterface $node): NodeInterface
     {
         return new FunctionNode('\json_encode', [

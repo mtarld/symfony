@@ -107,6 +107,40 @@ class SerializeGenerateTest extends TestCase
             <?php
 
             /**
+             * @param mixed \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+            };
+
+            PHP,
+            'mixed',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+            };
+
+            PHP,
+            'array',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
              * @param array<int, int> \$data
              * @param resource \$resource
              */
@@ -156,6 +190,23 @@ class SerializeGenerateTest extends TestCase
             <?php
 
             /**
+             * @param iterable \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+            };
+
+            PHP,
+            'iterable',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
              * @param iterable<int, int> \$data
              * @param resource \$resource
              */
@@ -197,6 +248,23 @@ class SerializeGenerateTest extends TestCase
 
             PHP,
             'iterable<string, int>',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param object \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fwrite(\$resource, \json_encode(\$data, \$context["json_encode_flags"] ?? 0));
+            };
+
+            PHP,
+            'object',
             [],
         ];
 

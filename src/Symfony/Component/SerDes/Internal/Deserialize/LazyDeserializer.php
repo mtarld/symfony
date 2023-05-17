@@ -66,6 +66,11 @@ final class LazyDeserializer extends Deserializer
         return $this->dictSplitter->split($data, $type, $context);
     }
 
+    protected function deserializeMixed(mixed $data, Type $type, array $context): mixed
+    {
+        return $this->decoder->decode($data, $context['boundary'][0], $context['boundary'][1], $context);
+    }
+
     protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable
     {
         return fn () => $this->deserialize($data, $type, ['boundary' => $value] + $context);

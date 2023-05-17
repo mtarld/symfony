@@ -34,16 +34,8 @@ final class Type implements \Stringable
         private readonly bool $isGeneric = false,
         private readonly array $genericParameterTypes = [],
     ) {
-        if ($this->isObject() && null === $this->className) {
-            throw new InvalidArgumentException('Missing className of "object" type.');
-        }
-
         if ($this->isGeneric && !$this->genericParameterTypes) {
             throw new InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
-        }
-
-        if ($this->isCollection() && 2 !== \count($this->genericParameterTypes)) {
-            throw new InvalidArgumentException(sprintf('Invalid generic parameter types of "%s" type.', $this->name));
         }
 
         $this->stringValue = $this->computeStringValue();
@@ -68,10 +60,11 @@ final class Type implements \Stringable
             throw new LogicException(sprintf('Cannot get class on "%s" type as it\'s not an object nor an enum.', $this->name));
         }
 
-        /** @var class-string $className */
-        $className = $this->className;
+        if (null === $this->className) {
+            throw new LogicException(sprintf('No class has been defined for "%s".', $this->name));
+        }
 
-        return $className;
+        return $this->className;
     }
 
     /**
@@ -133,7 +126,16 @@ final class Type implements \Stringable
 
     public function isDict(): bool
     {
-        return $this->isCollection() && !$this->isList();
+        if (!$this->isCollection()) {
+            return false;
+        }
+
+        $collectionKeyType = $this->collectionKeyType();
+        if (!$collectionKeyType instanceof self) {
+            return false;
+        }
+
+        return 'string' === $collectionKeyType->name();
     }
 
     public function collectionKeyType(): self|UnionType
@@ -142,7 +144,7 @@ final class Type implements \Stringable
             throw new LogicException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->genericParameterTypes[0];
+        return $this->genericParameterTypes[0] ?? new self('mixed');
     }
 
     public function collectionValueType(): self|UnionType
@@ -151,7 +153,7 @@ final class Type implements \Stringable
             throw new LogicException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
         }
 
-        return $this->genericParameterTypes[1];
+        return $this->genericParameterTypes[1] ?? new self('mixed');
     }
 
     private function computeStringValue(): string
@@ -162,9 +164,10 @@ final class Type implements \Stringable
 
         $nullablePrefix = $this->isNullable() ? '?' : '';
 
-        $name = $this->name();
-        if ($this->isObject() || $this->isEnum()) {
+        try {
             $name = $this->className();
+        } catch (LogicException) {
+            $name = $this->name();
         }
 
         if ($this->isGeneric()) {
