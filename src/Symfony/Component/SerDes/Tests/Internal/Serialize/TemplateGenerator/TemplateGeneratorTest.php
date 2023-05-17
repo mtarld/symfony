@@ -14,7 +14,6 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize\TemplateGenerator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\CircularReferenceException;
 use Symfony\Component\SerDes\Exception\LogicException;
-use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 use Symfony\Component\SerDes\Internal\Serialize\Compiler;
 use Symfony\Component\SerDes\Internal\Serialize\Node\AssignNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\BinaryNode;
@@ -49,13 +48,6 @@ class TemplateGeneratorTest extends TestCase
         );
     }
 
-    public function testThrowOnInvalidType()
-    {
-        $this->expectException(UnsupportedTypeException::class);
-
-        $this->templateGenerator->generate(TypeFactory::createFromString('foo'), new VariableNode('accessor'), []);
-    }
-
     public function testGenerateNullable()
     {
         $this->assertEquals([
@@ -63,7 +55,7 @@ class TemplateGeneratorTest extends TestCase
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), new VariableNode('accessor')),
                 ['null'],
-                ['$accessor (?int)'],
+                ['$accessor scalar(?int)'],
             ),
         ], $this->templateGenerator->generate(TypeFactory::createFromString('?int'), new VariableNode('accessor'), []));
     }
@@ -74,8 +66,8 @@ class TemplateGeneratorTest extends TestCase
             'closures',
             new IfNode(
                 new FunctionNode('\is_int', [new VariableNode('accessor')]),
-                ['$accessor (int)'],
-                ['$accessor (string)'],
+                ['$accessor scalar(int)'],
+                ['$accessor scalar(string)'],
             ),
         ], $this->templateGenerator->generate(TypeFactory::createFromString('int|string'), new VariableNode('accessor'), []));
 
@@ -83,11 +75,11 @@ class TemplateGeneratorTest extends TestCase
             'closures',
             new IfNode(
                 new FunctionNode('\is_int', [new VariableNode('accessor')]),
-                ['$accessor (int)'],
-                ['$accessor (float)'],
+                ['$accessor scalar(int)'],
+                ['$accessor scalar(float)'],
                 [[
                     'condition' => new FunctionNode('\is_string', [new VariableNode('accessor')]),
-                    'body' => ['$accessor (string)'],
+                    'body' => ['$accessor scalar(string)'],
                 ]]
             ),
         ], $this->templateGenerator->generate(TypeFactory::createFromString('int|string|float'), new VariableNode('accessor'), []));
@@ -100,7 +92,7 @@ class TemplateGeneratorTest extends TestCase
 
     public function testGenerateScalar()
     {
-        $this->assertEquals(['closures', '$accessor (int)'], $this->templateGenerator->generate(TypeFactory::createFromString('int'), new VariableNode('accessor'), []));
+        $this->assertEquals(['closures', '$accessor scalar(int)'], $this->templateGenerator->generate(TypeFactory::createFromString('int'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateList()
@@ -115,7 +107,7 @@ class TemplateGeneratorTest extends TestCase
 
     public function testGenerateEnum()
     {
-        $this->assertEquals(['closures', sprintf('$accessor->value (%s)', DummyBackedEnum::class)], $this->templateGenerator->generate(TypeFactory::createFromString(DummyBackedEnum::class), new VariableNode('accessor'), []));
+        $this->assertEquals(['closures', sprintf('$accessor->value scalar(%s)', DummyBackedEnum::class)], $this->templateGenerator->generate(TypeFactory::createFromString(DummyBackedEnum::class), new VariableNode('accessor'), []));
     }
 
     public function testGenerateObject()
@@ -277,6 +269,11 @@ class TemplateGeneratorTest extends TestCase
         $this->assertSame(2, $hookCallCount);
     }
 
+    public function testGenerateMixed()
+    {
+        $this->assertEquals(['closures', '$accessor mixed'], $this->templateGenerator->generate(TypeFactory::createFromString('mixed'), new VariableNode('accessor'), []));
+    }
+
     public function testThrowOnCircularReference()
     {
         $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), []);
@@ -302,7 +299,7 @@ final class DummyTemplateGenerator extends TemplateGenerator
 
     protected function scalarNodes(Type $type, NodeInterface $accessor, array $context): array
     {
-        return [sprintf('%s (%s)', (new Compiler())->compile($accessor)->source(), (string) $type)];
+        return [sprintf('%s scalar(%s)', (new Compiler())->compile($accessor)->source(), (string) $type)];
     }
 
     protected function listNodes(Type $type, NodeInterface $accessor, array $context): array
@@ -318,5 +315,10 @@ final class DummyTemplateGenerator extends TemplateGenerator
     protected function objectNodes(Type $type, array $propertiesInfo, array $context): array
     {
         return array_map(fn (array $i) => sprintf('%s (%s(%s))', (new Compiler())->compile($i['accessor'])->source(), $i['name'], $i['type']), $propertiesInfo);
+    }
+
+    protected function mixedNodes(NodeInterface $accessor, array $context): array
+    {
+        return [sprintf('%s mixed', (new Compiler())->compile($accessor)->source())];
     }
 }

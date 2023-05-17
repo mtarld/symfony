@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Tests\Internal;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Exception\InvalidTypeException;
 use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 use Symfony\Component\SerDes\Internal\Type;
@@ -63,6 +62,7 @@ class TypeFactoryTest extends TestCase
         ), ClassicDummy::class.'<int<?bool>>'];
 
         // collection types
+        yield [new Type('array'), 'array'];
         yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
         yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')]), 'array<float>'];
         yield [
@@ -132,14 +132,6 @@ class TypeFactoryTest extends TestCase
         $this->expectException(InvalidTypeException::class);
 
         TypeFactory::createFromString('array<int, array<string, bool>');
-    }
-
-    public function testCreateThrowOnRawArray()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
-
-        TypeFactory::createFromString('array');
     }
 
     public function testCreateThrowOnUnitEnum()

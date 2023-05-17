@@ -43,6 +43,7 @@ class TypeTest extends TestCase
         yield ['?int', new Type('int', isNullable: true)];
 
         // object types
+        yield ['object', new Type('object')];
         yield [ClassicDummy::class, new Type('object', className: ClassicDummy::class)];
         yield ['?'.ClassicDummy::class, new Type('object', isNullable: true, className: ClassicDummy::class)];
 
@@ -63,6 +64,7 @@ class TypeTest extends TestCase
         ];
 
         // collection types
+        yield ['array', new Type('array')];
         yield ['array<int, int>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')])];
         yield ['array<int, float>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')])];
         yield [
@@ -98,22 +100,6 @@ class TypeTest extends TestCase
         ];
     }
 
-    public function testCannotCreateObjectWithoutClassName()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing className of "object" type.');
-
-        new Type('object');
-    }
-
-    public function testCannotCreateWithTypeAndWithoutValue()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid generic parameter types of "array" type.');
-
-        new Type('array', isGeneric: true, genericParameterTypes: [new Type('int')]);
-    }
-
     public function testCannotCreateGenericWithoutGenericTypes()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -130,12 +116,24 @@ class TypeTest extends TestCase
         (new Type('int'))->className();
     }
 
+    public function testGetCollectionKeyType()
+    {
+        $this->assertEquals(new Type('string'), (new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]))->collectionKeyType());
+        $this->assertEquals(new Type('mixed'), (new Type('array'))->collectionKeyType());
+    }
+
     public function testCannotGetCollectionKeyTypeOnNonCollection()
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot get collection key type on "int" type as it\'s not a collection.');
 
         (new Type('int'))->collectionKeyType();
+    }
+
+    public function testGetCollectionValueType()
+    {
+        $this->assertEquals(new Type('int'), (new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]))->collectionValueType());
+        $this->assertEquals(new Type('mixed'), (new Type('array'))->collectionValueType());
     }
 
     public function testCannotGetCollectionValueTypeOnNonCollection()
@@ -170,6 +168,8 @@ class TypeTest extends TestCase
         yield ['type' => new Type('bool'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
         yield ['type' => new Type('float'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
         yield ['type' => new Type('null'), 'scalar' => false, 'null' => true, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
+        yield ['type' => new Type('array'), 'scalar' => false, 'null' => false, 'object' => false, 'collection' => true, 'list' => false, 'dict' => false, 'generic' => false];
+        yield ['type' => new Type('object'), 'scalar' => false, 'null' => false, 'object' => true, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
         yield [
             'type' => new Type('object', className: ClassicDummy::class),
             'scalar' => false,

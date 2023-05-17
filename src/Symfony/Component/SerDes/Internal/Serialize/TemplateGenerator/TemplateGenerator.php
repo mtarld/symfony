@@ -13,7 +13,6 @@ namespace Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator;
 
 use Symfony\Component\SerDes\Exception\CircularReferenceException;
 use Symfony\Component\SerDes\Exception\LogicException;
-use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 use Symfony\Component\SerDes\Internal\Serialize\Compiler;
 use Symfony\Component\SerDes\Internal\Serialize\Node\AssignNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\BinaryNode;
@@ -90,6 +89,13 @@ abstract class TemplateGenerator
      * @return list<NodeInterface>
      */
     abstract protected function objectNodes(Type $type, array $propertiesInfo, array $context): array;
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return list<NodeInterface>
+     */
+    abstract protected function mixedNodes(NodeInterface $accessor, array $context): array;
 
     /**
      * @param array<string, mixed> $context
@@ -174,7 +180,13 @@ abstract class TemplateGenerator
         }
 
         if ($type->isObject()) {
-            if (null !== $hook = $context['hooks']['serialize'][$className = $type->className()] ?? $context['hooks']['serialize']['object'] ?? null) {
+            try {
+                $className = $type->className();
+            } catch (LogicException) {
+                return $this->mixedNodes($accessor, $context);
+            }
+
+            if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
                 $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
 
                 /** @var Type $type */
@@ -183,7 +195,7 @@ abstract class TemplateGenerator
                 $context = $hookResult['context'] ?? $context;
             }
 
-            if (isset($context['generated_classes'][$className = $type->className()])) {
+            if (isset($context['generated_classes'][$className])) {
                 throw new CircularReferenceException($className);
             }
 
@@ -199,7 +211,7 @@ abstract class TemplateGenerator
             ];
         }
 
-        throw new UnsupportedTypeException((string) $type);
+        return $this->mixedNodes($accessor, $context);
     }
 
     /**
@@ -259,6 +271,14 @@ abstract class TemplateGenerator
 
         if ($type->isObject()) {
             return new BinaryNode('instanceof', $accessor, new ScalarNode($type->className()));
+        }
+
+        if ('array' === $type->name()) {
+            return new FunctionNode('\is_array', [$accessor]);
+        }
+
+        if ('mixed' === $type->name()) {
+            return new ScalarNode(true);
         }
 
         throw new LogicException(sprintf('Cannot find validator for "%s".', (string) $type));

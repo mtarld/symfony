@@ -32,6 +32,8 @@ abstract class DeserializerFactory
 
     /**
      * @param array<string, mixed> $context
+     *
+     * @return Deserializer<mixed>
      */
     public static function create(string $format, array $context): Deserializer
     {
@@ -44,6 +46,9 @@ abstract class DeserializerFactory
         };
     }
 
+    /**
+     * @return Deserializer<mixed>
+     */
     private static function json(bool $lazy, bool $validate): Deserializer
     {
         if ($lazy) {

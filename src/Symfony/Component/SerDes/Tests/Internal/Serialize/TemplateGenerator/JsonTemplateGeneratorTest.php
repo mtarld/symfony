@@ -130,4 +130,14 @@ class JsonTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('}')])),
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), []));
     }
+
+    public function testGenerateMixed()
+    {
+        $this->assertEquals([
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new FunctionNode('\json_encode', [
+                new VariableNode('accessor'),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+            ])])),
+        ], $this->templateGenerator->generate(TypeFactory::createFromString('mixed'), new VariableNode('accessor'), []));
+    }
 }

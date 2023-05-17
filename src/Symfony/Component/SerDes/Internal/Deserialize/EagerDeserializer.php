@@ -60,6 +60,9 @@ final class EagerDeserializer extends Deserializer
         return $this->deserializeCollectionItems($data, $type->collectionValueType(), $context);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     protected function deserializeObjectProperties(mixed $data, Type $type, array $context): ?array
     {
         if (null === $data) {
