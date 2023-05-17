@@ -60,6 +60,9 @@ final class EagerDeserializer extends Deserializer
         return $this->deserializeCollectionItems($data, $type->collectionValueType(), $context);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     protected function deserializeObjectProperties(mixed $data, Type $type, array $context): ?array
     {
         if (null === $data) {
@@ -70,6 +73,11 @@ final class EagerDeserializer extends Deserializer
             throw new UnexpectedValueException(sprintf('Unexpected value for object properties, expected "array", got "%s".', get_debug_type($data)));
         }
 
+        return $data;
+    }
+
+    protected function deserializeMixed(mixed $data, Type $type, array $context): mixed
+    {
         return $data;
     }
 

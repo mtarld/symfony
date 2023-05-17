@@ -54,8 +54,12 @@ class SerializeTest extends TestCase
         yield [.01];
         yield [false];
         yield [new ClassicDummy()];
+        yield [new ClassicDummy(), 'object'];
         yield [DummyBackedEnum::ONE];
         yield [new DummyWithQuotes()];
+        yield [['foo', true]];
+        yield [[1, 2, 3], 'array'];
+        yield [[1, 2, 3], 'iterable'];
         yield [[1, 2, 3], 'array<int, int>'];
         yield [[1, 2, 3.12], 'array<int, int|float>'];
         yield [[true, false, true], 'iterable<int, bool>'];
@@ -65,6 +69,7 @@ class SerializeTest extends TestCase
         yield [['"a"' => '"b"'], 'array<string, string>'];
         yield [['a' => 1, 'b' => null], 'iterable<string, ?string>'];
         yield [[1, 2.12, new ClassicDummy()], sprintf('array<int, int|float|%s>', ClassicDummy::class)];
+        yield [true, 'mixed'];
     }
 
     public function testSerializeWithJsonEncodeFlags()

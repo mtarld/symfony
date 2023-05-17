@@ -54,6 +54,36 @@ class DeserializeTest extends TestCase
      *
      * @param callable(string, string, array<string, mixed>): mixed
      */
+    public function testDeserializeRawArray(callable $deserialize)
+    {
+        $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $deserialize('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'array'));
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeArray(callable $deserialize)
+    {
+        $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $deserialize('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'array<int, array<string, int>>'));
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeRawIterable(callable $deserialize)
+    {
+        $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $deserialize('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'iterable'));
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
     public function testDeserializeIterable(callable $deserialize)
     {
         $value = $deserialize('[{"foo": 1, "bar": 2}, {"baz": 3}]', 'iterable<int, iterable<string, int>>');
@@ -67,6 +97,22 @@ class DeserializeTest extends TestCase
         }
 
         $this->assertSame([['foo' => 1, 'bar' => 2], ['baz' => 3]], $result);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeRawObject(callable $deserialize)
+    {
+        $value = $deserialize('{"id": 123, "name": "thename"}', 'object');
+
+        $expectedObject = new \stdClass();
+        $expectedObject->id = 123;
+        $expectedObject->name = 'thename';
+
+        $this->assertEquals($expectedObject, $value);
     }
 
     /**
@@ -113,6 +159,16 @@ class DeserializeTest extends TestCase
         $expectedObject->name = 'HOOK_VALUE';
 
         $this->assertEquals($expectedObject, $value);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeMixed(callable $deserialize)
+    {
+        $this->assertSame(['foo' => true], $deserialize('{"foo": true}', 'mixed'));
     }
 
     /**
