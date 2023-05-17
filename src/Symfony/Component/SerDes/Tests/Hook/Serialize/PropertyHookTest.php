@@ -189,4 +189,48 @@ class PropertyHookTest extends TestCase
 
         $this->assertSame('T', $hook(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context)['type']);
     }
+
+    public function testSkipWhenNoGroupIsMatching()
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+
+        $context = [
+            'groups' => ['one'],
+            '_symfony' => [
+                'serialize' => [
+                    'property_groups' => [
+                        ClassicDummy::class => [
+                            'id' => ['two' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
+
+        $this->assertNull($result['accessor']);
+    }
+
+    public function testDoNotSkipWhenGroupIsMatching()
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+
+        $context = [
+            'groups' => ['one', 'two'],
+            '_symfony' => [
+                'serialize' => [
+                    'property_groups' => [
+                        ClassicDummy::class => [
+                            'id' => ['one' => true, 'three' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = (new PropertyHook($typeExtractor))(new \ReflectionProperty(ClassicDummy::class, 'id'), '$accessor', $context);
+
+        $this->assertNotNull($result['accessor']);
+    }
 }

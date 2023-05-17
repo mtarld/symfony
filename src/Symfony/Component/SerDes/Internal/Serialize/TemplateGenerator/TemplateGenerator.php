@@ -83,8 +83,8 @@ abstract class TemplateGenerator
     abstract protected function dictNodes(Type $type, NodeInterface $accessor, array $context): array;
 
     /**
-     * @param list<array{name: string, type: string, accessor: string, context: array<string, mixed>}> $propertiesInfo
-     * @param array<string, mixed>                                                                     $context
+     * @param list<array{name: string, type: string, accessor: NodeInterface, context: array<string, mixed>}> $propertiesInfo
+     * @param array<string, mixed>                                                                            $context
      *
      * @return list<NodeInterface>
      */
@@ -218,7 +218,7 @@ abstract class TemplateGenerator
      * @param class-string         $className
      * @param array<string, mixed> $context
      *
-     * @return list<array{name: string, type: string, accessor: string, context: array<string, mixed>}>
+     * @return list<array{name: string, type: string, accessor: NodeInterface, context: array<string, mixed>}>
      */
     private function computePropertiesInfo(string $className, string $objectAccessor, array $context): array
     {
@@ -239,9 +239,13 @@ abstract class TemplateGenerator
             if (null !== $hook = $context['hooks']['serialize'][$className.'::$'.$propertyName] ?? $context['hooks']['serialize']['property'] ?? null) {
                 $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
 
+                if (\array_key_exists('accessor', $hookResult) && null === $hookResult['accessor']) {
+                    continue;
+                }
+
                 $propertyName = $hookResult['name'] ?? $propertyName;
                 $propertyType = $hookResult['type'] ?? $propertyType;
-                $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : (\array_key_exists('accessor', $hookResult) ? null : $propertyAccessor);
+                $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $propertyAccessor;
                 $propertyContext = $hookResult['context'] ?? $propertyContext;
             }
 

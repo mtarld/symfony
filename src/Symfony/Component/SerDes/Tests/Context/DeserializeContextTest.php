@@ -21,6 +21,7 @@ class DeserializeContextTest extends TestCase
         $hook = static function () {};
 
         $context = (new DeserializeContext(['constructor_option' => true, 'hooks' => ['deserialize' => ['constructor_hook' => $hook]]]))
+            ->withGroups(['groupOne', 'groupTwo'])
             ->withCollectErrors()
             ->withJsonDecodeFlags(123)
             ->withUnionSelector(['int|string' => 'int'])
@@ -46,6 +47,7 @@ class DeserializeContextTest extends TestCase
             'union_selector' => ['int|string' => 'int'],
             'json_decode_flags' => 123,
             'collect_errors' => true,
+            'groups' => ['groupOne', 'groupTwo'],
             'constructor_option' => true,
         ], $context->toArray());
     }

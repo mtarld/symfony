@@ -23,7 +23,7 @@ interface PropertyHookInterface
      * @param callable(string, array<string, mixed>): mixed $value
      * @param array<string, mixed>                          $context
      *
-     * @return array{name?: string, value_provider?: callable(): mixed}
+     * @return array{name?: string, value_provider?: callable(): mixed|null}
      */
     public function __invoke(\ReflectionClass $class, string $key, callable $value, array $context): array;
 }

@@ -45,7 +45,7 @@ class SerDesCacheWarmerTest extends TestCase
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
         $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([ClassicDummy::class]));
 
-        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json']))->warmUp('useless');
+        (new SerDesCacheWarmer($serializableResolver, $this->templateCacheDir, $this->lazyObjectCacheDir, ['json'], 32))->warmUp('useless');
 
         $expectedTemplates = array_map(fn (string $c): string => sprintf('%s/%s.json.php', $this->templateCacheDir, hash('xxh128', $c)), [ClassicDummy::class]);
 
@@ -57,7 +57,7 @@ class SerDesCacheWarmerTest extends TestCase
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
         $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([ClassicDummy::class]));
 
-        (new SerDesCacheWarmer($serializableResolver, [], $this->templateCacheDir, $this->lazyObjectCacheDir, ['json']))->warmUp('useless');
+        (new SerDesCacheWarmer($serializableResolver, $this->templateCacheDir, $this->lazyObjectCacheDir, ['json'], 32))->warmUp('useless');
 
         $expectedLazyObjects = array_map(fn (string $c): string => sprintf('%s/%s.php', $this->lazyObjectCacheDir, hash('xxh128', $c)), [ClassicDummy::class]);
 

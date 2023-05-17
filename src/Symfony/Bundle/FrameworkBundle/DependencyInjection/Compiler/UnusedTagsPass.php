@@ -23,8 +23,8 @@ class UnusedTagsPass implements CompilerPassInterface
 {
     private const KNOWN_TAGS = [
         'annotations.cached_reader',
-        'assets.package',
         'asset_mapper.compiler',
+        'assets.package',
         'auto_alias',
         'cache.pool',
         'cache.pool.clearer',
@@ -88,7 +88,6 @@ class UnusedTagsPass implements CompilerPassInterface
         'security.remember_me_aware',
         'security.remember_me_handler',
         'security.voter',
-        'ser_des.context_builder',
         'serializer.encoder',
         'serializer.normalizer',
         'texter.transport_factory',
