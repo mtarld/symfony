@@ -17,13 +17,18 @@ namespace Symfony\Component\SerDes\Attribute;
  * @experimental in 7.0
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final class SerializeFormatter
+final class Groups
 {
     /**
-     * @param callable(mixed, array<string, mixed>=): mixed $formatter
+     * @var list<non-empty-string>
      */
-    public function __construct(
-        public readonly mixed $formatter,
-    ) {
+    public readonly array $groups;
+
+    /**
+     * @param non-empty-string|non-empty-array<int, non-empty-string> $groups
+     */
+    public function __construct(string|array $groups)
+    {
+        $this->groups = array_values(array_unique((array) $groups));
     }
 }

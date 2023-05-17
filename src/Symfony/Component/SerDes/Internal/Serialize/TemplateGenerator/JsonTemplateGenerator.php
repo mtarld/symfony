@@ -102,10 +102,6 @@ final class JsonTemplateGenerator extends TemplateGenerator
         $separator = '';
 
         foreach ($propertiesInfo as $propertyInfo) {
-            if (null === $propertyInfo['accessor']) {
-                continue;
-            }
-
             $encodedName = json_encode($propertyInfo['name']);
             if (false === $encodedName) {
                 throw new RuntimeException(sprintf('Cannot encode "%s"', $propertyInfo['name']));

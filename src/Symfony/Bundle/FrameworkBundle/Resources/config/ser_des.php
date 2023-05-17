@@ -13,12 +13,14 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerDesCacheWarmer;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\GroupsAttributeContextBuilder as DeserializeGroupsAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeHookContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\SerializedNameAttributeContextBuilder as DeserializeSerializedNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\GroupsAttributeContextBuilder as SerializeGroupsAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeHookContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializedNameAttributeContextBuilder as SerializeSerializedNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Instantiator\LazyInstantiator;
 use Symfony\Component\SerDes\SerializableResolver\CachedSerializableResolver;
 use Symfony\Component\SerDes\SerializableResolver\PathSerializableResolver;
@@ -37,23 +39,29 @@ return static function (ContainerConfigurator $container) {
         ->set('.ser_des.cache_dir.lazy_object', '%kernel.cache_dir%/ser_des/lazy_object')
     ;
 
+    $serializeContextBuilders = [
+        service('.ser_des.context_builder.serialize.hook'),
+        service('.ser_des.context_builder.serialize.name_attribute'),
+        service('.ser_des.context_builder.serialize.formatter_attribute'),
+        service('.ser_des.context_builder.serialize.groups_attribute'),
+    ];
+
+    $deserializeContextBuilders = [
+        service('.ser_des.context_builder.deserialize.hook'),
+        service('.ser_des.context_builder.deserialize.name_attribute'),
+        service('.ser_des.context_builder.deserialize.formatter_attribute'),
+        service('.ser_des.context_builder.deserialize.groups_attribute'),
+        service('.ser_des.context_builder.deserialize.instantiator'),
+    ];
+
     $container->services()
         // Serializer
         ->set('ser_des.serializer', Serializer::class)
             ->args([
                 param('.ser_des.cache_dir.template'),
             ])
-            ->call('setSerializeContextBuilders', [[
-                service('.ser_des.context_builder.serialize.hook'),
-                service('.ser_des.context_builder.serialize.name_attribute'),
-                service('.ser_des.context_builder.serialize.formatter_attribute'),
-            ]])
-            ->call('setDeserializeContextBuilders', [[
-                service('.ser_des.context_builder.deserialize.hook'),
-                service('.ser_des.context_builder.deserialize.name_attribute'),
-                service('.ser_des.context_builder.deserialize.formatter_attribute'),
-                service('.ser_des.context_builder.deserialize.instantiator'),
-            ]])
+            ->call('setSerializeContextBuilders', [$serializeContextBuilders])
+            ->call('setDeserializeContextBuilders', [$deserializeContextBuilders])
 
         ->alias(SerializerInterface::class, 'ser_des.serializer')
 
@@ -79,12 +87,17 @@ return static function (ContainerConfigurator $container) {
                 'property' => service('ser_des.hook.serialize.property'),
             ]])
 
-        ->set('.ser_des.context_builder.serialize.name_attribute', SerializeNameAttributeContextBuilder::class)
+        ->set('.ser_des.context_builder.serialize.name_attribute', SerializeSerializedNameAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
 
         ->set('.ser_des.context_builder.serialize.formatter_attribute', SerializeFormatterAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+
+        ->set('.ser_des.context_builder.serialize.groups_attribute', SerializeGroupsAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
@@ -95,12 +108,17 @@ return static function (ContainerConfigurator $container) {
                 'property' => service('ser_des.hook.deserialize.property'),
             ]])
 
-        ->set('.ser_des.context_builder.deserialize.name_attribute', DeserializeNameAttributeContextBuilder::class)
+        ->set('.ser_des.context_builder.deserialize.name_attribute', DeserializeSerializedNameAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
 
         ->set('.ser_des.context_builder.deserialize.formatter_attribute', DeserializeFormatterAttributeContextBuilder::class)
+            ->args([
+                service('ser_des.serializable_resolver'),
+            ])
+
+        ->set('.ser_des.context_builder.deserialize.groups_attribute', DeserializeGroupsAttributeContextBuilder::class)
             ->args([
                 service('ser_des.serializable_resolver'),
             ])
@@ -156,12 +174,13 @@ return static function (ContainerConfigurator $container) {
         ->set('ser_des.cache_warmer', SerDesCacheWarmer::class)
             ->args([
                 service('ser_des.serializable_resolver'),
-                tagged_iterator('ser_des.context_builder'),
                 param('.ser_des.cache_dir.template'),
                 param('.ser_des.cache_dir.lazy_object'),
                 param('ser_des.template_warm_up.formats'),
+                param('ser_des.template_warm_up.max_variants'),
                 service('logger')->ignoreOnInvalid(),
             ])
+            ->call('setContextBuilders', [$serializeContextBuilders])
             ->tag('kernel.cache_warmer')
     ;
 };

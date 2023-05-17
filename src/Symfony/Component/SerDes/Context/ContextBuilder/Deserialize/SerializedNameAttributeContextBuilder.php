@@ -20,7 +20,7 @@ use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
  *
  * @internal
  */
-final class DeserializeNameAttributeContextBuilder implements DeserializeContextBuilderInterface
+final class SerializedNameAttributeContextBuilder implements DeserializeContextBuilderInterface
 {
     /**
      * @var array<class-string, array<string, string>>|null

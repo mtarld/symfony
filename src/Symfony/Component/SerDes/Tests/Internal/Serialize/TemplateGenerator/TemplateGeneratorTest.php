@@ -224,6 +224,27 @@ class TemplateGeneratorTest extends TestCase
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
     }
 
+    public function testGenerateObjectSkipPropertyWithNullAccessor()
+    {
+        $context = [
+            'hooks' => [
+                'serialize' => [
+                    sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
+                        return [
+                            'accessor' => null,
+                        ];
+                    },
+                ],
+            ],
+        ];
+
+        $this->assertEquals([
+            'closures',
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            '$object_0->name (name(string))',
+        ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
+    }
+
     public function testGenerateObjectCallProperPropertyHook()
     {
         $hookCallCount = 0;

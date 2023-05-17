@@ -89,7 +89,6 @@ class UnusedTagsPass implements CompilerPassInterface
         'security.remember_me_aware',
         'security.remember_me_handler',
         'security.voter',
-        'ser_des.context_builder',
         'serializer.encoder',
         'serializer.normalizer',
         'texter.transport_factory',

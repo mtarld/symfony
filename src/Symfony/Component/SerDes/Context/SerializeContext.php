@@ -34,6 +34,14 @@ class SerializeContext implements ContextInterface
         return $this->options;
     }
 
+    /**
+     * @param non-empty-string|non-empty-array<int, non-empty-string> $groups
+     */
+    public function withGroups(array|string $groups): self
+    {
+        return new self(['groups' => array_values(array_unique((array) $groups))] + $this->options);
+    }
+
     public function withForceGenerateTemplate(bool $forceGenerateTemplate = true): self
     {
         return new self(['force_generate_template' => $forceGenerateTemplate] + $this->options);

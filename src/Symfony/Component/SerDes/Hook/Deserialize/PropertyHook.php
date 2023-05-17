@@ -46,7 +46,22 @@ final class PropertyHook implements PropertyHookInterface
         $cacheKey = $propertyClass.'::$'.$propertyName;
 
         if (!self::$cache['class_has_property'][$cacheKey] = self::$cache['class_has_property'][$cacheKey] ?? $class->hasProperty($propertyName)) {
-            return [];
+            return ['value_provider' => null];
+        }
+
+        if (null !== ($groups = $context['groups'] ?? null)) {
+            $isGroupMatching = false;
+            foreach ($groups as $group) {
+                if (isset($context['_symfony']['deserialize']['property_groups'][$propertyClass][$propertyName][$group])) {
+                    $isGroupMatching = true;
+
+                    break;
+                }
+            }
+
+            if (!$isGroupMatching) {
+                return ['value_provider' => null];
+            }
         }
 
         if (!isset($context['_symfony']['deserialize']['property_formatter'][$propertyClass][$key])) {

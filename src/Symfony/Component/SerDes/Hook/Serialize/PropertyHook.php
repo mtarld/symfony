@@ -31,6 +31,21 @@ final class PropertyHook implements PropertyHookInterface
 
     public function __invoke(\ReflectionProperty $property, string $accessor, array $context): array
     {
+        if (null !== ($groups = $context['groups'] ?? null)) {
+            $isGroupMatching = false;
+            foreach ($groups as $group) {
+                if (isset($context['_symfony']['serialize']['property_groups'][$property->getDeclaringClass()->getName()][$property->getName()][$group])) {
+                    $isGroupMatching = true;
+
+                    break;
+                }
+            }
+
+            if (!$isGroupMatching) {
+                return ['accessor' => null];
+            }
+        }
+
         $propertyFormatter = isset($context['_symfony']['serialize']['property_formatter'][$className = $property->getDeclaringClass()->getName()][$name = $property->getName()])
             ? new \ReflectionFunction(\Closure::fromCallable($context['_symfony']['serialize']['property_formatter'][$className][$name]))
             : null;

@@ -745,6 +745,7 @@ class ConfigurationTest extends TestCase
                 'serializable_paths' => [],
                 'template_warm_up' => [
                     'formats' => ['json'],
+                    'max_variants' => 32,
                 ],
             ],
         ];

@@ -166,6 +166,32 @@ class DeserializeTest extends TestCase
      *
      * @param callable(string, string, array<string, mixed>): mixed
      */
+    public function testDeserializeObjectSkipWithNullValueProvider(callable $deserialize)
+    {
+        $expectedObject = new ClassicDummy();
+        $expectedObject->id = 123;
+        $expectedObject->name = 'dummy';
+
+        $value = $deserialize('{"id": 123, "name": "thename"}', ClassicDummy::class, [
+            'hooks' => [
+                'deserialize' => [
+                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
+                        return [
+                            'value_provider' => null,
+                        ];
+                    },
+                ],
+            ],
+        ]);
+
+        $this->assertEquals($expectedObject, $value);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
     public function testDeserializeMixed(callable $deserialize)
     {
         $this->assertSame(['foo' => true], $deserialize('{"foo": true}', 'mixed'));
