@@ -50,7 +50,53 @@ class PropertyHookTest extends TestCase
 
         $result = (new PropertyHook($typeExtractor))(new \ReflectionClass(ClassicDummy::class), 'invalid', fn () => null, []);
 
-        $this->assertSame([], $result);
+        $this->assertNull($result['value_provider']);
+    }
+
+    public function testSkipWhenNoGroupIsMatching()
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+
+        $context = [
+            'groups' => ['one'],
+            '_symfony' => [
+                'deserialize' => [
+                    'property_groups' => [
+                        ClassicDummy::class => [
+                            'id' => ['two' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = (new PropertyHook($typeExtractor))(new \ReflectionClass(ClassicDummy::class), 'id', fn () => null, $context);
+
+        $this->assertNull($result['value_provider']);
+    }
+
+    public function testDoNotSkipWhenGroupIsMatching()
+    {
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+
+        $context = [
+            'groups' => ['one', 'two'],
+            '_symfony' => [
+                'deserialize' => [
+                    'property_groups' => [
+                        ClassicDummy::class => [
+                            'id' => ['one' => true, 'three' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $valueProvider = static function () { return null; };
+
+        $result = (new PropertyHook($typeExtractor))(new \ReflectionClass(ClassicDummy::class), 'id', $valueProvider, $context);
+
+        $this->assertNotNull($result['value_provider']);
     }
 
     public function testRetrievePropertyType()

@@ -9,42 +9,34 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Serialize;
+namespace Symfony\Component\SerDes\Tests\Context\ContextBuilder\Deserialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\SerializedNameAttributeContextBuilder;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\AnotherDummyWithNameAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithNameAttributes;
 
-class SerializeNameAttributeContextBuilderTest extends TestCase
+class SerializedNameAttributeContextBuilderTest extends TestCase
 {
     public function testAddPropertyNameToContext()
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
         $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class]));
 
-        $contextBuilder = new SerializeNameAttributeContextBuilder($serializableResolver);
+        $contextBuilder = new SerializedNameAttributeContextBuilder($serializableResolver);
 
         $expectedContext = [
             '_symfony' => [
-                'serialize' => [
+                'deserialize' => [
                     'property_name' => [
-                        DummyWithNameAttributes::class => ['id' => '@id'],
-                        AnotherDummyWithNameAttributes::class => ['name' => 'call_me_with'],
+                        DummyWithNameAttributes::class => ['@id' => 'id'],
+                        AnotherDummyWithNameAttributes::class => ['call_me_with' => 'name'],
                     ],
                 ],
             ],
         ];
 
         $this->assertSame($expectedContext, $contextBuilder->build([]));
-    }
-
-    public function testSkipWhenWontGenerateTemplate()
-    {
-        $serializableResolver = $this->createStub(SerializableResolverInterface::class);
-        $serializableResolver->method('resolve')->willReturn(new \ArrayIterator([DummyWithNameAttributes::class, AnotherDummyWithNameAttributes::class]));
-
-        $this->assertSame(['template_exists' => true], (new SerializeNameAttributeContextBuilder($serializableResolver))->build(['template_exists' => true]));
     }
 }

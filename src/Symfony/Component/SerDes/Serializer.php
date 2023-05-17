@@ -14,6 +14,7 @@ namespace Symfony\Component\SerDes;
 use Symfony\Component\SerDes\Context\ContextBuilder\ContextBuilderInterface;
 use Symfony\Component\SerDes\Context\ContextInterface;
 use Symfony\Component\SerDes\Stream\StreamInterface;
+use Symfony\Component\SerDes\Template\TemplateHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,9 +33,12 @@ final class Serializer implements SerializerInterface
      */
     private iterable $deserializeContextBuilders = [];
 
+    private readonly TemplateHelper $templateHelper;
+
     public function __construct(
         private readonly string $templateCacheDir,
     ) {
+        $this->templateHelper = new TemplateHelper();
     }
 
     public function serialize(mixed $data, string $format, mixed $output, ContextInterface|array $context = []): void
@@ -49,7 +53,9 @@ final class Serializer implements SerializerInterface
 
         $context['type'] = $context['type'] ?? get_debug_type($data);
         $context['cache_dir'] = $context['cache_dir'] ?? $this->templateCacheDir;
-        $context['template_exists'] = file_exists(sprintf('%s%s%s.%s.php', $context['cache_dir'], \DIRECTORY_SEPARATOR, hash('xxh128', $context['type']), $format));
+
+        $templatePath = $context['cache_dir'].\DIRECTORY_SEPARATOR.$this->templateHelper->templateFilename($context['type'], $format, $context);
+        $context['template_exists'] = file_exists($templatePath);
 
         foreach ($this->serializeContextBuilders as $contextBuilder) {
             $context = $contextBuilder->build($context);

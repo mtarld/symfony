@@ -20,7 +20,7 @@ namespace Symfony\Component\SerDes\Attribute;
 final class DeserializeFormatter
 {
     /**
-     * @param callable(mixed, array<string, mixed>=): mixed|null $formatter
+     * @param callable(mixed, array<string, mixed>=): mixed $formatter
      */
     public function __construct(
         public readonly mixed $formatter,

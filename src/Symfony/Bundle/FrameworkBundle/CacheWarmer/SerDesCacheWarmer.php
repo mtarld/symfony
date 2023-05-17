@@ -14,9 +14,12 @@ namespace Symfony\Bundle\FrameworkBundle\CacheWarmer;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
+use Symfony\Component\SerDes\Context\ContextBuilder\ContextBuilderInterface;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Exception\ExceptionInterface;
 use Symfony\Component\SerDes\SerializableResolver\SerializableResolverInterface;
+use Symfony\Component\SerDes\Template\TemplateHelper;
+use Symfony\Component\SerDes\Template\TemplateVariation;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 use function Symfony\Component\SerDes\serialize_generate;
@@ -29,17 +32,25 @@ use function Symfony\Component\SerDes\serialize_generate;
 final class SerDesCacheWarmer extends CacheWarmer
 {
     /**
+     * @var iterable<ContextBuilderInterface>
+     */
+    private iterable $contextBuilders = [];
+
+    private readonly TemplateHelper $templateHelper;
+
+    /**
      * @param iterable<SerializeContextBuilderInterface> $contextBuilders
      * @param list<string>                               $formats
      */
     public function __construct(
         private readonly SerializableResolverInterface $serializableResolver,
-        private readonly iterable $contextBuilders,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
         private readonly array $formats,
+        private readonly int $maxVariants,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
+        $this->templateHelper = new TemplateHelper($this->templateCacheDir);
     }
 
     public function warmUp(string $cacheDir): array
@@ -53,8 +64,14 @@ final class SerDesCacheWarmer extends CacheWarmer
         }
 
         foreach ($this->serializableResolver->resolve() as $className) {
+            $variants = $this->templateHelper->classTemplateVariants($className);
+            if (\count($variants) > $this->maxVariants) {
+                $this->logger->debug('Too many variants for "{className}", keeping only the first {maxVariants}.', ['className' => $className, 'maxVariants' => $this->maxVariants]);
+                $variants = array_slice($variants, offset: 0, length: $this->maxVariants);
+            }
+
             foreach ($this->formats as $format) {
-                $this->warmClassTemplate($className, $format);
+                $this->warmClassTemplate($className, $variants, $format);
             }
 
             $this->warmClassLazyObject($className);
@@ -69,9 +86,20 @@ final class SerDesCacheWarmer extends CacheWarmer
     }
 
     /**
-     * @param class-string $className
+     * @param iterable<ContextBuilderInterface> $contextBuilders
+     *
+     * @internal
      */
-    private function warmClassTemplate(string $className, string $format): void
+    public function setContextBuilders(iterable $contextBuilders): void
+    {
+        $this->contextBuilders = $contextBuilders;
+    }
+
+    /**
+     * @param class-string $className
+     * @param list<list<TemplateVariation>> $variants
+     */
+    private function warmClassTemplate(string $className, array $variants, string $format): void
     {
         try {
             $context = [
@@ -83,9 +111,21 @@ final class SerDesCacheWarmer extends CacheWarmer
                 $context = $contextBuilder->build($context, true);
             }
 
-            $path = sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className), $format);
+            foreach ($variants as $variant) {
+                $variantContext = $context;
 
-            $this->writeCacheFile($path, serialize_generate($className, $format, $context));
+                $groupVariations = array_filter($variant, fn (TemplateVariation $v): bool => 'group' === $v->type);
+                if ([] !== $groupVariations) {
+                    $variantContext['groups'] = array_map(fn (TemplateVariation $v): string => $v->value, $groupVariations);
+                }
+
+                $variantFilename = $this->templateHelper->templateFilename($className, $format, $variantContext);
+
+                $this->writeCacheFile(
+                    $this->templateCacheDir.\DIRECTORY_SEPARATOR.$variantFilename,
+                    serialize_generate($className, $format, $variantContext),
+                );
+            }
         } catch (ExceptionInterface $e) {
             $this->logger->debug('Cannot generate template for "{className}": {exception}', ['className' => $className, 'exception' => $e]);
         }

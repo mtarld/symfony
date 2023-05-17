@@ -15,10 +15,12 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeFormatterAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeHookContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeInstantiatorContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\DeserializeNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\GroupsAttributeContextBuilder as DeserializeGroupsAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Deserialize\SerializedNameAttributeContextBuilder as DeserializeSerializedNameAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\GroupsAttributeContextBuilder as SerializeGroupsAttributeContextBuilder;
+use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializedNameAttributeContextBuilder as SerializeSerializedNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeFormatterAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeHookContextBuilder;
-use Symfony\Component\SerDes\Context\ContextBuilder\Serialize\SerializeNameAttributeContextBuilder;
 use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
 use Symfony\Component\SerDes\Context\DeserializeContext;
 use Symfony\Component\SerDes\Context\SerializeContext;
@@ -31,6 +33,7 @@ use Symfony\Component\SerDes\SerializerInterface;
 use Symfony\Component\SerDes\Stream\MemoryStream;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithGenerics;
+use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithGroups;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithNameAttributes;
 use Symfony\Component\SerDes\Type\PhpstanTypeExtractor;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
@@ -146,6 +149,13 @@ class SerializerTest extends TestCase
         $this->assertSame('{"id":"2","name":"dummy"}', (string) $output);
     }
 
+    public function testSerializeReadGroupsAttribute()
+    {
+        $this->serializer->serialize(new DummyWithGroups(), 'json', $output = new MemoryStream(), (new SerializeContext())->withGroups('one'));
+
+        $this->assertSame('{"one":"one","oneAndTwo":"oneAndTwo"}', (string) $output);
+    }
+
     public function testSerializeReadGenerics()
     {
         $dummy = new DummyWithGenerics();
@@ -202,7 +212,7 @@ class SerializerTest extends TestCase
         rewind($input->resource());
 
         $expectedResult = new DummyWithNameAttributes();
-        $result = $this->serializer->deserialize($input, DummyWithNameAttributes::class, 'json', ['instantiator' => 'eager']);
+        $result = $this->serializer->deserialize($input, DummyWithNameAttributes::class, 'json', (new DeserializeContext())->withEagerInstantiation());
 
         $this->assertEquals($expectedResult, $result);
     }
@@ -215,7 +225,23 @@ class SerializerTest extends TestCase
         rewind($input->resource());
 
         $expectedResult = new DummyWithFormatterAttributes();
-        $result = $this->serializer->deserialize($input, DummyWithFormatterAttributes::class, 'json', ['instantiator' => 'eager']);
+        $result = $this->serializer->deserialize($input, DummyWithFormatterAttributes::class, 'json', (new DeserializeContext())->withEagerInstantiation());
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    public function testDeserializeReadGroupsAttribute()
+    {
+        $input = new MemoryStream();
+
+        fwrite($input->resource(), '{"none":"updated","one":"updated","oneAndTwo":"updated","twoAndThree":"updated"}');
+        rewind($input->resource());
+
+        $expectedResult = new DummyWithGroups();
+        $expectedResult->one = 'updated';
+        $expectedResult->oneAndTwo = 'updated';
+
+        $result = $this->serializer->deserialize($input, DummyWithGroups::class, 'json', (new DeserializeContext())->withGroups('one'));
 
         $this->assertEquals($expectedResult, $result);
     }
@@ -242,7 +268,7 @@ class SerializerTest extends TestCase
         fwrite($input->resource(), '{"id":1,"name":"dummy"}');
         rewind($input->resource());
 
-        $result = $this->serializer->deserialize($input, DummyWithNameAttributes::class, 'json', ['instantiator' => 'lazy']);
+        $result = $this->serializer->deserialize($input, DummyWithNameAttributes::class, 'json', (new DeserializeContext())->withLazyInstantiation());
 
         $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', DummyWithNameAttributes::class));
 
@@ -258,7 +284,8 @@ class SerializerTest extends TestCase
         $serializer = new Serializer($this->templateCacheDir);
         $serializer->setSerializeContextBuilders([
             new SerializeFormatterAttributeContextBuilder($serializableResolver),
-            new SerializeNameAttributeContextBuilder($serializableResolver),
+            new SerializeSerializedNameAttributeContextBuilder($serializableResolver),
+            new SerializeGroupsAttributeContextBuilder($serializableResolver),
             new SerializeHookContextBuilder([
                 'object' => (new SerializeHook\ObjectHook($typeExtractor))(...),
                 'property' => (new SerializeHook\PropertyHook($typeExtractor))(...),
@@ -267,7 +294,8 @@ class SerializerTest extends TestCase
 
         $serializer->setDeserializeContextBuilders([
             new DeserializeFormatterAttributeContextBuilder($serializableResolver),
-            new DeserializeNameAttributeContextBuilder($serializableResolver),
+            new DeserializeSerializedNameAttributeContextBuilder($serializableResolver),
+            new DeserializeGroupsAttributeContextBuilder($serializableResolver),
             new DeserializeHookContextBuilder([
                 'object' => (new DeserializeHook\ObjectHook($typeExtractor))(...),
                 'property' => (new DeserializeHook\PropertyHook($typeExtractor))(...),

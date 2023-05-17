@@ -222,6 +222,10 @@ abstract class Deserializer
 
                     $name = $hookResult['name'] ?? $name;
                     $context = $hookResult['context'] ?? $context;
+
+                    if (\array_key_exists('value_provider', $hookResult) && null === $hookResult['value_provider']) {
+                        continue;
+                    }
                 }
 
                 self::$cache['class_has_property'][$identifier = $typeString.$name] ??= $reflection->hasProperty($name);

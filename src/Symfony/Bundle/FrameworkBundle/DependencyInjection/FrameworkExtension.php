@@ -3063,6 +3063,7 @@ class FrameworkExtension extends Extension
 
         $container->setParameter('ser_des.serializable_paths', $config['serializable_paths']);
         $container->setParameter('ser_des.template_warm_up.formats', $config['template_warm_up']['formats']);
+        $container->setParameter('ser_des.template_warm_up.max_variants', $config['template_warm_up']['max_variants']);
 
         $loader->load('ser_des.php');
 
