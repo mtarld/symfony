@@ -32,11 +32,6 @@ use Symfony\Component\SerDes\Internal\TypeFactory;
  */
 final class JsonTemplateGenerator extends TemplateGenerator
 {
-    protected function initialClosuresNodes(array $context): array
-    {
-        return [];
-    }
-
     protected function nullNodes(array $context): array
     {
         return [

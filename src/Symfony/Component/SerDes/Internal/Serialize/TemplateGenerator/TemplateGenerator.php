@@ -52,13 +52,6 @@ abstract class TemplateGenerator
      *
      * @return list<NodeInterface>
      */
-    abstract protected function initialClosuresNodes(array $context): array;
-
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return list<NodeInterface>
-     */
     abstract protected function nullNodes(array $context): array;
 
     /**
@@ -104,18 +97,11 @@ abstract class TemplateGenerator
      */
     public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
-        $nodes = !($context['closure_generated'] ?? false) ? $this->initialClosuresNodes($context) : [];
-        $context['closure_generated'] = true;
-
         if (!$type->isNullable()) {
-            return [
-                ...$nodes,
-                ...$this->nodes($type, $accessor, $context),
-            ];
+            return $this->nodes($type, $accessor, $context);
         }
 
         return [
-            ...$nodes,
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), $accessor),
                 $this->nullNodes($context),

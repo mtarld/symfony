@@ -51,7 +51,6 @@ class TemplateGeneratorTest extends TestCase
     public function testGenerateNullable()
     {
         $this->assertEquals([
-            'closures',
             new IfNode(
                 new BinaryNode('===', new ScalarNode(null), new VariableNode('accessor')),
                 ['null'],
@@ -63,7 +62,6 @@ class TemplateGeneratorTest extends TestCase
     public function testGenerateUnion()
     {
         $this->assertEquals([
-            'closures',
             new IfNode(
                 new FunctionNode('\is_int', [new VariableNode('accessor')]),
                 ['$accessor scalar(int)'],
@@ -72,7 +70,6 @@ class TemplateGeneratorTest extends TestCase
         ], $this->templateGenerator->generate(TypeFactory::createFromString('int|string'), new VariableNode('accessor'), []));
 
         $this->assertEquals([
-            'closures',
             new IfNode(
                 new FunctionNode('\is_int', [new VariableNode('accessor')]),
                 ['$accessor scalar(int)'],
@@ -87,33 +84,32 @@ class TemplateGeneratorTest extends TestCase
 
     public function testGenerateNull()
     {
-        $this->assertEquals(['closures', 'null'], $this->templateGenerator->generate(TypeFactory::createFromString('null'), new VariableNode('accessor'), []));
+        $this->assertEquals(['null'], $this->templateGenerator->generate(TypeFactory::createFromString('null'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateScalar()
     {
-        $this->assertEquals(['closures', '$accessor scalar(int)'], $this->templateGenerator->generate(TypeFactory::createFromString('int'), new VariableNode('accessor'), []));
+        $this->assertEquals(['$accessor scalar(int)'], $this->templateGenerator->generate(TypeFactory::createFromString('int'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateList()
     {
-        $this->assertEquals(['closures', '$accessor (list(array<int, int>))'], $this->templateGenerator->generate(TypeFactory::createFromString('array<int, int>'), new VariableNode('accessor'), []));
+        $this->assertEquals(['$accessor (list(array<int, int>))'], $this->templateGenerator->generate(TypeFactory::createFromString('array<int, int>'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateDict()
     {
-        $this->assertEquals(['closures', '$accessor (dict(array<string, int>))'], $this->templateGenerator->generate(TypeFactory::createFromString('array<string, int>'), new VariableNode('accessor'), []));
+        $this->assertEquals(['$accessor (dict(array<string, int>))'], $this->templateGenerator->generate(TypeFactory::createFromString('array<string, int>'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateEnum()
     {
-        $this->assertEquals(['closures', sprintf('$accessor->value scalar(%s)', DummyBackedEnum::class)], $this->templateGenerator->generate(TypeFactory::createFromString(DummyBackedEnum::class), new VariableNode('accessor'), []));
+        $this->assertEquals([sprintf('$accessor->value scalar(%s)', DummyBackedEnum::class)], $this->templateGenerator->generate(TypeFactory::createFromString(DummyBackedEnum::class), new VariableNode('accessor'), []));
     }
 
     public function testGenerateObject()
     {
         $this->assertEquals([
-            'closures',
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
             '$object_0->id (id(int))',
             '$object_0->name (name(string))',
@@ -123,7 +119,6 @@ class TemplateGeneratorTest extends TestCase
     public function testGenerateObjedctWithConstructorPropertyPromotion()
     {
         $this->assertEquals([
-            'closures',
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
             '$object_0->id (id(int))',
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ConstructorPropertyPromotedDummy::class), new VariableNode('accessor'), []));
@@ -154,7 +149,6 @@ class TemplateGeneratorTest extends TestCase
         ];
 
         $this->assertEquals([
-            'closures',
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new RawNode('$ACCESSOR'))),
             '$object_0->id (id(int))',
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
@@ -217,7 +211,6 @@ class TemplateGeneratorTest extends TestCase
         ];
 
         $this->assertEquals([
-            'closures',
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
             '$ACCESSOR (NAME(string))',
             '$ACCESSOR (NAME(string))',
@@ -239,7 +232,6 @@ class TemplateGeneratorTest extends TestCase
         ];
 
         $this->assertEquals([
-            'closures',
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
             '$object_0->name (name(string))',
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
@@ -292,7 +284,7 @@ class TemplateGeneratorTest extends TestCase
 
     public function testGenerateMixed()
     {
-        $this->assertEquals(['closures', '$accessor mixed'], $this->templateGenerator->generate(TypeFactory::createFromString('mixed'), new VariableNode('accessor'), []));
+        $this->assertEquals(['$accessor mixed'], $this->templateGenerator->generate(TypeFactory::createFromString('mixed'), new VariableNode('accessor'), []));
     }
 
     public function testThrowOnCircularReference()
@@ -308,11 +300,6 @@ class TemplateGeneratorTest extends TestCase
 
 final class DummyTemplateGenerator extends TemplateGenerator
 {
-    protected function initialClosuresNodes(array $context): array
-    {
-        return ['closures'];
-    }
-
     protected function nullNodes(array $context): array
     {
         return ['null'];
