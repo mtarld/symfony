@@ -147,7 +147,7 @@ class TypeTest extends TestCase
     /**
      * @dataProvider isserDataProvider
      */
-    public function testIsser(Type $type, bool $scalar, bool $nullable, bool $object, bool $collection, bool $list, bool $dict, bool $generic)
+    public function testIsser(Type $type, bool $scalar, bool $nullable, bool $object, bool $collection, bool $list, bool $dict, bool $generic, bool $class)
     {
         $this->assertSame($scalar, $type->isScalar());
         $this->assertSame($nullable, $type->isNull());
@@ -156,20 +156,91 @@ class TypeTest extends TestCase
         $this->assertSame($list, $type->isList());
         $this->assertSame($dict, $type->isDict());
         $this->assertSame($generic, $type->isGeneric());
+        $this->assertSame($class, $type->hasClass());
     }
 
     /**
-     * @return iterable<array{type: Type, scalar: bool, null: bool, object: bool, collection: bool, list: bool, dict: bool}>
+     * @return iterable<array{type: Type, scalar: bool, null: bool, object: bool, collection: bool, list: bool, dict: bool, class: bool}>
      */
     public static function isserDataProvider(): iterable
     {
-        yield ['type' => new Type('int'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('string'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('bool'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('float'), 'scalar' => true, 'null' => false, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('null'), 'scalar' => false, 'null' => true, 'object' => false, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('array'), 'scalar' => false, 'null' => false, 'object' => false, 'collection' => true, 'list' => false, 'dict' => false, 'generic' => false];
-        yield ['type' => new Type('object'), 'scalar' => false, 'null' => false, 'object' => true, 'collection' => false, 'list' => false, 'dict' => false, 'generic' => false];
+        yield [
+            'type' => new Type('int'),
+            'scalar' => true,
+            'null' => false,
+            'object' => false,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('string'),
+            'scalar' => true,
+            'null' => false,
+            'object' => false,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('bool'),
+            'scalar' => true,
+            'null' => false,
+            'object' => false,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('float'),
+            'scalar' => true,
+            'null' => false,
+            'object' => false,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('null'),
+            'scalar' => false,
+            'null' => true,
+            'object' => false,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('array'),
+            'scalar' => false,
+            'null' => false,
+            'object' => false,
+            'collection' => true,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
+        yield [
+            'type' => new Type('object'),
+            'scalar' => false,
+            'null' => false,
+            'object' => true,
+            'collection' => false,
+            'list' => false,
+            'dict' => false,
+            'generic' => false,
+            'class' => false,
+        ];
         yield [
             'type' => new Type('object', className: ClassicDummy::class),
             'scalar' => false,
@@ -179,6 +250,7 @@ class TypeTest extends TestCase
             'list' => false,
             'dict' => false,
             'generic' => false,
+            'class' => true,
         ];
         yield [
             'type' => new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
@@ -189,6 +261,7 @@ class TypeTest extends TestCase
             'list' => false,
             'dict' => false,
             'generic' => true,
+            'class' => true,
         ];
         yield [
             'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]),
@@ -199,6 +272,7 @@ class TypeTest extends TestCase
             'list' => true,
             'dict' => false,
             'generic' => true,
+            'class' => false,
         ];
         yield [
             'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]),
@@ -209,6 +283,7 @@ class TypeTest extends TestCase
             'list' => false,
             'dict' => true,
             'generic' => true,
+            'class' => false,
         ];
     }
 }

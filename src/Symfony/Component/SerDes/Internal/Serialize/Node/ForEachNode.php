@@ -35,18 +35,28 @@ final class ForEachNode implements NodeInterface
 
     public function compile(Compiler $compiler): void
     {
+        $valueName = $this->valueName;
+        $byReference = false;
+
+        if (str_starts_with($this->valueName, '&')) {
+            $byReference = true;
+            $valueName = substr($valueName, 1);
+        }
+
         if (null === $this->keyName) {
             $compiler->line(sprintf(
-                'foreach (%s as %s) {',
+                'foreach (%s as %s%s) {',
                 $compiler->subcompile($this->collection),
-                $compiler->subcompile(new VariableNode($this->valueName)),
+                $byReference ? '&' : '',
+                $compiler->subcompile(new VariableNode($valueName)),
             ));
         } else {
             $compiler->line(sprintf(
-                'foreach (%s as %s => %s) {',
+                'foreach (%s as %s => %s%s) {',
                 $compiler->subcompile($this->collection),
                 $compiler->subcompile(new VariableNode($this->keyName)),
-                $compiler->subcompile(new VariableNode($this->valueName)),
+                $byReference ? '&' : '',
+                $compiler->subcompile(new VariableNode($valueName)),
             ));
         }
 

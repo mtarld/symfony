@@ -51,6 +51,11 @@ final class Type implements \Stringable
         return $this->isNullable;
     }
 
+    public function hasClass(): bool
+    {
+        return null !== $this->className;
+    }
+
     /**
      * @return class-string
      */
@@ -162,19 +167,13 @@ final class Type implements \Stringable
             return 'null';
         }
 
-        $nullablePrefix = $this->isNullable() ? '?' : '';
-
-        try {
-            $name = $this->className();
-        } catch (LogicException) {
-            $name = $this->name();
-        }
+        $name = $this->hasClass() ? $this->className() : $this->name();
 
         if ($this->isGeneric()) {
             $name .= sprintf('<%s>', implode(', ', $this->genericParameterTypes));
         }
 
-        return $nullablePrefix.$name;
+        return ($this->isNullable() ? '?' : '').$name;
     }
 
     public function __toString(): string

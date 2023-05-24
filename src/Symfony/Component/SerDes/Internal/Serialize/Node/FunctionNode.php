@@ -23,23 +23,23 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
 final class FunctionNode implements NodeInterface
 {
     /**
-     * @param list<NodeInterface> $parameters
+     * @param list<NodeInterface> $arguments
      */
     public function __construct(
         public readonly string $name,
-        public readonly array $parameters,
+        public readonly array $arguments,
     ) {
     }
 
     public function compile(Compiler $compiler): void
     {
-        $parameters = implode(', ', array_map(fn (NodeInterface $v): string => $compiler->subcompile($v), $this->parameters));
+        $arguments = implode(', ', array_map(fn (NodeInterface $v): string => $compiler->subcompile($v), $this->arguments));
 
-        $compiler->raw(sprintf('%s(%s)', $this->name, $parameters));
+        $compiler->raw(sprintf('%s(%s)', $this->name, $arguments));
     }
 
     public function optimize(Optimizer $optimizer): static
     {
-        return new self($this->name, $optimizer->optimize($this->parameters));
+        return new self($this->name, $optimizer->optimize($this->arguments));
     }
 }

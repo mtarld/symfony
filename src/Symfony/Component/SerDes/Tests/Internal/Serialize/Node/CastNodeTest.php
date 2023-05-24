@@ -13,14 +13,14 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize\Node;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Internal\Serialize\Compiler;
-use Symfony\Component\SerDes\Internal\Serialize\Node\TernaryConditionNode;
+use Symfony\Component\SerDes\Internal\Serialize\Node\CastNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 
-class TernaryConditionNodeTest extends TestCase
+class CastNodeTest extends TestCase
 {
     public function testCompile()
     {
-        (new TernaryConditionNode(new VariableNode('foo'), new VariableNode('trueFoo'), new VariableNode('falseFoo')))->compile($compiler = new Compiler());
-        $this->assertSame('($foo ? $trueFoo : $falseFoo)', $compiler->source());
+        (new CastNode('array', new VariableNode('foo')))->compile($compiler = new Compiler());
+        $this->assertSame('(array) ($foo)', $compiler->source());
     }
 }
