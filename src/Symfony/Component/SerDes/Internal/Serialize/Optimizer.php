@@ -74,11 +74,11 @@ final class Optimizer
 
             /**
              * @var ExpressionNode<FunctionNode> $node
-             * @var ScalarNode                   $stringParameter
+             * @var ScalarNode                   $stringArgument
              */
-            $stringParameter = $node->node->parameters[1];
+            $stringArgument = $node->node->arguments[1];
 
-            $stringContent = $stringContent.$stringParameter->value;
+            $stringContent = $stringContent.$stringArgument->value;
         }
 
         if ('' !== $stringContent) {
@@ -103,10 +103,10 @@ final class Optimizer
             return false;
         }
 
-        $resourceParameter = $currentNode->parameters[0] ?? null;
-        $dataParameter = $currentNode->parameters[1] ?? null;
+        $resourceArgument = $currentNode->arguments[0] ?? null;
+        $dataArgument = $currentNode->arguments[1] ?? null;
 
-        return $resourceParameter instanceof VariableNode && 'resource' === $resourceParameter->name
-            && $dataParameter instanceof ScalarNode && \is_string($dataParameter->value);
+        return $resourceArgument instanceof VariableNode && 'resource' === $resourceArgument->name
+            && $dataArgument instanceof ScalarNode && \is_string($dataArgument->value);
     }
 }

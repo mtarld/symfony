@@ -28,17 +28,13 @@ final class TemplateGeneratorFactory
 
     public static function create(string $format): TemplateGenerator
     {
+        $reflectionTypeExtractor = new ReflectionTypeExtractor();
+        $typeSorter = new TypeSorter();
+
         return match ($format) {
-            'json' => self::json(),
+            'json' => new JsonTemplateGenerator($reflectionTypeExtractor, $typeSorter),
+            'csv' => new CsvTemplateGenerator($reflectionTypeExtractor, $typeSorter),
             default => throw new UnsupportedFormatException($format),
         };
-    }
-
-    private static function json(): TemplateGenerator
-    {
-        return new JsonTemplateGenerator(
-            reflectionTypeExtractor: new ReflectionTypeExtractor(),
-            typeSorter: new TypeSorter(),
-        );
     }
 }

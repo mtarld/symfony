@@ -24,12 +24,14 @@ final class ClosureNode implements NodeInterface
 {
     /**
      * @param list<NodeInterface> $body
+     * @param list<VariableNode>  $uses
      */
     public function __construct(
         public readonly ArgumentsNode $arguments,
         public readonly ?string $returnType,
         public readonly bool $static,
         public readonly array $body,
+        public readonly array $uses = [],
     ) {
     }
 
@@ -37,10 +39,11 @@ final class ClosureNode implements NodeInterface
     {
         $staticSource = $this->static ? 'static ' : '';
         $argumentsSource = $compiler->subcompile($this->arguments);
+        $usesSource = [] !== $this->uses ? sprintf(' use (%s)', implode(', ', array_map(fn (NodeInterface $v): string => $compiler->subcompile($v), $this->uses))) : '';
         $returnTypeSource = $this->returnType ? ': '.$this->returnType : '';
 
         $compiler
-            ->raw(sprintf('%sfunction (%s)%s {', $staticSource, $argumentsSource, $returnTypeSource).\PHP_EOL)
+            ->raw(sprintf('%sfunction (%s)%s%s {', $staticSource, $argumentsSource, $usesSource, $returnTypeSource).\PHP_EOL)
             ->indent();
 
         foreach ($this->body as $bodyNode) {
@@ -59,6 +62,7 @@ final class ClosureNode implements NodeInterface
             $this->returnType,
             $this->static,
             $optimizer->optimize($this->body),
+            $optimizer->optimize($this->uses),
         );
     }
 }

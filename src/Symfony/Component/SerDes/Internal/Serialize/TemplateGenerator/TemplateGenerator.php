@@ -42,8 +42,8 @@ abstract class TemplateGenerator
     use VariableNameScoperTrait;
 
     public function __construct(
-        private readonly ReflectionTypeExtractor $reflectionTypeExtractor,
-        private readonly TypeSorter $typeSorter,
+        protected readonly ReflectionTypeExtractor $reflectionTypeExtractor,
+        protected readonly TypeSorter $typeSorter,
     ) {
     }
 
@@ -95,7 +95,7 @@ abstract class TemplateGenerator
      *
      * @return list<NodeInterface>
      */
-    public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
+    final public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
     {
         if (!$type->isNullable()) {
             return $this->nodes($type, $accessor, $context);

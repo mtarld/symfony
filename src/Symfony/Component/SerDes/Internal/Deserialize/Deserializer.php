@@ -172,9 +172,7 @@ abstract class Deserializer
         }
 
         if ($type->isObject()) {
-            try {
-                $className = $type->className();
-            } catch (LogicException) {
+            if (!$type->hasClass()) {
                 $object = new \stdClass();
                 foreach ($this->deserializeMixed($data, $type, $context) as $property => $value) {
                     $object->{$property} = $value;
@@ -183,6 +181,7 @@ abstract class Deserializer
                 return $object;
             }
 
+            $className = $type->className();
             $objectProperties = $this->deserializeObjectProperties($data, $type, $context);
 
             if (null === $objectProperties) {

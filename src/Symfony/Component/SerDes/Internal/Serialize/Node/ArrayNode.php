@@ -20,29 +20,42 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class TernaryConditionNode implements NodeInterface
+final class ArrayNode implements NodeInterface
 {
+    /**
+     * @param array<int|string, NodeInterface> $elements
+     */
     public function __construct(
-        public readonly NodeInterface $condition,
-        public readonly NodeInterface $onTrue,
-        public readonly NodeInterface $onFalse,
+        public readonly array $elements,
     ) {
     }
 
     public function compile(Compiler $compiler): void
     {
-        $compiler
-            ->raw('(')
-            ->compile($this->condition)
-            ->raw(' ? ')
-            ->compile($this->onTrue)
-            ->raw(' : ')
-            ->compile($this->onFalse)
-            ->raw(')');
+        $compiler->raw('[');
+
+        $first = true;
+        $associative = !array_is_list($this->elements);
+
+        foreach ($this->elements as $key => $value) {
+            if (!$first) {
+                $compiler->raw(', ');
+            }
+
+            $first = false;
+
+            if ($associative) {
+                $compiler->compile(new ScalarNode($key))->raw(' => ');
+            }
+
+            $compiler->compile($value);
+        }
+
+        $compiler->raw(']');
     }
 
     public function optimize(Optimizer $optimizer): static
     {
-        return new self($optimizer->optimize($this->condition), $optimizer->optimize($this->onTrue), $optimizer->optimize($this->onFalse));
+        return new self($optimizer->optimize($this->elements));
     }
 }

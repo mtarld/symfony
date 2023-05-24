@@ -50,6 +50,17 @@ class ForEachNodeTest extends TestCase
         ];
         yield [
             <<<PHP
+            foreach (\$foo as &\$fooValue) {
+            }
+
+            PHP,
+            new VariableNode('foo'),
+            null,
+            '&fooValue',
+            [],
+        ];
+        yield [
+            <<<PHP
             foreach (\$foo as \$fooKey => \$fooValue) {
             }
 

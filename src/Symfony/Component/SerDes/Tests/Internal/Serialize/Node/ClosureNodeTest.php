@@ -18,6 +18,7 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ClosureNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ExpressionNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\NodeInterface;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ScalarNode;
+use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 
 class ClosureNodeTest extends TestCase
 {
@@ -25,15 +26,16 @@ class ClosureNodeTest extends TestCase
      * @dataProvider compileDataProvider
      *
      * @param list<NodeInterface> $body
+     * @param list<VariableNode>  $uses
      */
-    public function testCompile(string $expectedSource, ArgumentsNode $arguments, ?string $returnType, bool $static, array $body)
+    public function testCompile(string $expectedSource, ArgumentsNode $arguments, ?string $returnType, bool $static, array $body, array $uses)
     {
-        (new ClosureNode($arguments, $returnType, $static, $body))->compile($compiler = new Compiler());
+        (new ClosureNode($arguments, $returnType, $static, $body, $uses))->compile($compiler = new Compiler());
         $this->assertSame($expectedSource, $compiler->source());
     }
 
     /**
-     * @return iterable<array{0: string, 1: ArgumentsNode, 2: ?string, 3: bool, 4: list<NodeInterface>}>
+     * @return iterable<array{0: string, 1: ArgumentsNode, 2: ?string, 3: bool, 4: list<NodeInterface>, 5: list<VariableNode>}>
      */
     public static function compileDataProvider(): iterable
     {
@@ -46,6 +48,7 @@ class ClosureNodeTest extends TestCase
             null,
             false,
             [],
+            [],
         ];
         yield [
             <<<PHP
@@ -55,6 +58,7 @@ class ClosureNodeTest extends TestCase
             new ArgumentsNode([]),
             'string',
             true,
+            [],
             [],
         ];
         yield [
@@ -68,6 +72,18 @@ class ClosureNodeTest extends TestCase
             'void',
             true,
             [new ExpressionNode(new ScalarNode('foo')), new ExpressionNode(new ScalarNode('bar'))],
+            [],
+        ];
+        yield [
+            <<<PHP
+            function () use (\$foo, \$bar): string {
+            }
+            PHP,
+            new ArgumentsNode([]),
+            'string',
+            false,
+            [],
+            [new VariableNode('foo'), new VariableNode('bar')],
         ];
     }
 }
