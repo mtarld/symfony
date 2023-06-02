@@ -71,7 +71,7 @@ class SerializeTest extends TestCase
         $this->assertSame("0,1\n\"1 2\",\n\"\\3\",4\n", $this->serializeAsString([['1 2'], ['\3', '4']]));
         $this->assertSame('0|1EOL_1 2_|EOL\\3|4EOL', $this->serializeAsString([['1 2'], ['\3', '4']], [
             'csv_end_of_line' => 'EOL',
-            'csv_delimiter' => '|',
+            'csv_separator' => '|',
             'csv_enclosure' => '_',
             'csv_escape_char' => '',
         ]));

@@ -12,8 +12,12 @@
 namespace Symfony\Component\SerDes\Internal\Deserialize;
 
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
+use Symfony\Component\SerDes\Internal\Deserialize\Csv\CsvDecoder;
+use Symfony\Component\SerDes\Internal\Deserialize\Csv\CsvDeserializer;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDecoder;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDictSplitter;
+use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonEagerDeserializer;
+use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonLazyDeserializer;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonLexer;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonListSplitter;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\ValidatingJsonLexer;
@@ -32,8 +36,6 @@ abstract class DeserializerFactory
 
     /**
      * @param array<string, mixed> $context
-     *
-     * @return Deserializer<mixed>
      */
     public static function create(string $format, array $context): Deserializer
     {
@@ -42,13 +44,11 @@ abstract class DeserializerFactory
 
         return match ($format) {
             'json' => self::json($lazyReading, $validateStream),
+            'csv' => self::csv($lazyReading),
             default => throw new UnsupportedFormatException($format),
         };
     }
 
-    /**
-     * @return Deserializer<mixed>
-     */
     private static function json(bool $lazy, bool $validate): Deserializer
     {
         if ($lazy) {
@@ -57,7 +57,7 @@ abstract class DeserializerFactory
                 $lexer = new ValidatingJsonLexer($lexer);
             }
 
-            return new LazyDeserializer(
+            return new JsonLazyDeserializer(
                 reflectionTypeExtractor: new ReflectionTypeExtractor(),
                 decoder: new JsonDecoder(),
                 listSplitter: new JsonListSplitter($lexer),
@@ -65,6 +65,11 @@ abstract class DeserializerFactory
             );
         }
 
-        return new EagerDeserializer(new ReflectionTypeExtractor());
+        return new JsonEagerDeserializer(new ReflectionTypeExtractor(), new JsonDecoder());
+    }
+
+    private static function csv(bool $lazy): Deserializer
+    {
+        return new CsvDeserializer(new ReflectionTypeExtractor(), new CsvDecoder(), $lazy);
     }
 }

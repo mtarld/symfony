@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
-use Symfony\Component\SerDes\Exception\RuntimeException;
+use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Internal\Deserialize\LexerInterface;
 
 /**
@@ -43,11 +43,10 @@ final class JsonLexer implements LexerInterface
 
         while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
             try {
-                if (false === $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
-                    throw new \RuntimeException();
-                }
+                /** @var string $buffer */
+                $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset);
             } catch (\Throwable) {
-                throw new RuntimeException('Cannot read JSON resource.');
+                throw new InvalidResourceException($resource);
             }
 
             $toReadLength -= $bufferLength = \strlen($buffer);

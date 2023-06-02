@@ -9,27 +9,36 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal\Deserialize;
+namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
+use Symfony\Component\SerDes\Internal\Deserialize\Deserializer;
 use Symfony\Component\SerDes\Internal\Type;
 use Symfony\Component\SerDes\Internal\UnionType;
+use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @extends Deserializer<mixed>
  */
-final class EagerDeserializer extends Deserializer
+final class JsonEagerDeserializer extends Deserializer
 {
-    protected function deserializeScalar(mixed $data, Type $type, array $context): mixed
-    {
-        return $data;
+    public function __construct(
+        ReflectionTypeExtractor $reflectionTypeExtractor,
+        private readonly JsonDecoder $decoder,
+    ) {
+        parent::__construct($reflectionTypeExtractor);
     }
 
-    protected function deserializeEnum(mixed $data, Type $type, array $context): mixed
+    public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed
+    {
+        $data = $this->decoder->decode($resource, 0, -1, $context);
+
+        return $this->doDeserialize($data, $type, $context);
+    }
+
+    protected function deserializeScalar(mixed $data, Type $type, array $context): mixed
     {
         return $data;
     }
@@ -76,14 +85,14 @@ final class EagerDeserializer extends Deserializer
         return $data;
     }
 
-    protected function deserializeMixed(mixed $data, Type $type, array $context): mixed
+    protected function deserializeMixed(mixed $data, array $context): mixed
     {
         return $data;
     }
 
     protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable
     {
-        return fn () => $this->deserialize($value, $type, $context);
+        return fn () => $this->doDeserialize($value, $type, $context);
     }
 
     /**
@@ -95,7 +104,7 @@ final class EagerDeserializer extends Deserializer
     private function deserializeCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
     {
         foreach ($collection as $key => $value) {
-            yield $key => $this->deserialize($value, $type, $context);
+            yield $key => $this->doDeserialize($value, $type, $context);
         }
     }
 }

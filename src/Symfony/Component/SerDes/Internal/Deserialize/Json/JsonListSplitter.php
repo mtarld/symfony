@@ -13,7 +13,6 @@ namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Internal\Deserialize\LexerInterface;
-use Symfony\Component\SerDes\Internal\Deserialize\ListSplitterInterface;
 use Symfony\Component\SerDes\Internal\Type;
 
 /**
@@ -21,7 +20,7 @@ use Symfony\Component\SerDes\Internal\Type;
  *
  * @internal
  */
-final class JsonListSplitter implements ListSplitterInterface
+final class JsonListSplitter
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
@@ -31,9 +30,15 @@ final class JsonListSplitter implements ListSplitterInterface
     ) {
     }
 
+    /**
+     * @param resource             $resource
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<array{0: int, 1: int}>|null
+     */
     public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['boundary'][0], $context['boundary'][1], $context);
+        $tokens = $this->lexer->tokens($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
 
         if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;

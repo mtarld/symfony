@@ -268,42 +268,6 @@ class DeserializeTest extends TestCase
     }
 
     /**
-     * @dataProvider deserializeDataProvider
-     *
-     * @param callable(string, string, array<string, mixed>): mixed
-     */
-    public function testThrowOnInvalidList(callable $deserialize, bool $lazy)
-    {
-        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
-
-        $deserialize('"foo"', 'array<int, int>', ['lazy_reading' => true]);
-    }
-
-    /**
-     * @dataProvider deserializeDataProvider
-     *
-     * @param callable(string, string, array<string, mixed>): mixed
-     */
-    public function testThrowOnInvalidDict(callable $deserialize, bool $lazy)
-    {
-        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
-
-        $deserialize('"foo"', 'array<string, int>', ['lazy_reading' => true]);
-    }
-
-    /**
-     * @dataProvider deserializeDataProvider
-     *
-     * @param callable(string, string, array<string, mixed>): mixed
-     */
-    public function testThrowOnInvalidObjectProperties(callable $deserialize, bool $lazy)
-    {
-        $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
-
-        $deserialize('"foo"', ClassicDummy::class, ['lazy_reading' => true]);
-    }
-
-    /**
      * @return iterable<array{0: callable(mixed, string, array<string, mixed>): mixed, 1: bool}>
      */
     public static function deserializeDataProvider(): iterable

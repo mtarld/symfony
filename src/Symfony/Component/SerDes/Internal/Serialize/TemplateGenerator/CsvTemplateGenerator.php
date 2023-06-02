@@ -224,7 +224,7 @@ final class CsvTemplateGenerator extends TemplateGenerator
 
             foreach ($properties as $property) {
                 $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($prefix)]));
-                $prefix = $context['csv_delimiter'] ?? ',';
+                $prefix = $context['csv_separator'] ?? ',';
 
                 if (null === $propertyInfo = $indexedPropertiesInfo[$property] ?? null) {
                     continue;
@@ -387,7 +387,7 @@ final class CsvTemplateGenerator extends TemplateGenerator
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 $data,
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),

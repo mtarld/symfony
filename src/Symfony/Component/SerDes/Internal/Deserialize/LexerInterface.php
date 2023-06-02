@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\SerDes\Internal\Deserialize;
 
-use Symfony\Component\SerDes\Exception\RuntimeException;
+use Symfony\Component\SerDes\Exception\InvalidResourceException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -26,7 +26,7 @@ interface LexerInterface
      *
      * @return \Iterator<array{0: string, 1: int}>
      *
-     * @throws RuntimeException
+     * @throws InvalidResourceException
      */
     public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator;
 }

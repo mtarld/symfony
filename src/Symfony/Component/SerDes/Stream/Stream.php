@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\SerDes\Stream;
 
+use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Exception\RuntimeException;
 
 /**
@@ -49,7 +50,7 @@ class Stream implements StreamInterface
         rewind($this->resource());
 
         if (false === $content = stream_get_contents($this->resource())) {
-            throw new RuntimeException(sprintf('Cannot read "%s" resource', $this->filename));
+            throw new InvalidResourceException($this->resource());
         }
 
         return $content;
