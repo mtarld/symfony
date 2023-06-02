@@ -12,7 +12,7 @@
 namespace Symfony\Component\SerDes\Tests\Internal\Deserialize\Json;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Exception\RuntimeException;
+use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonLexer;
 
 class JsonLexerTest extends TestCase
@@ -54,7 +54,7 @@ class JsonLexerTest extends TestCase
 
     public function testTokensThrowOnInvalidResource()
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidResourceException::class);
 
         iterator_to_array((new JsonLexer())->tokens(fopen(sprintf('%s/%s', sys_get_temp_dir(), uniqid()), 'w'), 0, -1, []));
     }

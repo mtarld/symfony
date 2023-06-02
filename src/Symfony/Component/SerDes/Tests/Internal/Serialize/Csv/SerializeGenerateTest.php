@@ -43,11 +43,11 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, [null], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [null], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -67,11 +67,11 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -99,38 +99,38 @@ class SerializeGenerateTest extends TestCase
                         return \\array_values(\\array_unique(\\array_merge(\$c, \array_keys(\$i))));
             }, []);
                     \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                    \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data)) && \\is_subclass_of(\\get_class(\\reset(\$data)), "BackedEnum")) {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data))) {
-                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } else {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
@@ -159,38 +159,38 @@ class SerializeGenerateTest extends TestCase
                         return \\array_values(\\array_unique(\\array_merge(\$c, \array_keys(\$i))));
             }, []);
                     \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                    \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data)) && \\is_subclass_of(\\get_class(\\reset(\$data)), "BackedEnum")) {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data))) {
-                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } else {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
@@ -211,11 +211,11 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, \\array_keys(\\reset(\$data)), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, \\array_keys(\\reset(\$data)), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, \$row_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \$row_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -239,11 +239,11 @@ class SerializeGenerateTest extends TestCase
                     return \\array_values(\\array_unique(\\array_merge(\$c, \\array_keys(\$i))));
             }, []);
                 \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -271,38 +271,38 @@ class SerializeGenerateTest extends TestCase
                         return \\array_values(\\array_unique(\\array_merge(\$c, \array_keys(\$i))));
             }, []);
                     \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                    \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data)) && \\is_subclass_of(\\get_class(\\reset(\$data)), "BackedEnum")) {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data))) {
-                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } else {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
@@ -323,11 +323,11 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -351,11 +351,11 @@ class SerializeGenerateTest extends TestCase
                     return \\array_values(\\array_unique(\\array_merge(\$c, \\array_keys(\$i))));
             }, []);
                 \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -383,38 +383,38 @@ class SerializeGenerateTest extends TestCase
                         return \\array_values(\\array_unique(\\array_merge(\$c, \array_keys(\$i))));
             }, []);
                     \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                    \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data)) && \\is_subclass_of(\\get_class(\\reset(\$data)), "BackedEnum")) {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } elseif (\\is_object(\\reset(\$data))) {
-                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \\array_keys((array) (\\reset(\$data))), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
                 } else {
-                    \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     foreach (\$data as \$row_0) {
-                        \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                         \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                     }
@@ -435,11 +435,11 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
-                    \\fputcsv(\$resource, [\$row_0->value], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -461,14 +461,14 @@ class SerializeGenerateTest extends TestCase
             return static function (mixed \$data, mixed \$resource, array \$context): void {
                 \$headers_0 = \\array_keys((array) (\\reset(\$data)));
                 \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
-                \\fputcsv(\$resource, \$headers_0, \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
                     \$object_0 = \$row_0;
-                    \\fputcsv(\$resource, [\$object_0->id], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [\$object_0->id], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, ",");
-                    \\fputcsv(\$resource, [\$object_0->name], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, [\$object_0->name], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }
@@ -488,14 +488,14 @@ class SerializeGenerateTest extends TestCase
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
-                \\fputcsv(\$resource, [0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
                     if (null === \$row_0) {
-                        \\fputcsv(\$resource, [null], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [null], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     } else {
-                        \\fputcsv(\$resource, [\$row_0], \$context["csv_delimiter"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     }
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");

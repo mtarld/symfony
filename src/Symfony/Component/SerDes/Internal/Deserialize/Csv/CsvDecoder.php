@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
+namespace Symfony\Component\SerDes\Internal\Deserialize\Csv;
 
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 
@@ -18,7 +18,7 @@ use Symfony\Component\SerDes\Exception\InvalidResourceException;
  *
  * @internal
  */
-final class JsonDecoder
+final class CsvDecoder
 {
     private const UTF8_BOM = "\xEF\xBB\xBF";
 
@@ -26,33 +26,33 @@ final class JsonDecoder
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
+     * @return \Iterator<list<mixed>>
+     *
      * @throws InvalidResourceException
      */
-    public function decode(mixed $resource, int $offset, int $length, array $context): mixed
+    public function decode(mixed $resource, array $context): \Iterator
     {
-        if (0 === $offset) {
-            try {
-                /** @var string $content */
-                $content = stream_get_contents($resource, \strlen(self::UTF8_BOM));
-            } catch (\Throwable) {
-                throw new InvalidResourceException($resource);
-            }
-
-            if (self::UTF8_BOM === $content) {
-                $offset = \strlen(self::UTF8_BOM);
-            }
-        }
-
         try {
             /** @var string $content */
-            $content = stream_get_contents($resource, $length, $offset);
+            $content = stream_get_contents($resource, \strlen(self::UTF8_BOM));
         } catch (\Throwable) {
             throw new InvalidResourceException($resource);
         }
 
+        if (self::UTF8_BOM !== $content) {
+            rewind($resource);
+        }
+
         try {
-            return json_decode($content, associative: true, flags: ($context['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+            while (false !== ($row = fgetcsv(
+                $resource,
+                separator: $context['csv_separator'] ?? ',',
+                enclosure: $context['csv_enclosure'] ?? '"',
+                escape: $context['csv_escape_char'] ?? '\\',
+            ))) {
+                yield $row;
+            }
+        } catch (\Throwable) {
             throw new InvalidResourceException($resource);
         }
     }

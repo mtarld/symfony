@@ -13,7 +13,6 @@ namespace Symfony\Component\SerDes\Tests\Internal\Deserialize\Json;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
-use Symfony\Component\SerDes\Exception\RuntimeException;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDecoder;
 
 class JsonDecoderTest extends TestCase
@@ -21,6 +20,12 @@ class JsonDecoderTest extends TestCase
     public function testDecode()
     {
         $this->assertSame('foo', (new JsonDecoder())->decode($this->createResource('"foo"'), 0, -1, []));
+    }
+
+    public function testDecodeWithUtf8Bom()
+    {
+        $this->assertSame('foo', (new JsonDecoder())->decode($this->createResource('"foo"'), 0, -1, []));
+        $this->assertSame('foo', (new JsonDecoder())->decode($this->createResource("\xEF\xBB\xBF\"foo\""), 0, -1, []));
     }
 
     public function testDecodeSubset()
@@ -43,7 +48,7 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeThrowOnInvalidResource()
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidResourceException::class);
 
         (new JsonDecoder())->decode(fopen(sprintf('%s/%s', sys_get_temp_dir(), uniqid()), 'w'), 0, -1, []);
     }

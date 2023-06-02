@@ -22,8 +22,6 @@ use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @template T of mixed
  */
 abstract class Deserializer
 {
@@ -43,62 +41,53 @@ abstract class Deserializer
     }
 
     /**
-     * @param T                    $data
      * @param array<string, mixed> $context
      */
-    abstract protected function deserializeScalar(mixed $data, Type $type, array $context): mixed;
+    abstract protected function deserializeScalar(mixed $dataOrResource, Type $type, array $context): mixed;
 
     /**
-     * @param T                    $data
-     * @param array<string, mixed> $context
-     */
-    abstract protected function deserializeEnum(mixed $data, Type $type, array $context): mixed;
-
-    /**
-     * @param T                    $data
      * @param array<string, mixed> $context
      *
      * @return \Iterator<mixed>|null
      */
-    abstract protected function deserializeList(mixed $data, Type $type, array $context): ?\Iterator;
+    abstract protected function deserializeList(mixed $dataOrResource, Type $type, array $context): ?\Iterator;
 
     /**
-     * @param T                    $data
      * @param array<string, mixed> $context
      *
      * @return \Iterator<string, mixed>|null
      */
-    abstract protected function deserializeDict(mixed $data, Type $type, array $context): ?\Iterator;
+    abstract protected function deserializeDict(mixed $dataOrResource, Type $type, array $context): ?\Iterator;
 
     /**
-     * @param T                    $data
      * @param array<string, mixed> $context
      *
      * @return \Iterator<string, mixed>|array<string, mixed>|null
      */
-    abstract protected function deserializeObjectProperties(mixed $data, Type $type, array $context): \Iterator|array|null;
+    abstract protected function deserializeObjectProperties(mixed $dataOrResource, Type $type, array $context): \Iterator|array|null;
 
     /**
-     * @param T                    $data
      * @param array<string, mixed> $context
-     *
-     * @return T
      */
-    abstract protected function deserializeMixed(mixed $data, Type $type, array $context): mixed;
+    abstract protected function deserializeMixed(mixed $dataOrResource, array $context): mixed;
 
     /**
-     * @param T                    $data
      * @param array<string, mixed> $context
      *
      * @return callable(): mixed
      */
-    abstract protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable;
+    abstract protected function propertyValueCallable(Type|UnionType $type, mixed $dataOrResource, mixed $value, array $context): callable;
 
     /**
-     * @param T                    $data
+     * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    final public function deserialize(mixed $data, Type|UnionType $type, array $context): mixed
+    abstract public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed;
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    protected function doDeserialize(mixed $dataOrResource, Type|UnionType $type, array $context): mixed
     {
         if ($type instanceof UnionType) {
             if (!isset($context['union_selector'][$typeString = (string) $type])) {
@@ -110,7 +99,7 @@ abstract class Deserializer
         }
 
         if ($type->isScalar()) {
-            $scalar = $this->deserializeScalar($data, $type, $context);
+            $scalar = $this->deserializeScalar($dataOrResource, $type, $context);
 
             if (null === $scalar) {
                 if (!$type->isNullable()) {
@@ -134,7 +123,7 @@ abstract class Deserializer
         }
 
         if ($type->isEnum()) {
-            $enum = $this->deserializeEnum($data, $type, $context);
+            $enum = $this->deserializeScalar($dataOrResource, $type, $context);
 
             if (null === $enum) {
                 if (!$type->isNullable()) {
@@ -152,13 +141,11 @@ abstract class Deserializer
         }
 
         if ($type->isCollection()) {
-            if ($type->isList()) {
-                $collection = $this->deserializeList($data, $type, $context);
-            } elseif ($type->isDict()) {
-                $collection = $this->deserializeDict($data, $type, $context);
-            } else {
-                $collection = $this->deserializeMixed($data, $type, $context);
-            }
+            $collection = match (true) {
+                $type->isList() => $this->deserializeList($dataOrResource, $type, $context),
+                $type->isDict() => $this->deserializeDict($dataOrResource, $type, $context),
+                default => $this->deserializeMixed($dataOrResource, $context),
+            };
 
             if (null === $collection) {
                 if (!$type->isNullable()) {
@@ -174,7 +161,7 @@ abstract class Deserializer
         if ($type->isObject()) {
             if (!$type->hasClass()) {
                 $object = new \stdClass();
-                foreach ($this->deserializeMixed($data, $type, $context) as $property => $value) {
+                foreach ($this->deserializeMixed($dataOrResource, $context) as $property => $value) {
                     $object->{$property} = $value;
                 }
 
@@ -182,7 +169,7 @@ abstract class Deserializer
             }
 
             $className = $type->className();
-            $objectProperties = $this->deserializeObjectProperties($data, $type, $context);
+            $objectProperties = $this->deserializeObjectProperties($dataOrResource, $type, $context);
 
             if (null === $objectProperties) {
                 if (!$type->isNullable()) {
@@ -215,7 +202,7 @@ abstract class Deserializer
                     $hookResult = $hook(
                         $reflection,
                         $name,
-                        fn (string $type, array $context) => $this->propertyValueCallable(self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $data, $value, $context)(),
+                        fn (string $type, array $context) => $this->propertyValueCallable(self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $dataOrResource, $value, $context)(),
                         $context,
                     );
 
@@ -241,7 +228,7 @@ abstract class Deserializer
 
                 self::$cache['property_type'][$identifier] ??= TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name)));
 
-                $valueCallables[$name] = $this->propertyValueCallable(self::$cache['property_type'][$identifier], $data, $value, $context);
+                $valueCallables[$name] = $this->propertyValueCallable(self::$cache['property_type'][$identifier], $dataOrResource, $value, $context);
             }
 
             if (isset($context['instantiator'])) {
@@ -267,6 +254,6 @@ abstract class Deserializer
             return $object;
         }
 
-        return $this->deserializeMixed($data, $type, $context);
+        return $this->deserializeMixed($dataOrResource, $context);
     }
 }

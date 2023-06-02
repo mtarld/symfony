@@ -55,7 +55,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new ArrayNode([new ScalarNode(0)]),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -68,7 +68,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new ScalarNode(null)]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -87,7 +87,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new ArrayNode([new ScalarNode(0)]),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -100,7 +100,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new VariableNode('row_0')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -119,7 +119,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new ArrayNode([new ScalarNode(0)]),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -132,7 +132,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new PropertyNode(new VariableNode('row_0'), 'value')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -151,7 +151,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new FunctionNode('\array_keys', [new FunctionNode('\reset', [new VariableNode('accessor')])]),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -164,7 +164,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new VariableNode('row_0'),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -203,7 +203,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new VariableNode('headers_0'),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -216,7 +216,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new FunctionNode('\array_replace', [new VariableNode('flippedHeaders_0'), new VariableNode('row_0')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -243,7 +243,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new VariableNode('headers_0'),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -258,7 +258,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new PropertyNode(new VariableNode('object_0'), 'id')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -267,7 +267,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new PropertyNode(new VariableNode('object_0'), 'name')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),
@@ -294,7 +294,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new VariableNode('headers_0'),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -310,7 +310,7 @@ class CsvTemplateGeneratorTest extends TestCase
                         new ExpressionNode(new FunctionNode('\fputcsv', [
                             new VariableNode('resource'),
                             new FunctionNode('\array_replace', [new VariableNode('flippedHeaders_0'), new VariableNode('row_0')]),
-                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                             new ScalarNode(''),
@@ -320,7 +320,7 @@ class CsvTemplateGeneratorTest extends TestCase
                         new ExpressionNode(new FunctionNode('\fputcsv', [
                             new VariableNode('resource'),
                             new ArrayNode([new VariableNode('row_0')]),
-                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                             new ScalarNode(''),
@@ -337,7 +337,7 @@ class CsvTemplateGeneratorTest extends TestCase
                                 new ExpressionNode(new FunctionNode('\fputcsv', [
                                     new VariableNode('resource'),
                                     new ArrayNode([new PropertyNode(new VariableNode('row_0'), 'value')]),
-                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                     new ScalarNode(''),
@@ -350,7 +350,7 @@ class CsvTemplateGeneratorTest extends TestCase
                                 new ExpressionNode(new FunctionNode('\fputcsv', [
                                     new VariableNode('resource'),
                                     new CastNode('array', new VariableNode('row_0')),
-                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                     new ScalarNode(''),
@@ -402,7 +402,7 @@ class CsvTemplateGeneratorTest extends TestCase
                     new ExpressionNode(new FunctionNode('\fputcsv', [
                         new VariableNode('resource'),
                         new VariableNode('headers_0'),
-                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                         new ScalarNode(''),
@@ -415,7 +415,7 @@ class CsvTemplateGeneratorTest extends TestCase
                         new ExpressionNode(new FunctionNode('\fputcsv', [
                             new VariableNode('resource'),
                             new FunctionNode('\array_replace', [new VariableNode('flippedHeaders_0'), new VariableNode('row_0')]),
-                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                             new ScalarNode(''),
@@ -430,7 +430,7 @@ class CsvTemplateGeneratorTest extends TestCase
                     new ExpressionNode(new FunctionNode('\fputcsv', [
                         new VariableNode('resource'),
                         new ArrayNode([new ScalarNode(0)]),
-                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                         new ScalarNode(''),
@@ -443,7 +443,7 @@ class CsvTemplateGeneratorTest extends TestCase
                         new ExpressionNode(new FunctionNode('\fputcsv', [
                             new VariableNode('resource'),
                             new ArrayNode([new VariableNode('row_0')]),
-                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                             new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                             new ScalarNode(''),
@@ -465,7 +465,7 @@ class CsvTemplateGeneratorTest extends TestCase
                             new ExpressionNode(new FunctionNode('\fputcsv', [
                                 new VariableNode('resource'),
                                 new ArrayNode([new ScalarNode(0)]),
-                                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                 new ScalarNode(''),
@@ -478,7 +478,7 @@ class CsvTemplateGeneratorTest extends TestCase
                                 new ExpressionNode(new FunctionNode('\fputcsv', [
                                     new VariableNode('resource'),
                                     new ArrayNode([new PropertyNode(new VariableNode('row_0'), 'value')]),
-                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                     new ScalarNode(''),
@@ -496,7 +496,7 @@ class CsvTemplateGeneratorTest extends TestCase
                             new ExpressionNode(new FunctionNode('\fputcsv', [
                                 new VariableNode('resource'),
                                 new FunctionNode('\array_keys', [new CastNode('array', new FunctionNode('\reset', [new VariableNode('accessor')]))]),
-                                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                 new ScalarNode(''),
@@ -509,7 +509,7 @@ class CsvTemplateGeneratorTest extends TestCase
                                 new ExpressionNode(new FunctionNode('\fputcsv', [
                                     new VariableNode('resource'),
                                     new CastNode('array', new VariableNode('row_0')),
-                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                                     new ScalarNode(''),
@@ -532,7 +532,7 @@ class CsvTemplateGeneratorTest extends TestCase
             new ExpressionNode(new FunctionNode('\fputcsv', [
                 new VariableNode('resource'),
                 new ArrayNode([new ScalarNode(0)]),
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                 new ScalarNode(''),
@@ -545,7 +545,7 @@ class CsvTemplateGeneratorTest extends TestCase
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
                     new ArrayNode([new VariableNode('row_0')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_delimiter')), new ScalarNode(',')),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
                     new ScalarNode(''),

@@ -11,9 +11,7 @@
 
 namespace Symfony\Component\SerDes;
 
-use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Exception\PartialDeserializationException;
-use Symfony\Component\SerDes\Internal\Deserialize\DecoderFactory;
 use Symfony\Component\SerDes\Internal\Deserialize\DeserializerFactory;
 use Symfony\Component\SerDes\Internal\Serialize\Compiler;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ArgumentsNode;
@@ -102,21 +100,11 @@ if (!\function_exists(deserialize::class)) {
             $errors = &$context['collected_errors'];
         }
 
-        $context['boundary'] = $context['boundary'] ?? [0, -1];
         $context['lazy_reading'] = $context['lazy_reading'] ?? false;
 
-        $deserializer = DeserializerFactory::create($format, $context);
         $type = TypeFactory::createFromString($type);
 
-        $result = match ($context['lazy_reading']) {
-            true => $deserializer->deserialize($resource, $type, $context),
-            false => $deserializer->deserialize(
-                DecoderFactory::create($format)->decode($resource, $context['boundary'][0], $context['boundary'][1], $context),
-                $type,
-                $context,
-            ),
-            default => throw new InvalidArgumentException('Context value "lazy_reading" must be a boolean'),
-        };
+        $result = DeserializerFactory::create($format, $context)->deserialize($resource, $type, $context);
 
         if ([] !== $errors) {
             throw new PartialDeserializationException($resource, $result, $errors);
