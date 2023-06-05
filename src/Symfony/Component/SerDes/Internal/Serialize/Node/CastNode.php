@@ -20,11 +20,11 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class CastNode implements NodeInterface
+final readonly class CastNode implements NodeInterface
 {
     public function __construct(
-        public readonly string $type,
-        public readonly NodeInterface $node,
+        public string $type,
+        public NodeInterface $node,
     ) {
     }
 

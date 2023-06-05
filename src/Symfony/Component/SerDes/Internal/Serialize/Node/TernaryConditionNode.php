@@ -20,12 +20,12 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class TernaryConditionNode implements NodeInterface
+final readonly class TernaryConditionNode implements NodeInterface
 {
     public function __construct(
-        public readonly NodeInterface $condition,
-        public readonly NodeInterface $onTrue,
-        public readonly NodeInterface $onFalse,
+        public NodeInterface $condition,
+        public NodeInterface $onTrue,
+        public NodeInterface $onFalse,
     ) {
     }
 

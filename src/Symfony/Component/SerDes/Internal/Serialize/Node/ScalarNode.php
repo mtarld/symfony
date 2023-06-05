@@ -21,10 +21,10 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class ScalarNode implements NodeInterface
+final readonly class ScalarNode implements NodeInterface
 {
     public function __construct(
-        public readonly mixed $value,
+        public mixed $value,
     ) {
     }
 

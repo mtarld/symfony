@@ -20,13 +20,13 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class ArgumentsNode implements NodeInterface
+final readonly class ArgumentsNode implements NodeInterface
 {
     /**
      * @param array<string, ?string> $arguments
      */
     public function __construct(
-        public readonly array $arguments,
+        public array $arguments,
     ) {
     }
 

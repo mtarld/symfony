@@ -20,11 +20,11 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class ArrayAccessNode implements NodeInterface
+final readonly class ArrayAccessNode implements NodeInterface
 {
     public function __construct(
-        public readonly NodeInterface $array,
-        public readonly NodeInterface $key,
+        public NodeInterface $array,
+        public NodeInterface $key,
     ) {
     }
 

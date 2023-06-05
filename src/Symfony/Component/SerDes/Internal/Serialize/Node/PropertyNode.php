@@ -20,11 +20,11 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class PropertyNode implements NodeInterface
+final readonly class PropertyNode implements NodeInterface
 {
     public function __construct(
-        public readonly NodeInterface $object,
-        public readonly string $property,
+        public NodeInterface $object,
+        public string $property,
     ) {
     }
 

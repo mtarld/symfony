@@ -20,18 +20,18 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class ClosureNode implements NodeInterface
+final readonly class ClosureNode implements NodeInterface
 {
     /**
      * @param list<NodeInterface> $body
      * @param list<VariableNode>  $uses
      */
     public function __construct(
-        public readonly ArgumentsNode $arguments,
-        public readonly ?string $returnType,
-        public readonly bool $static,
-        public readonly array $body,
-        public readonly array $uses = [],
+        public ArgumentsNode $arguments,
+        public ?string $returnType,
+        public bool $static,
+        public array $body,
+        public array $uses = [],
     ) {
     }
 

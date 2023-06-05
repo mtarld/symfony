@@ -20,10 +20,10 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class VariableNode implements NodeInterface
+final readonly class VariableNode implements NodeInterface
 {
     public function __construct(
-        public readonly string $name,
+        public string $name,
     ) {
     }
 

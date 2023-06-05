@@ -21,7 +21,7 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class BinaryNode implements NodeInterface
+final readonly class BinaryNode implements NodeInterface
 {
     private const OPERATORS = [
         '&&',
@@ -35,9 +35,9 @@ final class BinaryNode implements NodeInterface
     ];
 
     public function __construct(
-        public readonly string $operator,
-        public readonly NodeInterface $left,
-        public readonly NodeInterface $right,
+        public string $operator,
+        public NodeInterface $left,
+        public NodeInterface $right,
     ) {
         if (!\in_array($this->operator, self::OPERATORS)) {
             throw new InvalidArgumentException(sprintf('Invalid "%s" operator.', $this->operator));

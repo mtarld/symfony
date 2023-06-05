@@ -21,15 +21,15 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class UnaryNode implements NodeInterface
+final readonly class UnaryNode implements NodeInterface
 {
     private const OPERATORS = [
         '!',
     ];
 
     public function __construct(
-        public readonly string $operator,
-        public readonly NodeInterface $node,
+        public string $operator,
+        public NodeInterface $node,
     ) {
         if (!\in_array($this->operator, self::OPERATORS)) {
             throw new InvalidArgumentException(sprintf('Invalid "%s" operator.', $this->operator));

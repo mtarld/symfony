@@ -20,12 +20,12 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class TemplateStringNode implements NodeInterface
+final readonly class TemplateStringNode implements NodeInterface
 {
     /**
      * @var list<string|VariableNode>
      */
-    public readonly array $parts;
+    public array $parts;
 
     public function __construct(string|VariableNode ...$parts)
     {

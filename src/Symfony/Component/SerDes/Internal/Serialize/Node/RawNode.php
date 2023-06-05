@@ -20,10 +20,10 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class RawNode implements NodeInterface
+final readonly class RawNode implements NodeInterface
 {
     public function __construct(
-        public readonly string $source,
+        public string $source,
     ) {
     }
 

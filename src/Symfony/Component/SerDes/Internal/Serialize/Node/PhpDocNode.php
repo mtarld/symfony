@@ -20,13 +20,13 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class PhpDocNode implements NodeInterface
+final readonly class PhpDocNode implements NodeInterface
 {
     /**
      * @param list<string> $lines
      */
     public function __construct(
-        public readonly array $lines,
+        public array $lines,
     ) {
     }
 

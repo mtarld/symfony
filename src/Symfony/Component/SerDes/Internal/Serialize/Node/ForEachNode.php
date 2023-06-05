@@ -20,16 +20,16 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class ForEachNode implements NodeInterface
+final readonly class ForEachNode implements NodeInterface
 {
     /**
      * @param list<NodeInterface> $body
      */
     public function __construct(
-        public readonly NodeInterface $collection,
-        public readonly ?string $keyName,
-        public readonly string $valueName,
-        public readonly array $body,
+        public NodeInterface $collection,
+        public ?string $keyName,
+        public string $valueName,
+        public array $body,
     ) {
     }
 

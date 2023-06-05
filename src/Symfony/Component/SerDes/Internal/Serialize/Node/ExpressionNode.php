@@ -22,13 +22,13 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @template T of NodeInterface
  */
-final class ExpressionNode implements NodeInterface
+final readonly class ExpressionNode implements NodeInterface
 {
     /**
      * @param T $node
      */
     public function __construct(
-        public readonly NodeInterface $node,
+        public NodeInterface $node,
     ) {
     }
 

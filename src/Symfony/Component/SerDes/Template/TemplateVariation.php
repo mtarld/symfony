@@ -16,11 +16,11 @@ namespace Symfony\Component\SerDes\Template;
  *
  * @experimental in 7.0
  */
-final class TemplateVariation implements \Stringable
+final readonly class TemplateVariation implements \Stringable
 {
     public function __construct(
-        public readonly string $type,
-        public readonly string $value,
+        public string $type,
+        public string $value,
     ) {
     }
 

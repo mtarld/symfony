@@ -20,7 +20,7 @@ use Symfony\Component\SerDes\Internal\Serialize\Optimizer;
  *
  * @internal
  */
-final class IfNode implements NodeInterface
+final readonly class IfNode implements NodeInterface
 {
     /**
      * @param list<NodeInterface>                                              $onIf
@@ -28,10 +28,10 @@ final class IfNode implements NodeInterface
      * @param list<array{condition: NodeInterface, body: list<NodeInterface>}> $elseIfs
      */
     public function __construct(
-        public readonly NodeInterface $condition,
-        public readonly array $onIf,
-        public readonly array $onElse = [],
-        public readonly array $elseIfs = [],
+        public NodeInterface $condition,
+        public array $onIf,
+        public array $onElse = [],
+        public array $elseIfs = [],
     ) {
     }
 
