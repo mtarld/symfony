@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Tests\Internal\Deserialize;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Exception\PartialDeserializationException;
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
@@ -244,13 +243,6 @@ class DeserializeTest extends TestCase
             $this->assertCount(2, $e->errors);
             $this->assertContainsOnlyInstancesOf(UnexpectedValueException::class, $e->errors);
         }
-    }
-
-    public function testThrowWhenValidateInvalidStream()
-    {
-        $this->expectException(InvalidResourceException::class);
-
-        self::deserialize('{[]}', ClassicDummy::class, ['lazy_reading' => true, 'validate_stream' => true]);
     }
 
     public function testNotThrowWhenNotValidateInvalidStream()

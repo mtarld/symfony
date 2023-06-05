@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
-use Symfony\Component\SerDes\Internal\Deserialize\LexerInterface;
 use Symfony\Component\SerDes\Internal\Type;
 
 /**
@@ -25,9 +24,11 @@ final class JsonListSplitter
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
 
-    public function __construct(
-        private readonly LexerInterface $lexer,
-    ) {
+    private readonly JsonLexer $lexer;
+
+    public function __construct()
+    {
+        $this->lexer = new JsonLexer();
     }
 
     /**

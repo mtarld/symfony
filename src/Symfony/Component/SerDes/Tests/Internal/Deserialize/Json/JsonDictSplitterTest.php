@@ -14,37 +14,31 @@ namespace Symfony\Component\SerDes\Tests\Internal\Deserialize\Json;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDictSplitter;
-use Symfony\Component\SerDes\Internal\Deserialize\LexerInterface;
 use Symfony\Component\SerDes\Internal\TypeFactory;
 
 class JsonDictSplitterTest extends TestCase
 {
     public function testSplitNull()
     {
-        $lexer = $this->createStub(LexerInterface::class);
-        $lexer->method('tokens')->willReturn(new \ArrayIterator([['null', 0]]));
-
-        $context = ['boundary' => [0, -1]];
-
-        $this->assertNull((new JsonDictSplitter($lexer))->split(fopen('php://temp', 'r'), TypeFactory::createFromString('int'), $context));
+        $this->assertNull((new JsonDictSplitter())->split(
+            $this->createResource('null'),
+            TypeFactory::createFromString('useless'),
+            ['boundary' => [0, -1]],
+        ));
     }
 
     /**
      * @dataProvider splitDataProvider
      *
-     * @param list<array{0: int, 1: int}>    $expectedBoundaries
-     * @param list<array{0: string, 1: int}> $tokens
+     * @param list<array{0: int, 1: int}> $expectedBoundaries
      */
-    public function testSplit(array $expectedBoundaries, array $tokens)
+    public function testSplit(array $expectedBoundaries, string $content)
     {
-        $lexer = $this->createStub(LexerInterface::class);
-        $lexer->method('tokens')->willReturn(new \ArrayIterator($tokens));
-
-        $context = ['boundary' => [0, -1]];
-
-        $boundaries = (new JsonDictSplitter($lexer))->split(fopen('php://temp', 'r'), TypeFactory::createFromString('int'), $context);
-
-        $this->assertSame($expectedBoundaries, iterator_to_array($boundaries));
+        $this->assertSame($expectedBoundaries, iterator_to_array((new JsonDictSplitter())->split(
+            self::createResource($content),
+            TypeFactory::createFromString('useless'),
+            ['boundary' => [0, -1]],
+        )));
     }
 
     /**
@@ -52,26 +46,23 @@ class JsonDictSplitterTest extends TestCase
      */
     public static function splitDataProvider(): iterable
     {
-        yield [[], [['{', 0], ['}', 1]]];
-        yield [['k' => [5, 2]], [['{', 0], ['"k"', 1], [':', 4], ['10', 5], ['}', 7]]];
-        yield [['k' => [5, 4]], [['{', 0], ['"k"', 1], [':', 4], ['[', 5], ['10', 6], [']', 8], ['}', 9]]];
+        yield [[], '{}'];
+        yield [['k' => [5, 2]], '{"k":10}'];
+        yield [['k' => [5, 4]], '{"k":[10]}'];
     }
 
     /**
      * @dataProvider splitInvalidDataProvider
-     *
-     * @param list<array{0: string, 1: int}> $tokens
      */
-    public function testSplitInvalidThrowException(array $tokens)
+    public function testSplitInvalidThrowException(string $content)
     {
-        $lexer = $this->createStub(LexerInterface::class);
-        $lexer->method('tokens')->willReturn(new \ArrayIterator($tokens));
-
-        $context = ['boundary' => [0, -1]];
-
         $this->expectException(InvalidResourceException::class);
 
-        iterator_to_array((new JsonDictSplitter($lexer))->split(fopen('php://temp', 'r'), TypeFactory::createFromString('int'), $context));
+        iterator_to_array((new JsonDictSplitter())->split(
+            self::createResource($content),
+            TypeFactory::createFromString('useless'),
+            ['boundary' => [0, -1]],
+        ));
     }
 
     /**
@@ -79,8 +70,22 @@ class JsonDictSplitterTest extends TestCase
      */
     public static function splitInvalidDataProvider(): iterable
     {
-        yield [[['{', 0], ['100', 1]]];
-        yield [[['{', 0], ['{', 1], ['}', 2]]];
-        yield [[['{', 0], ['{', 1], ['}', 2], [']', 3]]];
+        yield ['{100'];
+        yield ['{{}'];
+        yield ['{{}]'];
+    }
+
+    /**
+     * @return resource
+     */
+    private static function createResource(string $content): mixed
+    {
+        /** @var resource $resource */
+        $resource = fopen('php://memory', 'w+');
+
+        fwrite($resource, $content);
+        rewind($resource);
+
+        return $resource;
     }
 }

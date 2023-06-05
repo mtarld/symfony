@@ -18,9 +18,7 @@ use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDecoder;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDictSplitter;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonEagerDeserializer;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonLazyDeserializer;
-use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonLexer;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonListSplitter;
-use Symfony\Component\SerDes\Internal\Deserialize\Json\ValidatingJsonLexer;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 
 /**
@@ -40,28 +38,22 @@ abstract class DeserializerFactory
     public static function create(string $format, array $context): Deserializer
     {
         $lazyReading = $context['lazy_reading'] ?? false;
-        $validateStream = $lazyReading && ($context['validate_stream'] ?? false);
 
         return match ($format) {
-            'json' => self::json($lazyReading, $validateStream),
+            'json' => self::json($lazyReading),
             'csv' => self::csv($lazyReading),
             default => throw new UnsupportedFormatException($format),
         };
     }
 
-    private static function json(bool $lazy, bool $validate): Deserializer
+    private static function json(bool $lazy): Deserializer
     {
         if ($lazy) {
-            $lexer = new JsonLexer();
-            if ($validate) {
-                $lexer = new ValidatingJsonLexer($lexer);
-            }
-
             return new JsonLazyDeserializer(
                 reflectionTypeExtractor: new ReflectionTypeExtractor(),
                 decoder: new JsonDecoder(),
-                listSplitter: new JsonListSplitter($lexer),
-                dictSplitter: new JsonDictSplitter($lexer),
+                listSplitter: new JsonListSplitter(),
+                dictSplitter: new JsonDictSplitter(),
             );
         }
 

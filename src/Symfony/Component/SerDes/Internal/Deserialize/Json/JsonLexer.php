@@ -12,14 +12,13 @@
 namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
-use Symfony\Component\SerDes\Internal\Deserialize\LexerInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
  */
-final class JsonLexer implements LexerInterface
+final class JsonLexer
 {
     private const MAX_CHUNK_LENGTH = 8192;
 
@@ -27,6 +26,14 @@ final class JsonLexer implements LexerInterface
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
     private const EMPTY_TOKENS = ['' => true, "\xEF\xBB\xBF" => true];
 
+    /**
+     * @param resource             $resource
+     * @param array<string, mixed> $context
+     *
+     * @return \Iterator<array{0: string, 1: int}>remov
+     *
+     * @throws InvalidResourceException
+     */
     public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
     {
         $currentTokenPosition = $offset;
