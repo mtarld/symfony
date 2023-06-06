@@ -84,9 +84,15 @@ final class CsvTemplateGenerator extends TemplateGenerator
                 $collectionValueType = reset($collectionValueTypes);
             }
 
-            $headersName = $this->scopeVariableName('headers', $context);
-            $flippedHeadersName = $this->scopeVariableName('flippedHeaders', $context);
             $rowName = $this->scopeVariableName('row', $context);
+            $flippedHeadersName = $this->scopeVariableName('flippedHeaders', $context);
+
+            $rowNodes = $this->generate($collectionValueType, new VariableNode($rowName), $context + [
+                'flipped_headers_accessor' => new VariableNode($flippedHeadersName),
+                'csv_depth' => $depth + 1,
+            ]);
+
+            $headersName = $this->scopeVariableName('headers', $context);
 
             $headerNodes = match (true) {
                 $collectionValueType->isScalar() || $collectionValueType->isEnum() || $collectionValueType->isNull() => [
@@ -130,6 +136,18 @@ final class CsvTemplateGenerator extends TemplateGenerator
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
                     ])),
                 ],
+                $collectionValueType->isObject() && $collectionValueType->hasClass() => [
+                    new ExpressionNode(new AssignNode(
+                        new VariableNode($headersName),
+                        new ArrayNode(array_map(fn (string $n): NodeInterface => new ScalarNode($n), array_keys($rowNodes[1]->node->arguments[1]->arguments[1]->elements))),
+                    )),
+                    new ExpressionNode(new AssignNode(new VariableNode($flippedHeadersName), new FunctionNode('\array_fill_keys', [new VariableNode($headersName), new ScalarNode('')]))),
+                    ...$this->fputcsvNodes(new VariableNode($headersName)),
+                    new ExpressionNode(new FunctionNode('\fwrite', [
+                        new VariableNode('resource'),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
+                    ])),
+                ],
                 $collectionValueType->isObject() => [
                     new ExpressionNode(new AssignNode(new VariableNode($headersName), new FunctionNode('\array_keys', [new CastNode('array', new FunctionNode('\reset', [$accessor]))]))),
                     new ExpressionNode(new AssignNode(new VariableNode($flippedHeadersName), new FunctionNode('\array_fill_keys', [new VariableNode($headersName), new ScalarNode('')]))),
@@ -145,10 +163,7 @@ final class CsvTemplateGenerator extends TemplateGenerator
             return [
                 ...$headerNodes,
                 new ForEachNode($accessor, null, $rowName, [
-                    ...$this->generate($collectionValueType, new VariableNode($rowName), $context + [
-                        'flipped_headers_accessor' => new VariableNode($flippedHeadersName),
-                        'csv_depth' => $depth + 1,
-                    ]),
+                    ...$rowNodes,
                     new ExpressionNode(new FunctionNode('\fwrite', [
                         new VariableNode('resource'),
                         new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
@@ -217,27 +232,10 @@ final class CsvTemplateGenerator extends TemplateGenerator
                 $indexedPropertiesInfo[$propertyInfo['name']] = $propertyInfo;
             }
 
-            $nodes = [];
-            $prefix = '';
-
-            $properties = array_map(fn (\ReflectionProperty $p): string => $p->name, (new \ReflectionClass($type->className()))->getProperties());
-
-            foreach ($properties as $property) {
-                $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($prefix)]));
-                $prefix = $context['csv_separator'] ?? ',';
-
-                if (null === $propertyInfo = $indexedPropertiesInfo[$property] ?? null) {
-                    continue;
-                }
-
-                if (\is_string($propertyInfo['type'])) {
-                    $propertyInfo['type'] = TypeFactory::createFromString($propertyInfo['type']);
-                }
-
-                array_push($nodes, ...$this->generate($propertyInfo['type'], $propertyInfo['accessor'], $propertyInfo['context']));
-            }
-
-            return $nodes;
+            return $this->fputcsvNodes(new FunctionNode('\array_replace', [
+                $context['flipped_headers_accessor'],
+                new ArrayNode(array_map(fn (array $p): NodeInterface => $p['accessor'], $indexedPropertiesInfo)),
+            ]));
         }
 
         throw $this->tooDeepException();

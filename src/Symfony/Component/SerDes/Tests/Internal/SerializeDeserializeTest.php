@@ -41,35 +41,55 @@ class SerializeDeserializeTest extends TestCase
      *
      * @param array<string, mixed> $context
      */
-    public function testSerializeDeserialize(mixed $data, string $type, array $context = [])
+    public function testSerializeDeserialize(mixed $data, string $type, string $format, array $context = [])
     {
         /** @var resource $resource */
         $resource = fopen('php://memory', 'w+');
 
-        serialize($data, $resource, 'json', ['type' => $type] + $context);
+        serialize($data, $resource, $format, ['type' => $type] + $context);
         rewind($resource);
 
-        $this->assertEquals($data, deserialize($resource, TypeFactory::createFromString($type), 'json', $context));
+        $this->assertEquals($data, deserialize($resource, TypeFactory::createFromString($type), $format, $context));
     }
 
     /**
-     * @return iterable<array{0: mixed, 1: string, 2: array<string, mixed>}>
+     * @return iterable<array{0: mixed, 1: string, 2: string, 3: array<string, mixed>}>
      */
     public static function serializeDeserializeDataProvider(): iterable
     {
-        yield [1, 'int'];
-        yield [null, '?int'];
-        yield ['foo', 'string'];
-        yield [[1, 2, null], 'array<int, ?int>'];
-        yield [['foo' => 1, 'bar' => 2, 'baz' => null], 'array<string, ?int>'];
-        yield [DummyBackedEnum::ONE, DummyBackedEnum::class];
-        yield [new ClassicDummy(), ClassicDummy::class];
-
         $dummy = new DummyWithFormatterAttributes();
         $dummy->id = 200;
         $dummy->name = '200';
 
-        yield [$dummy, DummyWithFormatterAttributes::class, ['hooks' => [
+        yield [1, 'int', 'json'];
+        yield [null, '?int', 'json'];
+        yield ['foo', 'string', 'json'];
+        yield [[1, 2, null], 'array<int, ?int>', 'json'];
+        yield [['foo' => 1, 'bar' => 2, 'baz' => null], 'array<string, ?int>', 'json'];
+        yield [DummyBackedEnum::ONE, DummyBackedEnum::class, 'json'];
+        yield [new ClassicDummy(), ClassicDummy::class, 'json'];
+        yield [$dummy, DummyWithFormatterAttributes::class, 'json', ['hooks' => [
+            'serialize' => [
+                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
+                    'name' => '@name',
+                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+                ],
+            ],
+            'deserialize' => [
+                sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
+                    'name' => 'name',
+                    'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+                ],
+            ],
+        ]]];
+
+        yield [[1], 'array<int, int>', 'csv'];
+        yield [[1, 2, null], 'array<int, ?int>', 'csv'];
+        yield [['foo'], 'array<int, string>', 'csv'];
+        yield [[['foo' => 1, 'bar' => null], ['foo' => null, 'bar' => 2]], 'array<int, array<string, ?int>>', 'csv'];
+        yield [[DummyBackedEnum::ONE], sprintf('array<int, %s>', DummyBackedEnum::class), 'csv'];
+        yield [[new ClassicDummy()], sprintf('array<int, %s>', ClassicDummy::class), 'csv'];
+        yield [[$dummy], sprintf('array<int, %s>', DummyWithFormatterAttributes::class), 'csv', ['hooks' => [
             'serialize' => [
                 sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
                     'name' => '@name',
@@ -90,7 +110,7 @@ class SerializeDeserializeTest extends TestCase
      *
      * @param array<string, mixed> $context
      */
-    public function testDeserializeSerialize(string $content, string $type, array $context = [])
+    public function testDeserializeSerialize(string $content, string $type, string $format, array $context = [])
     {
         /** @var resource $resource */
         $resource = fopen('php://memory', 'w+');
@@ -98,29 +118,49 @@ class SerializeDeserializeTest extends TestCase
         fwrite($resource, $content);
         rewind($resource);
 
-        $data = deserialize($resource, TypeFactory::createFromString($type), 'json', $context);
+        $data = deserialize($resource, TypeFactory::createFromString($type), $format, $context);
 
         /** @var resource $resource */
         $newResource = fopen('php://memory', 'w+');
 
-        serialize($data, $newResource, 'json', ['type' => TypeFactory::createFromString($type)] + $context);
+        serialize($data, $newResource, $format, ['type' => TypeFactory::createFromString($type)] + $context);
         rewind($newResource);
 
         $this->assertEquals($content, stream_get_contents($newResource));
     }
 
     /**
-     * @return iterable<array{0: string, 1: string, 2: array<string, mixed>}>
+     * @return iterable<array{0: string, 1: string, 2: string, 3: array<string, mixed>}>
      */
     public static function deserializeSerializeDataProvider(): iterable
     {
-        yield ['1', 'int'];
-        yield ['null', '?int'];
-        yield ['"foo"', 'string'];
-        yield ['[1,2,null]', 'array<int, ?int>'];
-        yield ['{"foo":1,"bar":2,"baz":null}', 'array<string, ?int>'];
-        yield ['{"id":100,"name":"Dummy"}', ClassicDummy::class];
-        yield ['{"id":200,"@name":100}', DummyWithFormatterAttributes::class, ['hooks' => [
+        yield ['1', 'int', 'json'];
+        yield ['null', '?int', 'json'];
+        yield ['"foo"', 'string', 'json'];
+        yield ['[1,2,null]', 'array<int, ?int>', 'json'];
+        yield ['{"foo":1,"bar":2,"baz":null}', 'array<string, ?int>', 'json'];
+        yield ['{"id":100,"name":"Dummy"}', ClassicDummy::class, 'json'];
+        yield ['{"id":200,"@name":100}', DummyWithFormatterAttributes::class, 'json', ['hooks' => [
+            'serialize' => [
+                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
+                    'name' => '@name',
+                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
+                ],
+            ],
+            'deserialize' => [
+                sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
+                    'name' => 'name',
+                    'value_provider' => fn () => DummyWithFormatterAttributes::doubleAndCastToString($value('int', $context)),
+                ],
+            ],
+        ]]];
+
+        yield ["0\n1\n", 'array<int, int>', 'csv'];
+        yield ["0\n1\n2\n", 'array<int, ?int>', 'csv'];
+        yield ["0\nfoo\n", 'array<int, string>', 'csv'];
+        yield ["foo,bar\n1,\n,2\n", 'array<int, array<string, ?int>>', 'csv'];
+        yield ["id,name\n100,Dummy\n", sprintf('array<int, %s>', ClassicDummy::class), 'csv'];
+        yield ["id,@name\n200,100\n", sprintf('array<int, %s>', DummyWithFormatterAttributes::class), 'csv', ['hooks' => [
             'serialize' => [
                 sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
                     'name' => '@name',

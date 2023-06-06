@@ -234,7 +234,7 @@ class CsvTemplateGeneratorTest extends TestCase
         $this->assertEquals([
             new ExpressionNode(new AssignNode(
                 new VariableNode('headers_0'),
-                new FunctionNode('\array_keys', [new CastNode('array', new FunctionNode('\reset', [new VariableNode('accessor')]))]),
+                new ArrayNode([new ScalarNode('id'), new ScalarNode('name')]),
             )),
             new ExpressionNode(new AssignNode(
                 new VariableNode('flippedHeaders_0'),
@@ -254,19 +254,12 @@ class CsvTemplateGeneratorTest extends TestCase
             ])),
             new ForEachNode(new VariableNode('accessor'), null, 'row_0', [
                 new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('row_0'))),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('')])),
                 new ExpressionNode(new FunctionNode('\fputcsv', [
                     new VariableNode('resource'),
-                    new ArrayNode([new PropertyNode(new VariableNode('object_0'), 'id')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
-                    new ScalarNode(''),
-                ])),
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(',')])),
-                new ExpressionNode(new FunctionNode('\fputcsv', [
-                    new VariableNode('resource'),
-                    new ArrayNode([new PropertyNode(new VariableNode('object_0'), 'name')]),
+                    new FunctionNode('\array_replace', [
+                        new VariableNode('flippedHeaders_0'),
+                        new ArrayNode(['id' => new PropertyNode(new VariableNode('object_0'), 'id'), 'name' => new PropertyNode(new VariableNode('object_0'), 'name')]),
+                    ]),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),

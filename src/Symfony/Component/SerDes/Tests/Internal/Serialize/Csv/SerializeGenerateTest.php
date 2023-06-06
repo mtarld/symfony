@@ -456,7 +456,7 @@ class SerializeGenerateTest extends TestCase
             <?php
 
             /**
-             * @param array<int, Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy> \$data
+             * @param array<int, object> \$data
              * @param resource \$resource
              */
             return static function (mixed \$data, mixed \$resource, array \$context): void {
@@ -466,10 +466,42 @@ class SerializeGenerateTest extends TestCase
                 \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 foreach (\$data as \$row_0) {
+                    if (\\is_iterable(\$row_0)) {
+                        \\fputcsv(\$resource, \array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } elseif (\\is_object(\$row_0) && \\is_subclass_of(\\get_class(\$row_0), "BackedEnum")) {
+                        \\fputcsv(\$resource, [\$row_0->value], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } elseif (\\is_object(\$row_0)) {
+                        \\fputcsv(\$resource, (array) (\$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } else {
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    }
+                    \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                }
+            };
+
+            PHP,
+            'array<int, object>',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<int, Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \$headers_0 = ["id", "name"];
+                \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
+                \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                foreach (\$data as \$row_0) {
                     \$object_0 = \$row_0;
-                    \\fputcsv(\$resource, [\$object_0->id], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
-                    \\fwrite(\$resource, ",");
-                    \\fputcsv(\$resource, [\$object_0->name], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    \\fputcsv(\$resource, \array_replace(\$flippedHeaders_0, ["id" => \$object_0->id, "name" => \$object_0->name]), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
                     \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
             ");
                 }

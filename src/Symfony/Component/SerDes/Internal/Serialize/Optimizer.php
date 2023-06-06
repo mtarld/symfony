@@ -55,6 +55,10 @@ final class Optimizer
      */
     private function mergeResourceStringFwrites(array $nodes): array
     {
+        if (!array_is_list($nodes)) {
+            return $nodes;
+        }
+
         $createFwriteExpression = fn (string $content) => new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($content)]));
 
         $stringContent = '';

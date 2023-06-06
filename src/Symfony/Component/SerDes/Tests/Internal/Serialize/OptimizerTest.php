@@ -47,6 +47,14 @@ class OptimizerTest extends TestCase
         ]];
 
         yield [[
+            'foo' => $createFwriteExpression(new ScalarNode('foo')),
+            'bar' => $createFwriteExpression(new ScalarNode('bar')),
+        ], [
+            'foo' => $createFwriteExpression(new ScalarNode('foo')),
+            'bar' => $createFwriteExpression(new ScalarNode('bar')),
+        ]];
+
+        yield [[
             $createFwriteExpression(new ScalarNode('foo')),
             $createFwriteExpression(new VariableNode('bar')),
             $createFwriteExpression(new ScalarNode('baz')),
