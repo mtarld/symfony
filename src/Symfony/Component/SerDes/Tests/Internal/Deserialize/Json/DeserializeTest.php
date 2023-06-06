@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\deserialize;
 
@@ -113,6 +114,6 @@ class DeserializeTest extends TestCase
         fwrite($resource, $content);
         rewind($resource);
 
-        return deserialize($resource, $type, 'json', $context);
+        return deserialize($resource, TypeFactory::createFromString($type), 'json', $context);
     }
 }

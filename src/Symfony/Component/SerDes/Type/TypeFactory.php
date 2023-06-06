@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal;
+namespace Symfony\Component\SerDes\Type;
 
 use Symfony\Component\SerDes\Exception\InvalidTypeException;
 use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
@@ -17,7 +17,7 @@ use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
 abstract class TypeFactory
 {

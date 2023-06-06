@@ -21,8 +21,10 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\PhpDocNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ReturnNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator\TemplateGeneratorFactory;
-use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Template\TemplateHelper;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 if (!\function_exists(serialize::class)) {
     /**
@@ -34,6 +36,9 @@ if (!\function_exists(serialize::class)) {
     function serialize(mixed $data, $resource, string $format, array $context = []): void
     {
         $type = $context['type'] ?? get_debug_type($data);
+        if (\is_string($type)) {
+            $type = TypeFactory::createFromString($type);
+        }
 
         $cacheDir = $context['cache_dir'] ?? sys_get_temp_dir().\DIRECTORY_SEPARATOR.'symfony_ser_des';
         $cacheFilename = (new TemplateHelper())->templateFilename($type, $format, $context);
@@ -58,7 +63,7 @@ if (!\function_exists(serialize_generate::class)) {
      *
      * @param array<string, mixed> $context
      */
-    function serialize_generate(string $type, string $format, array $context = []): string
+    function serialize_generate(Type|UnionType $type, string $format, array $context = []): string
     {
         $compiler = new Compiler();
         $accessor = new VariableNode('data');
@@ -75,7 +80,7 @@ if (!\function_exists(serialize_generate::class)) {
         $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
 
         $compiler->indent();
-        $bodyNodes = TemplateGeneratorFactory::create($format)->generate(TypeFactory::createFromString($type), $accessor, $context);
+        $bodyNodes = TemplateGeneratorFactory::create($format)->generate($type, $accessor, $context);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));
@@ -92,7 +97,7 @@ if (!\function_exists(deserialize::class)) {
      *
      * @throws PartialDeserializationException
      */
-    function deserialize($resource, string $type, string $format, array $context = []): mixed
+    function deserialize($resource, Type|UnionType $type, string $format, array $context = []): mixed
     {
         $errors = [];
 
@@ -101,8 +106,6 @@ if (!\function_exists(deserialize::class)) {
         }
 
         $context['lazy_reading'] = $context['lazy_reading'] ?? false;
-
-        $type = TypeFactory::createFromString($type);
 
         $result = DeserializerFactory::create($format, $context)->deserialize($resource, $type, $context);
 

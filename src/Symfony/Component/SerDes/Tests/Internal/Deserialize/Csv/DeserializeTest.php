@@ -14,6 +14,7 @@ namespace Symfony\Component\SerDes\Tests\Internal\Deserialize\Csv;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\deserialize;
 
@@ -163,6 +164,6 @@ class DeserializeTest extends TestCase
         fwrite($resource, $content);
         rewind($resource);
 
-        return deserialize($resource, $type, 'csv', $context);
+        return deserialize($resource, TypeFactory::createFromString($type), 'csv', $context);
     }
 }

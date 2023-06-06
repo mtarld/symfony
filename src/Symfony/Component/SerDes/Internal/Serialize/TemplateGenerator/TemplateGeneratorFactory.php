@@ -12,8 +12,8 @@
 namespace Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator;
 
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
-use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\TypeSorter;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

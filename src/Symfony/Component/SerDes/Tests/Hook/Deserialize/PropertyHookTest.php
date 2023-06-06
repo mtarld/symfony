@@ -20,12 +20,14 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithQuotes;
 use Symfony\Component\SerDes\Type\PhpstanTypeExtractor;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class PropertyHookTest extends TestCase
 {
     public function testRetrievePropertyName()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('int'));
 
         $context = [
             '_symfony' => [
@@ -166,7 +168,7 @@ class PropertyHookTest extends TestCase
     public function testRetrievePropertyTypeWithFormatterAndGenerics()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromFunctionParameter')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionParameter')->willReturn(TypeFactory::createFromString('T'));
 
         $type = null;
         $valueProvider = static function (string $valueType, array $context) use (&$type): int {
@@ -198,7 +200,7 @@ class PropertyHookTest extends TestCase
     public function testDoNotReplaceGenericTypesWhenFormatterDoesNotBelongToCurrentClass()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromFunctionParameter')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionParameter')->willReturn(TypeFactory::createFromString('T'));
 
         $type = null;
         $valueProvider = static function (string $valueType, array $context) use (&$type): int {

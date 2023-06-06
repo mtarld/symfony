@@ -9,20 +9,20 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal;
+namespace Symfony\Component\SerDes\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
-final class UnionType implements \Stringable
+final readonly class UnionType implements \Stringable
 {
     /**
      * @param list<Type> $types
      */
     public function __construct(
-        public readonly array $types,
+        public array $types,
     ) {
     }
 

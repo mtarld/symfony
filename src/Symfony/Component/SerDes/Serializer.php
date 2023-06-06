@@ -15,6 +15,9 @@ use Symfony\Component\SerDes\Context\ContextBuilder\ContextBuilderInterface;
 use Symfony\Component\SerDes\Context\ContextInterface;
 use Symfony\Component\SerDes\Stream\StreamInterface;
 use Symfony\Component\SerDes\Template\TemplateHelper;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -43,15 +46,19 @@ final class Serializer implements SerializerInterface
 
     public function serialize(mixed $data, string $format, mixed $output, ContextInterface|array $context = []): void
     {
-        if ($context instanceof ContextInterface) {
-            $context = $context->toArray();
-        }
-
         if ($output instanceof StreamInterface) {
             $output = $output->resource();
         }
 
+        if ($context instanceof ContextInterface) {
+            $context = $context->toArray();
+        }
+
         $context['type'] = $context['type'] ?? get_debug_type($data);
+        if (\is_string($context['type'])) {
+            $context['type'] = TypeFactory::createFromString($context['type']);
+        }
+
         $context['cache_dir'] = $context['cache_dir'] ?? $this->templateCacheDir;
 
         $templatePath = $context['cache_dir'].\DIRECTORY_SEPARATOR.$this->templateHelper->templateFilename($context['type'], $format, $context);
@@ -64,14 +71,18 @@ final class Serializer implements SerializerInterface
         serialize($data, $output, $format, $context);
     }
 
-    public function deserialize(mixed $input, string $type, string $format, ContextInterface|array $context = []): mixed
+    public function deserialize(mixed $input, Type|UnionType|string $type, string $format, ContextInterface|array $context = []): mixed
     {
-        if ($context instanceof ContextInterface) {
-            $context = $context->toArray();
-        }
-
         if ($input instanceof StreamInterface) {
             $input = $input->resource();
+        }
+
+        if (\is_string($type)) {
+            $type = TypeFactory::createFromString($type);
+        }
+
+        if ($context instanceof ContextInterface) {
+            $context = $context->toArray();
         }
 
         foreach ($this->deserializeContextBuilders as $contextBuilder) {

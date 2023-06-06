@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal;
+namespace Symfony\Component\SerDes\Type;
 
 use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Exception\LogicException;
@@ -17,22 +17,22 @@ use Symfony\Component\SerDes\Exception\LogicException;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
-final class Type implements \Stringable
+final readonly class Type implements \Stringable
 {
-    private readonly string $stringValue;
+    private string $stringValue;
 
     /**
      * @param class-string|null    $className
      * @param list<self|UnionType> $genericParameterTypes
      */
     public function __construct(
-        private readonly string $name,
-        private readonly bool $isNullable = false,
-        private readonly ?string $className = null,
-        private readonly bool $isGeneric = false,
-        private readonly array $genericParameterTypes = [],
+        private string $name,
+        private bool $isNullable = false,
+        private ?string $className = null,
+        private bool $isGeneric = false,
+        private array $genericParameterTypes = [],
     ) {
         if ($this->isGeneric && !$this->genericParameterTypes) {
             throw new InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));

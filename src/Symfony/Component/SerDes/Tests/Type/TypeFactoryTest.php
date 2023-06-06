@@ -9,17 +9,17 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Internal;
+namespace Symfony\Component\SerDes\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidTypeException;
 use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
-use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyUnitEnum;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 class TypeFactoryTest extends TestCase
 {

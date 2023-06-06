@@ -25,14 +25,14 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ScalarNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
 use Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator\TemplateGenerator;
-use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ConstructorPropertyPromotedDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithNotPublicProperty;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\TypeSorter;
 
 class TemplateGeneratorTest extends TestCase
 {

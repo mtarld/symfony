@@ -9,17 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Internal\Serialize;
+namespace Symfony\Component\SerDes\Type;
 
 use Symfony\Component\SerDes\Exception\LogicException;
-use Symfony\Component\SerDes\Internal\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
- *
- * @psalm-type PhoneType = array{phone: string}
+ * @experimental in 7.0
  */
 final class TypeSorter
 {

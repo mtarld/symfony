@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\SerDes\Tests\Internal;
+namespace Symfony\Component\SerDes\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\UnionType;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\UnionType;
 
 class UnionTypeTest extends TestCase
 {

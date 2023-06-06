@@ -32,11 +32,11 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ThrowNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\UnaryNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator\CsvTemplateGenerator;
-use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
-use Symfony\Component\SerDes\Internal\TypeFactory;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\TypeSorter;
 
 class CsvTemplateGeneratorTest extends TestCase
 {

@@ -17,6 +17,7 @@ use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\deserialize;
 
@@ -256,7 +257,7 @@ class DeserializeTest extends TestCase
     {
         $this->expectException(UnsupportedFormatException::class);
 
-        deserialize(fopen('php://memory', 'w+'), 'int', 'unknown', []);
+        deserialize(fopen('php://memory', 'w+'), TypeFactory::createFromString('int'), 'unknown', []);
     }
 
     /**
@@ -279,6 +280,6 @@ class DeserializeTest extends TestCase
         fwrite($resource, $content);
         rewind($resource);
 
-        return deserialize($resource, $type, 'json', $context);
+        return deserialize($resource, TypeFactory::createFromString($type), 'json', $context);
     }
 }

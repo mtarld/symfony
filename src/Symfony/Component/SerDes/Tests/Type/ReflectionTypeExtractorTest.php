@@ -18,6 +18,7 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\AbstractDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ReflectionExtractableDummy;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class ReflectionTypeExtractorTest extends TestCase
 {
@@ -28,7 +29,7 @@ class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionProperty = (new \ReflectionClass(ReflectionExtractableDummy::class))->getProperty($property);
 
-        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromProperty($reflectionProperty));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), (new ReflectionTypeExtractor())->extractFromProperty($reflectionProperty));
     }
 
     public function testCannotHandleIntersectionProperty()
@@ -56,7 +57,7 @@ class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionMethod = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod($method);
 
-        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), (new ReflectionTypeExtractor())->extractFromFunctionReturn($reflectionMethod));
     }
 
     public function testExtractClassTypeFromFunctionReturnType()
@@ -65,13 +66,13 @@ class ReflectionTypeExtractorTest extends TestCase
             return $this;
         });
 
-        $this->assertSame(self::class, (new ReflectionTypeExtractor())->extractFromFunctionReturn($selfReflectionFunction));
+        $this->assertEquals(TypeFactory::createFromString(self::class), (new ReflectionTypeExtractor())->extractFromFunctionReturn($selfReflectionFunction));
 
         $parentReflectionFunction = new \ReflectionFunction(function (): parent {
             return $this;
         });
 
-        $this->assertSame(parent::class, (new ReflectionTypeExtractor())->extractFromFunctionReturn($parentReflectionFunction));
+        $this->assertEquals(TypeFactory::createFromString(parent::class), (new ReflectionTypeExtractor())->extractFromFunctionReturn($parentReflectionFunction));
     }
 
     public function testCannotHandleIntersectionReturnType()
@@ -117,7 +118,7 @@ class ReflectionTypeExtractorTest extends TestCase
     {
         $reflectionParameter = (new \ReflectionClass(ReflectionExtractableDummy::class))->getMethod($method)->getParameters()[0];
 
-        $this->assertSame($expectedType, (new ReflectionTypeExtractor())->extractFromFunctionParameter($reflectionParameter));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), (new ReflectionTypeExtractor())->extractFromFunctionParameter($reflectionParameter));
     }
 
     public function testThrowIfCannotFindParameterType()

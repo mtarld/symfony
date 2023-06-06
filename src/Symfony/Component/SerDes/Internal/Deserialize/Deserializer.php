@@ -13,10 +13,10 @@ namespace Symfony\Component\SerDes\Internal\Deserialize;
 
 use Symfony\Component\SerDes\Exception\LogicException;
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
-use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -90,12 +90,15 @@ abstract class Deserializer
     protected function doDeserialize(mixed $dataOrResource, Type|UnionType $type, array $context): mixed
     {
         if ($type instanceof UnionType) {
-            if (!isset($context['union_selector'][$typeString = (string) $type])) {
+            $selectedType = ($context['union_selector'][$typeString = (string) $type] ?? null);
+            if (null === $selectedType) {
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
             }
 
             /** @var Type $type */
-            $type = (self::$cache['type'][$typeString] ??= TypeFactory::createFromString($context['union_selector'][$typeString]));
+            $type = \is_string($selectedType)
+                ? (self::$cache['type'][$selectedType] ??= TypeFactory::createFromString($selectedType))
+                : $selectedType;
         }
 
         if ($type->isScalar()) {
@@ -180,12 +183,14 @@ abstract class Deserializer
             }
 
             if (null !== $hook = $context['hooks']['deserialize'][$className] ?? $context['hooks']['deserialize']['object'] ?? null) {
-                /** @var array{type?: string, context?: array<string, mixed>} $hookResult */
-                $hookResult = $hook((string) $type, $context);
+                /** @var array{type?: Type|UnionType|string, context?: array<string, mixed>} $hookResult */
+                $hookResult = $hook($type, $context);
 
                 if (isset($hookResult['type'])) {
                     /** @var Type $type */
-                    $type = (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']));
+                    $type = \is_string($hookResult['type'])
+                        ? (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']))
+                        : $hookResult['type'];
                 }
 
                 $context = $hookResult['context'] ?? $context;
@@ -202,7 +207,12 @@ abstract class Deserializer
                     $hookResult = $hook(
                         $reflection,
                         $name,
-                        fn (string $type, array $context) => $this->propertyValueCallable(self::$cache['type'][$type] ??= TypeFactory::createFromString($type), $dataOrResource, $value, $context)(),
+                        function (Type|UnionType|string $type, array $context) use ($dataOrResource, $value) {
+                            /** @var Type $type */
+                            $type = \is_string($type) ? (self::$cache['type'][$type] ??= TypeFactory::createFromString($type)) : $type;
+
+                            return $this->propertyValueCallable($type, $dataOrResource, $value, $context)();
+                        },
                         $context,
                     );
 
@@ -226,7 +236,7 @@ abstract class Deserializer
                     continue;
                 }
 
-                self::$cache['property_type'][$identifier] ??= TypeFactory::createFromString($this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name)));
+                self::$cache['property_type'][$identifier] ??= $this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name));
 
                 $valueCallables[$name] = $this->propertyValueCallable(self::$cache['property_type'][$identifier], $dataOrResource, $value, $context);
             }

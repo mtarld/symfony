@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\deserialize;
 use function Symfony\Component\SerDes\serialize;
@@ -48,7 +49,7 @@ class SerializeDeserializeTest extends TestCase
         serialize($data, $resource, 'json', ['type' => $type] + $context);
         rewind($resource);
 
-        $this->assertEquals($data, deserialize($resource, $type, 'json', $context));
+        $this->assertEquals($data, deserialize($resource, TypeFactory::createFromString($type), 'json', $context));
     }
 
     /**
@@ -97,12 +98,12 @@ class SerializeDeserializeTest extends TestCase
         fwrite($resource, $content);
         rewind($resource);
 
-        $data = deserialize($resource, $type, 'json', $context);
+        $data = deserialize($resource, TypeFactory::createFromString($type), 'json', $context);
 
         /** @var resource $resource */
         $newResource = fopen('php://memory', 'w+');
 
-        serialize($data, $newResource, 'json', ['type' => $type] + $context);
+        serialize($data, $newResource, 'json', ['type' => TypeFactory::createFromString($type)] + $context);
         rewind($newResource);
 
         $this->assertEquals($content, stream_get_contents($newResource));

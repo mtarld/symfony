@@ -25,12 +25,12 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ScalarNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\UnaryNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
-use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
 use Symfony\Component\SerDes\Internal\Serialize\VariableNameScoperTrait;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
-use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\TypeSorter;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -76,8 +76,8 @@ abstract class TemplateGenerator
     abstract protected function dictNodes(Type $type, NodeInterface $accessor, array $context): array;
 
     /**
-     * @param list<array{name: string, type: string, accessor: NodeInterface, context: array<string, mixed>}> $propertiesInfo
-     * @param array<string, mixed>                                                                            $context
+     * @param list<array{name: string, type: Type|UnionType|string, accessor: NodeInterface, context: array<string, mixed>}> $propertiesInfo
+     * @param array<string, mixed>                                                                                           $context
      *
      * @return list<NodeInterface>
      */
@@ -173,10 +173,13 @@ abstract class TemplateGenerator
             }
 
             if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
-                $hookResult = $hook((string) $type, (new Compiler())->compile($accessor)->source(), $context);
+                $hookResult = $hook($type, (new Compiler())->compile($accessor)->source(), $context);
 
-                /** @var Type $type */
-                $type = isset($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $type;
+                if (isset($hookResult['type'])) {
+                    /** @var Type $type */
+                    $type = \is_string($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $hookResult['type'];
+                }
+
                 $accessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $accessor;
                 $context = $hookResult['context'] ?? $context;
             }

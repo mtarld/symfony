@@ -18,6 +18,7 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithMethods;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithQuotes;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class PropertyHookTest extends TestCase
 {
@@ -29,6 +30,7 @@ class PropertyHookTest extends TestCase
     public function testUpdateName(string $expectedName, array $propertyNames)
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('int'));
 
         $context = [
             '_symfony' => [
@@ -61,8 +63,8 @@ class PropertyHookTest extends TestCase
     public function testUpdateTypeAccessorAndContextFromFormatter(string $expectedType, string $expectedAccessor, array $propertyFormatters)
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromProperty')->willReturn('int');
-        $typeExtractor->method('extractFromFunctionReturn')->willReturn('string');
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('int'));
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn(TypeFactory::createFromString('string'));
 
         $context = [
             '_symfony' => [
@@ -98,6 +100,7 @@ class PropertyHookTest extends TestCase
     public function testThrowWhenWrongFormatter(string $exceptionMessage, callable $formatter)
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn(TypeFactory::createFromString('int'));
 
         $context = [
             '_symfony' => [
@@ -139,8 +142,8 @@ class PropertyHookTest extends TestCase
     public function testConvertGenericTypes()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromProperty')->willReturn('T');
-        $typeExtractor->method('extractFromFunctionReturn')->willReturn('U');
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('T'));
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn(TypeFactory::createFromString('U'));
 
         $context = [
             '_symfony' => [
@@ -168,7 +171,7 @@ class PropertyHookTest extends TestCase
     public function testDoNotConvertGenericTypesWhenFormatterDoesNotBelongToCurrentClass()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
-        $typeExtractor->method('extractFromFunctionReturn')->willReturn('T');
+        $typeExtractor->method('extractFromFunctionReturn')->willReturn(TypeFactory::createFromString('T'));
 
         $context = [
             '_symfony' => [
@@ -193,6 +196,7 @@ class PropertyHookTest extends TestCase
     public function testSkipWhenNoGroupIsMatching()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('int'));
 
         $context = [
             'groups' => ['one'],
@@ -215,6 +219,7 @@ class PropertyHookTest extends TestCase
     public function testDoNotSkipWhenGroupIsMatching()
     {
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractFromProperty')->willReturn(TypeFactory::createFromString('int'));
 
         $context = [
             'groups' => ['one', 'two'],

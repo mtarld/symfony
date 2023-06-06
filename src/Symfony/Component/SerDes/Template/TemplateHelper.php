@@ -12,6 +12,8 @@
 namespace Symfony\Component\SerDes\Template;
 
 use Symfony\Component\SerDes\Attribute\Groups;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -23,9 +25,9 @@ final class TemplateHelper
     /**
      * @param array<string, mixed> $context
      */
-    public function templateFilename(string $type, string $format, array $context): string
+    public function templateFilename(Type|UnionType|string $type, string $format, array $context): string
     {
-        $hash = hash('xxh128', $type);
+        $hash = hash('xxh128', (string) $type);
 
         if ([] !== $variant = $this->variant($context)) {
             usort($variant, fn (TemplateVariation $a, TemplateVariation $b): int => $a->compare($b));

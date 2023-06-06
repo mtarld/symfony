@@ -18,7 +18,9 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\AbstractDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\NonUniqueTemplatePhpstanExtractableDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\PhpstanExtractableDummy;
 use Symfony\Component\SerDes\Type\PhpstanTypeExtractor;
+use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class PhpstanTypeExtractorTest extends TestCase
 {
@@ -28,12 +30,12 @@ class PhpstanTypeExtractorTest extends TestCase
     public function testExtractFromProperty(string $expectedType, string $property)
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromProperty')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromProperty')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
         $reflectionProperty = (new \ReflectionClass(PhpstanExtractableDummy::class))->getProperty($property);
 
-        $this->assertSame($expectedType, $extractor->extractFromProperty($reflectionProperty));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), $extractor->extractFromProperty($reflectionProperty));
     }
 
     public function testCannotHandleIntersectionProperty()
@@ -66,32 +68,32 @@ class PhpstanTypeExtractorTest extends TestCase
     public function testExtractFromFunctionReturn(string $expectedType, string $method)
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
         $reflectionMethod = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod($method);
 
-        $this->assertSame($expectedType, $extractor->extractFromFunctionReturn($reflectionMethod));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), $extractor->extractFromFunctionReturn($reflectionMethod));
     }
 
     public function testFallbackOnVoidAndNeverFunctionReturn()
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
 
         $voidReflectionMethod = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod('void');
         $neverReflectionMethod = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod('never');
 
-        $this->assertSame('FALLBACK', $extractor->extractFromFunctionReturn($voidReflectionMethod));
-        $this->assertSame('FALLBACK', $extractor->extractFromFunctionReturn($neverReflectionMethod));
+        $this->assertEquals(new Type('FALLBACK'), $extractor->extractFromFunctionReturn($voidReflectionMethod));
+        $this->assertEquals(new Type('FALLBACK'), $extractor->extractFromFunctionReturn($neverReflectionMethod));
     }
 
     public function testExtractClassTypeFromFunctionFunctionReturn()
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromFunctionReturn')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
 
@@ -100,7 +102,7 @@ class PhpstanTypeExtractorTest extends TestCase
             return $this;
         });
 
-        $this->assertSame(self::class, $extractor->extractFromFunctionReturn($selfReflectionFunction));
+        $this->assertEquals(TypeFactory::createFromString(self::class), $extractor->extractFromFunctionReturn($selfReflectionFunction));
     }
 
     /**
@@ -109,19 +111,19 @@ class PhpstanTypeExtractorTest extends TestCase
     public function testExtractFromParameter(string $expectedType, string $method)
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromFunctionParameter')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromFunctionParameter')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
 
         $reflectionParameter = (new \ReflectionClass(PhpstanExtractableDummy::class))->getMethod($method)->getParameters()[0];
 
-        $this->assertSame($expectedType, $extractor->extractFromFunctionParameter($reflectionParameter));
+        $this->assertEquals(TypeFactory::createFromString($expectedType), $extractor->extractFromFunctionParameter($reflectionParameter));
     }
 
     public function testExtractClassTypeFromParameter()
     {
         $fallbackExtractor = $this->createStub(TypeExtractorInterface::class);
-        $fallbackExtractor->method('extractFromFunctionParameter')->willReturn('FALLBACK');
+        $fallbackExtractor->method('extractFromFunctionParameter')->willReturn(new Type('FALLBACK'));
 
         $extractor = new PhpstanTypeExtractor($fallbackExtractor);
 
@@ -129,7 +131,7 @@ class PhpstanTypeExtractorTest extends TestCase
         $selfReflectionFunction = new \ReflectionFunction(function ($_) {
         });
 
-        $this->assertSame(self::class, $extractor->extractFromFunctionParameter($selfReflectionFunction->getParameters()[0]));
+        $this->assertEquals(TypeFactory::createFromString(self::class), $extractor->extractFromFunctionParameter($selfReflectionFunction->getParameters()[0]));
     }
 
     /**

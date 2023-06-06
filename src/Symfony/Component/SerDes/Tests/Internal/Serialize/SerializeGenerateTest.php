@@ -18,6 +18,7 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\CircularReferencingDummyLeft;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\CircularReferencingDummyRight;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\SelfReferencingDummy;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\serialize_generate;
 
@@ -33,7 +34,7 @@ class SerializeGenerateTest extends TestCase
             $this->expectExceptionMessage(sprintf('A circular reference has been detected on class "%s".', $expectedCircularClassName));
         }
 
-        serialize_generate($type, 'json');
+        serialize_generate(TypeFactory::createFromString($type), 'json');
 
         $this->addToAssertionCount(1);
     }
@@ -68,6 +69,6 @@ class SerializeGenerateTest extends TestCase
     {
         $this->expectException(UnsupportedFormatException::class);
 
-        serialize_generate('int', 'unknown', []);
+        serialize_generate(TypeFactory::createFromString('int'), 'unknown', []);
     }
 }

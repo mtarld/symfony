@@ -14,6 +14,7 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize\Json;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 use function Symfony\Component\SerDes\serialize_generate;
 
@@ -26,7 +27,7 @@ class SerializeGenerateTest extends TestCase
      */
     public function testSerializeGenerate(string $expectedSource, string $type, array $context)
     {
-        $this->assertSame($expectedSource, serialize_generate($type, 'json', $context));
+        $this->assertSame($expectedSource, serialize_generate(TypeFactory::createFromString($type), 'json', $context));
     }
 
     /**

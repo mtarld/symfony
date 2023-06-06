@@ -13,9 +13,9 @@ namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Internal\Deserialize\Deserializer;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\UnionType;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

@@ -22,8 +22,8 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ScalarNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\TemplateStringNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -104,13 +104,17 @@ final class JsonTemplateGenerator extends TemplateGenerator
 
             $encodedName = substr($encodedName, 1, -1);
 
+            if (\is_string($propertyInfo['type'])) {
+                $propertyInfo['type'] = TypeFactory::createFromString($propertyInfo['type']);
+            }
+
             array_push(
                 $nodes,
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($separator)])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($encodedName)])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
-                ...$this->generate(TypeFactory::createFromString($propertyInfo['type']), $propertyInfo['accessor'], $propertyInfo['context']),
+                ...$this->generate($propertyInfo['type'], $propertyInfo['accessor'], $propertyInfo['context']),
             );
 
             $separator = ',';

@@ -13,9 +13,9 @@ namespace Symfony\Component\SerDes\Tests\Internal\Serialize;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\LogicException;
-use Symfony\Component\SerDes\Internal\Serialize\TypeSorter;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\TypeSorter;
 
 class TypeSorterTest extends TestCase
 {

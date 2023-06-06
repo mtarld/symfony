@@ -31,9 +31,9 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\ThrowNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\UnaryNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
-use Symfony\Component\SerDes\Internal\Type;
-use Symfony\Component\SerDes\Internal\TypeFactory;
-use Symfony\Component\SerDes\Internal\UnionType;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -230,7 +230,11 @@ final class CsvTemplateGenerator extends TemplateGenerator
                     continue;
                 }
 
-                array_push($nodes, ...$this->generate(TypeFactory::createFromString($propertyInfo['type']), $propertyInfo['accessor'], $propertyInfo['context']));
+                if (\is_string($propertyInfo['type'])) {
+                    $propertyInfo['type'] = TypeFactory::createFromString($propertyInfo['type']);
+                }
+
+                array_push($nodes, ...$this->generate($propertyInfo['type'], $propertyInfo['accessor'], $propertyInfo['context']));
             }
 
             return $nodes;

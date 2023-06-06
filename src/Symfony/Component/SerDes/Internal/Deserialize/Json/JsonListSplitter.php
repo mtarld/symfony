@@ -12,7 +12,7 @@
 namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
-use Symfony\Component\SerDes\Internal\Type;
+use Symfony\Component\SerDes\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

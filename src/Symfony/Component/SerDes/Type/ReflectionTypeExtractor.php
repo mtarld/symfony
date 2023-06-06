@@ -21,7 +21,7 @@ use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
  */
 final class ReflectionTypeExtractor implements TypeExtractorInterface
 {
-    public function extractFromProperty(\ReflectionProperty $property): string
+    public function extractFromProperty(\ReflectionProperty $property): Type|UnionType
     {
         if (null === $type = $property->getType()) {
             throw MissingTypeException::forProperty($property);
@@ -30,7 +30,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $property->getDeclaringClass());
     }
 
-    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type|UnionType
     {
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
@@ -42,7 +42,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $declaringClass);
     }
 
-    public function extractFromFunctionParameter(\ReflectionParameter $parameter): string
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type|UnionType
     {
         $function = $parameter->getDeclaringFunction();
 
@@ -59,14 +59,17 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
     /**
      * @param \ReflectionClass<object>|null $declaringClass
      */
-    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): string
+    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): Type|UnionType
     {
         if (!($reflection instanceof \ReflectionUnionType || $reflection instanceof \ReflectionNamedType)) {
             throw new UnsupportedTypeException((string) $reflection);
         }
 
         if ($reflection instanceof \ReflectionUnionType) {
-            return implode('|', array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes()));
+            /** @var list<Type> $unionTypes */
+            $unionTypes = array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes());
+
+            return new UnionType($unionTypes);
         }
 
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';
@@ -77,13 +80,14 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         }
 
         if ('mixed' === $phpTypeOrClass || 'null' === $phpTypeOrClass) {
-            return $phpTypeOrClass;
+            return new Type($phpTypeOrClass);
         }
 
         if ($reflection->isBuiltin()) {
-            return $nullablePrefix.$phpTypeOrClass;
+            return new Type($phpTypeOrClass, isNullable: $reflection->allowsNull());
         }
 
+        /** @var class-string $className */
         $className = $phpTypeOrClass;
 
         if ($declaringClass && 'self' === strtolower($className)) {
@@ -92,7 +96,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
             $className = $parent->name;
         }
 
-        return $nullablePrefix.$className;
+        return new Type('object', isNullable: $reflection->allowsNull(), className: $className);
     }
 
     public function extractTemplateFromClass(\ReflectionClass $class): array

@@ -14,7 +14,7 @@ namespace Symfony\Component\SerDes\Tests\Internal\Deserialize\Json;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidResourceException;
 use Symfony\Component\SerDes\Internal\Deserialize\Json\JsonDictSplitter;
-use Symfony\Component\SerDes\Internal\TypeFactory;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class JsonDictSplitterTest extends TestCase
 {

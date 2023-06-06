@@ -45,7 +45,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         $this->phpstanLexer = new Lexer();
     }
 
-    public function extractFromProperty(\ReflectionProperty $property): string
+    public function extractFromProperty(\ReflectionProperty $property): Type|UnionType
     {
         if (null === $typeNode = $this->getTypeNode($property)) {
             return $this->decoratedTypeExtractor->extractFromProperty($property);
@@ -54,7 +54,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         return $this->phpstanTypeHelper->getType($typeNode, $property->getDeclaringClass(), $this->getTemplateNodes($property->getDeclaringClass()));
     }
 
-    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): string
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type|UnionType
     {
         if (null === $typeNode = $this->getTypeNode($function)) {
             return $this->decoratedTypeExtractor->extractFromFunctionReturn($function);
@@ -68,7 +68,7 @@ final class PhpstanTypeExtractor implements TypeExtractorInterface
         return $this->phpstanTypeHelper->getType($typeNode, $declaringClass, $this->getTemplateNodes($declaringClass));
     }
 
-    public function extractFromFunctionParameter(\ReflectionParameter $parameter): string
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type|UnionType
     {
         if (null === $typeNode = $this->getTypeNode($parameter)) {
             return $this->decoratedTypeExtractor->extractFromFunctionParameter($parameter);
