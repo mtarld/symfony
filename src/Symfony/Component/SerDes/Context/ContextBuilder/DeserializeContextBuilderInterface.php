@@ -14,7 +14,7 @@ namespace Symfony\Component\SerDes\Context\ContextBuilder;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.0
+ * @internal
  */
 interface DeserializeContextBuilderInterface extends ContextBuilderInterface
 {

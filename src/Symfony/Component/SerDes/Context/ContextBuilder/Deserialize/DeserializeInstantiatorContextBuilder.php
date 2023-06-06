@@ -18,7 +18,7 @@ use Symfony\Component\SerDes\Instantiator\InstantiatorInterface;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.0
+ * @internal
  */
 final class DeserializeInstantiatorContextBuilder implements DeserializeContextBuilderInterface
 {

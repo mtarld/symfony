@@ -16,7 +16,7 @@ use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInter
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.0
+ * @internal
  */
 final class SerializeHookContextBuilder implements SerializeContextBuilderInterface
 {
