@@ -20,7 +20,6 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\BinaryNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ExpressionNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\FunctionNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\IfNode;
-use Symfony\Component\SerDes\Internal\Serialize\Node\RawNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\ScalarNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
@@ -132,28 +131,6 @@ class TemplateGeneratorTest extends TestCase
         $this->templateGenerator->generate(TypeFactory::createFromString(DummyWithNotPublicProperty::class), new VariableNode('accessor'), []);
     }
 
-    public function testGenerateObjectWithObjectHook()
-    {
-        $context = [
-            'hooks' => [
-                'serialize' => [
-                    'object' => static function (string $type, string $accessor, array $context): array {
-                        return [
-                            'type' => ConstructorPropertyPromotedDummy::class,
-                            'accessor' => '$ACCESSOR',
-                            'context' => ['CONTEXT'],
-                        ];
-                    },
-                ],
-            ],
-        ];
-
-        $this->assertEquals([
-            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new RawNode('$ACCESSOR'))),
-            '$object_0->id (id(int))',
-        ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
-    }
-
     public function testGenerateObjectCallProperObjectHook()
     {
         $hookCallCount = 0;
@@ -162,23 +139,42 @@ class TemplateGeneratorTest extends TestCase
             'custom_context_value' => true,
             'hooks' => [
                 'serialize' => [
-                    ClassicDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
+                    ClassicDummy::class => function (string $type, string $accessor, array $properties, array $context) use (&$hookCallCount): array {
                         ++$hookCallCount;
 
                         $this->assertSame(ClassicDummy::class, $type);
-                        $this->assertSame('$accessor', $accessor);
+                        $this->assertSame('$object_0', $accessor);
+                        $this->assertEquals([
+                            'id' => [
+                                'name' => 'id',
+                                'accessor' => '$object_0->id',
+                                'type' => TypeFactory::createFromString('int'),
+                            ],
+                            'name' => [
+                                'name' => 'name',
+                                'accessor' => '$object_0->name',
+                                'type' => TypeFactory::createFromString('string'),
+                            ],
+                        ], $properties);
                         $this->assertArrayHasKey('custom_context_value', $context);
 
-                        return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
+                        return ['properties' => $properties, 'context' => $context];
                     },
-                    ConstructorPropertyPromotedDummy::class => function (string $type, string $accessor, array $context) use (&$hookCallCount): array {
+                    ConstructorPropertyPromotedDummy::class => function (string $type, string $accessor, array $properties, array $context) use (&$hookCallCount): array {
                         ++$hookCallCount;
 
                         $this->assertSame(ConstructorPropertyPromotedDummy::class, $type);
-                        $this->assertSame('$accessor', $accessor);
+                        $this->assertSame('$object_0', $accessor);
+                        $this->assertEquals([
+                            'id' => [
+                                'name' => 'id',
+                                'accessor' => '$object_0->id',
+                                'type' => TypeFactory::createFromString('int'),
+                            ],
+                        ], $properties);
                         $this->assertArrayHasKey('custom_context_value', $context);
 
-                        return ['type' => $type, 'accessor' => $accessor, 'context' => $context];
+                        return ['properties' => $properties, 'context' => $context];
                     },
                 ],
             ],
@@ -193,18 +189,20 @@ class TemplateGeneratorTest extends TestCase
         $this->assertSame(2, $hookCallCount);
     }
 
-    public function testGenerateObjectWithPropertyHook()
+    public function testGenerateObjectWithHookUpdateProperties()
     {
         $context = [
             'hooks' => [
                 'serialize' => [
-                    'property' => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                        return [
-                            'name' => 'NAME',
-                            'type' => 'string',
-                            'accessor' => '$ACCESSOR',
-                            'context' => ['CONTEXT'],
-                        ];
+                    ClassicDummy::class => function (string $type, string $accessor, array $properties, array $context): array {
+                        $properties['id']['name'] = 'ID_NAME';
+                        $properties['id']['accessor'] = '$ID_ACCESSOR';
+                        $properties['id']['type'] = 'string';
+
+                        $properties['name']['name'] = 'NAME_NAME';
+                        $properties['name']['accessor'] = '$NAME_ACCESSOR';
+
+                        return ['properties' => $properties];
                     },
                 ],
             ],
@@ -212,20 +210,20 @@ class TemplateGeneratorTest extends TestCase
 
         $this->assertEquals([
             new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
-            '$ACCESSOR (NAME(string))',
-            '$ACCESSOR (NAME(string))',
+            '$ID_ACCESSOR (ID_NAME(string))',
+            '$NAME_ACCESSOR (NAME_NAME(string))',
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
     }
 
-    public function testGenerateObjectSkipPropertyWithNullAccessor()
+    public function testGenerateObjectSkipRemovedProperties()
     {
         $context = [
             'hooks' => [
                 'serialize' => [
-                    sprintf('%s::$id', ClassicDummy::class) => static function (\ReflectionProperty $property, string $accessor, array $context): array {
-                        return [
-                            'accessor' => null,
-                        ];
+                    ClassicDummy::class => function (string $type, string $accessor, array $properties, array $context): array {
+                        unset($properties['id']);
+
+                        return ['properties' => $properties];
                     },
                 ],
             ],
@@ -237,49 +235,30 @@ class TemplateGeneratorTest extends TestCase
         ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
     }
 
-    public function testGenerateObjectCallProperPropertyHook()
+    public function testGenerateObjectAddAdditionalProperties()
     {
-        $hookCallCount = 0;
-
         $context = [
-            'custom_context_value' => true,
             'hooks' => [
                 'serialize' => [
-                    sprintf('%s::$id', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
-                        ++$hookCallCount;
-
-                        $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'id'), $property);
-                        $this->assertSame('$object_0->id', $accessor);
-                        $this->assertArrayHasKey('custom_context_value', $context);
-
-                        return [
-                            'name' => 'name',
-                            'type' => 'string',
-                            'accessor' => '$accessor',
-                            'context' => [],
+                    ClassicDummy::class => function (string $type, string $accessor, array $properties, array $context): array {
+                        $properties['foo'] = [
+                            'name' => 'NAME_FOO',
+                            'type' => 'int',
+                            'accessor' => sprintf('FOO_ACCESSOR(%s)', $accessor),
                         ];
-                    },
-                    sprintf('%s::$name', ClassicDummy::class) => function (\ReflectionProperty $property, string $accessor, array $context) use (&$hookCallCount): array {
-                        ++$hookCallCount;
 
-                        $this->assertEquals(new \ReflectionProperty(ClassicDummy::class, 'name'), $property);
-                        $this->assertSame('$object_0->name', $accessor);
-                        $this->assertArrayHasKey('custom_context_value', $context);
-
-                        return [
-                            'name' => 'name',
-                            'type' => 'string',
-                            'accessor' => '$accessor',
-                            'context' => [],
-                        ];
+                        return ['properties' => $properties];
                     },
                 ],
             ],
         ];
 
-        $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context);
-
-        $this->assertSame(2, $hookCallCount);
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(new VariableNode('object_0'), new VariableNode('accessor'))),
+            '$object_0->id (id(int))',
+            '$object_0->name (name(string))',
+            'FOO_ACCESSOR($object_0) (NAME_FOO(int))',
+        ], $this->templateGenerator->generate(TypeFactory::createFromString(ClassicDummy::class), new VariableNode('accessor'), $context));
     }
 
     public function testGenerateMixed()
@@ -320,9 +299,9 @@ final class DummyTemplateGenerator extends TemplateGenerator
         return [sprintf('%s (dict(%s))', (new Compiler())->compile($accessor)->source(), (string) $type)];
     }
 
-    protected function objectNodes(Type $type, array $propertiesInfo, array $context): array
+    protected function objectNodes(Type $type, array $properties, array $context): array
     {
-        return array_map(fn (array $i) => sprintf('%s (%s(%s))', (new Compiler())->compile($i['accessor'])->source(), $i['name'], $i['type']), $propertiesInfo);
+        return array_values(array_map(fn (array $i) => sprintf('%s (%s(%s))', (new Compiler())->compile($i['accessor'])->source(), $i['name'], $i['type']), $properties));
     }
 
     protected function mixedNodes(NodeInterface $accessor, array $context): array

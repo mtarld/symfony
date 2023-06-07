@@ -13,7 +13,10 @@ namespace Symfony\Component\SerDes\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Exception\InvalidTypeException;
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\TypeFactory;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
+use Symfony\Component\SerDes\Type\UnionType;
 
 class TypeGenericsHelperTest extends TestCase
 {
@@ -24,7 +27,9 @@ class TypeGenericsHelperTest extends TestCase
      */
     public function testReplaceGenericTypes(string $expectedType, string $type, array $genericTypes)
     {
-        $this->assertSame($expectedType, (new TypeGenericsHelper())->replaceGenericTypes($type, $genericTypes));
+        $genericTypes = array_map(fn (string $t): Type|UnionType => TypeFactory::createFromString($t), $genericTypes);
+
+        $this->assertEquals($expectedType, (new TypeGenericsHelper())->replaceGenericTypes(TypeFactory::createFromString($type), $genericTypes));
     }
 
     /**
@@ -36,7 +41,6 @@ class TypeGenericsHelperTest extends TestCase
         yield ['Foo', 'T', ['T' => 'Foo']];
 
         yield ['array<int, Foo>', 'array<int, T>', ['T' => 'Foo']];
-        yield ['array<Foo>', 'array<T>', ['T' => 'Foo']];
         yield ['array<Foo, Foo>', 'array<T, T>', ['T' => 'Foo']];
 
         yield ['int|Foo', 'int|T', ['T' => 'Foo']];

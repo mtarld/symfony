@@ -134,11 +134,6 @@ return static function (ContainerConfigurator $container) {
                 service('ser_des.type_extractor'),
             ])
 
-        ->set('ser_des.hook.serialize.property', SerializeHook\PropertyHook::class)
-            ->args([
-                service('ser_des.type_extractor'),
-            ])
-
         ->set('ser_des.hook.deserialize.object', DeserializeHook\ObjectHook::class)
             ->args([
                 service('ser_des.type_extractor'),

@@ -26,9 +26,7 @@ class SerializeContextTest extends TestCase
             ->withType('TYPE')
             ->withJsonEncodeFlags(123)
             ->withObjectHook($hook)
-            ->withObjectHook($hook, 'className')
-            ->withPropertyHook($hook)
-            ->withPropertyHook($hook, 'className', 'propertyName');
+            ->withObjectHook($hook, 'className');
 
         $this->assertSame([
             'hooks' => [
@@ -36,8 +34,6 @@ class SerializeContextTest extends TestCase
                     'constructor_hook' => $hook,
                     'object' => $hook,
                     'className' => $hook,
-                    'property' => $hook,
-                    'className::$propertyName' => $hook,
                 ],
             ],
             'json_encode_flags' => 123,

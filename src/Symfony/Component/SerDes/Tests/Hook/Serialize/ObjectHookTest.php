@@ -16,6 +16,7 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Hook\Serialize\ObjectHook;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
+use Symfony\Component\SerDes\Type\TypeFactory;
 
 class ObjectHookTest extends TestCase
 {
@@ -30,9 +31,9 @@ class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn($templates);
 
-        $hookResult = (new ObjectHook($typeExtractor))($type, '$accessor', []);
+        $hookResult = (new ObjectHook($typeExtractor))(TypeFactory::createFromString($type), 'accessor', [], []);
 
-        $this->assertSame($expectedGenericParameterTypes, $hookResult['context']['_symfony']['generic_parameter_types'] ?? []);
+        $this->assertEquals($expectedGenericParameterTypes, $hookResult['context']['_symfony']['generic_parameter_types'] ?? []);
     }
 
     /**
@@ -40,10 +41,13 @@ class ObjectHookTest extends TestCase
      */
     public static function addGenericParameterTypesDataProvider(): iterable
     {
-        yield [[], 'int', []];
-        yield [[], 'Foo<int>', ['T']];
-        yield [[ClassicDummy::class => ['T' => 'int']], ClassicDummy::class.'<int>', ['T']];
-        yield [[ClassicDummy::class => ['Tk' => 'int', 'Tv' => 'string']], ClassicDummy::class.'<int, string>', ['Tk', 'Tv']];
+        yield [[], ClassicDummy::class, []];
+        yield [[ClassicDummy::class => ['T' => TypeFactory::createFromString('int')]], ClassicDummy::class.'<int>', ['T']];
+        yield [
+            [ClassicDummy::class => ['Tk' => TypeFactory::createFromString('int'), 'Tv' => TypeFactory::createFromString('string')]],
+            ClassicDummy::class.'<int, string>',
+            ['Tk', 'Tv'],
+        ];
     }
 
     public function testThrowOnWrongGenericTypeCount()
@@ -54,6 +58,6 @@ class ObjectHookTest extends TestCase
         $typeExtractor = $this->createStub(TypeExtractorInterface::class);
         $typeExtractor->method('extractTemplateFromClass')->willReturn(['Tk', 'Tv']);
 
-        (new ObjectHook($typeExtractor))(ClassicDummy::class.'<int>', '$accessor', []);
+        (new ObjectHook($typeExtractor))(TypeFactory::createFromString(ClassicDummy::class.'<int>'), 'accessor', [], []);
     }
 }

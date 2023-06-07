@@ -68,17 +68,6 @@ class SerializeContext implements ContextInterface
         return $this->withHook($hookName, $hook);
     }
 
-    /**
-     * @param PropertyHookInterface|callable(\ReflectionProperty, string, array<string, mixed>): array{name: string, type: string, accessor: string, context: array<string, mixed>} $hook
-     * @param class-string|null                                                                                                                                                     $className
-     */
-    public function withPropertyHook(PropertyHookInterface|callable $hook, string $className = null, string $propertyName = null): self
-    {
-        $hookName = null !== $className && null !== $propertyName ? sprintf('%s::$%s', $className, $propertyName) : 'property';
-
-        return $this->withHook($hookName, $hook);
-    }
-
     private function withHook(string $hookName, callable $hook): self
     {
         $hooks = $this->options['hooks'] ?? [];

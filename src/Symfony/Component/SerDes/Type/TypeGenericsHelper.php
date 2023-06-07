@@ -26,27 +26,36 @@ final class TypeGenericsHelper
     private static array $genericsCache = [];
 
     /**
-     * @param array<string, string> $genericTypes
+     * @template T of Type|UnionType
+     *
+     * @param T                             $type
+     * @param array<string, Type|UnionType> $genericTypes
+     *
+     * @return T
      */
-    public function replaceGenericTypes(string $type, array $genericTypes): string
+    public function replaceGenericTypes(Type|UnionType $type, array $genericTypes): Type|UnionType
     {
-        $types = $this->explodeUnion($type);
-
-        if (\count($types) > 1) {
-            return implode('|', array_map(fn (string $t): string => $this->replaceGenericTypes($t, $genericTypes), $types));
+        if ($type instanceof UnionType) {
+            return new UnionType(array_map(fn (Type $t): Type => $this->replaceGenericTypes($t, $genericTypes), $type->types));
         }
 
-        [$type, $genericParameterTypes] = $this->explodeGenerics($type);
+        if ([] !== $type->genericParameterTypes()) {
+            $genericParameterTypes = array_map(fn (Type|UnionType $t): Type|UnionType => $this->replaceGenericTypes($t, $genericTypes), $type->genericParameterTypes());
 
-        if ([] !== $genericParameterTypes) {
-            return sprintf(
-                '%s<%s>',
-                $this->replaceGenericTypes($type, $genericTypes),
-                implode(', ', array_map(fn (string $t): string => $this->replaceGenericTypes($t, $genericTypes), $genericParameterTypes)),
+            return new Type(
+                name: $type->name(),
+                isNullable: $type->isNullable(),
+                className: $type->hasClass() ? $type->className() : null,
+                isGeneric: true,
+                genericParameterTypes: $genericParameterTypes,
             );
         }
 
-        return str_replace(array_keys($genericTypes), array_values($genericTypes), $type);
+        if (isset($genericTypes[(string) $type])) {
+            return $genericTypes[(string) $type];
+        }
+
+        return $type;
     }
 
     /**

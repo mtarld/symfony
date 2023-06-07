@@ -76,12 +76,12 @@ abstract class TemplateGenerator
     abstract protected function dictNodes(Type $type, NodeInterface $accessor, array $context): array;
 
     /**
-     * @param list<array{name: string, type: Type|UnionType|string, accessor: NodeInterface, context: array<string, mixed>}> $propertiesInfo
-     * @param array<string, mixed>                                                                                           $context
+     * @param array<string, array{name: string, type: Type|UnionType, accessor: NodeInterface}> $properties
+     * @param array<string, mixed>                                                              $context
      *
      * @return list<NodeInterface>
      */
-    abstract protected function objectNodes(Type $type, array $propertiesInfo, array $context): array;
+    abstract protected function objectNodes(Type $type, array $properties, array $context): array;
 
     /**
      * @param array<string, mixed> $context
@@ -172,16 +172,39 @@ abstract class TemplateGenerator
                 return $this->mixedNodes($accessor, $context);
             }
 
-            if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
-                $hookResult = $hook($type, (new Compiler())->compile($accessor)->source(), $context);
+            $objectName = $this->scopeVariableName('object', $context);
+            $class = new \ReflectionClass($className);
+            $properties = [];
 
-                if (isset($hookResult['type'])) {
-                    /** @var Type $type */
-                    $type = \is_string($hookResult['type']) ? TypeFactory::createFromString($hookResult['type']) : $hookResult['type'];
+            foreach ($class->getProperties() as $property) {
+                if (!$property->isPublic()) {
+                    throw new LogicException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
                 }
 
-                $accessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $accessor;
+                $properties[$property->getName()] = [
+                    'name' => $property->getName(),
+                    'type' => $this->reflectionTypeExtractor->extractFromProperty($property),
+                    'accessor' => new PropertyNode(new VariableNode($objectName), $property->getName()),
+                ];
+            }
+
+            if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
+                /** @var array{properties?: array<string, array{name?: string, type?: Type|UnionType, accessor?: string}>, context?: array<string, mixed>} $hookResult */
+                $hookResult = $hook(
+                    $type,
+                    (new Compiler())->compile(new VariableNode($objectName))->source(),
+                    array_map(fn (array $p): array => ['accessor' => (new Compiler())->compile($p['accessor'])->source()] + $p, $properties),
+                    $context,
+                );
+
                 $context = $hookResult['context'] ?? $context;
+
+                if (isset($hookResult['properties'])) {
+                    $properties = array_map(fn (array $p): array => [
+                        'accessor' => new RawNode($p['accessor']),
+                        'type' => $p['type'],
+                    ] + $p, $hookResult['properties']);
+                }
             }
 
             if (isset($context['generated_classes'][$className])) {
@@ -190,90 +213,28 @@ abstract class TemplateGenerator
 
             $context['generated_classes'][$className] = true;
 
-            $objectName = $this->scopeVariableName('object', $context);
-
-            $propertiesInfo = $this->computePropertiesInfo($type->className(), $objectName, $context);
-
             return [
                 new ExpressionNode(new AssignNode(new VariableNode($objectName), $accessor)),
-                ...$this->objectNodes($type, $propertiesInfo, $context),
+                ...$this->objectNodes($type, $properties, $context),
             ];
         }
 
         return $this->mixedNodes($accessor, $context);
     }
 
-    /**
-     * @param class-string         $className
-     * @param array<string, mixed> $context
-     *
-     * @return list<array{name: string, type: string, accessor: NodeInterface, context: array<string, mixed>}>
-     */
-    private function computePropertiesInfo(string $className, string $objectAccessor, array $context): array
-    {
-        $class = new \ReflectionClass($className);
-
-        $propertiesInfo = [];
-
-        foreach ($class->getProperties() as $property) {
-            if (!$property->isPublic()) {
-                throw new LogicException(sprintf('"%s::$%s" must be public.', $class->getName(), $property->getName()));
-            }
-
-            $propertyName = $property->getName();
-            $propertyType = $this->reflectionTypeExtractor->extractFromProperty($property);
-            $propertyAccessor = new PropertyNode(new VariableNode($objectAccessor), $property->getName());
-            $propertyContext = $context;
-
-            if (null !== $hook = $context['hooks']['serialize'][$className.'::$'.$propertyName] ?? $context['hooks']['serialize']['property'] ?? null) {
-                $hookResult = $hook($property, (new Compiler())->compile($propertyAccessor)->source(), $context);
-
-                if (\array_key_exists('accessor', $hookResult) && null === $hookResult['accessor']) {
-                    continue;
-                }
-
-                $propertyName = $hookResult['name'] ?? $propertyName;
-                $propertyType = $hookResult['type'] ?? $propertyType;
-                $propertyAccessor = isset($hookResult['accessor']) ? new RawNode($hookResult['accessor']) : $propertyAccessor;
-                $propertyContext = $hookResult['context'] ?? $propertyContext;
-            }
-
-            $propertiesInfo[] = ['name' => $propertyName, 'type' => $propertyType, 'accessor' => $propertyAccessor, 'context' => $propertyContext];
-        }
-
-        return $propertiesInfo;
-    }
-
     private function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
     {
-        if ($type->isNull()) {
-            return new BinaryNode('===', new ScalarNode(null), $accessor);
-        }
-
-        if ($type->isScalar()) {
-            return new FunctionNode(sprintf('\is_%s', $type->name()), [$accessor]);
-        }
-
-        if ($type->isList()) {
-            return new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new FunctionNode('\array_is_list', [$accessor]));
-        }
-
-        if ($type->isDict()) {
-            return new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new UnaryNode('!', new FunctionNode('\array_is_list', [$accessor])));
-        }
-
-        if ($type->isObject()) {
-            return new BinaryNode('instanceof', $accessor, new ScalarNode($type->className()));
-        }
-
-        if ('array' === $type->name()) {
-            return new FunctionNode('\is_array', [$accessor]);
-        }
-
-        if ('mixed' === $type->name()) {
-            return new ScalarNode(true);
-        }
-
-        throw new LogicException(sprintf('Cannot find validator for "%s".', (string) $type));
+        // TODO test is_iterable
+        return match (true) {
+            $type->isNull() => new BinaryNode('===', new ScalarNode(null), $accessor),
+            $type->isScalar() => new FunctionNode(sprintf('\is_%s', $type->name()), [$accessor]),
+            $type->isList() => new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new FunctionNode('\array_is_list', [$accessor])),
+            $type->isDict() => new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new UnaryNode('!', new FunctionNode('\array_is_list', [$accessor]))),
+            $type->isObject() => new BinaryNode('instanceof', $accessor, new ScalarNode($type->className())),
+            'array' === $type->name() => new FunctionNode('\is_array', [$accessor]),
+            'iterable' === $type->name() => new FunctionNode('\is_iterable', [$accessor]),
+            'mixed' === $type->name() => new ScalarNode(true),
+            default => throw new LogicException(sprintf('Cannot find validator for "%s".', (string) $type)),
+        };
     }
 }

@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\SerDes\Hook\Serialize;
 
+use Symfony\Component\SerDes\Type\Type;
+use Symfony\Component\SerDes\Type\UnionType;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -19,9 +22,10 @@ namespace Symfony\Component\SerDes\Hook\Serialize;
 interface ObjectHookInterface
 {
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, array{name: string, type: Type|UnionType, accessor: string}> $properties
+     * @param array<string, mixed>                                 $context
      *
-     * @return array{type?: string, accessor?: string, context?: array<string, mixed>}
+     * @return array{properties?: array<string, array{name?: string, type?: Type|UnionType, accessor?: string}>, context?: array<string, mixed>}
      */
-    public function __invoke(string $type, string $accessor, array $context): array;
+    public function __invoke(Type $type, string $accessor, array $properties, array $context): array;
 }

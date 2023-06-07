@@ -288,7 +288,6 @@ class SerializerTest extends TestCase
             new SerializeGroupsAttributeContextBuilder($serializableResolver),
             new SerializeHookContextBuilder([
                 'object' => (new SerializeHook\ObjectHook($typeExtractor))(...),
-                'property' => (new SerializeHook\PropertyHook($typeExtractor))(...),
             ]),
         ]);
 

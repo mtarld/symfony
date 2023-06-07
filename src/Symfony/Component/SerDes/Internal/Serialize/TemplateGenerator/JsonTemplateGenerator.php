@@ -91,22 +91,18 @@ final class JsonTemplateGenerator extends TemplateGenerator
         ];
     }
 
-    protected function objectNodes(Type $type, array $propertiesInfo, array $context): array
+    protected function objectNodes(Type $type, array $properties, array $context): array
     {
         $nodes = [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')]))];
         $separator = '';
 
-        foreach ($propertiesInfo as $propertyInfo) {
-            $encodedName = json_encode($propertyInfo['name']);
+        foreach ($properties as $property) {
+            $encodedName = json_encode($property['name']);
             if (false === $encodedName) {
-                throw new RuntimeException(sprintf('Cannot encode "%s"', $propertyInfo['name']));
+                throw new RuntimeException(sprintf('Cannot encode "%s"', $property['name']));
             }
 
             $encodedName = substr($encodedName, 1, -1);
-
-            if (\is_string($propertyInfo['type'])) {
-                $propertyInfo['type'] = TypeFactory::createFromString($propertyInfo['type']);
-            }
 
             array_push(
                 $nodes,
@@ -114,7 +110,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($encodedName)])),
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
-                ...$this->generate($propertyInfo['type'], $propertyInfo['accessor'], $propertyInfo['context']),
+                ...$this->generate($property['type'], $property['accessor'], $context),
             );
 
             $separator = ',';

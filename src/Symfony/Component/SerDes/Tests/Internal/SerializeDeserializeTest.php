@@ -70,10 +70,12 @@ class SerializeDeserializeTest extends TestCase
         yield [new ClassicDummy(), ClassicDummy::class, 'json'];
         yield [$dummy, DummyWithFormatterAttributes::class, 'json', ['hooks' => [
             'serialize' => [
-                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                    'name' => '@name',
-                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
-                ],
+                DummyWithFormatterAttributes::class => function (string $type, string $accessor, array $properties, array $context): array {
+                    $properties['name']['name'] = '@name';
+                    $properties['name']['accessor'] = sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $properties['name']['accessor']);
+
+                    return ['properties' => $properties];
+                },
             ],
             'deserialize' => [
                 sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
@@ -91,10 +93,12 @@ class SerializeDeserializeTest extends TestCase
         yield [[new ClassicDummy()], sprintf('array<int, %s>', ClassicDummy::class), 'csv'];
         yield [[$dummy], sprintf('array<int, %s>', DummyWithFormatterAttributes::class), 'csv', ['hooks' => [
             'serialize' => [
-                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                    'name' => '@name',
-                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
-                ],
+                DummyWithFormatterAttributes::class => function (string $type, string $accessor, array $properties, array $context): array {
+                    $properties['name']['name'] = '@name';
+                    $properties['name']['accessor'] = sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $properties['name']['accessor']);
+
+                    return ['properties' => $properties];
+                },
             ],
             'deserialize' => [
                 sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
@@ -120,7 +124,7 @@ class SerializeDeserializeTest extends TestCase
 
         $data = deserialize($resource, TypeFactory::createFromString($type), $format, $context);
 
-        /** @var resource $resource */
+        /** @var resource $newResource */
         $newResource = fopen('php://memory', 'w+');
 
         serialize($data, $newResource, $format, ['type' => TypeFactory::createFromString($type)] + $context);
@@ -142,10 +146,12 @@ class SerializeDeserializeTest extends TestCase
         yield ['{"id":100,"name":"Dummy"}', ClassicDummy::class, 'json'];
         yield ['{"id":200,"@name":100}', DummyWithFormatterAttributes::class, 'json', ['hooks' => [
             'serialize' => [
-                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                    'name' => '@name',
-                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
-                ],
+                DummyWithFormatterAttributes::class => function (string $type, string $accessor, array $properties, array $context): array {
+                    $properties['name']['name'] = '@name';
+                    $properties['name']['accessor'] = sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $properties['name']['accessor']);
+
+                    return ['properties' => $properties];
+                },
             ],
             'deserialize' => [
                 sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [
@@ -162,10 +168,12 @@ class SerializeDeserializeTest extends TestCase
         yield ["id,name\n100,Dummy\n", sprintf('array<int, %s>', ClassicDummy::class), 'csv'];
         yield ["id,@name\n200,100\n", sprintf('array<int, %s>', DummyWithFormatterAttributes::class), 'csv', ['hooks' => [
             'serialize' => [
-                sprintf('%s::$name', DummyWithFormatterAttributes::class) => fn (\ReflectionProperty $p, string $accessor) => [
-                    'name' => '@name',
-                    'accessor' => sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $accessor),
-                ],
+                DummyWithFormatterAttributes::class => function (string $type, string $accessor, array $properties, array $context): array {
+                    $properties['name']['name'] = '@name';
+                    $properties['name']['accessor'] = sprintf('%s::divideAndCastToInt(%s, $context)', DummyWithFormatterAttributes::class, $properties['name']['accessor']);
+
+                    return ['properties' => $properties];
+                },
             ],
             'deserialize' => [
                 sprintf('%s[@name]', DummyWithFormatterAttributes::class) => fn (\ReflectionClass $class, string $key, callable $value, array $context) => [

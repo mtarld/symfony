@@ -218,7 +218,7 @@ final class CsvTemplateGenerator extends TemplateGenerator
         throw $this->tooDeepException();
     }
 
-    protected function objectNodes(Type $type, array $propertiesInfo, array $context): array
+    protected function objectNodes(Type $type, array $properties, array $context): array
     {
         $depth = $context['csv_depth'] ?? 0;
 
@@ -227,14 +227,14 @@ final class CsvTemplateGenerator extends TemplateGenerator
         }
 
         if (1 === $depth) {
-            $indexedPropertiesInfo = [];
-            foreach ($propertiesInfo as $propertyInfo) {
-                $indexedPropertiesInfo[$propertyInfo['name']] = $propertyInfo;
+            $nameIndexedProperties = [];
+            foreach ($properties as $property) {
+                $nameIndexedProperties[$property['name']] = $property;
             }
 
             return $this->fputcsvNodes(new FunctionNode('\array_replace', [
                 $context['flipped_headers_accessor'],
-                new ArrayNode(array_map(fn (array $p): NodeInterface => $p['accessor'], $indexedPropertiesInfo)),
+                new ArrayNode(array_map(fn (array $p): NodeInterface => $p['accessor'], $nameIndexedProperties)),
             ]));
         }
 
