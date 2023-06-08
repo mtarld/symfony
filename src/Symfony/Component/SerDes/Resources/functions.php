@@ -24,7 +24,6 @@ use Symfony\Component\SerDes\Internal\Serialize\TemplateGenerator\TemplateGenera
 use Symfony\Component\SerDes\Template\TemplateHelper;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 if (!\function_exists(serialize::class)) {
     /**
@@ -63,7 +62,7 @@ if (!\function_exists(serialize_generate::class)) {
      *
      * @param array<string, mixed> $context
      */
-    function serialize_generate(Type|UnionType $type, string $format, array $context = []): string
+    function serialize_generate(Type $type, string $format, array $context = []): string
     {
         $compiler = new Compiler();
         $accessor = new VariableNode('data');
@@ -97,7 +96,7 @@ if (!\function_exists(deserialize::class)) {
      *
      * @throws PartialDeserializationException
      */
-    function deserialize($resource, Type|UnionType $type, string $format, array $context = []): mixed
+    function deserialize($resource, Type $type, string $format, array $context = []): mixed
     {
         $errors = null;
 

@@ -35,7 +35,7 @@ final class PhpstanTypeHelper
      * @param \ReflectionClass<object>   $declaringClass
      * @param list<TemplateTagValueNode> $templateNodes
      */
-    public function getType(TypeNode $typeNode, \ReflectionClass $declaringClass, array $templateNodes): Type|UnionType
+    public function getType(TypeNode $typeNode, \ReflectionClass $declaringClass, array $templateNodes): Type
     {
         $templateNodeNames = array_map(fn (TemplateTagValueNode $t): string => $t->name, $templateNodes);
 

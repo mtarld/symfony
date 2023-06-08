@@ -24,18 +24,24 @@ final readonly class Type implements \Stringable
     private string $stringValue;
 
     /**
-     * @param class-string|null    $className
-     * @param list<self|UnionType> $genericParameterTypes
+     * @param class-string|null $className
+     * @param list<self>        $genericParameterTypes
+     * @param list<self>        $unionTypes
      */
     public function __construct(
         private string $name,
         private bool $isNullable = false,
         private ?string $className = null,
-        private bool $isGeneric = false,
+        private bool $isGeneric = false, // TODO remove it in favor of genericParameterTypes
         private array $genericParameterTypes = [],
+        private array $unionTypes = [],
     ) {
         if ($this->isGeneric && !$this->genericParameterTypes) {
             throw new InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
+        }
+
+        if (1 === \count($this->unionTypes)) {
+            throw new InvalidArgumentException(sprintf('Cannot define only one union type for "%s" type.', $this->name));
         }
 
         $this->stringValue = $this->computeStringValue();
@@ -46,8 +52,23 @@ final readonly class Type implements \Stringable
         return $this->name;
     }
 
+    public function isUnion(): bool
+    {
+        return [] !== $this->unionTypes;
+    }
+
     public function isNullable(): bool
     {
+        if ($this->isUnion()) {
+            foreach ($this->unionTypes as $type) {
+                if ($type->isNull()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         return $this->isNullable;
     }
 
@@ -73,16 +94,28 @@ final readonly class Type implements \Stringable
     }
 
     /**
-     * @return list<self|UnionType>
+     * @return list<self>
      */
     public function genericParameterTypes(): array
     {
         return $this->genericParameterTypes;
     }
 
+    /**
+     * @return list<self>
+     */
+    public function unionTypes(): array
+    {
+        return $this->unionTypes;
+    }
+
     public function isScalar(): bool
     {
-        return \in_array($this->name, ['int', 'float', 'string', 'bool'], true);
+        if ($this->isUnion()) {
+            return array_reduce($this->unionTypes, fn (bool $c, self $t): bool => $c && $t->isScalar(), true);
+        }
+
+        return \in_array($this->name, ['int', 'float', 'string', 'bool', 'null'], true);
     }
 
     public function isNull(): bool
@@ -107,6 +140,10 @@ final readonly class Type implements \Stringable
 
     public function isCollection(): bool
     {
+        if ($this->isUnion()) {
+            return array_reduce($this->unionTypes, fn (bool $c, self $t): bool => $c && $t->isCollection(), true);
+        }
+
         return \in_array($this->name, ['array', 'iterable'], true);
     }
 
@@ -143,7 +180,7 @@ final readonly class Type implements \Stringable
         return 'string' === $collectionKeyType->name();
     }
 
-    public function collectionKeyType(): self|UnionType
+    public function collectionKeyType(): self
     {
         if (!$this->isCollection()) {
             throw new LogicException(sprintf('Cannot get collection key type on "%s" type as it\'s not a collection.', $this->name));
@@ -152,7 +189,7 @@ final readonly class Type implements \Stringable
         return $this->genericParameterTypes[0] ?? new self('mixed');
     }
 
-    public function collectionValueType(): self|UnionType
+    public function collectionValueType(): self
     {
         if (!$this->isCollection()) {
             throw new LogicException(sprintf('Cannot get collection value type on "%s" type as it\'s not a collection.', $this->name));
@@ -163,6 +200,10 @@ final readonly class Type implements \Stringable
 
     private function computeStringValue(): string
     {
+        if ($this->isUnion()) {
+            return implode('|', array_map(fn (Type $t): string => (string) $t, $this->unionTypes));
+        }
+
         if ($this->isNull()) {
             return 'null';
         }

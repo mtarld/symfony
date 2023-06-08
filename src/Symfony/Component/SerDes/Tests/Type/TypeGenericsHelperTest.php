@@ -15,7 +15,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
-use Symfony\Component\SerDes\Type\UnionType;
 
 class TypeGenericsHelperTest extends TestCase
 {
@@ -26,7 +25,7 @@ class TypeGenericsHelperTest extends TestCase
      */
     public function testReplaceGenericTypes(string $expectedType, string $type, array $genericTypes)
     {
-        $genericTypes = array_map(fn (string $t): Type|UnionType => TypeFactory::createFromString($t), $genericTypes);
+        $genericTypes = array_map(fn (string $t): Type => TypeFactory::createFromString($t), $genericTypes);
 
         $this->assertEquals($expectedType, (new TypeGenericsHelper())->replaceGenericTypes(TypeFactory::createFromString($type), $genericTypes));
     }

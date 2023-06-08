@@ -19,20 +19,19 @@ use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyUnitEnum;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 class TypeFactoryTest extends TestCase
 {
     /**
      * @dataProvider createFromStringDataProvider
      */
-    public function testCreateFromString(Type|UnionType $expectedType, string $string)
+    public function testCreateFromString(Type $expectedType, string $string)
     {
         $this->assertEquals($expectedType, TypeFactory::createFromString($string));
     }
 
     /**
-     * @return iterable<array{0: Type|UnionType, 1: string}>
+     * @return iterable<array{0: Type, 1: string}>
      */
     public static function createFromStringDataProvider(): iterable
     {
@@ -101,21 +100,27 @@ class TypeFactoryTest extends TestCase
         ];
 
         // union types
-        yield [new UnionType([new Type('int'), new Type('string')]), 'int|string'];
-        yield [new UnionType([new Type('int'), new Type('string'), new Type('null')]), 'int|string|null'];
-        yield [new UnionType([new Type('int'), new Type('string'), new Type('null')]), 'int|?string|null'];
+        yield [new Type('int|string', unionTypes: [new Type('int'), new Type('string')]), 'int|string'];
+        yield [new Type('int|string|null', unionTypes: [new Type('int'), new Type('string'), new Type('null')]), 'int|string|null'];
+        yield [new Type('int|?string|null', unionTypes: [new Type('int'), new Type('string'), new Type('null')]), 'int|?string|null'];
         yield [
-            new UnionType([
-                new Type(
-                    'array',
-                    isGeneric: true,
-                    genericParameterTypes: [new Type('string'), new UnionType([
-                        new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
-                        new Type('float'),
-                    ])],
-                ),
-                new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
-            ]),
+            new Type(
+                sprintf('array<string, %s<int>|float>|array<int, bool>', ClassicDummy::class),
+                unionTypes: [
+                    new Type(
+                        'array',
+                        isGeneric: true,
+                        genericParameterTypes: [
+                            new Type('string'),
+                            new Type(sprintf('%s<int>|float', ClassicDummy::class), unionTypes: [
+                                new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
+                                new Type('float'),
+                            ]),
+                        ],
+                    ),
+                    new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
+                ],
+            ),
             sprintf('array<string, %s<int>|float>|array<int, bool>', ClassicDummy::class),
         ];
     }

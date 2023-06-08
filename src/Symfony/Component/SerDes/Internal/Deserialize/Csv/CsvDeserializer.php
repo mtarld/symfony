@@ -15,7 +15,6 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Internal\Deserialize\Deserializer;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,9 +31,9 @@ final class CsvDeserializer extends Deserializer
         parent::__construct($reflectionTypeExtractor);
     }
 
-    public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed
+    public function deserialize(mixed $resource, Type $type, array $context): mixed
     {
-        if ($type instanceof UnionType || !$type->isList()) {
+        if (!$type->isList()) {
             throw new InvalidArgumentException(sprintf('Expecting type to be a list, but got "%s".', (string) $type));
         }
 
@@ -126,7 +125,7 @@ final class CsvDeserializer extends Deserializer
         return $data;
     }
 
-    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
+    protected function deserializeObjectPropertyValue(Type $type, mixed $resource, mixed $value, array $context): mixed
     {
         ++$context['csv_depth'];
 
@@ -139,7 +138,7 @@ final class CsvDeserializer extends Deserializer
      *
      * @return \Iterator<mixed>
      */
-    private function lazyDeserialize(\Iterator $rows, Type|UnionType $collectionValueType, array $context): \Iterator
+    private function lazyDeserialize(\Iterator $rows, Type $collectionValueType, array $context): \Iterator
     {
         foreach ($rows as $row) {
             yield $this->doDeserialize($row, $collectionValueType, $context);

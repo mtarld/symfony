@@ -29,7 +29,6 @@ use Symfony\Component\SerDes\Internal\Serialize\VariableNameScoperTrait;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeSorter;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -75,8 +74,8 @@ abstract class TemplateGenerator
     abstract protected function dictNodes(Type $type, NodeInterface $accessor, array $context): array;
 
     /**
-     * @param array<string, array{name: string, type: Type|UnionType, accessor: NodeInterface}> $properties
-     * @param array<string, mixed>                                                              $context
+     * @param array<string, array{name: string, type: Type, accessor: NodeInterface}> $properties
+     * @param array<string, mixed>                                                    $context
      *
      * @return list<NodeInterface>
      */
@@ -94,7 +93,7 @@ abstract class TemplateGenerator
      *
      * @return list<NodeInterface>
      */
-    final public function generate(Type|UnionType $type, NodeInterface $accessor, array $context): array
+    final public function generate(Type $type, NodeInterface $accessor, array $context): array
     {
         if (!$type->isNullable()) {
             return $this->nodes($type, $accessor, $context);
@@ -114,27 +113,23 @@ abstract class TemplateGenerator
      *
      * @return list<NodeInterface>
      */
-    private function nodes(Type|UnionType $type, NodeInterface $accessor, array $context): array
+    private function nodes(Type $type, NodeInterface $accessor, array $context): array
     {
-        if ($type instanceof UnionType) {
-            if (\count($type->types) <= 0) {
-                return [];
-            }
+        if ($type->isUnion()) {
+            $unionTypes = $this->typeSorter->sortByPrecision($type->unionTypes());
 
-            $types = $this->typeSorter->sortByPrecision($type->types);
-
-            if (1 === \count($types)) {
-                return $this->generate($types[0], $accessor, $context);
+            if (1 === \count($unionTypes)) {
+                return $this->generate($unionTypes[0], $accessor, $context);
             }
 
             /** @var Type $ifType */
-            $ifType = array_shift($types);
+            $ifType = array_shift($unionTypes);
 
             /** @var Type $elseType */
-            $elseType = array_pop($types);
+            $elseType = array_pop($unionTypes);
 
             /** @var list<array{condition: NodeInterface, body: list<NodeInterface>}> $elseIfTypes */
-            $elseIfTypes = array_map(fn (Type $t): array => ['condition' => $this->typeValidatorNode($t, $accessor), 'body' => $this->generate($t, $accessor, $context)], $types);
+            $elseIfTypes = array_map(fn (Type $t): array => ['condition' => $this->typeValidatorNode($t, $accessor), 'body' => $this->generate($t, $accessor, $context)], $unionTypes);
 
             return [new IfNode(
                 $this->typeValidatorNode($ifType, $accessor),
@@ -188,7 +183,7 @@ abstract class TemplateGenerator
             }
 
             if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
-                /** @var array{properties?: array<string, array{name: string, type: Type|UnionType, accessor: string}>, context?: array<string, mixed>} $hookResult */
+                /** @var array{properties?: array<string, array{name: string, type: Type, accessor: string}>, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook(
                     $type,
                     (new Compiler())->compile(new VariableNode($objectName))->source(),
@@ -221,7 +216,7 @@ abstract class TemplateGenerator
         return $this->mixedNodes($accessor, $context);
     }
 
-    private function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
+    protected function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
     {
         return match (true) {
             $type->isNull() => new BinaryNode('===', new ScalarNode(null), $accessor),

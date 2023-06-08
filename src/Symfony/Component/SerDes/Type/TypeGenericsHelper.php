@@ -19,37 +19,22 @@ namespace Symfony\Component\SerDes\Type;
 final class TypeGenericsHelper
 {
     /**
-     * @template T of Type|UnionType
-     *
-     * @param T                             $type
-     * @param array<string, Type|UnionType> $genericTypes
-     *
-     * @return T
+     * @param array<string, Type> $genericTypes
      */
-    public function replaceGenericTypes(Type|UnionType $type, array $genericTypes): Type|UnionType
+    public function replaceGenericTypes(Type $type, array $genericTypes): Type
     {
-        if ($type instanceof UnionType) {
-            return new UnionType(array_map(fn (Type $t): Type => $this->replaceGenericTypes($t, $genericTypes), $type->types));
-        }
+        $unionTypes = array_map(fn (Type $t): Type => $this->replaceGenericTypes($t, $genericTypes), $type->unionTypes());
+        $genericParameterTypes = array_map(fn (Type $t): Type => $this->replaceGenericTypes($t, $genericTypes), $type->genericParameterTypes());
 
-        if ([] !== $type->genericParameterTypes()) {
-            $genericParameterTypes = array_map(fn (Type|UnionType $t): Type|UnionType => $this->replaceGenericTypes($t, $genericTypes), $type->genericParameterTypes());
+        $type = new Type(
+            name: $type->name(),
+            isNullable: $type->isNullable(),
+            className: $type->hasClass() ? $type->className() : null,
+            isGeneric: $type->isGeneric(),
+            genericParameterTypes: $genericParameterTypes,
+            unionTypes: $unionTypes,
+        );
 
-            return new Type(
-                name: $type->name(),
-                isNullable: $type->isNullable(),
-                className: $type->hasClass() ? $type->className() : null,
-                isGeneric: true,
-                genericParameterTypes: $genericParameterTypes,
-            );
-        }
-
-        /** @var T|null $genericType */
-        $genericType = $genericTypes[(string) $type] ?? null;
-        if (null !== $genericType) {
-            return $genericType;
-        }
-
-        return $type;
+        return $genericTypes[(string) $type] ?? $type;
     }
 }

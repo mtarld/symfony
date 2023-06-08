@@ -535,20 +535,94 @@ class CsvTemplateGeneratorTest extends TestCase
                 new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
             ])),
             new ForEachNode(new VariableNode('accessor'), null, 'row_0', [
-                new ExpressionNode(new FunctionNode('\fputcsv', [
-                    new VariableNode('resource'),
-                    new ArrayNode([new VariableNode('row_0')]),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
-                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
-                    new ScalarNode(''),
-                ])),
+                new IfNode(new FunctionNode('\is_int', [new VariableNode('row_0')]), [
+                    new ExpressionNode(new FunctionNode('\fputcsv', [
+                        new VariableNode('resource'),
+                        new ArrayNode([new VariableNode('row_0')]),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
+                        new ScalarNode(''),
+                    ])),
+                ], [
+                    new ExpressionNode(new FunctionNode('\fputcsv', [
+                        new VariableNode('resource'),
+                        new ArrayNode([new VariableNode('row_0')]),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
+                        new ScalarNode(''),
+                    ])),
+                ]),
                 new ExpressionNode(new FunctionNode('\fwrite', [
                     new VariableNode('resource'),
                     new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
                 ])),
             ]),
-        ], $this->templateGenerator->generate(TypeFactory::createFromString('array<int, int|array<int, string>>'), new VariableNode('accessor'), []));
+        ], $this->templateGenerator->generate(TypeFactory::createFromString('array<int, int|string>'), new VariableNode('accessor'), []));
+    }
+
+    public function testGenerateUnionDict()
+    {
+        $this->assertEquals([
+            new ExpressionNode(new AssignNode(
+                new VariableNode('headers_0'),
+                new FunctionNode('\array_reduce', [
+                    new VariableNode('accessor'),
+                    new ClosureNode(
+                        new ArgumentsNode(['c' => 'array', 'i' => 'array']),
+                        'array',
+                        true,
+                        [
+                            new ExpressionNode(new ReturnNode(new FunctionNode('\array_values', [
+                                new FunctionNode('\array_unique', [
+                                    new FunctionNode('\array_merge', [new VariableNode('c'), new FunctionNode('\array_keys', [new VariableNode('i')])]),
+                                ]),
+                            ]))),
+                        ],
+                    ),
+                    new ArrayNode([]),
+                ]),
+            )),
+            new ExpressionNode(new AssignNode(new VariableNode('flippedHeaders_0'), new FunctionNode('\array_fill_keys', [new VariableNode('headers_0'), new ScalarNode('')]))),
+            new ExpressionNode(new FunctionNode('\fputcsv', [
+                new VariableNode('resource'),
+                new VariableNode('headers_0'),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
+                new ScalarNode(''),
+            ])),
+            new ExpressionNode(new FunctionNode('\fwrite', [
+                new VariableNode('resource'),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
+            ])),
+            new ForEachNode(new VariableNode('accessor'), null, 'row_0', [
+                new IfNode(new FunctionNode('\is_int', [new VariableNode('row_0')]), [
+                    new ExpressionNode(new FunctionNode('\fputcsv', [
+                        new VariableNode('resource'),
+                        new FunctionNode('\array_replace', [new VariableNode('flippedHeaders_0'), new VariableNode('row_0')]),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
+                        new ScalarNode(''),
+                    ])),
+                ], [
+                    new ExpressionNode(new FunctionNode('\fputcsv', [
+                        new VariableNode('resource'),
+                        new FunctionNode('\array_replace', [new VariableNode('flippedHeaders_0'), new VariableNode('row_0')]),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_separator')), new ScalarNode(',')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_enclosure')), new ScalarNode('"')),
+                        new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_escape_char')), new ScalarNode('\\')),
+                        new ScalarNode(''),
+                    ])),
+                ]),
+                new ExpressionNode(new FunctionNode('\fwrite', [
+                    new VariableNode('resource'),
+                    new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('csv_end_of_line')), new ScalarNode("\n")),
+                ])),
+            ]),
+        ], $this->templateGenerator->generate(TypeFactory::createFromString('array<int, array<string, int|string>>'), new VariableNode('accessor'), []));
     }
 
     public function testGenerateThrowWhenCannotGuessHeaders()

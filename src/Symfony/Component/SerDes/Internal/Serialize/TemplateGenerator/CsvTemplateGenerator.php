@@ -33,7 +33,6 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -78,11 +77,6 @@ final class CsvTemplateGenerator extends TemplateGenerator
 
         if (0 === $depth) {
             $collectionValueType = $type->collectionValueType();
-            if ($collectionValueType instanceof UnionType) {
-                $collectionValueTypes = $this->typeSorter->sortByPrecision($collectionValueType->types);
-                /** @var Type $collectionValueType */
-                $collectionValueType = reset($collectionValueTypes);
-            }
 
             $rowName = $this->scopeVariableName('row', $context);
             $flippedHeadersName = $this->scopeVariableName('flippedHeaders', $context);
@@ -175,11 +169,38 @@ final class CsvTemplateGenerator extends TemplateGenerator
         if (1 === $depth) {
             $collectionValueType = $type->collectionValueType();
 
-            if ($collectionValueType instanceof Type && !$collectionValueType->isScalar() && !$collectionValueType->isEnum() && !$collectionValueType->isNull()) {
+            if ($collectionValueType->isUnion()) {
+                $unionTypes = $this->typeSorter->sortByPrecision($collectionValueType->unionTypes());
+
+                if (1 === \count($unionTypes)) {
+                    return $this->generate(TypeFactory::createFromString(sprintf('array<int, %s>', (string) $unionTypes[0])), $accessor, $context);
+                }
+
+                /** @var Type $ifType */
+                $ifType = array_shift($unionTypes);
+
+                /** @var Type $elseType */
+                $elseType = array_pop($unionTypes);
+
+                /** @var list<array{condition: NodeInterface, body: list<NodeInterface>}> $elseIfTypes */
+                $elseIfTypes = array_map(fn (Type $t): array => [
+                    'condition' => $this->typeValidatorNode($t, $accessor),
+                    'body' => $this->generate(TypeFactory::createFromString(sprintf('array<int, %s>', (string) $t)), $accessor, $context),
+                ], $unionTypes);
+
+                return [new IfNode(
+                    $this->typeValidatorNode($ifType, $accessor),
+                    $this->generate(TypeFactory::createFromString(sprintf('array<int, %s>', (string) $ifType)), $accessor, $context),
+                    $this->generate(TypeFactory::createFromString(sprintf('array<int, %s>', (string) $elseType)), $accessor, $context),
+                    $elseIfTypes,
+                )];
+            }
+
+            if ($collectionValueType->isObject() || $collectionValueType->isCollection()) {
                 throw $this->tooDeepException();
             }
 
-            if ($collectionValueType instanceof Type && $collectionValueType->isEnum()) {
+            if ($collectionValueType->isEnum()) {
                 $accessor = new FunctionNode('\array_map', [new ClosureNode(new ArgumentsNode(['e' => '\\'.\BackedEnum::class]), 'int|string', true, [
                     new ExpressionNode(new ReturnNode(new PropertyNode(new VariableNode('e'), 'value'))),
                 ]), $accessor]);
@@ -202,11 +223,38 @@ final class CsvTemplateGenerator extends TemplateGenerator
         if (1 === $depth) {
             $collectionValueType = $type->collectionValueType();
 
-            if ($collectionValueType instanceof Type && !$collectionValueType->isScalar() && !$collectionValueType->isEnum() && !$collectionValueType->isNull()) {
+            if ($collectionValueType->isUnion()) {
+                $unionTypes = $this->typeSorter->sortByPrecision($collectionValueType->unionTypes());
+
+                if (1 === \count($unionTypes)) {
+                    return $this->generate(TypeFactory::createFromString(sprintf('array<string, %s>', (string) $unionTypes[0])), $accessor, $context);
+                }
+
+                /** @var Type $ifType */
+                $ifType = array_shift($unionTypes);
+
+                /** @var Type $elseType */
+                $elseType = array_pop($unionTypes);
+
+                /** @var list<array{condition: NodeInterface, body: list<NodeInterface>}> $elseIfTypes */
+                $elseIfTypes = array_map(fn (Type $t): array => [
+                    'condition' => $this->typeValidatorNode($t, $accessor),
+                    'body' => $this->dictNodes(TypeFactory::createFromString(sprintf('array<string, %s>', (string) $t)), $accessor, $context),
+                ], $unionTypes);
+
+                return [new IfNode(
+                    $this->typeValidatorNode($ifType, $accessor),
+                    $this->generate(TypeFactory::createFromString(sprintf('array<string, %s>', (string) $ifType)), $accessor, $context),
+                    $this->generate(TypeFactory::createFromString(sprintf('array<string, %s>', (string) $elseType)), $accessor, $context),
+                    $elseIfTypes,
+                )];
+            }
+
+            if ($collectionValueType->isObject() || $collectionValueType->isCollection()) {
                 throw $this->tooDeepException();
             }
 
-            if ($collectionValueType instanceof Type && $collectionValueType->isEnum()) {
+            if ($collectionValueType->isEnum()) {
                 $accessor = new FunctionNode('\array_map', [new ClosureNode(new ArgumentsNode(['e' => '\\'.\BackedEnum::class]), 'int|string', true, [
                     new ExpressionNode(new ReturnNode(new PropertyNode(new VariableNode('e'), 'value'))),
                 ]), $accessor]);
@@ -397,7 +445,7 @@ final class CsvTemplateGenerator extends TemplateGenerator
         ];
     }
 
-    private function notAListException(Type|UnionType $type): \Throwable
+    private function notAListException(Type $type): \Throwable
     {
         return new UnexpectedValueException(sprintf('Expecting first level data type to be a list, but got "%s".', (string) $type));
     }

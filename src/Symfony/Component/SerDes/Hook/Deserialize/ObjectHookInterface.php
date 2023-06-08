@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Hook\Deserialize;
 
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -22,10 +21,10 @@ use Symfony\Component\SerDes\Type\UnionType;
 interface ObjectHookInterface
 {
     /**
-     * @param array<string, array{name: string, value_provider: callable(Type|UnionType): mixed}> $properties
-     * @param array<string, mixed>                                                                $context
+     * @param array<string, array{name: string, value_provider: callable(Type): mixed}> $properties
+     * @param array<string, mixed>                                                      $context
      *
-     * @return array{properties?: array<string, array{name: string, value_provider: callable(Type|UnionType): mixed}>, context?: array<string, mixed>}
+     * @return array{properties?: array<string, array{name: string, value_provider: callable(Type): mixed}>, context?: array<string, mixed>}
      */
     public function __invoke(Type $type, array $properties, array $context): array;
 }

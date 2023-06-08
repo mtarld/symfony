@@ -15,7 +15,6 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -125,7 +124,7 @@ final class ObjectHook implements ObjectHookInterface
      * @param class-string         $className
      * @param array<string, mixed> $context
      */
-    private function propertyType(string $className, string $name, ?\ReflectionFunction $formatter, array $context): Type|UnionType
+    private function propertyType(string $className, string $name, ?\ReflectionFunction $formatter, array $context): Type
     {
         $type = null === $formatter
             ? $this->typeExtractor->extractFromProperty(new \ReflectionProperty($className, $name))

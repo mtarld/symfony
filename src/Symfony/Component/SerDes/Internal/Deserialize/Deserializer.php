@@ -16,7 +16,6 @@ use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -74,20 +73,20 @@ abstract class Deserializer
     /**
      * @param array<string, mixed> $context
      */
-    abstract protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $dataOrResource, mixed $value, array $context): mixed;
+    abstract protected function deserializeObjectPropertyValue(Type $type, mixed $dataOrResource, mixed $value, array $context): mixed;
 
     /**
      * @param resource             $resource
      * @param array<string, mixed> $context
      */
-    abstract public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed;
+    abstract public function deserialize(mixed $resource, Type $type, array $context): mixed;
 
     /**
      * @param array<string, mixed> $context
      */
-    protected function doDeserialize(mixed $dataOrResource, Type|UnionType $type, array $context): mixed
+    protected function doDeserialize(mixed $dataOrResource, Type $type, array $context): mixed
     {
-        if ($type instanceof UnionType) {
+        if ($type->isUnion()) {
             $selectedType = ($context['union_selector'][$typeString = (string) $type] ?? null);
             if (null === $selectedType) {
                 throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
@@ -187,12 +186,12 @@ abstract class Deserializer
             foreach ($values as $name => $value) {
                 $properties[$name] = [
                     'name' => $name,
-                    'value_provider' => fn (Type|UnionType $type) => $this->deserializeObjectPropertyValue($type, $dataOrResource, $value, $context),
+                    'value_provider' => fn (Type $type) => $this->deserializeObjectPropertyValue($type, $dataOrResource, $value, $context),
                 ];
             }
 
             if (null !== $hook = $context['hooks']['deserialize'][$className] ?? $context['hooks']['deserialize']['object'] ?? null) {
-                /** @var array{properties?: array<string, array{name: string, value_provider: callable(Type|UnionType): mixed}>, context?: array<string, mixed>} $hookResult */
+                /** @var array{properties?: array<string, array{name: string, value_provider: callable(Type): mixed}>, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook($type, $properties, $context);
 
                 $context = $hookResult['context'] ?? $context;

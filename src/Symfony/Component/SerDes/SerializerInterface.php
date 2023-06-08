@@ -15,7 +15,6 @@ use Symfony\Component\SerDes\Context\ContextInterface;
 use Symfony\Component\SerDes\Exception\PartialDeserializationException;
 use Symfony\Component\SerDes\Stream\StreamInterface;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -36,5 +35,5 @@ interface SerializerInterface
      *
      * @throws PartialDeserializationException
      */
-    public function deserialize(mixed $input, Type|UnionType|string $type, string $format, ContextInterface|array $context = []): mixed;
+    public function deserialize(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed;
 }

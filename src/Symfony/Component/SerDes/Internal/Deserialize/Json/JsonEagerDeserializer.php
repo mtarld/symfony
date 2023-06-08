@@ -15,7 +15,6 @@ use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Internal\Deserialize\Deserializer;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -31,7 +30,7 @@ final class JsonEagerDeserializer extends Deserializer
         parent::__construct($reflectionTypeExtractor);
     }
 
-    public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed
+    public function deserialize(mixed $resource, Type $type, array $context): mixed
     {
         $data = $this->decoder->decode($resource, 0, -1, $context);
 
@@ -87,7 +86,7 @@ final class JsonEagerDeserializer extends Deserializer
         return $data;
     }
 
-    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
+    protected function deserializeObjectPropertyValue(Type $type, mixed $resource, mixed $value, array $context): mixed
     {
         return $this->doDeserialize($value, $type, $context);
     }
@@ -98,7 +97,7 @@ final class JsonEagerDeserializer extends Deserializer
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
-    private function deserializeCollectionItems(array $collection, Type|UnionType $type, array $context): \Iterator
+    private function deserializeCollectionItems(array $collection, Type $type, array $context): \Iterator
     {
         foreach ($collection as $key => $value) {
             yield $key => $this->doDeserialize($value, $type, $context);

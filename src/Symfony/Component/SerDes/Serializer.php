@@ -17,7 +17,6 @@ use Symfony\Component\SerDes\Stream\StreamInterface;
 use Symfony\Component\SerDes\Template\TemplateHelper;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -71,7 +70,7 @@ final class Serializer implements SerializerInterface
         serialize($data, $output, $format, $context);
     }
 
-    public function deserialize(mixed $input, Type|UnionType|string $type, string $format, ContextInterface|array $context = []): mixed
+    public function deserialize(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed
     {
         if ($input instanceof StreamInterface) {
             $input = $input->resource();

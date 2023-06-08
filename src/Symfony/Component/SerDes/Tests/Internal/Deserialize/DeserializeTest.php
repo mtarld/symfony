@@ -19,7 +19,6 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 use function Symfony\Component\SerDes\deserialize;
 
@@ -40,7 +39,7 @@ class DeserializeTest extends TestCase
      *
      * @param callable(string, string, array<string, mixed>): mixed
      */
-    public function testDeserializeUnionType(callable $deserialize)
+    public function testDeserializeUnion(callable $deserialize)
     {
         $this->assertSame([1, 2, 3], $deserialize('[1, "2", "3"]', 'array<int, int|string>', context: ['union_selector' => ['int|string' => 'int']]));
         $this->assertEquals(1, $deserialize('1', 'int', context: ['lazy_reading' => true]));
@@ -147,7 +146,7 @@ class DeserializeTest extends TestCase
                 'deserialize' => [
                     ClassicDummy::class => static function (Type $type, array $properties, array $context): array {
                         $properties['@id']['name'] = 'id';
-                        $properties['name']['value_provider'] = fn (Type|UnionType $type) => sprintf('HOOK_VALUE(%s)', $properties['name']['value_provider']($type));
+                        $properties['name']['value_provider'] = fn (Type $type) => sprintf('HOOK_VALUE(%s)', $properties['name']['value_provider']($type));
 
                         return ['properties' => $properties];
                     },
@@ -231,7 +230,7 @@ class DeserializeTest extends TestCase
                 'hooks' => [
                     'deserialize' => [
                         ClassicDummy::class => static function (Type $type, array $properties, array $context): array {
-                            $properties['name']['value_provider'] = fn (Type|UnionType $type) => 'ok' === $properties['name']['value_provider']($type) ? 'ok' : new \DateTimeImmutable();
+                            $properties['name']['value_provider'] = fn (Type $type) => 'ok' === $properties['name']['value_provider']($type) ? 'ok' : new \DateTimeImmutable();
 
                             return ['properties' => $properties];
                         },

@@ -15,7 +15,6 @@ use Symfony\Component\SerDes\Exception\InvalidArgumentException;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -25,7 +24,7 @@ use Symfony\Component\SerDes\Type\UnionType;
 final class ObjectHook implements ObjectHookInterface
 {
     /**
-     * @var array{type: array<string, Type|UnionType>}
+     * @var array{type: array<string, Type>}
      */
     private static array $cache = [
         'type' => [],
@@ -73,7 +72,7 @@ final class ObjectHook implements ObjectHookInterface
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $context['_symfony']['generic_parameter_types'][$className]);
                 }
 
-                $property['value_provider'] = fn (Type|UnionType $initialType) => $property['value_provider']($type);
+                $property['value_provider'] = fn (Type $initialType) => $property['value_provider']($type);
 
                 continue;
             }
@@ -89,7 +88,7 @@ final class ObjectHook implements ObjectHookInterface
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $context['_symfony']['generic_parameter_types'][$className]);
             }
 
-            $property['value_provider'] = fn (Type|UnionType $initialType) => $propertyFormatter($property['value_provider']($type), $context);
+            $property['value_provider'] = fn (Type $initialType) => $propertyFormatter($property['value_provider']($type), $context);
         }
 
         return [

@@ -18,11 +18,11 @@ namespace Symfony\Component\SerDes\Type;
  */
 interface TypeExtractorInterface
 {
-    public function extractFromProperty(\ReflectionProperty $property): Type|UnionType;
+    public function extractFromProperty(\ReflectionProperty $property): Type;
 
-    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type|UnionType;
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type;
 
-    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type|UnionType;
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type;
 
     /**
      * @param \ReflectionClass<object> $class

@@ -14,7 +14,6 @@ namespace Symfony\Component\SerDes\Internal\Deserialize\Json;
 use Symfony\Component\SerDes\Internal\Deserialize\Deserializer;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,7 +31,7 @@ final class JsonLazyDeserializer extends Deserializer
         parent::__construct($reflectionTypeExtractor);
     }
 
-    public function deserialize(mixed $resource, Type|UnionType $type, array $context): mixed
+    public function deserialize(mixed $resource, Type $type, array $context): mixed
     {
         return $this->doDeserialize($resource, $type, $context);
     }
@@ -74,7 +73,7 @@ final class JsonLazyDeserializer extends Deserializer
         return $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
     }
 
-    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
+    protected function deserializeObjectPropertyValue(Type $type, mixed $resource, mixed $value, array $context): mixed
     {
         return $this->doDeserialize($resource, $type, ['boundary' => $value] + $context);
     }
@@ -86,7 +85,7 @@ final class JsonLazyDeserializer extends Deserializer
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
-    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type|UnionType $type, array $context): \Iterator
+    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, array $context): \Iterator
     {
         foreach ($boundaries as $key => $boundary) {
             yield $key => $this->doDeserialize($resource, $type, ['boundary' => $boundary] + $context);

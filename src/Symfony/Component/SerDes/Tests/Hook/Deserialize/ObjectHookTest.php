@@ -23,7 +23,6 @@ use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 class ObjectHookTest extends TestCase
 {
@@ -87,7 +86,7 @@ class ObjectHookTest extends TestCase
 
         $result = (new ObjectHook($typeExtractor))(TypeFactory::createFromString(ClassicDummy::class), ['@id' => [
             'name' => 'id',
-            'value_provider' => fn (Type|UnionType $t) => null,
+            'value_provider' => fn (Type $t) => null,
         ]], $context);
 
         $this->assertSame('id', $result['properties']['@id']['name']);
@@ -112,7 +111,7 @@ class ObjectHookTest extends TestCase
 
         $result = (new ObjectHook($typeExtractor))(TypeFactory::createFromString(ClassicDummy::class), ['id' => [
             'name' => 'id',
-            'value_provider' => fn (Type|UnionType $t) => null,
+            'value_provider' => fn (Type $t) => null,
         ]], $context);
 
         $this->assertArrayNotHasKey('id', $result['properties']);
@@ -138,7 +137,7 @@ class ObjectHookTest extends TestCase
 
         $result = (new ObjectHook($typeExtractor))(TypeFactory::createFromString(ClassicDummy::class), ['id' => [
             'name' => 'id',
-            'value_provider' => fn (Type|UnionType $t) => null,
+            'value_provider' => fn (Type $t) => null,
         ]], $context);
 
         $this->assertArrayHasKey('id', $result['properties']);
@@ -149,7 +148,7 @@ class ObjectHookTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $type = null;
-        $valueProvider = static function (Type|UnionType $valueType) use (&$type) {
+        $valueProvider = static function (Type $valueType) use (&$type) {
             $type = $valueType;
         };
 
@@ -176,7 +175,7 @@ class ObjectHookTest extends TestCase
         ];
 
         $type = null;
-        $valueProvider = static function (Type|UnionType $valueType) use (&$type) {
+        $valueProvider = static function (Type $valueType) use (&$type) {
             $type = $valueType;
         };
 
@@ -195,7 +194,7 @@ class ObjectHookTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 
         $type = null;
-        $valueProvider = static function (Type|UnionType $valueType) use (&$type): int {
+        $valueProvider = static function (Type $valueType) use (&$type): int {
             $type = $valueType;
 
             return 123;
@@ -229,7 +228,7 @@ class ObjectHookTest extends TestCase
         $typeExtractor->method('extractFromFunctionParameter')->willReturn(TypeFactory::createFromString('T'));
 
         $type = null;
-        $valueProvider = static function (Type|UnionType $valueType) use (&$type): int {
+        $valueProvider = static function (Type $valueType) use (&$type): int {
             $type = $valueType;
 
             return 123;
@@ -266,7 +265,7 @@ class ObjectHookTest extends TestCase
         $typeExtractor->method('extractFromFunctionParameter')->willReturn(TypeFactory::createFromString('T'));
 
         $type = null;
-        $valueProvider = static function (Type|UnionType $valueType) use (&$type): int {
+        $valueProvider = static function (Type $valueType) use (&$type): int {
             $type = $valueType;
 
             return 123;
@@ -316,7 +315,7 @@ class ObjectHookTest extends TestCase
 
         $result = (new ObjectHook($typeExtractor))(TypeFactory::createFromString(ClassicDummy::class), ['name' => [
             'name' => 'name',
-            'value_provider' => fn (Type|UnionType $t) => 'the_name',
+            'value_provider' => fn (Type $t) => 'the_name',
         ]], $context);
 
         $this->assertSame('THE_NAME', $result['properties']['name']['value_provider'](TypeFactory::createFromString('string')));

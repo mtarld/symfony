@@ -21,7 +21,7 @@ use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
  */
 final class ReflectionTypeExtractor implements TypeExtractorInterface
 {
-    public function extractFromProperty(\ReflectionProperty $property): Type|UnionType
+    public function extractFromProperty(\ReflectionProperty $property): Type
     {
         if (null === $type = $property->getType()) {
             throw MissingTypeException::forProperty($property);
@@ -30,7 +30,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $property->getDeclaringClass());
     }
 
-    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type|UnionType
+    public function extractFromFunctionReturn(\ReflectionFunctionAbstract $function): Type
     {
         /** @var \ReflectionClass<object>|null $declaringClass */
         $declaringClass = $function instanceof \ReflectionMethod ? $function->getDeclaringClass() : $function->getClosureScopeClass();
@@ -42,7 +42,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
         return $this->extractFromReflection($type, $declaringClass);
     }
 
-    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type|UnionType
+    public function extractFromFunctionParameter(\ReflectionParameter $parameter): Type
     {
         $function = $parameter->getDeclaringFunction();
 
@@ -59,7 +59,7 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
     /**
      * @param \ReflectionClass<object>|null $declaringClass
      */
-    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): Type|UnionType
+    private function extractFromReflection(\ReflectionType $reflection, ?\ReflectionClass $declaringClass): Type
     {
         if (!($reflection instanceof \ReflectionUnionType || $reflection instanceof \ReflectionNamedType)) {
             throw new UnsupportedTypeException((string) $reflection);
@@ -67,9 +67,9 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
 
         if ($reflection instanceof \ReflectionUnionType) {
             /** @var list<Type> $unionTypes */
-            $unionTypes = array_map(fn (\ReflectionNamedType $t): string => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes());
+            $unionTypes = array_map(fn (\ReflectionNamedType $t): Type => $this->extractFromReflection($t, $declaringClass), $reflection->getTypes());
 
-            return new UnionType($unionTypes);
+            return new Type((string) $reflection, unionTypes: $unionTypes);
         }
 
         $nullablePrefix = $reflection->allowsNull() ? '?' : '';

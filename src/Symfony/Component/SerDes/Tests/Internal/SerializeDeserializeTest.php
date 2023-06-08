@@ -17,7 +17,6 @@ use Symfony\Component\SerDes\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
-use Symfony\Component\SerDes\Type\UnionType;
 
 use function Symfony\Component\SerDes\deserialize;
 use function Symfony\Component\SerDes\serialize;
@@ -83,7 +82,7 @@ class SerializeDeserializeTest extends TestCase
                 DummyWithFormatterAttributes::class => static function (Type $type, array $properties, array $context): array {
                     $properties['@name']['name'] = 'name';
                     $properties['@name']['type'] = TypeFactory::createFromString('int');
-                    $properties['@name']['value_provider'] = fn (Type|UnionType $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
+                    $properties['@name']['value_provider'] = fn (Type $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
 
                     return ['properties' => $properties];
                 },
@@ -109,7 +108,7 @@ class SerializeDeserializeTest extends TestCase
                 DummyWithFormatterAttributes::class => static function (Type $type, array $properties, array $context): array {
                     $properties['@name']['name'] = 'name';
                     $properties['@name']['type'] = TypeFactory::createFromString('int');
-                    $properties['@name']['value_provider'] = fn (Type|UnionType $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
+                    $properties['@name']['value_provider'] = fn (Type $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
 
                     return ['properties' => $properties];
                 },
@@ -165,7 +164,7 @@ class SerializeDeserializeTest extends TestCase
                 DummyWithFormatterAttributes::class => static function (Type $type, array $properties, array $context): array {
                     $properties['@name']['name'] = 'name';
                     $properties['@name']['type'] = TypeFactory::createFromString('int');
-                    $properties['@name']['value_provider'] = fn (Type|UnionType $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
+                    $properties['@name']['value_provider'] = fn (Type $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
 
                     return ['properties' => $properties];
                 },
@@ -190,7 +189,7 @@ class SerializeDeserializeTest extends TestCase
                 DummyWithFormatterAttributes::class => static function (Type $type, array $properties, array $context): array {
                     $properties['@name']['name'] = 'name';
                     $properties['@name']['type'] = TypeFactory::createFromString('int');
-                    $properties['@name']['value_provider'] = fn (Type|UnionType $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
+                    $properties['@name']['value_provider'] = fn (Type $type) => DummyWithFormatterAttributes::doubleAndCastToString($properties['@name']['value_provider']($type));
 
                     return ['properties' => $properties];
                 },

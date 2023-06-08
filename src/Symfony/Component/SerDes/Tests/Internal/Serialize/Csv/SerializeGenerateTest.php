@@ -539,5 +539,67 @@ class SerializeGenerateTest extends TestCase
             'array<int, ?int>',
             [],
         ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<int, int|string> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \\fputcsv(\$resource, [0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                foreach (\$data as \$row_0) {
+                    if (\\is_int(\$row_0)) {
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } else {
+                        \\fputcsv(\$resource, [\$row_0], \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    }
+                    \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                }
+            };
+
+            PHP,
+            'array<int, int|string>',
+            [],
+        ];
+
+        yield [
+            <<<PHP
+            <?php
+
+            /**
+             * @param array<int, array<string, int|string|float>> \$data
+             * @param resource \$resource
+             */
+            return static function (mixed \$data, mixed \$resource, array \$context): void {
+                \$headers_0 = \\array_reduce(\$data, static function (array \$c, array \$i): array {
+                    return \\array_values(\\array_unique(\\array_merge(\$c, \\array_keys(\$i))));
+            }, []);
+                \$flippedHeaders_0 = \\array_fill_keys(\$headers_0, "");
+                \\fputcsv(\$resource, \$headers_0, \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                foreach (\$data as \$row_0) {
+                    if (\\is_int(\$row_0)) {
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } elseif (\\is_string(\$row_0)) {
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    } else {
+                        \\fputcsv(\$resource, \\array_replace(\$flippedHeaders_0, \$row_0), \$context["csv_separator"] ?? ",", \$context["csv_enclosure"] ?? "\\"", \$context["csv_escape_char"] ?? "\\\\", "");
+                    }
+                    \\fwrite(\$resource, \$context["csv_end_of_line"] ?? "
+            ");
+                }
+            };
+
+            PHP,
+            'array<int, array<string, int|string|float>>',
+            [],
+        ];
     }
 }

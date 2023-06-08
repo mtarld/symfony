@@ -22,7 +22,7 @@ use Symfony\Component\SerDes\Exception\UnsupportedTypeException;
 abstract class TypeFactory
 {
     /**
-     * @var array<string, Type|UnionType>
+     * @var array<string, Type>
      */
     private static array $cache = [];
 
@@ -30,7 +30,7 @@ abstract class TypeFactory
     {
     }
 
-    public static function createFromString(string $string): Type|UnionType
+    public static function createFromString(string $string): Type
     {
         if (isset(self::$cache[$cacheKey = $string])) {
             return self::$cache[$cacheKey];
@@ -91,7 +91,7 @@ abstract class TypeFactory
                 $types[] = new Type('null');
             }
 
-            return self::$cache[$cacheKey] = new UnionType($types);
+            return self::$cache[$cacheKey] = new Type($string, unionTypes: $types);
         }
 
         if ('null' === $string) {
@@ -171,7 +171,7 @@ abstract class TypeFactory
                 isNullable: $isNullable,
                 isGeneric: true,
                 className: $className,
-                genericParameterTypes: array_map(fn (string $t): Type|UnionType => self::createFromString($t), $genericParameters),
+                genericParameterTypes: array_map(fn (string $t): Type => self::createFromString($t), $genericParameters),
             );
         }
 
