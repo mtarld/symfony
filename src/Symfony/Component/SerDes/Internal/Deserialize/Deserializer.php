@@ -62,9 +62,9 @@ abstract class Deserializer
     /**
      * @param array<string, mixed> $context
      *
-     * @return \Iterator<string, mixed>|array<string, mixed>|null
+     * @return array<string, mixed>|null
      */
-    abstract protected function deserializeObjectProperties(mixed $dataOrResource, Type $type, array $context): \Iterator|array|null;
+    abstract protected function deserializeObjectProperties(mixed $dataOrResource, Type $type, array $context): ?array;
 
     /**
      * @param array<string, mixed> $context
@@ -73,10 +73,8 @@ abstract class Deserializer
 
     /**
      * @param array<string, mixed> $context
-     *
-     * @return callable(): mixed
      */
-    abstract protected function propertyValueCallable(Type|UnionType $type, mixed $dataOrResource, mixed $value, array $context): callable;
+    abstract protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $dataOrResource, mixed $value, array $context): mixed;
 
     /**
      * @param resource             $resource
@@ -172,9 +170,12 @@ abstract class Deserializer
             }
 
             $className = $type->className();
-            $objectProperties = $this->deserializeObjectProperties($dataOrResource, $type, $context);
 
-            if (null === $objectProperties) {
+            /** @var \ReflectionClass<object> $reflection */
+            $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($className));
+            $values = $this->deserializeObjectProperties($dataOrResource, $type, $context);
+
+            if (null === $values) {
                 if (!$type->isNullable()) {
                     throw new UnexpectedValueException(sprintf('Unexpected "null" value for "%s" type.', (string) $type));
                 }
@@ -182,74 +183,45 @@ abstract class Deserializer
                 return null;
             }
 
-            if (null !== $hook = $context['hooks']['deserialize'][$className] ?? $context['hooks']['deserialize']['object'] ?? null) {
-                /** @var array{type?: Type|UnionType|string, context?: array<string, mixed>} $hookResult */
-                $hookResult = $hook($type, $context);
-
-                if (isset($hookResult['type'])) {
-                    /** @var Type $type */
-                    $type = \is_string($hookResult['type'])
-                        ? (self::$cache['type'][$hookResult['type']] ??= TypeFactory::createFromString($hookResult['type']))
-                        : $hookResult['type'];
-                }
-
-                $context = $hookResult['context'] ?? $context;
+            $properties = [];
+            foreach ($values as $name => $value) {
+                $properties[$name] = [
+                    'name' => $name,
+                    'value_provider' => fn (Type|UnionType $type) => $this->deserializeObjectPropertyValue($type, $dataOrResource, $value, $context),
+                ];
             }
 
-            /** @var \ReflectionClass<object> $reflection */
-            $reflection = (self::$cache['class_reflection'][$typeString = (string) $type] ??= new \ReflectionClass($className));
+            if (null !== $hook = $context['hooks']['deserialize'][$className] ?? $context['hooks']['deserialize']['object'] ?? null) {
+                /** @var array{properties?: array<string, array{name: string, value_provider: callable(Type|UnionType): mixed}>, context?: array<string, mixed>} $hookResult */
+                $hookResult = $hook($type, $properties, $context);
 
-            /** @var array<string, callable(): mixed> $valueCallables */
-            $valueCallables = [];
-
-            foreach ($objectProperties as $name => $value) {
-                if (null !== $hook = $context['hooks']['deserialize'][$className.'['.$name.']'] ?? $context['hooks']['deserialize']['property'] ?? null) {
-                    $hookResult = $hook(
-                        $reflection,
-                        $name,
-                        function (Type|UnionType|string $type, array $context) use ($dataOrResource, $value) {
-                            /** @var Type $type */
-                            $type = \is_string($type) ? (self::$cache['type'][$type] ??= TypeFactory::createFromString($type)) : $type;
-
-                            return $this->propertyValueCallable($type, $dataOrResource, $value, $context)();
-                        },
-                        $context,
-                    );
-
-                    $name = $hookResult['name'] ?? $name;
-                    $context = $hookResult['context'] ?? $context;
-
-                    if (\array_key_exists('value_provider', $hookResult) && null === $hookResult['value_provider']) {
-                        continue;
-                    }
-                }
-
-                self::$cache['class_has_property'][$identifier = $typeString.$name] ??= $reflection->hasProperty($name);
-
-                if (!self::$cache['class_has_property'][$identifier]) {
-                    continue;
-                }
-
-                if (isset($hookResult['value_provider'])) {
-                    $valueCallables[$name] = $hookResult['value_provider'];
-
-                    continue;
-                }
-
-                self::$cache['property_type'][$identifier] ??= $this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name));
-
-                $valueCallables[$name] = $this->propertyValueCallable(self::$cache['property_type'][$identifier], $dataOrResource, $value, $context);
+                $context = $hookResult['context'] ?? $context;
+                $properties = $hookResult['properties'] ?? $properties;
             }
 
             if (isset($context['instantiator'])) {
-                return $context['instantiator']($reflection, $valueCallables, $context);
+                return $context['instantiator']($reflection, array_map(function (array $property) use ($typeString, $reflection): callable {
+                    $name = $property['name'];
+                    $type = (self::$cache['property_type'][$typeString.$name] ??= $this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name)));
+
+                    return fn () => $property['value_provider']($type);
+                }, $properties), $context);
             }
 
             $object = new $className();
 
-            foreach ($valueCallables as $name => $callable) {
+            foreach ($properties as $property) {
+                $name = $property['name'];
+
+                self::$cache['class_has_property'][$identifier = $typeString.$name] ??= $reflection->hasProperty($name);
+                if (!self::$cache['class_has_property'][$identifier]) {
+                    continue;
+                }
+
+                $type = (self::$cache['property_type'][$identifier] ??= $this->reflectionTypeExtractor->extractFromProperty($reflection->getProperty($name)));
+
                 try {
-                    $object->{$name} = $callable();
+                    $object->{$name} = $property['value_provider']($type);
                 } catch (\TypeError|UnexpectedValueException $e) {
                     $exception = new UnexpectedValueException($e->getMessage(), previous: $e);
 

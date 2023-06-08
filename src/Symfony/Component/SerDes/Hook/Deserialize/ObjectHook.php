@@ -12,8 +12,10 @@
 namespace Symfony\Component\SerDes\Hook\Deserialize;
 
 use Symfony\Component\SerDes\Exception\InvalidArgumentException;
+use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeExtractorInterface;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
+use Symfony\Component\SerDes\Type\UnionType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -23,10 +25,10 @@ use Symfony\Component\SerDes\Type\TypeGenericsHelper;
 final class ObjectHook implements ObjectHookInterface
 {
     /**
-     * @var array{class_reflection: array<string, \ReflectionClass<object>>}
+     * @var array{type: array<string, Type|UnionType>}
      */
     private static array $cache = [
-        'class_reflection' => [],
+        'type' => [],
     ];
 
     private readonly TypeGenericsHelper $typeGenericsHelper;
@@ -37,10 +39,62 @@ final class ObjectHook implements ObjectHookInterface
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    public function __invoke(string $type, array $context): array
+    public function __invoke(Type $type, array $properties, array $context): array
     {
+        $className = $type->className();
+        $context = $this->addGenericParameterTypes($type, $context);
+
+        foreach ($properties as $name => &$property) {
+            if (isset($context['groups'])) {
+                $matchingGroup = false;
+                foreach ($context['groups'] as $group) {
+                    if (isset($context['_symfony']['deserialize']['property_groups'][$className][$name][$group])) {
+                        $matchingGroup = true;
+
+                        break;
+                    }
+                }
+
+                if (!$matchingGroup) {
+                    unset($properties[$name]);
+
+                    continue;
+                }
+            }
+
+            $cacheKey = $className.$name;
+
+            $property['name'] = $context['_symfony']['deserialize']['property_name'][$className][$name] ?? $name;
+
+            if (null === $formatter = $context['_symfony']['deserialize']['property_formatter'][$className][$name] ?? null) {
+                $type = (self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromProperty(new \ReflectionProperty($className, $property['name'])));
+
+                if (isset($context['_symfony']['generic_parameter_types'][$className])) {
+                    $type = $this->typeGenericsHelper->replaceGenericTypes($type, $context['_symfony']['generic_parameter_types'][$className]);
+                }
+
+                $property['value_provider'] = fn (Type|UnionType $initialType) => $property['value_provider']($type);
+
+                continue;
+            }
+
+            $cacheKey .= ($propertyFormatterHash = json_encode($context['_symfony']['deserialize']['property_formatter'][$className][$property['name']]));
+
+            $propertyFormatter = \Closure::fromCallable($context['_symfony']['deserialize']['property_formatter'][$className][$property['name']]);
+            $propertyFormatterReflection = new \ReflectionFunction($propertyFormatter);
+
+            $type = (self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromFunctionParameter($propertyFormatterReflection->getParameters()[0]));
+
+            if (isset($context['_symfony']['generic_parameter_types'][$className]) && $propertyFormatterReflection->getClosureScopeClass()?->getName() === $className) {
+                $type = $this->typeGenericsHelper->replaceGenericTypes($type, $context['_symfony']['generic_parameter_types'][$className]);
+            }
+
+            $property['value_provider'] = fn (Type|UnionType $initialType) => $propertyFormatter($property['value_provider']($type), $context);
+        }
+
         return [
-            'context' => $this->addGenericParameterTypes($type, $context),
+            'properties' => $properties,
+            'context' => $context,
         ];
     }
 
@@ -49,29 +103,19 @@ final class ObjectHook implements ObjectHookInterface
      *
      * @return array<string, mixed>
      */
-    private function addGenericParameterTypes(string $type, array $context): array
+    private function addGenericParameterTypes(Type $type, array $context): array
     {
-        $generics = $this->typeGenericsHelper->extractGenerics($type);
+        $className = $type->className();
+        $genericParameterTypes = $type->genericParameterTypes();
 
-        $genericType = $generics['genericType'];
-        $genericParameters = $generics['genericParameters'];
+        $templates = $this->typeExtractor->extractTemplateFromClass(new \ReflectionClass($className));
 
-        if (!class_exists($genericType)) {
-            return $context;
+        if (\count($templates) !== \count($genericParameterTypes)) {
+            throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameterTypes), (string) $type, \count($templates), $className));
         }
 
-        if (!isset(self::$cache['class_reflection'][$type])) {
-            self::$cache['class_reflection'][$type] = new \ReflectionClass($genericType);
-        }
-
-        $templates = $this->typeExtractor->extractTemplateFromClass(self::$cache['class_reflection'][$type]);
-
-        if (\count($templates) !== \count($genericParameters)) {
-            throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%s".', \count($genericParameters), $type, \count($templates), $genericType));
-        }
-
-        foreach ($genericParameters as $i => $genericParameter) {
-            $context['_symfony']['generic_parameter_types'][$genericType][$templates[$i]] = $genericParameter;
+        foreach ($genericParameterTypes as $i => $genericParameterType) {
+            $context['_symfony']['generic_parameter_types'][$className][$templates[$i]] = $genericParameterType;
         }
 
         return $context;

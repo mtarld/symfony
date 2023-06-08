@@ -134,7 +134,7 @@ class DeserializeTest extends TestCase
 
         $foo = new class() {};
 
-        dd($deserialize("0\nuseless", sprintf('array<int, array<string, %s>>', $foo::class)));
+        $deserialize("0\nuseless", sprintf('array<int, array<string, %s>>', $foo::class));
     }
 
     /**

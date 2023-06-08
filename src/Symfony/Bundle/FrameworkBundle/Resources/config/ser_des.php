@@ -139,11 +139,6 @@ return static function (ContainerConfigurator $container) {
                 service('ser_des.type_extractor'),
             ])
 
-        ->set('ser_des.hook.deserialize.property', DeserializeHook\PropertyHook::class)
-            ->args([
-                service('ser_des.type_extractor'),
-            ])
-
         // Serializable resolvers
         ->set('ser_des.serializable_resolver', PathSerializableResolver::class)
             ->args([

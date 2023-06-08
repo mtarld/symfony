@@ -97,19 +97,24 @@ final class CsvDeserializer extends Deserializer
         }
     }
 
-    protected function deserializeObjectProperties(mixed $data, Type $type, array $context): \Iterator
+    protected function deserializeObjectProperties(mixed $data, Type $type, array $context): ?array
     {
         if (!\is_array($data)) {
             throw $this->tooDeepException();
         }
 
+        $properties = [];
         foreach ($data as $index => $value) {
             if ('' === $value) {
                 continue;
             }
 
-            yield $context['csv_headers'][$index] => $value;
+            /** @var string $key */
+            $key = $context['csv_headers'][$index];
+            $properties[$key] = $value;
         }
+
+        return $properties;
     }
 
     protected function deserializeMixed(mixed $data, array $context): mixed
@@ -121,11 +126,11 @@ final class CsvDeserializer extends Deserializer
         return $data;
     }
 
-    protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable
+    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
     {
         ++$context['csv_depth'];
 
-        return fn () => $this->doDeserialize($value, $type, $context);
+        return $this->doDeserialize($value, $type, $context);
     }
 
     /**

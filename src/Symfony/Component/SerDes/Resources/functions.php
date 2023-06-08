@@ -99,7 +99,7 @@ if (!\function_exists(deserialize::class)) {
      */
     function deserialize($resource, Type|UnionType $type, string $format, array $context = []): mixed
     {
-        $errors = [];
+        $errors = null;
 
         if ($context['collect_errors'] ?? false) {
             $errors = &$context['collected_errors'];
@@ -109,7 +109,7 @@ if (!\function_exists(deserialize::class)) {
 
         $result = DeserializerFactory::create($format, $context)->deserialize($resource, $type, $context);
 
-        if ([] !== $errors) {
+        if (null !== $errors) {
             throw new PartialDeserializationException($resource, $result, $errors);
         }
 

@@ -23,9 +23,9 @@ interface ObjectHookInterface
 {
     /**
      * @param array<string, array{name: string, type: Type|UnionType, accessor: string}> $properties
-     * @param array<string, mixed>                                 $context
+     * @param array<string, mixed>                                                       $context
      *
-     * @return array{properties?: array<string, array{name?: string, type?: Type|UnionType, accessor?: string}>, context?: array<string, mixed>}
+     * @return array{properties?: array<string, array{name: string, type: Type|UnionType, accessor: string}>, context?: array<string, mixed>}
      */
     public function __invoke(Type $type, string $accessor, array $properties, array $context): array;
 }

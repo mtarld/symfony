@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Tests\Type;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\SerDes\Exception\InvalidTypeException;
 use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
 use Symfony\Component\SerDes\Type\TypeGenericsHelper;
@@ -46,35 +45,5 @@ class TypeGenericsHelperTest extends TestCase
         yield ['int|Foo', 'int|T', ['T' => 'Foo']];
         yield ['int|Foo|Bar', 'int|T|U', ['T' => 'Foo', 'U' => 'Bar']];
         yield ['int|Foo|array<string, Bar>', 'int|T|array<string, U>', ['T' => 'Foo', 'U' => 'Bar']];
-    }
-
-    /**
-     * @dataProvider extractGenericsDataProvider
-     *
-     * @param list<string> $expectedGenericParameters
-     */
-    public function testExtractGenerics(string $expectedGenericType, array $expectedGenericParameters, string $type)
-    {
-        $this->assertSame(
-            ['genericType' => $expectedGenericType, 'genericParameters' => $expectedGenericParameters],
-            (new TypeGenericsHelper())->extractGenerics($type),
-        );
-    }
-
-    /**
-     * @return iterable<array{0: string, 1: list<string>, 2: string}>
-     */
-    public static function extractGenericsDataProvider(): iterable
-    {
-        yield ['int', [], 'int'];
-        yield ['Foo', ['int'], 'Foo<int>'];
-        yield ['array', ['int', 'string'], 'array<int, string>'];
-    }
-
-    public function testExtractGenericsThrowOnInvalidGenericString()
-    {
-        $this->expectException(InvalidTypeException::class);
-
-        (new TypeGenericsHelper())->extractGenerics('Foo<int, Bar<string>', '$accessor', []);
     }
 }

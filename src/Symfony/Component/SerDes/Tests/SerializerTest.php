@@ -241,7 +241,7 @@ class SerializerTest extends TestCase
         $expectedResult->one = 'updated';
         $expectedResult->oneAndTwo = 'updated';
 
-        $result = $this->serializer->deserialize($input, DummyWithGroups::class, 'json', (new DeserializeContext())->withGroups('one'));
+        $result = $this->serializer->deserialize($input, DummyWithGroups::class, 'json', (new DeserializeContext())->withGroups('one')->withLazyReading());
 
         $this->assertEquals($expectedResult, $result);
     }
@@ -297,7 +297,6 @@ class SerializerTest extends TestCase
             new DeserializeGroupsAttributeContextBuilder($serializableResolver),
             new DeserializeHookContextBuilder([
                 'object' => (new DeserializeHook\ObjectHook($typeExtractor))(...),
-                'property' => (new DeserializeHook\PropertyHook($typeExtractor))(...),
             ]),
             new DeserializeInstantiatorContextBuilder(new LazyInstantiator($this->lazyObjectCacheDir)),
         ]);

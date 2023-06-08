@@ -28,7 +28,6 @@ use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
 use Symfony\Component\SerDes\Internal\Serialize\VariableNameScoperTrait;
 use Symfony\Component\SerDes\Type\ReflectionTypeExtractor;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\TypeFactory;
 use Symfony\Component\SerDes\Type\TypeSorter;
 use Symfony\Component\SerDes\Type\UnionType;
 
@@ -189,7 +188,7 @@ abstract class TemplateGenerator
             }
 
             if (null !== $hook = $context['hooks']['serialize'][$className] ?? $context['hooks']['serialize']['object'] ?? null) {
-                /** @var array{properties?: array<string, array{name?: string, type?: Type|UnionType, accessor?: string}>, context?: array<string, mixed>} $hookResult */
+                /** @var array{properties?: array<string, array{name: string, type: Type|UnionType, accessor: string}>, context?: array<string, mixed>} $hookResult */
                 $hookResult = $hook(
                     $type,
                     (new Compiler())->compile(new VariableNode($objectName))->source(),
@@ -224,7 +223,6 @@ abstract class TemplateGenerator
 
     private function typeValidatorNode(Type $type, NodeInterface $accessor): NodeInterface
     {
-        // TODO test is_iterable
         return match (true) {
             $type->isNull() => new BinaryNode('===', new ScalarNode(null), $accessor),
             $type->isScalar() => new FunctionNode(sprintf('\is_%s', $type->name()), [$accessor]),

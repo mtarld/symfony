@@ -17,7 +17,9 @@ use Symfony\Component\SerDes\Exception\UnexpectedValueException;
 use Symfony\Component\SerDes\Exception\UnsupportedFormatException;
 use Symfony\Component\SerDes\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\SerDes\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\SerDes\Type\Type;
 use Symfony\Component\SerDes\Type\TypeFactory;
+use Symfony\Component\SerDes\Type\UnionType;
 
 use function Symfony\Component\SerDes\deserialize;
 
@@ -143,20 +145,17 @@ class DeserializeTest extends TestCase
         $value = $deserialize('{"@id": 123, "name": "thename"}', ClassicDummy::class, [
             'hooks' => [
                 'deserialize' => [
-                    sprintf('%s[@id]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                        return [
-                            'name' => 'id',
-                        ];
-                    },
-                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                        return [
-                            'value_provider' => fn () => 'HOOK_VALUE',
-                        ];
+                    ClassicDummy::class => static function (Type $type, array $properties, array $context): array {
+                        $properties['@id']['name'] = 'id';
+                        $properties['name']['value_provider'] = fn (Type|UnionType $type) => sprintf('HOOK_VALUE(%s)', $properties['name']['value_provider']($type));
+
+                        return ['properties' => $properties];
                     },
                 ],
             ],
         ]);
-        $expectedObject->name = 'HOOK_VALUE';
+
+        $expectedObject->name = 'HOOK_VALUE(thename)';
 
         $this->assertEquals($expectedObject, $value);
     }
@@ -166,7 +165,7 @@ class DeserializeTest extends TestCase
      *
      * @param callable(string, string, array<string, mixed>): mixed
      */
-    public function testDeserializeObjectSkipWithNullValueProvider(callable $deserialize)
+    public function testDeserializeObjectSkipUnsetProperties(callable $deserialize)
     {
         $expectedObject = new ClassicDummy();
         $expectedObject->id = 123;
@@ -175,16 +174,26 @@ class DeserializeTest extends TestCase
         $value = $deserialize('{"id": 123, "name": "thename"}', ClassicDummy::class, [
             'hooks' => [
                 'deserialize' => [
-                    sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                        return [
-                            'value_provider' => null,
-                        ];
+                    ClassicDummy::class => static function (Type $type, array $properties, array $context): array {
+                        unset($properties['name']);
+
+                        return ['properties' => $properties];
                     },
                 ],
             ],
         ]);
 
         $this->assertEquals($expectedObject, $value);
+    }
+
+    /**
+     * @dataProvider deserializeDataProvider
+     *
+     * @param callable(string, string, array<string, mixed>): mixed
+     */
+    public function testDeserializeObjectSkipInvalidProperties(callable $deserialize)
+    {
+        $this->assertEquals(new ClassicDummy(), $deserialize('{"invalid": "invalid"}', ClassicDummy::class));
     }
 
     /**
@@ -221,12 +230,10 @@ class DeserializeTest extends TestCase
                 'collect_errors' => true,
                 'hooks' => [
                     'deserialize' => [
-                        sprintf('%s[name]', ClassicDummy::class) => static function (\ReflectionClass $class, string $key, callable $value, array $context): array {
-                            $ok = $value('string', $context);
+                        ClassicDummy::class => static function (Type $type, array $properties, array $context): array {
+                            $properties['name']['value_provider'] = fn (Type|UnionType $type) => 'ok' === $properties['name']['value_provider']($type) ? 'ok' : new \DateTimeImmutable();
 
-                            return [
-                                'value_provider' => fn () => 'ok' === $ok ? 'ok' : new \DateTimeImmutable(),
-                            ];
+                            return ['properties' => $properties];
                         },
                     ],
                 ],

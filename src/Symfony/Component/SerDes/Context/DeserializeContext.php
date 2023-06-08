@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Context;
 
 use Symfony\Component\SerDes\Hook\Deserialize\ObjectHookInterface;
-use Symfony\Component\SerDes\Hook\Deserialize\PropertyHookInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -61,23 +60,11 @@ class DeserializeContext implements ContextInterface
     }
 
     /**
-     * @param ObjectHookInterface|callable(string, array<string, mixed>): array{type: string, context: array<string, mixed>} $hook
-     * @param class-string|null                                                                                              $className
+     * @param class-string|null $className
      */
     public function withObjectHook(ObjectHookInterface|callable $hook, string $className = null): self
     {
         $hookName = $className ?? 'object';
-
-        return $this->withHook($hookName, $hook);
-    }
-
-    /**
-     * @param PropertyHookInterface|callable(\ReflectionClass<object>, string, callable(): mixed, array<string, mixed>): array{name?: string, value?: callable(): mixed, context?: array<string, mixed>} $hook
-     * @param class-string|null                                                                                                                                                                          $className
-     */
-    public function withPropertyHook(PropertyHookInterface|callable $hook, string $className = null, string $propertyName = null): self
-    {
-        $hookName = null !== $className && null !== $propertyName ? sprintf('%s::$%s', $className, $propertyName) : 'property';
 
         return $this->withHook($hookName, $hook);
     }

@@ -12,7 +12,6 @@
 namespace Symfony\Component\SerDes\Context;
 
 use Symfony\Component\SerDes\Hook\Serialize\ObjectHookInterface;
-use Symfony\Component\SerDes\Hook\Serialize\PropertyHookInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -58,8 +57,7 @@ class SerializeContext implements ContextInterface
     }
 
     /**
-     * @param ObjectHookInterface|callable(string, string, array<string, mixed>): array{type: string, accessor: string, context: array<string, mixed>} $hook
-     * @param class-string|null                                                                                                                        $className
+     * @param class-string|null $className
      */
     public function withObjectHook(ObjectHookInterface|callable $hook, string $className = null): self
     {

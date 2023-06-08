@@ -60,9 +60,13 @@ final class JsonLazyDeserializer extends Deserializer
         return $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $context);
     }
 
-    protected function deserializeObjectProperties(mixed $resource, Type $type, array $context): ?\Iterator
+    protected function deserializeObjectProperties(mixed $resource, Type $type, array $context): ?array
     {
-        return $this->dictSplitter->split($resource, $type, $context);
+        if (null === $boundaries = $this->dictSplitter->split($resource, $type, $context)) {
+            return null;
+        }
+
+        return iterator_to_array($boundaries);
     }
 
     protected function deserializeMixed(mixed $resource, array $context): mixed
@@ -70,9 +74,9 @@ final class JsonLazyDeserializer extends Deserializer
         return $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
     }
 
-    protected function propertyValueCallable(Type|UnionType $type, mixed $resource, mixed $value, array $context): callable
+    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
     {
-        return fn () => $this->doDeserialize($resource, $type, ['boundary' => $value] + $context);
+        return $this->doDeserialize($resource, $type, ['boundary' => $value] + $context);
     }
 
     /**

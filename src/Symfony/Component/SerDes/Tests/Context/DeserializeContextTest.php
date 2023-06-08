@@ -27,8 +27,6 @@ class DeserializeContextTest extends TestCase
             ->withUnionSelector(['int|string' => 'int'])
             ->withObjectHook($hook)
             ->withObjectHook($hook, 'className')
-            ->withPropertyHook($hook)
-            ->withPropertyHook($hook, 'className', 'propertyName')
             ->withEagerReading()
             ->withLazyInstantiation();
 
@@ -40,8 +38,6 @@ class DeserializeContextTest extends TestCase
                     'constructor_hook' => $hook,
                     'object' => $hook,
                     'className' => $hook,
-                    'property' => $hook,
-                    'className::$propertyName' => $hook,
                 ],
             ],
             'union_selector' => ['int|string' => 'int'],

@@ -23,7 +23,6 @@ use Symfony\Component\SerDes\Internal\Serialize\Node\TemplateStringNode;
 use Symfony\Component\SerDes\Internal\Serialize\Node\VariableNode;
 use Symfony\Component\SerDes\Internal\Serialize\NodeInterface;
 use Symfony\Component\SerDes\Type\Type;
-use Symfony\Component\SerDes\Type\TypeFactory;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

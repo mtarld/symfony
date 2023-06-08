@@ -87,7 +87,7 @@ class DeserializeTest extends TestCase
      *
      * @param callable(string, string, array<string, mixed>): mixed
      */
-    public function testThrowOnInvalidObjectProperties(callable $deserialize, bool $lazy)
+    public function testThrowOnInvalidObject(callable $deserialize, bool $lazy)
     {
         $this->expectException($lazy ? InvalidResourceException::class : UnexpectedValueException::class);
 

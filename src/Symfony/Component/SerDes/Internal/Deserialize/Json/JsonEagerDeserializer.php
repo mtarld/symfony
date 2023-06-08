@@ -69,9 +69,6 @@ final class JsonEagerDeserializer extends Deserializer
         return $this->deserializeCollectionItems($data, $type->collectionValueType(), $context);
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
     protected function deserializeObjectProperties(mixed $data, Type $type, array $context): ?array
     {
         if (null === $data) {
@@ -90,9 +87,9 @@ final class JsonEagerDeserializer extends Deserializer
         return $data;
     }
 
-    protected function propertyValueCallable(Type|UnionType $type, mixed $data, mixed $value, array $context): callable
+    protected function deserializeObjectPropertyValue(Type|UnionType $type, mixed $resource, mixed $value, array $context): mixed
     {
-        return fn () => $this->doDeserialize($value, $type, $context);
+        return $this->doDeserialize($value, $type, $context);
     }
 
     /**
