@@ -169,7 +169,6 @@ abstract class TypeFactory
             return self::$cache[$cacheKey] = new Type(
                 name: $type,
                 isNullable: $isNullable,
-                isGeneric: true,
                 className: $className,
                 genericParameterTypes: array_map(fn (string $t): Type => self::createFromString($t), $genericParameters),
             );

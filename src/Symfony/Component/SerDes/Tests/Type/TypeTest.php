@@ -51,29 +51,27 @@ class TypeTest extends TestCase
         yield ['?'.DummyBackedEnum::class, new Type('enum', isNullable: true, className: DummyBackedEnum::class)];
 
         // generic types
-        yield [ClassicDummy::class.'<int>', new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')])];
+        yield [ClassicDummy::class.'<int>', new Type('object', className: ClassicDummy::class, genericParameterTypes: [new Type('int')])];
         yield [
             ClassicDummy::class.'<int<?bool>>',
             new Type(
                 'object',
                 className: ClassicDummy::class,
-                isGeneric: true,
-                genericParameterTypes: [new Type('int', isGeneric: true, genericParameterTypes: [new Type('bool', isNullable: true)])],
+                genericParameterTypes: [new Type('int', genericParameterTypes: [new Type('bool', isNullable: true)])],
             ),
         ];
 
         // collection types
         yield ['array', new Type('array')];
-        yield ['array<int, int>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')])];
-        yield ['array<int, float>', new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')])];
+        yield ['array<int, int>', new Type('array', genericParameterTypes: [new Type('int'), new Type('int')])];
+        yield ['array<int, float>', new Type('array', genericParameterTypes: [new Type('int'), new Type('float')])];
         yield [
             'array<string, array<int, bool>>',
             new Type(
                 'array',
-                isGeneric: true,
                 genericParameterTypes: [
                     new Type('string'),
-                    new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
+                    new Type('array', genericParameterTypes: [new Type('int'), new Type('bool')]),
                 ],
             ),
         ];
@@ -82,13 +80,11 @@ class TypeTest extends TestCase
             new Type(
                 'array',
                 isNullable: true,
-                isGeneric: true,
                 genericParameterTypes: [
                     new Type('string', isNullable: true),
                     new Type(
                         'array',
                         isNullable: true,
-                        isGeneric: true,
                         genericParameterTypes: [
                             new Type('int', isNullable: true),
                             new Type('bool', isNullable: true),
@@ -108,21 +104,12 @@ class TypeTest extends TestCase
                 unionTypes: [
                     new Type(
                         'array',
-                        isGeneric: true,
                         genericParameterTypes: [new Type('string'), new Type('string|float', unionTypes: [new Type('string'), new Type('float')])],
                     ),
-                    new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
+                    new Type('array', genericParameterTypes: [new Type('int'), new Type('bool')]),
                 ],
             ),
         ];
-    }
-
-    public function testCannotCreateGenericWithoutGenericTypes()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing generic parameter types of "object" type.');
-
-        new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: []);
     }
 
     public function testCannotCreateUnionWithOnlyOneType()
@@ -143,7 +130,7 @@ class TypeTest extends TestCase
 
     public function testGetCollectionKeyType()
     {
-        $this->assertEquals(new Type('string'), (new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]))->collectionKeyType());
+        $this->assertEquals(new Type('string'), (new Type('array', genericParameterTypes: [new Type('string'), new Type('int')]))->collectionKeyType());
         $this->assertEquals(new Type('mixed'), (new Type('array'))->collectionKeyType());
     }
 
@@ -157,7 +144,7 @@ class TypeTest extends TestCase
 
     public function testGetCollectionValueType()
     {
-        $this->assertEquals(new Type('int'), (new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]))->collectionValueType());
+        $this->assertEquals(new Type('int'), (new Type('array', genericParameterTypes: [new Type('string'), new Type('int')]))->collectionValueType());
         $this->assertEquals(new Type('mixed'), (new Type('array'))->collectionValueType());
     }
 
@@ -307,7 +294,7 @@ class TypeTest extends TestCase
             'union' => false,
         ];
         yield [
-            'type' => new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
+            'type' => new Type('object', className: ClassicDummy::class, genericParameterTypes: [new Type('int')]),
             'scalar' => false,
             'null' => false,
             'nullable' => false,
@@ -320,7 +307,7 @@ class TypeTest extends TestCase
             'union' => false,
         ];
         yield [
-            'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]),
+            'type' => new Type('array', genericParameterTypes: [new Type('int'), new Type('int')]),
             'scalar' => false,
             'null' => false,
             'nullable' => false,
@@ -333,7 +320,7 @@ class TypeTest extends TestCase
             'union' => false,
         ];
         yield [
-            'type' => new Type('array', isGeneric: true, genericParameterTypes: [new Type('string'), new Type('int')]),
+            'type' => new Type('array', genericParameterTypes: [new Type('string'), new Type('int')]),
             'scalar' => false,
             'null' => false,
             'nullable' => false,

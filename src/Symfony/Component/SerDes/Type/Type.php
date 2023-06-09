@@ -32,14 +32,9 @@ final readonly class Type implements \Stringable
         private string $name,
         private bool $isNullable = false,
         private ?string $className = null,
-        private bool $isGeneric = false, // TODO remove it in favor of genericParameterTypes
         private array $genericParameterTypes = [],
         private array $unionTypes = [],
     ) {
-        if ($this->isGeneric && !$this->genericParameterTypes) {
-            throw new InvalidArgumentException(sprintf('Missing generic parameter types of "%s" type.', $this->name));
-        }
-
         if (1 === \count($this->unionTypes)) {
             throw new InvalidArgumentException(sprintf('Cannot define only one union type for "%s" type.', $this->name));
         }
@@ -50,31 +45,6 @@ final readonly class Type implements \Stringable
     public function name(): string
     {
         return $this->name;
-    }
-
-    public function isUnion(): bool
-    {
-        return [] !== $this->unionTypes;
-    }
-
-    public function isNullable(): bool
-    {
-        if ($this->isUnion()) {
-            foreach ($this->unionTypes as $type) {
-                if ($type->isNull()) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        return $this->isNullable;
-    }
-
-    public function hasClass(): bool
-    {
-        return null !== $this->className;
     }
 
     /**
@@ -123,9 +93,29 @@ final readonly class Type implements \Stringable
         return 'null' === $this->name;
     }
 
+    public function isNullable(): bool
+    {
+        if ($this->isUnion()) {
+            foreach ($this->unionTypes as $type) {
+                if ($type->isNull()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return $this->isNullable;
+    }
+
     public function isObject(): bool
     {
         return 'object' === $this->name;
+    }
+
+    public function hasClass(): bool
+    {
+        return null !== $this->className;
     }
 
     public function isEnum(): bool
@@ -135,7 +125,12 @@ final readonly class Type implements \Stringable
 
     public function isGeneric(): bool
     {
-        return $this->isGeneric;
+        return [] !== $this->genericParameterTypes;
+    }
+
+    public function isUnion(): bool
+    {
+        return [] !== $this->unionTypes;
     }
 
     public function isCollection(): bool

@@ -30,7 +30,6 @@ final class TypeGenericsHelper
             name: $type->name(),
             isNullable: $type->isNullable(),
             className: $type->hasClass() ? $type->className() : null,
-            isGeneric: $type->isGeneric(),
             genericParameterTypes: $genericParameterTypes,
             unionTypes: $unionTypes,
         );

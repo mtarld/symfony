@@ -52,23 +52,21 @@ class TypeFactoryTest extends TestCase
         yield [new Type('enum', isNullable: true, className: DummyBackedEnum::class), '?'.DummyBackedEnum::class];
 
         // generic types
-        yield [new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]), ClassicDummy::class.'<int>'];
+        yield [new Type('object', className: ClassicDummy::class, genericParameterTypes: [new Type('int')]), ClassicDummy::class.'<int>'];
         yield [new Type(
             'object',
             className: ClassicDummy::class,
-            isGeneric: true,
-            genericParameterTypes: [new Type('int', isGeneric: true, genericParameterTypes: [new Type('bool', isNullable: true)])],
+            genericParameterTypes: [new Type('int', genericParameterTypes: [new Type('bool', isNullable: true)])],
         ), ClassicDummy::class.'<int<?bool>>'];
 
         // collection types
         yield [new Type('array'), 'array'];
-        yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
-        yield [new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('float')]), 'array<float>'];
+        yield [new Type('array', genericParameterTypes: [new Type('int'), new Type('int')]), 'array<int, int>'];
+        yield [new Type('array', genericParameterTypes: [new Type('int'), new Type('float')]), 'array<float>'];
         yield [
             new Type(
                 'array',
-                isGeneric: true,
-                genericParameterTypes: [new Type('string'), new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')])],
+                genericParameterTypes: [new Type('string'), new Type('array', genericParameterTypes: [new Type('int'), new Type('bool')])],
             ),
             'array<string, array<int, bool>>',
         ];
@@ -76,25 +74,22 @@ class TypeFactoryTest extends TestCase
             new Type(
                 'array',
                 isNullable: true,
-                isGeneric: true,
                 genericParameterTypes: [
                     new Type('string', isNullable: true),
                     new Type(
                         'array',
                         isNullable: true,
-                        isGeneric: true,
                         genericParameterTypes: [new Type('int', isNullable: true), new Type('bool', isNullable: true)],
                     ),
                 ]
             ),
             '?array<?string, ?array<?int, ?bool>>',
         ];
-        yield [new Type('iterable', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('int')]), 'iterable<int, int>'];
+        yield [new Type('iterable', genericParameterTypes: [new Type('int'), new Type('int')]), 'iterable<int, int>'];
         yield [
             new Type(
                 'iterable',
-                isGeneric: true,
-                genericParameterTypes: [new Type('string'), new Type('iterable', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')])],
+                genericParameterTypes: [new Type('string'), new Type('iterable', genericParameterTypes: [new Type('int'), new Type('bool')])],
             ),
             'iterable<string, iterable<bool>>',
         ];
@@ -109,16 +104,15 @@ class TypeFactoryTest extends TestCase
                 unionTypes: [
                     new Type(
                         'array',
-                        isGeneric: true,
                         genericParameterTypes: [
                             new Type('string'),
                             new Type(sprintf('%s<int>|float', ClassicDummy::class), unionTypes: [
-                                new Type('object', className: ClassicDummy::class, isGeneric: true, genericParameterTypes: [new Type('int')]),
+                                new Type('object', className: ClassicDummy::class, genericParameterTypes: [new Type('int')]),
                                 new Type('float'),
                             ]),
                         ],
                     ),
-                    new Type('array', isGeneric: true, genericParameterTypes: [new Type('int'), new Type('bool')]),
+                    new Type('array', genericParameterTypes: [new Type('int'), new Type('bool')]),
                 ],
             ),
             sprintf('array<string, %s<int>|float>|array<int, bool>', ClassicDummy::class),
