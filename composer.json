@@ -84,7 +84,6 @@
         "symfony/ldap": "self.version",
         "symfony/lock": "self.version",
         "symfony/mailer": "self.version",
-        "symfony/ser-des": "self.version",
         "symfony/messenger": "self.version",
         "symfony/mime": "self.version",
         "symfony/monolog-bridge": "self.version",
@@ -188,7 +187,7 @@
         },
         "files": [
             "src/Symfony/Component/String/Resources/functions.php",
-            "src/Symfony/Component/SerDes/Resources/functions.php"
+            "src/Symfony/Component/Serializer/Resources/functions.php"
         ],
         "classmap": [
             "src/Symfony/Component/Cache/Traits/ValueWrapper.php"

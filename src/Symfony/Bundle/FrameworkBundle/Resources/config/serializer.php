@@ -12,11 +12,18 @@
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializeDeserializeCacheWarmer;
 use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializerCacheWarmer;
 use Symfony\Component\Cache\Adapter\PhpArrayAdapter;
 use Symfony\Component\ErrorHandler\ErrorRenderer\HtmlErrorRenderer;
 use Symfony\Component\ErrorHandler\ErrorRenderer\SerializerErrorRenderer;
 use Symfony\Component\PropertyInfo\Extractor\SerializerExtractor;
+use Symfony\Component\Serializer\Context\ContextBuilder;
+use Symfony\Component\Serializer\Deserialize;
+use Symfony\Component\Serializer\Deserialize\Hook\ObjectHook as DeserializeObjectHook;
+use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface as DeserializeObjectHookInterface;
+use Symfony\Component\Serializer\Deserialize\Instantiator\LazyInstantiator;
+use Symfony\Component\Serializer\DeserializeInterface;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
@@ -49,8 +56,18 @@ use Symfony\Component\Serializer\Normalizer\ProblemNormalizer;
 use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Normalizer\UidNormalizer;
 use Symfony\Component\Serializer\Normalizer\UnwrappingDenormalizer;
+use Symfony\Component\Serializer\SerializableResolver\CachedSerializableResolver;
+use Symfony\Component\Serializer\SerializableResolver\PathSerializableResolver;
+use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
+use Symfony\Component\Serializer\Serialize;
+use Symfony\Component\Serializer\Serialize\Hook\ObjectHook as SerializeObjectHook;
+use Symfony\Component\Serializer\Serialize\Hook\ObjectHookInterface as SerializeObjectHookInterface;
+use Symfony\Component\Serializer\SerializeInterface;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Type\PhpstanTypeExtractor;
+use Symfony\Component\Serializer\Type\ReflectionTypeExtractor;
+use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 
 return static function (ContainerConfigurator $container) {
     $container->parameters()
@@ -220,4 +237,100 @@ return static function (ContainerConfigurator $container) {
             ->tag('serializer.normalizer', ['priority' => -915])
         ;
     }
+
+    //
+    // Experimental serializer
+    //
+
+    $container->parameters()
+        ->set('.serializer.cache_dir.template', '%kernel.cache_dir%/serializer/template')
+        ->set('.serializer.cache_dir.lazy_object', '%kernel.cache_dir%/serializer/lazy_object')
+    ;
+
+    $container->services()
+        // Serialize
+        ->set('serializer.serialize', Serialize::class)
+            ->args([
+                service('.serializer.context_builder'),
+                param('.serializer.cache_dir.template'),
+            ])
+        ->alias(SerializeInterface::class, 'serializer.serialize')
+
+        // Deserialize
+        ->set('serializer.deserialize', Deserialize::class)
+            ->args([
+                service('.serializer.context_builder'),
+                service('serializer.hook.deserialize.object'),
+            ])
+        ->alias(DeserializeInterface::class, 'serializer.deserialize')
+
+        // Context
+        ->set('.serializer.context_builder', ContextBuilder::class)
+            ->args([
+                service('serializer.serializable_resolver'),
+                service('serializer.instantiator.lazy'),
+                service('serializer.hook.serialize.object'),
+                service('serializer.hook.deserialize.object'),
+            ])
+
+        // Type extractors
+        ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)
+            ->lazy()
+            ->tag('proxy', ['interface' => TypeExtractorInterface::class])
+
+        ->set('serializer.type_extractor.phpstan', PhpstanTypeExtractor::class)
+            ->decorate('serializer.type_extractor.reflection')
+            ->args([
+                service('serializer.type_extractor.phpstan.inner'),
+            ])
+            ->lazy()
+            ->tag('proxy', ['interface' => TypeExtractorInterface::class])
+        ->alias('serializer.type_extractor', 'serializer.type_extractor.reflection')
+
+        // Hooks
+        ->set('serializer.hook.serialize.object', SerializeObjectHook::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(SerializeObjectHookInterface::class, 'serializer.hook.serialize.object')
+
+        ->set('serializer.hook.deserialize.object', DeserializeObjectHook::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(DeserializeObjectHookInterface::class, 'serializer.hook.deserialize.object')
+
+        // Serializable resolvers
+        ->set('serializer.serializable_resolver', PathSerializableResolver::class)
+            ->args([
+                param('serializer.serializable_paths'),
+            ])
+
+        ->set('serializer.serializable_resolver.cached', CachedSerializableResolver::class)
+            ->decorate('serializer.serializable_resolver', priority: -1024)
+            ->args([
+                service('serializer.serializable_resolver.cached.inner'),
+                service('cache.serializer')->ignoreOnInvalid(),
+            ])
+        ->alias(SerializableResolverInterface::class, 'serializer.serializable_resolver')
+
+        // Object instantiators
+        ->set('serializer.instantiator.lazy', LazyInstantiator::class)
+            ->args([
+                param('.serializer.cache_dir.lazy_object'),
+            ])
+
+        // Cache
+        ->set('serializer.cache_warmer.serialize_deserialize', SerializeDeserializeCacheWarmer::class)
+            ->args([
+                service('.serializer.context_builder'),
+                service('serializer.serializable_resolver'),
+                param('.serializer.cache_dir.template'),
+                param('.serializer.cache_dir.lazy_object'),
+                param('serializer.template_warm_up.formats'),
+                param('serializer.template_warm_up.max_variants'),
+                service('logger')->ignoreOnInvalid(),
+            ])
+            ->tag('kernel.cache_warmer')
+    ;
 };

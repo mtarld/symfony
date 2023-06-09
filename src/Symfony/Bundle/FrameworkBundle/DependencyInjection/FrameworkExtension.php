@@ -15,10 +15,6 @@ use Composer\InstalledVersions;
 use Doctrine\Common\Annotations\Reader;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
-use Symfony\Component\SerDes\Context\ContextBuilderInterface;
-use Symfony\Component\SerDes\Context\ContextBuilder\DeserializeContextBuilderInterface;
-use Symfony\Component\SerDes\Context\ContextBuilder\SerializeContextBuilderInterface;
-use Symfony\Component\SerDes\SerializerInterface as SerDesSerializerInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use PhpParser\Parser;
@@ -572,10 +568,6 @@ class FrameworkExtension extends Extension
             $this->registerHtmlSanitizerConfiguration($config['html_sanitizer'], $container, $loader);
         }
 
-        if ($this->readConfigEnabled('ser_des', $container, $config['ser_des'])) {
-            $this->registerSerDesConfiguration($config['ser_des'], $container, $loader);
-        }
-
         $this->addAnnotatedClassesToCompile([
             '**\\Controller\\',
             '**\\Entity\\',
@@ -670,10 +662,6 @@ class FrameworkExtension extends Extension
             ->addTag('mime.mime_type_guesser');
         $container->registerForAutoconfiguration(LoggerAwareInterface::class)
             ->addMethodCall('setLogger', [new Reference('logger')]);
-        $container->registerForAutoconfiguration(SerializeContextBuilderInterface::class)
-            ->addTag('ser_des.context_builder.serialize');
-        $container->registerForAutoconfiguration(DeserializeContextBuilderInterface::class)
-            ->addTag('ser_des.context_builder.deserialize');
 
         $container->registerAttributeForAutoconfiguration(AsEventListener::class, static function (ChildDefinition $definition, AsEventListener $attribute, \ReflectionClass|\ReflectionMethod $reflector) {
             $tagAttributes = get_object_vars($attribute);
@@ -1955,6 +1943,18 @@ class FrameworkExtension extends Extension
         if (isset($config['default_context']) && $config['default_context']) {
             $container->setParameter('serializer.default_context', $config['default_context']);
         }
+
+        $container->setParameter('serializer.serializable_paths', $config['serializable_paths']);
+        $container->setParameter('serializer.template_warm_up.formats', $config['template_warm_up']['formats']);
+        $container->setParameter('serializer.template_warm_up.max_variants', $config['template_warm_up']['max_variants']);
+
+        foreach ($config['serializable_paths'] as $path) {
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $container->fileExists($path, '/\.php$/');
+        }
     }
 
     private function registerPropertyInfoConfiguration(ContainerBuilder $container, PhpFileLoader $loader): void
@@ -3052,27 +3052,6 @@ class FrameworkExtension extends Extension
             if ('default' !== $sanitizerName) {
                 $container->registerAliasForArgument($sanitizerId, HtmlSanitizerInterface::class, $sanitizerName);
             }
-        }
-    }
-
-    private function registerSerDesConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
-    {
-        if (!interface_exists(SerDesSerializerInterface::class)) {
-            throw new LogicException('SerDes serializer support cannot be enabled as the SerDes component is not installed. Try running "composer require symfony/ser-des');
-        }
-
-        $container->setParameter('ser_des.serializable_paths', $config['serializable_paths']);
-        $container->setParameter('ser_des.template_warm_up.formats', $config['template_warm_up']['formats']);
-        $container->setParameter('ser_des.template_warm_up.max_variants', $config['template_warm_up']['max_variants']);
-
-        $loader->load('ser_des.php');
-
-        foreach ($config['serializable_paths'] as $path) {
-            if (!is_dir($path)) {
-                continue;
-            }
-
-            $container->fileExists($path, '/\.php$/');
         }
     }
 

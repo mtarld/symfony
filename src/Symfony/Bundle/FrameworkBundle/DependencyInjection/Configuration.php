@@ -33,7 +33,6 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\SerDes\Serializer as SerDesSerializer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
@@ -189,7 +188,6 @@ class Configuration implements ConfigurationInterface
         $this->addHtmlSanitizerSection($rootNode, $enableIfStandalone);
         $this->addWebhookSection($rootNode, $enableIfStandalone);
         $this->addRemoteEventSection($rootNode, $enableIfStandalone);
-        $this->addSerDesSection($rootNode, $enableIfStandalone);
 
         return $treeBuilder;
     }
@@ -1100,6 +1098,7 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('serializer')
                     ->info('serializer configuration')
                     ->{$enableIfStandalone('symfony/serializer', Serializer::class)}()
+                    ->fixXmlConfig('serializable_path')
                     ->children()
                         ->booleanNode('enable_annotations')->{!class_exists(FullStack::class) ? 'defaultTrue' : 'defaultFalse'}()->end()
                         ->scalarNode('name_converter')->end()
@@ -1119,6 +1118,29 @@ class Configuration implements ConfigurationInterface
                             ->useAttributeAsKey('name')
                             ->defaultValue([])
                             ->prototype('variable')->end()
+                        ->end()
+                        ->arrayNode('serializable_paths')
+                            ->info('Defines where to find serializable classes.')
+                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
+                            ->prototype('scalar')->end()
+                            ->defaultValue([])
+                        ->end()
+                        ->arrayNode('template_warm_up')
+                            ->addDefaultsIfNotSet()
+                            ->fixXmlConfig('format')
+                            ->children()
+                                ->arrayNode('formats')
+                                    ->info('Defines the formats that will be handled.')
+                                    ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
+                                    ->prototype('scalar')->end()
+                                    ->defaultValue(['json'])
+                                ->end()
+                                ->integerNode('max_variants')
+                                    ->info('Defines the maximum variants allowed for each class.')
+                                    ->defaultValue(32)
+                                    ->min(0)
+                                ->end()
+                            ->end()
                         ->end()
                     ->end()
                 ->end()
@@ -2486,44 +2508,6 @@ class Configuration implements ConfigurationInterface
                                         ->info('The maximum length allowed for the sanitized input.')
                                         ->defaultValue(0)
                                     ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
-            ->end()
-        ;
-    }
-
-    private function addSerDesSection(ArrayNodeDefinition $rootNode, callable $enableIfStandalone): void
-    {
-        $rootNode
-            ->children()
-                ->arrayNode('ser_des')
-                    ->info('SerDes configuration')
-                    ->{$enableIfStandalone('symfony/ser-des', SerDesSerializer::class)}()
-                    ->fixXmlConfig('serializable_path')
-                    ->children()
-                        ->arrayNode('serializable_paths')
-                            ->info('Defines where to find serializable classes.')
-                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
-                            ->prototype('scalar')->end()
-                            ->defaultValue([])
-                        ->end()
-                        ->arrayNode('template_warm_up')
-                            ->addDefaultsIfNotSet()
-                            ->fixXmlConfig('format')
-                            ->children()
-                                ->arrayNode('formats')
-                                    ->info('Defines the formats that will be handled.')
-                                    ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
-                                    ->prototype('scalar')->end()
-                                    ->defaultValue(['json'])
-                                ->end()
-                                ->integerNode('max_variants')
-                                    ->info('Defines the maximum variants allowed for each class.')
-                                    ->defaultValue(32)
-                                    ->min(0)
                                 ->end()
                             ->end()
                         ->end()

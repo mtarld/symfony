@@ -32,7 +32,6 @@ return static function (ContainerConfigurator $container) {
                 [
                     'cache.validator',
                     'cache.serializer',
-                    'cache.ser_des',
                 ],
             ])
             ->tag('kernel.cache_warmer', ['priority' => 64])

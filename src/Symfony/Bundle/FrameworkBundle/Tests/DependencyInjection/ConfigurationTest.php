@@ -27,7 +27,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\RateLimiter\Policy\TokenBucketLimiter;
 use Symfony\Component\Scheduler\Messenger\SchedulerTransportFactory;
-use Symfony\Component\SerDes\Serializer;
 use Symfony\Component\Uid\Factory\UuidFactory;
 
 class ConfigurationTest extends TestCase
@@ -568,6 +567,11 @@ class ConfigurationTest extends TestCase
                 'enabled' => !class_exists(FullStack::class),
                 'enable_annotations' => !class_exists(FullStack::class),
                 'mapping' => ['paths' => []],
+                'serializable_paths' => [],
+                'template_warm_up' => [
+                    'formats' => ['json'],
+                    'max_variants' => 32,
+                ],
             ],
             'property_access' => [
                 'enabled' => true,
@@ -739,14 +743,6 @@ class ConfigurationTest extends TestCase
             ],
             'remote-event' => [
                 'enabled' => false,
-            ],
-            'ser_des' => [
-                'enabled' => !class_exists(FullStack::class) && class_exists(Serializer::class),
-                'serializable_paths' => [],
-                'template_warm_up' => [
-                    'formats' => ['json'],
-                    'max_variants' => 32,
-                ],
             ],
         ];
     }

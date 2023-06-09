@@ -1,0 +1,29 @@
+<?php
+
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Symfony\Component\Serializer\Attribute;
+
+/**
+ * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @experimental in 7.0
+ */
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+final readonly class SerializeFormatter
+{
+    /**
+     * @param callable(mixed, array<string, mixed>=): mixed $formatter
+     */
+    public function __construct(
+        public mixed $formatter,
+    ) {
+    }
+}
