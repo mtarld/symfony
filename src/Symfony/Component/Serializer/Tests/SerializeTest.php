@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Serializer\Context\ContextBuilder;
 use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface as DeserializeObjectHookInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
@@ -49,6 +50,8 @@ class SerializeTest extends TestCase
                 $this->createStub(InstantiatorInterface::class),
                 new ObjectHook(new PhpstanTypeExtractor(new ReflectionTypeExtractor())),
                 $this->createStub(DeserializeObjectHookInterface::class),
+                $this->createStub(ContainerInterface::class),
+                $this->createStub(ContainerInterface::class),
             ),
             $templateCacheDir,
         );

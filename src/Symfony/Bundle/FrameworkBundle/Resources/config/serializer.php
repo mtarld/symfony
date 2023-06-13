@@ -271,6 +271,8 @@ return static function (ContainerConfigurator $container) {
                 service('serializer.instantiator.lazy'),
                 service('serializer.hook.serialize.object'),
                 service('serializer.hook.deserialize.object'),
+                abstract_arg('available services during serialization'),
+                abstract_arg('available services during serialization'),
             ])
 
         // Type extractors

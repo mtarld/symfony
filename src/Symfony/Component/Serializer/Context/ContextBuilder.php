@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Context;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
@@ -33,6 +34,8 @@ final class ContextBuilder
         private readonly InstantiatorInterface $lazyObjectInstantiator,
         private readonly SerializeObjectHookInterface $serializeObjectHook,
         private readonly DeserializeObjectHookInterface $deserializeObjectHook,
+        private readonly ContainerInterface $serializeHookServices,
+        private readonly ContainerInterface $deserializeHookServices,
     ) {
     }
 
@@ -68,6 +71,7 @@ final class ContextBuilder
         }
 
         $context['hooks'][$serializeKey]['object'] ??= $isSerialization ? $this->serializeObjectHook : $this->deserializeObjectHook;
+        $context['services'][$serializeKey] = $isSerialization ? $this->serializeHookServices : $this->deserializeHookServices;
 
         return $context;
     }

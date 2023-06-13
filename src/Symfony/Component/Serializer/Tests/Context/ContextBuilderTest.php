@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Tests\Context;
 
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Serializer\Context\ContextBuilder;
 use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface as DeserializeObjectHookInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
@@ -140,6 +141,15 @@ class ContextBuilderTest extends TestCase
         $this->assertInstanceOf(DeserializeObjectHookInterface::class, $context['hooks']['deserialize']['object']);
     }
 
+    public function testAddServices()
+    {
+        $context = $this->contextBuilder([])->build([], isSerialization: true);
+        $this->assertInstanceOf(ContainerInterface::class, $context['services']['serialize']);
+
+        $context = $this->contextBuilder([])->build([], isSerialization: false);
+        $this->assertInstanceOf(ContainerInterface::class, $context['services']['deserialize']);
+    }
+
     /**
      * @param list<class-string> $serializable
      */
@@ -153,6 +163,8 @@ class ContextBuilderTest extends TestCase
             $this->createStub(InstantiatorInterface::class),
             $this->createStub(SerializeObjectHookInterface::class),
             $this->createStub(DeserializeObjectHookInterface::class),
+            $this->createStub(ContainerInterface::class),
+            $this->createStub(ContainerInterface::class),
         );
     }
 }
