@@ -54,12 +54,11 @@ final class Deserializer implements DeserializerInterface
 
         $context['type'] = $type;
 
-        /** @var UnmarshallerInterface $unmarshaller */
-        $unmarshaller = match ($format) {
-            'json' => ($context['lazy_reading'] ?? false) ? $this->lazyUnmarshallers['json'] : $this->eagerUnmarshallers['json'],
-            'csv' => $this->eagerUnmarshallers['csv'],
-            default => throw new UnsupportedException(sprintf('"%s" format is not supported.', $format)),
-        };
+        /** @var UnmarshallerInterface|null $unmarshaller */
+        $unmarshaller = ($context['lazy_reading'] ?? false) ? ($this->lazyUnmarshallers[$format] ?? null) : ($this->eagerUnmarshallers[$format] ?? null);
+        if (null === $unmarshaller) {
+            throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
+        }
 
         $instantiator = ($context['lazy_instantiation'] ?? false) ? $this->lazyInstantiator : $this->eagerInstantiator;
 

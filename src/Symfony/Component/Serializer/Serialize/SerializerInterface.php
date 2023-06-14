@@ -9,25 +9,21 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize;
+namespace Symfony\Component\Serializer\Serialize;
 
 use Symfony\Component\Serializer\ContextInterface;
-use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
-use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface DeserializerInterface
+interface SerializerInterface
 {
     /**
-     * @param StreamInterface|resource              $input
+     * @param StreamInterface|resource              $output
      * @param ContextInterface|array<string, mixed> $context
-     *
-     * @throws UnsupportedException
      */
-    public function deserialize(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed;
+    public function serialize(mixed $data, string $format, mixed $output, ContextInterface|array $context = []): void;
 }

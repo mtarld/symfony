@@ -88,30 +88,3 @@ if (!\function_exists(serialize_generate::class)) {
         return '<?php'.\PHP_EOL.\PHP_EOL.$phpDoc.$php;
     }
 }
-
-if (!\function_exists(deserialize::class)) {
-    /**
-     * @param resource             $resource
-     * @param array<string, mixed> $context
-     *
-     * @throws PartialDeserializationException
-     */
-    function deserialize($resource, Type $type, string $format, array $context = []): mixed
-    {
-        $errors = null;
-
-        if ($context['collect_errors'] ?? false) {
-            $errors = &$context['collected_errors'];
-        }
-
-        $context['lazy_reading'] = $context['lazy_reading'] ?? false;
-
-        $result = DeserializerFactory::create($format, $context)->deserialize($resource, $type, $context);
-
-        if (null !== $errors) {
-            throw new PartialDeserializationException($resource, $result, $errors);
-        }
-
-        return $result;
-    }
-}

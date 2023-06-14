@@ -24,7 +24,7 @@ interface InstantiatorInterface
      * @template T of object
      *
      * @param class-string<T>                  $className
-     * @param array<string, callable(): mixed> $properties
+     * @param array<string, callable(): mxed> $properties
      * @param array<string, mixed>             $context
      *
      * @return T

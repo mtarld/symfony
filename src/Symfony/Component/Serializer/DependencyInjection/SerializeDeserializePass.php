@@ -29,20 +29,29 @@ final class SerializeDeserializePass implements CompilerPassInterface
         //     return;
         // }
 
-        $eagerDeserialize = [];
-        foreach ($container->findTaggedServiceIds('serializer.deserialize.eager') as $id => $tags) {
+        $templateGenerators = [];
+        foreach ($container->findTaggedServiceIds('serializer.template_generator') as $id => $tags) {
             $tag = reset($tags);
-            $eagerDeserialize[$tag['format']] = new Reference($id);
+            $templateGenerators[$tag['format']] = new Reference($id);
         }
 
-        $lazyDeserialize = [];
-        foreach ($container->findTaggedServiceIds('serializer.deserialize.lazy') as $id => $tags) {
+        $container->getDefinition('serializer.serializer')
+            ->replaceArgument(0, $templateGenerators);
+
+        $eagerUnmarshallers = [];
+        foreach ($container->findTaggedServiceIds('serializer.unmarshaller.eager') as $id => $tags) {
             $tag = reset($tags);
-            $lazyDeserialize[$tag['format']] = new Reference($id);
+            $eagerUnmarshallers[$tag['format']] = new Reference($id);
+        }
+
+        $lazyUnmarshallers = [];
+        foreach ($container->findTaggedServiceIds('serializer.unmarshaller.lazy') as $id => $tags) {
+            $tag = reset($tags);
+            $lazyUnmarshallers[$tag['format']] = new Reference($id);
         }
 
         $container->getDefinition('serializer.deserializer')
-            ->replaceArgument(0, $eagerDeserialize)
-            ->replaceArgument(1, $lazyDeserialize);
+            ->replaceArgument(0, $eagerUnmarshallers)
+            ->replaceArgument(1, $lazyUnmarshallers);
     }
 }
