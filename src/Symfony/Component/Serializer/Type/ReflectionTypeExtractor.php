@@ -104,6 +104,15 @@ final class ReflectionTypeExtractor implements TypeExtractorInterface
             $className = $parent->name;
         }
 
+        if (is_subclass_of($className, \UnitEnum::class)) {
+            if (is_subclass_of($className, \BackedEnum::class)) {
+                return new Type('enum', isNullable: $reflection->allowsNull(), className: $className);
+            }
+
+            // TODO
+            throw new InvalidArgumentException(sprintf('Invalid "%s" type.', $className));
+        }
+
         return new Type('object', isNullable: $reflection->allowsNull(), className: $className);
     }
 

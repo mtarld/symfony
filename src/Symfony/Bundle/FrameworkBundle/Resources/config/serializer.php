@@ -27,14 +27,18 @@ use Symfony\Component\Serializer\Deserialize\Unmarshaller\EagerUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\LazyUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Deserializer;
 use Symfony\Component\Serializer\Deserialize\DeserializerInterface;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfigurator;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfigurator as DeserializePropertyConfigurator;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface as DeserializePropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Serialize\PropertyConfigurator\PropertyConfigurator as SerializePropertyConfigurator;
+use Symfony\Component\Serializer\Serialize\PropertyConfigurator\PropertyConfiguratorInterface as SerializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
+use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
+use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\CsvTemplateGenerator;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
@@ -253,9 +257,10 @@ return static function (ContainerConfigurator $container) {
     ;
 
     $container->services()
-        // Serialize
+        // Serializer
         ->set('serializer.serializer', ExperimentalSerializer::class)
             ->args([
+                service('serializer.dom_tree_builder'),
                 abstract_arg('template generators'),
                 param('.serializer.cache_dir.template'),
             ])
@@ -268,11 +273,19 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('serializer.template_generator', ['format' => 'json'])
 
-        ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
+        // ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
+        //     ->args([
+        //         service('serializer.type_extractor'),
+        //     ])
+        //     ->tag('serializer.template_generator', ['format' => 'csv'])
+
+        // DOM tree builders
+        ->set('serializer.dom_tree_builder', DomTreeBuilder::class)
             ->args([
                 service('serializer.type_extractor'),
+                service('serializer.serialize.property_configurator'),
             ])
-            ->tag('serializer.template_generator', ['format' => 'csv'])
+        ->alias(DomTreeBuilderInterface::class, 'serializer.dom_tree_builder')
 
         // Deserializer
         ->set('serializer.deserializer', Deserializer::class)
@@ -314,21 +327,27 @@ return static function (ContainerConfigurator $container) {
         // Instantiators
         ->set('serializer.instantiator.eager', EagerInstantiator::class)
             ->args([
-                service('serializer.property_configurator'),
+                service('serializer.deserialize.property_configurator'),
             ])
 
         ->set('serializer.instantiator.lazy', LazyInstantiator::class)
             ->args([
-                service('serializer.property_configurator'),
+                service('serializer.deserialize.property_configurator'),
                 param('.serializer.cache_dir.lazy_object'),
             ])
 
-        // Property configurator
-        ->set('serializer.property_configurator', PropertyConfigurator::class)
+        // Property configurators
+        ->set('serializer.deserialize.property_configurator', DeserializePropertyConfigurator::class)
             ->args([
                 service('serializer.type_extractor'),
             ])
-        ->alias(PropertyConfiguratorInterface::class, 'serializer.property_configurator')
+        ->alias(DeserializePropertyConfiguratorInterface::class, 'serializer.deserialize.property_configurator')
+
+        ->set('serializer.serialize.property_configurator', SerializePropertyConfigurator::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(SerializePropertyConfiguratorInterface::class, 'serializer.serialize.property_configurator')
 
         // Type extractors
         ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)

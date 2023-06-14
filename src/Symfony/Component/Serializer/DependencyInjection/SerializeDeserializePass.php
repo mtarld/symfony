@@ -36,7 +36,7 @@ final class SerializeDeserializePass implements CompilerPassInterface
         }
 
         $container->getDefinition('serializer.serializer')
-            ->replaceArgument(0, $templateGenerators);
+            ->replaceArgument(1, $templateGenerators);
 
         $eagerUnmarshallers = [];
         foreach ($container->findTaggedServiceIds('serializer.unmarshaller.eager') as $id => $tags) {

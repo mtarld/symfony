@@ -13,6 +13,7 @@ namespace Symfony\Component\Serializer\Serialize;
 
 use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
+use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Compiler;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ArgumentsNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ClosureNode;
@@ -20,7 +21,6 @@ use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ExpressionNode
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\PhpDocNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ReturnNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\VariableNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\TemplateGeneratorFactory;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\TemplateGeneratorInterface;
 use Symfony\Component\Serializer\Serialize\Template\TemplateHelper;
 use Symfony\Component\Serializer\Stream\StreamInterface;
@@ -40,6 +40,7 @@ final class Serializer implements SerializerInterface
      * @param array<string, TemplateGeneratorInterface> $templateGenerators
      */
     public function __construct(
+        private readonly DomTreeBuilderInterface $domTreeBuilder,
         private readonly array $templateGenerators,
         private readonly string $templateCacheDir,
     ) {
@@ -85,15 +86,8 @@ final class Serializer implements SerializerInterface
             throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
         }
 
-        // $dom = $this->foo->bar($type);
-
         $compiler = new Compiler();
         $accessor = new VariableNode('data');
-
-        $context = $context + [
-            'generated_classes' => [],
-            'variable_counters' => [],
-        ];
 
         $compiler->compile(new PhpDocNode([sprintf('@param %s $data', $type), '@param resource $resource']));
         $phpDoc = $compiler->source();
@@ -102,7 +96,7 @@ final class Serializer implements SerializerInterface
         $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
 
         $compiler->indent();
-        $bodyNodes = $templateGenerator->generate($type, $accessor, $context);
+        $bodyNodes = $templateGenerator->generate($this->domTreeBuilder->build($type, $accessor, $context), $context);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

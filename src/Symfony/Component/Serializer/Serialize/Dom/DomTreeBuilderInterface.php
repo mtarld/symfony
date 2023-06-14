@@ -9,21 +9,20 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\TemplateGenerator;
+namespace Symfony\Component\Serializer\Serialize\Dom;
 
-use Symfony\Component\Serializer\Serialize\Dom\DomNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
+use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface TemplateGeneratorInterface
+interface DomTreeBuilderInterface
 {
     /**
      * @param array<string, mixed> $context
-     *
-     * @return list<NodeInterface>
      */
-    public function generate(DomNode $domNode, array $context): array;
+    public function build(Type $type, NodeInterface $accessor, array $context): DomNode;
 }

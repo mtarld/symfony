@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\Context;
+namespace Symfony\Component\Serializer\Serialize;
 
 use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Serialize\Hook\ObjectHookInterface;

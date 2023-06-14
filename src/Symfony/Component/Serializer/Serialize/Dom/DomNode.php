@@ -11,31 +11,29 @@
 
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Compiler;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-final readonly class Node
+abstract readonly class DomNode
 {
-    /**
-     * @param list<self> $children
-     */
     public function  __construct(
-        public string $name,
-        public string $type,
-        public string $accessor,
-        public array $children = [],
+        public NodeInterface $accessor,
     ) {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
-            'type' => $this->type,
-            'accessor' => $this->accessor,
-            'children' => array_map($this->toArray(...), $this->children),
+            'accessor' => (new Compiler())->compile($this->accessor),
         ];
     }
 }
+
