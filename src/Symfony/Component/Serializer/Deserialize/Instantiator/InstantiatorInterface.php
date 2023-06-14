@@ -23,13 +23,13 @@ interface InstantiatorInterface
     /**
      * @template T of object
      *
-     * @param \ReflectionClass<T>              $class
-     * @param array<string, callable(): mixed> $propertiesValues
+     * @param class-string<T>                  $className
+     * @param array<string, callable(): mixed> $properties
      * @param array<string, mixed>             $context
      *
      * @return T
      *
      * @throws UnexpectedValueException
      */
-    public function __invoke(\ReflectionClass $class, array $propertiesValues, array $context): object;
+    public function instantiate(string $className, array $properties, array $context): object;
 }

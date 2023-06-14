@@ -9,10 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\Context;
+namespace Symfony\Component\Serializer\Deserialize;
 
 use Symfony\Component\Serializer\ContextInterface;
-use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -60,17 +59,6 @@ readonly class DeserializeContext implements ContextInterface
         return new self(['union_selector' => $unionSelector] + $this->options);
     }
 
-    /**
-     * @param class-string|null $className
-     */
-    public function withHook(ObjectHookInterface $hook, string $className = null): self
-    {
-        $hooks = $this->options['hooks'] ?? [];
-        $hooks['deserialize'][$className ?? 'object'] = $hook;
-
-        return new self(['hooks' => $hooks] + $this->options);
-    }
-
     public function withEagerReading(): self
     {
         return new self(['lazy_reading' => false] + $this->options);
@@ -83,21 +71,11 @@ readonly class DeserializeContext implements ContextInterface
 
     public function withEagerInstantiation(): self
     {
-        return new self(['instantiator' => 'eager'] + $this->options);
+        return new self(['lazy_instantiation' => false] + $this->options);
     }
 
     public function withLazyInstantiation(): self
     {
-        return new self(['instantiator' => 'lazy'] + $this->options);
-    }
-
-    /**
-     * @template T of object
-     *
-     * @param callable(\ReflectionClass<T>, array<string, mixed>, array<string, mixed>): T $instantiator
-     */
-    public function withCustomInstantiator(callable $instantiator): self
-    {
-        return new self(['instantiator' => $instantiator] + $this->options);
+        return new self(['lazy_instantiation' => true] + $this->options);
     }
 }

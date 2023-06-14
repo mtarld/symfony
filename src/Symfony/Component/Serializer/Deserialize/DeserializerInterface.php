@@ -9,9 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer;
+namespace Symfony\Component\Serializer\Deserialize;
 
+use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Exception\PartialDeserializationException;
+use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\Type;
 
@@ -20,13 +22,14 @@ use Symfony\Component\Serializer\Type\Type;
  *
  * @experimental in 7.0
  */
-interface DeserializeInterface
+interface DeserializerInterface
 {
     /**
      * @param StreamInterface|resource              $input
      * @param ContextInterface|array<string, mixed> $context
      *
+     * @throws UnsupportedException
      * @throws PartialDeserializationException
      */
-    public function __invoke(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed;
+    public function deserialize(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed;
 }

@@ -37,7 +37,7 @@ final class SerializeDeserializeCacheWarmer extends CacheWarmer
      * @param list<string> $formats
      */
     public function __construct(
-        private readonly ContextBuilder $contextBuilder,
+        // private readonly ContextBuilder $contextBuilder,
         private readonly SerializableResolverInterface $serializableResolver,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
@@ -67,7 +67,8 @@ final class SerializeDeserializeCacheWarmer extends CacheWarmer
             }
 
             foreach ($this->formats as $format) {
-                $this->warmClassTemplate($className, $variants, $format);
+                // TODO
+                // $this->warmClassTemplate($className, $variants, $format);
             }
 
             $this->warmClassLazyObject($className);

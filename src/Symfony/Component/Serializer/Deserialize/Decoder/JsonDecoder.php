@@ -9,40 +9,19 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Internal\Deserialize\Json;
+namespace Symfony\Component\Serializer\Deserialize\Decoder;
 
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
-final class JsonDecoder
+final class JsonDecoder implements DecoderInterface
 {
-    private const UTF8_BOM = "\xEF\xBB\xBF";
-
-    /**
-     * @param resource             $resource
-     * @param array<string, mixed> $context
-     *
-     * @throws InvalidResourceException
-     */
     public function decode(mixed $resource, int $offset, int $length, array $context): mixed
     {
-        if (0 === $offset) {
-            try {
-                /** @var string $content */
-                $content = stream_get_contents($resource, \strlen(self::UTF8_BOM));
-            } catch (\Throwable) {
-                throw new InvalidResourceException($resource);
-            }
-
-            if (self::UTF8_BOM === $content) {
-                $offset = \strlen(self::UTF8_BOM);
-            }
-        }
-
         try {
             /** @var string $content */
             $content = stream_get_contents($resource, $length, $offset);

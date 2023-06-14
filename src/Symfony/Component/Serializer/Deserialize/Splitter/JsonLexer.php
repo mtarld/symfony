@@ -9,14 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Internal\Deserialize\Json;
+namespace Symfony\Component\Serializer\Deserialize\Splitter;
 
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
 final class JsonLexer
 {
@@ -24,7 +24,6 @@ final class JsonLexer
 
     private const WHITESPACE_CHARS = [' ' => true, "\r" => true, "\t" => true, "\n" => true];
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
-    private const EMPTY_TOKENS = ['' => true, "\xEF\xBB\xBF" => true];
 
     /**
      * @param resource             $resource
@@ -89,10 +88,6 @@ final class JsonLexer
 
                 if (isset(self::STRUCTURE_CHARS[$byte]) || isset(self::WHITESPACE_CHARS[$byte])) {
                     if ('' !== $token) {
-                        if (!isset(self::EMPTY_TOKENS[$token])) {
-                            yield [$token, $currentTokenPosition];
-                        }
-
                         $currentTokenPosition += \strlen($token);
                         $token = '';
                     }
@@ -114,7 +109,7 @@ final class JsonLexer
             $offset += $bufferLength;
         }
 
-        if (!isset(self::EMPTY_TOKENS[$token])) {
+        if ('' !== $token) {
             yield [$token, $currentTokenPosition];
         }
     }

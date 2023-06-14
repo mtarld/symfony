@@ -26,7 +26,7 @@ final readonly class Serialize implements SerializeInterface
     private TemplateHelper $templateHelper;
 
     public function __construct(
-        private ContextBuilder $contextBuilder,
+        // private ContextBuilder $contextBuilder,
         private string $templateCacheDir,
     ) {
         $this->templateHelper = new TemplateHelper();

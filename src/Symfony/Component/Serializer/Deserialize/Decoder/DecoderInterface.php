@@ -9,15 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Internal\Deserialize;
+namespace Symfony\Component\Serializer\Deserialize\Decoder;
 
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
-use Symfony\Component\Serializer\Exception\RuntimeException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
 interface DecoderInterface
 {
@@ -25,7 +24,6 @@ interface DecoderInterface
      * @param resource             $resource
      * @param array<string, mixed> $context
      *
-     * @throws RuntimeException
      * @throws InvalidResourceException
      */
     public function decode(mixed $resource, int $offset, int $length, array $context): mixed;

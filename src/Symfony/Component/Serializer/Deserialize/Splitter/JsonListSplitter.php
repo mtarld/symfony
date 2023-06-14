@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Internal\Deserialize\Json;
+namespace Symfony\Component\Serializer\Deserialize\Splitter;
 
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
 use Symfony\Component\Serializer\Type\Type;
@@ -17,37 +17,23 @@ use Symfony\Component\Serializer\Type\Type;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @internal
+ * @experimental in 7.0
  */
-final class JsonDictSplitter
+final class JsonListSplitter implements SplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
 
     private readonly JsonLexer $lexer;
 
-    /**
-     * @var array{key: array<string, string>}
-     */
-    private static array $cache = [
-        'key' => [],
-    ];
-
     public function __construct()
     {
         $this->lexer = new JsonLexer();
     }
 
-    /**
-     * @param resource             $resource
-     * @param array<string, mixed> $context
-     *
-     * @return \Iterator<string, array{0: int, 1: int}>|null
-     */
     public function split(mixed $resource, Type $type, array $context): ?\Iterator
     {
         $tokens = $this->lexer->tokens($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
-        $currentToken = $tokens->current();
 
         if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
@@ -61,14 +47,11 @@ final class JsonDictSplitter
      * @param resource                            $resource
      * @param array<string, mixed>                $context
      *
-     * @return \Iterator<string, array{0: int, 1: int}>
+     * @return \Iterator<array{0: int, 1: int}>
      */
-    public function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
+    private function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
     {
         $level = 0;
-        $offset = 0;
-        $firstValueToken = false;
-        $key = null;
 
         foreach ($tokens as $i => $token) {
             if (0 === $i) {
@@ -77,11 +60,7 @@ final class JsonDictSplitter
 
             $value = $token[0];
             $position = $token[1];
-
-            if ($firstValueToken) {
-                $firstValueToken = false;
-                $offset = $position;
-            }
+            $offset = $offset ?? $position;
 
             if (isset(self::NESTING_CHARS[$value])) {
                 ++$level;
@@ -99,33 +78,21 @@ final class JsonDictSplitter
                 continue;
             }
 
-            if (':' === $value) {
-                $firstValueToken = true;
-
-                continue;
-            }
-
             if (',' === $value) {
-                if (null !== $key && ($length = $position - $offset) > 0) {
-                    yield $key => [$offset, $length];
+                if (($length = $position - $offset) > 0) {
+                    yield [$offset, $length];
                 }
 
-                $key = null;
-
-                continue;
-            }
-
-            if (null === $key) {
-                $key = self::$cache['key'][$value] ??= json_decode($value, flags: $context['json_decode_flags'] ?? 0);
+                $offset = null;
             }
         }
 
-        if (-1 !== $level || !isset($value, $position) || '}' !== $value) {
+        if (-1 !== $level || !isset($value, $offset, $position) || ']' !== $value) {
             throw new InvalidResourceException($resource);
         }
 
-        if (null !== $key && ($length = $position - $offset) > 0) {
-            yield $key => [$offset, $length];
+        if (($length = $position - $offset) > 0) {
+            yield [$offset, $length];
         }
     }
 }

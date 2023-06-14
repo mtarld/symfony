@@ -18,12 +18,18 @@ use Symfony\Component\Cache\Adapter\PhpArrayAdapter;
 use Symfony\Component\ErrorHandler\ErrorRenderer\HtmlErrorRenderer;
 use Symfony\Component\ErrorHandler\ErrorRenderer\SerializerErrorRenderer;
 use Symfony\Component\PropertyInfo\Extractor\SerializerExtractor;
-use Symfony\Component\Serializer\Context\ContextBuilder;
-use Symfony\Component\Serializer\Deserialize;
-use Symfony\Component\Serializer\Deserialize\Hook\ObjectHook as DeserializeObjectHook;
-use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface as DeserializeObjectHookInterface;
+use Symfony\Component\Serializer\Deserialize\Decoder\CsvDecoder;
+use Symfony\Component\Serializer\Deserialize\Decoder\JsonDecoder;
+use Symfony\Component\Serializer\Deserialize\Instantiator\EagerInstantiator;
 use Symfony\Component\Serializer\Deserialize\Instantiator\LazyInstantiator;
-use Symfony\Component\Serializer\DeserializeInterface;
+use Symfony\Component\Serializer\Deserialize\Splitter\JsonDictSplitter;
+use Symfony\Component\Serializer\Deserialize\Splitter\JsonListSplitter;
+use Symfony\Component\Serializer\Deserialize\Unmarshaller\EagerUnmarshaller;
+use Symfony\Component\Serializer\Deserialize\Unmarshaller\LazyUnmarshaller;
+use Symfony\Component\Serializer\Deserialize\Deserializer;
+use Symfony\Component\Serializer\Deserialize\DeserializerInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfigurator;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
@@ -251,29 +257,10 @@ return static function (ContainerConfigurator $container) {
         // Serialize
         ->set('serializer.serialize', Serialize::class)
             ->args([
-                service('.serializer.context_builder'),
+                // service('.serializer.context_builder'),
                 param('.serializer.cache_dir.template'),
             ])
         ->alias(SerializeInterface::class, 'serializer.serialize')
-
-        // Deserialize
-        ->set('serializer.deserialize', Deserialize::class)
-            ->args([
-                service('.serializer.context_builder'),
-                service('serializer.hook.deserialize.object'),
-            ])
-        ->alias(DeserializeInterface::class, 'serializer.deserialize')
-
-        // Context
-        ->set('.serializer.context_builder', ContextBuilder::class)
-            ->args([
-                service('serializer.serializable_resolver'),
-                service('serializer.instantiator.lazy'),
-                service('serializer.hook.serialize.object'),
-                service('serializer.hook.deserialize.object'),
-                abstract_arg('available services during serialization'),
-                abstract_arg('available services during serialization'),
-            ])
 
         // Type extractors
         ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)
@@ -296,12 +283,6 @@ return static function (ContainerConfigurator $container) {
             ])
         ->alias(SerializeObjectHookInterface::class, 'serializer.hook.serialize.object')
 
-        ->set('serializer.hook.deserialize.object', DeserializeObjectHook::class)
-            ->args([
-                service('serializer.type_extractor'),
-            ])
-        ->alias(DeserializeObjectHookInterface::class, 'serializer.hook.deserialize.object')
-
         // Serializable resolvers
         ->set('serializer.serializable_resolver', PathSerializableResolver::class)
             ->args([
@@ -316,16 +297,22 @@ return static function (ContainerConfigurator $container) {
             ])
         ->alias(SerializableResolverInterface::class, 'serializer.serializable_resolver')
 
-        // Object instantiators
+        // Instantiators
+        ->set('serializer.instantiator.eager', EagerInstantiator::class)
+            ->args([
+                service('serializer.property_configurator'),
+            ])
+
         ->set('serializer.instantiator.lazy', LazyInstantiator::class)
             ->args([
+                service('serializer.property_configurator'),
                 param('.serializer.cache_dir.lazy_object'),
             ])
 
         // Cache
         ->set('serializer.cache_warmer.serialize_deserialize', SerializeDeserializeCacheWarmer::class)
             ->args([
-                service('.serializer.context_builder'),
+                // service('.serializer.context_builder'),
                 service('serializer.serializable_resolver'),
                 param('.serializer.cache_dir.template'),
                 param('.serializer.cache_dir.lazy_object'),
@@ -334,5 +321,49 @@ return static function (ContainerConfigurator $container) {
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('kernel.cache_warmer')
+
+        // Property configurator
+        ->set('serializer.property_configurator', PropertyConfigurator::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(PropertyConfiguratorInterface::class, 'serializer.property_configurator')
+
+        // Unmarshallers
+        ->set('serializer.deserialize.unmarshaller.json.eager', EagerUnmarshaller::class)
+            ->args([
+                service('serializer.type_extractor'),
+                inline_service(JsonDecoder::class),
+            ])
+            ->tag('serializer.deserialize.eager', ['format' => 'json'])
+
+        ->set('serializer.deserialize.unmarshaller.json.lazy', LazyUnmarshaller::class)
+            ->args([
+                service('serializer.type_extractor'),
+                inline_service(JsonDecoder::class),
+                inline_service(JsonListSplitter::class),
+                inline_service(JsonDictSplitter::class),
+            ])
+            ->tag('serializer.deserialize.lazy', ['format' => 'json'])
+
+        ->set('serializer.deserialize.unmarshaller.csv.eager', EagerUnmarshaller::class)
+            ->args([
+                service('serializer.type_extractor'),
+                inline_service(CsvDecoder::class)
+                    ->args([
+                        service('serializer.encoder.csv'),
+                    ]),
+            ])
+            ->tag('serializer.deserialize.eager', ['format' => 'csv'])
+
+        // Deserializer
+        ->set('serializer.deserializer', Deserializer::class)
+            ->args([
+                abstract_arg('eager deserialize'),
+                abstract_arg('lazy deserialize'),
+                service('serializer.instantiator.eager'),
+                service('serializer.instantiator.lazy'),
+            ])
+        ->alias(DeserializerInterface::class, 'serializer.deserializer')
     ;
 };

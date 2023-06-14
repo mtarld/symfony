@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Serializer\DependencyInjection;
 
-use Symfony\Component\DependencyInjection\Argument\ServiceLocatorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -25,16 +24,25 @@ final class SerializeDeserializePass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition('serializer.serialize')) {
-            return;
+        // TODO
+        // if (!$container->hasDefinition('serializer.serialize')) {
+        //     return;
+        // }
+
+        $eagerDeserialize = [];
+        foreach ($container->findTaggedServiceIds('serializer.deserialize.eager') as $id => $tags) {
+            $tag = reset($tags);
+            $eagerDeserialize[$tag['format']] = new Reference($id);
         }
 
-        $contextBuilderDefinition = $container->getDefinition('.serializer.context_builder');
+        $lazyDeserialize = [];
+        foreach ($container->findTaggedServiceIds('serializer.deserialize.lazy') as $id => $tags) {
+            $tag = reset($tags);
+            $lazyDeserialize[$tag['format']] = new Reference($id);
+        }
 
-        $serializeServicesDefinitions = array_map(fn (string $id): Reference => new Reference($id), $container->findTaggedServiceIds('serializer.serialize_service'));
-        $deserializeServicesDefinitions = array_map(fn (string $id): Reference => new Reference($id), $container->findTaggedServiceIds('serializer.deserialize_service'));
-
-        $contextBuilderDefinition->replaceArgument(4, new ServiceLocatorArgument($serializeServicesDefinitions));
-        $contextBuilderDefinition->replaceArgument(5, new ServiceLocatorArgument($deserializeServicesDefinitions));
+        $container->getDefinition('serializer.deserializer')
+            ->replaceArgument(0, $eagerDeserialize)
+            ->replaceArgument(1, $lazyDeserialize);
     }
 }
