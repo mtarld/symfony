@@ -12,11 +12,8 @@
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
-use Symfony\Component\Serializer\Serialize\PropertyConfigurator\PropertyConfiguratorInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\VariableNode;
+use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\VariableNameScoperTrait;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\PropertyNode;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 use Symfony\Component\Serializer\Type\TypeFactory;
@@ -35,12 +32,12 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
 
     public function __construct(
         private readonly TypeExtractorInterface $typeExtractor,
-        private readonly PropertyConfiguratorInterface $propertyConfigurator,
+        private readonly SerializePropertyConfiguratorInterface $propertyConfigurator,
     ) {
         $this->typeSorter = new TypeSorter();
     }
 
-    public function build(Type $type, NodeInterface $accessor, array $context): DomNode
+    public function build(Type $type, string $accessor, array $context): DomNode
     {
         if ($type->isNullable()) {
             return new UnionDomNode($accessor, [
@@ -69,14 +66,15 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
                     continue;
                 }
 
-                $properties[$property->getName()] = $this->build(
-                    $this->typeExtractor->extractFromProperty($property),
-                    new PropertyNode($accessor, $property->getName()),
-                    $context,
-                );
+                $properties[$property->getName()] = [
+                    // TODO DTO?
+                    'type' => $this->typeExtractor->extractFromProperty($property),
+                    'accessor' => sprintf('%s->%s', $accessor, $property->getName()),
+                ];
             }
 
             $properties = $this->propertyConfigurator->configure($type->className(), $properties, $context);
+            $properties = array_map(fn (array $p) => $this->build($p['type'], $p['accessor'], $context), $properties);
 
             return new ObjectDomNode($accessor, $type->className(), $properties);
         }
@@ -87,13 +85,13 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
                 throw new \RuntimeException('TODO');
             }
 
-            return new ValueDomNode(new PropertyNode($accessor, 'value'), TypeFactory::createFromString((string) $backedType));
+            return new ValueDomNode(sprintf('%s->value', $accessor), TypeFactory::createFromString((string) $backedType));
         }
 
         if ($type->isCollection()) {
             return new CollectionDomNode(
                 $accessor,
-                $this->build($type->collectionValueType(), new VariableNode($this->scopeVariableName('value', $context)), $context),
+                $this->build($type->collectionValueType(), '$'.$this->scopeVariableName('value', $context), $context),
                 $type->isList(),
                 'array' === $type->name(),
             );

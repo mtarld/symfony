@@ -14,7 +14,7 @@ namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
 use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
@@ -25,11 +25,12 @@ use Symfony\Component\Serializer\Type\TypeGenericsHelper;
  *
  * @experimental in 7.0
  */
-final class PropertyConfigurator implements PropertyConfiguratorInterface
+final class DeserializePropertyConfigurator implements DeserializePropertyConfiguratorInterface
 {
     private static array $cache = [
         'metadata' => [],
         'reflection' => [],
+        'formatter_reflection' => [],
         'generic_types' => [],
         'type' => [],
     ];
@@ -82,9 +83,10 @@ final class PropertyConfigurator implements PropertyConfiguratorInterface
             }
 
             $cacheKey .= json_encode($formatter);
+            $formatterReflection = self::$cache['formatter_reflection'][$cacheKey] ??= new \ReflectionFunction(\Closure::fromCallable($formatter));
+            $type = self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromFunctionParameter($formatterReflection->getParameters()[0]);
 
-            $type = self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromFunctionParameter((new \ReflectionFunction(\Closure::fromCallable($formatter)))->getParameters()[0]);
-            if (isset($genericTypes[(string) $type])) {
+            if (isset($genericTypes[(string) $type]) && $formatterReflection->getClosureScopeClass()?->getName() !== $className) {
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 

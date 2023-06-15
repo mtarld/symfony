@@ -11,9 +11,6 @@
 
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
-
-
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -25,7 +22,7 @@ final readonly class UnionDomNode extends DomNode
      * @param list<DomNode> $domNodes
      */
     public function  __construct(
-        NodeInterface $accessor,
+        string $accessor,
         public array $domNodes,
     ) {
         parent::__construct($accessor);
@@ -33,6 +30,8 @@ final readonly class UnionDomNode extends DomNode
 
     public function toArray(): array
     {
-        return [];
+        return [
+            'domNodes' => array_map(fn (DomNode $p): array => $p->toArray(), $this->domNodes),
+        ] + parent::toArray();
     }
 }

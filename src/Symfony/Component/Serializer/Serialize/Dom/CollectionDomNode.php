@@ -11,8 +11,6 @@
 
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
-
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -21,7 +19,7 @@ use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
 final readonly class CollectionDomNode extends DomNode
 {
     public function  __construct(
-        NodeInterface $accessor,
+        string $accessor,
         public DomNode $childrenDomNode,
         public bool $isList,
         public bool $isArray,
@@ -31,6 +29,10 @@ final readonly class CollectionDomNode extends DomNode
 
     public function toArray(): array
     {
-        return [];
+        return [
+            'childrenDomNode' => $this->childrenDomNode->toArray(),
+            'isList' => $this->isList,
+            'isArray' => $this->isArray,
+        ] + parent::toArray();
     }
 }

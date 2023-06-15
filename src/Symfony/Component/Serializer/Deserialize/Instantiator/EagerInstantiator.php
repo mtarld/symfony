@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Instantiator;
 
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\TypeGenericsHelper;
 
@@ -33,7 +33,7 @@ final class EagerInstantiator implements InstantiatorInterface
     private readonly TypeGenericsHelper $typeGenericsHelper;
 
     public function __construct(
-        private readonly PropertyConfiguratorInterface $propertyConfigurator,
+        private readonly DeserializePropertyConfiguratorInterface $propertyConfigurator,
     ) {
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }

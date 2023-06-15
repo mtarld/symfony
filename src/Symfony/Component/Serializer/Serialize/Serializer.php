@@ -87,7 +87,6 @@ final class Serializer implements SerializerInterface
         }
 
         $compiler = new Compiler();
-        $accessor = new VariableNode('data');
 
         $compiler->compile(new PhpDocNode([sprintf('@param %s $data', $type), '@param resource $resource']));
         $phpDoc = $compiler->source();
@@ -96,7 +95,7 @@ final class Serializer implements SerializerInterface
         $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
 
         $compiler->indent();
-        $bodyNodes = $templateGenerator->generate($this->domTreeBuilder->build($type, $accessor, $context), $context);
+        $bodyNodes = $templateGenerator->generate($this->domTreeBuilder->build($type, '$data', $context), $context);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

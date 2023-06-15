@@ -16,14 +16,14 @@ namespace Symfony\Component\Serializer\Serialize\PropertyConfigurator;
  *
  * @experimental in 7.0
  */
-interface PropertyConfiguratorInterface
+interface SerializePropertyConfiguratorInterface
 {
     /**
      * @param class-string              $className
-     * @param array<string, array{name: string, type: Type, accessor: string}> $properties
+     * @param array<string, array{type: Type, accessor: string}> $properties
      * @param array<string, mixed> $context
      *
-     * @return array<string, array{name: string, type: Type, accessor: string}>
+     * @return array<string, array{type: Type, accessor: string}>
      */
     public function configure(string $className, array $properties, array $context): array;
 }

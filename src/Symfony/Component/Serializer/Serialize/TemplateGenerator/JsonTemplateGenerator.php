@@ -19,6 +19,7 @@ use Symfony\Component\Serializer\Serialize\Dom\UnionDomNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ArrayAccessNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ForEachNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\RawNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\TemplateStringNode;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\VariableNameScoperTrait;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\AssignNode;
@@ -48,6 +49,8 @@ final class JsonTemplateGenerator implements TemplateGeneratorInterface
 
     public function generate(DomNode $domNode, array $context): array
     {
+        $accessor = new RawNode($domNode->accessor);
+
         if ($domNode instanceof UnionDomNode) {
             $domNodes = $domNode->domNodes;
 
@@ -80,7 +83,7 @@ final class JsonTemplateGenerator implements TemplateGeneratorInterface
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('[')])),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
-                    new ForEachNode($domNode->accessor, null, $domNode->childrenDomNode->accessor->name, [
+                    new ForEachNode($accessor, null, substr($domNode->childrenDomNode->accessor, 1), [
                         new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
                         ...$this->generate($domNode->childrenDomNode, $context),
                         new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
@@ -96,7 +99,7 @@ final class JsonTemplateGenerator implements TemplateGeneratorInterface
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
                 new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
 
-                new ForEachNode($domNode->accessor, $keyName, $domNode->childrenDomNode->accessor->name, [
+                new ForEachNode($accessor, $keyName, substr($domNode->childrenDomNode->accessor, 1), [
                     new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->escapeString(new VariableNode($keyName)))),
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
                         new VariableNode($prefixName),
@@ -142,27 +145,29 @@ final class JsonTemplateGenerator implements TemplateGeneratorInterface
         }
 
         return [
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->encodeValue($domNode->accessor)])),
+            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->encodeValue($accessor)])),
         ];
     }
 
     private function typeValidator(DomNode $domNode): NodeInterface
     {
+        $accessor = new RawNode($domNode->accessor);
+
         if ($domNode instanceof CollectionDomNode) {
             if ($domNode->isArray) {
                 return $domNode->isList
-                    ? new BinaryNode('&&', new FunctionNode('\is_array', [$domNode->accessor]), new FunctionNode('\array_is_list', [$domNode->accessor]))
-                    : new BinaryNode('&&', new FunctionNode('\is_array', [$domNode->accessor]), new UnaryNode('!', new FunctionNode('\array_is_list', [$domNode->accessor])));
+                    ? new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new FunctionNode('\array_is_list', [$accessor]))
+                    : new BinaryNode('&&', new FunctionNode('\is_array', [$accessor]), new UnaryNode('!', new FunctionNode('\array_is_list', [$accessor])));
             }
 
-            return new FunctionNode('\is_iterable', [$domNode->accessor]);
+            return new FunctionNode('\is_iterable', [$accessor]);
         }
 
         if ($domNode instanceof ObjectDomNode) {
-            return new BinaryNode('instanceof', $domNode->accessor, new ScalarNode($domNode->className));
+            return new BinaryNode('instanceof', $accessor, new ScalarNode($domNode->className));
         }
 
-        return new FunctionNode(sprintf('\is_%s', $domNode->type), [$domNode->accessor]);
+        return new FunctionNode(sprintf('\is_%s', $domNode->type), [$accessor]);
     }
 
     private function encodeValue(NodeInterface $node): NodeInterface

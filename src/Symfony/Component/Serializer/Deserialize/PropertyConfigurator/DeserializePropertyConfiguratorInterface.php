@@ -16,7 +16,7 @@ namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
  *
  * @experimental in 7.0
  */
-interface PropertyConfiguratorInterface
+interface DeserializePropertyConfiguratorInterface
 {
     /**
      * @param class-string              $className

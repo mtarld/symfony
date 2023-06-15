@@ -24,5 +24,5 @@ interface DomTreeBuilderInterface
     /**
      * @param array<string, mixed> $context
      */
-    public function build(Type $type, NodeInterface $accessor, array $context): DomNode;
+    public function build(Type $type, string $accessor, array $context): DomNode;
 }

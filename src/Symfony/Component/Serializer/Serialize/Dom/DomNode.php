@@ -11,9 +11,6 @@
 
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Compiler;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
-
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -22,7 +19,7 @@ use Symfony\Component\Serializer\Serialize\TemplateGenerator\NodeInterface;
 abstract readonly class DomNode
 {
     public function  __construct(
-        public NodeInterface $accessor,
+        public string $accessor,
     ) {
     }
 
@@ -32,7 +29,7 @@ abstract readonly class DomNode
     public function toArray(): array
     {
         return [
-            'accessor' => (new Compiler())->compile($this->accessor),
+            'accessor' => $this->accessor,
         ];
     }
 }

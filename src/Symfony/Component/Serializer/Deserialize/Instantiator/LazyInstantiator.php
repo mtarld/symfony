@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Instantiator;
 
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\PropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -36,7 +36,7 @@ final class LazyInstantiator implements InstantiatorInterface
     private static array $lazyClassesLoaded = [];
 
     public function __construct(
-        private readonly PropertyConfiguratorInterface $propertyConfigurator,
+        private readonly DeserializePropertyConfiguratorInterface $propertyConfigurator,
         private readonly string $cacheDir,
     ) {
     }
