@@ -12,6 +12,15 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Exception\UnsupportedException;
+use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Compiler;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ArgumentsNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ClosureNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ExpressionNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\PhpDocNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ReturnNode;
+use Symfony\Component\Serializer\Serialize\TemplateGenerator\TemplateGeneratorInterface;
 use Symfony\Component\Serializer\Type\Type;
 
 /**
@@ -19,12 +28,23 @@ use Symfony\Component\Serializer\Type\Type;
  *
  * @experimental in 7.0
  */
-final class TemplateHelper
+// TODO better name
+final class Template
 {
+    /**
+     * @param array<string, TemplateGeneratorInterface> $templateGenerators
+     */
+    public function __construct(
+        private readonly DomTreeBuilderInterface $domTreeBuilder,
+        private readonly array $templateGenerators,
+        private readonly string $templateCacheDir,
+    ) {
+    }
+
     /**
      * @param array<string, mixed> $context
      */
-    public function templateFilename(Type|string $type, string $format, array $context): string
+    public function path(Type $type, string $format, array $context): string
     {
         $hash = hash('xxh128', (string) $type);
 
@@ -34,7 +54,38 @@ final class TemplateHelper
             $hash .= '.'.hash('xxh128', implode('_', array_map(fn (TemplateVariation $t): string => (string) $t, $variant)));
         }
 
-        return sprintf('%s.%s.php', $hash, $format);
+        return sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, $hash, $format);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function content(Type $type, string $format, array $context): string
+    {
+        $context['type'] = $type;
+
+        /** @var TemplateGeneratorInterface|null $templateGenerator */
+        $templateGenerator = $this->templateGenerators[$format] ?? null;
+        if (null === $templateGenerator) {
+            throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
+        }
+
+        $compiler = new Compiler();
+
+        $compiler->compile(new PhpDocNode([sprintf('@param %s $data', $type), '@param resource $resource']));
+        $phpDoc = $compiler->source();
+        $compiler->reset();
+
+        $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
+
+        $compiler->indent();
+        $bodyNodes = $templateGenerator->generate($this->domTreeBuilder->build($type, '$data', $context), $context);
+        $compiler->outdent();
+
+        $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));
+        $php = $compiler->source();
+
+        return "<?php\n\n".$phpDoc.$php;
     }
 
     /**
@@ -42,7 +93,7 @@ final class TemplateHelper
      *
      * @return list<list<TemplateVariation>>
      */
-    public function classTemplateVariants(string $className): array
+    public function classVariants(string $className): array
     {
         $groups = [];
 

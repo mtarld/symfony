@@ -72,6 +72,7 @@ use Symfony\Component\Serializer\SerializableResolver\PathSerializableResolver;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\Serializer\Serialize\Serializer as ExperimentalSerializer;
 use Symfony\Component\Serializer\Serialize\SerializerInterface as ExperimentalSerializerInterface;
+use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Serializer\Type\PhpstanTypeExtractor;
@@ -260,11 +261,18 @@ return static function (ContainerConfigurator $container) {
         // Serializer
         ->set('serializer.serializer', ExperimentalSerializer::class)
             ->args([
+                service('serializer.template'),
+                param('.serializer.cache_dir.template'),
+            ])
+        ->alias(ExperimentalSerializerInterface::class, 'serializer.serializer')
+
+        // Template
+        ->set('serializer.template', Template::class)
+            ->args([
                 service('serializer.dom_tree_builder'),
                 abstract_arg('template generators'),
                 param('.serializer.cache_dir.template'),
             ])
-        ->alias(ExperimentalSerializerInterface::class, 'serializer.serializer')
 
         // Template generators
         ->set('serializer.template_generator.json', JsonTemplateGenerator::class)
@@ -382,6 +390,7 @@ return static function (ContainerConfigurator $container) {
         ->set('serializer.cache_warmer', SerializerDeserializerCacheWarmer::class)
             ->args([
                 service('serializer.serializable_resolver'),
+                service('serializer.template'),
                 param('.serializer.cache_dir.template'),
                 param('.serializer.cache_dir.lazy_object'),
                 param('serializer.template_warm_up.formats'),

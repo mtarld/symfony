@@ -43,7 +43,7 @@ final readonly class ClosureNode implements NodeInterface
         $returnTypeSource = $this->returnType ? ': '.$this->returnType : '';
 
         $compiler
-            ->raw(sprintf('%sfunction (%s)%s%s {', $staticSource, $argumentsSource, $usesSource, $returnTypeSource).\PHP_EOL)
+            ->raw(sprintf('%sfunction (%s)%s%s {', $staticSource, $argumentsSource, $usesSource, $returnTypeSource)."\n")
             ->indent();
 
         foreach ($this->body as $bodyNode) {

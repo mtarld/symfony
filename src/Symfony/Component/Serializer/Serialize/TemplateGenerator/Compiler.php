@@ -69,7 +69,7 @@ final class Compiler
 
     public function line(string $line): static
     {
-        $this->source .= str_repeat(' ', 4 * $this->indentationLevel).$line.\PHP_EOL;
+        $this->source .= str_repeat(' ', 4 * $this->indentationLevel).$line."\n";
 
         return $this;
     }

@@ -16,12 +16,10 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
-use Symfony\Component\Serializer\Serialize\Template\TemplateHelper;
+use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariation;
 use Symfony\Component\Serializer\Type\TypeFactory;
 use Symfony\Component\VarExporter\ProxyHelper;
-
-use function Symfony\Component\Serializer\serialize_generate;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -30,20 +28,18 @@ use function Symfony\Component\Serializer\serialize_generate;
  */
 final class SerializerDeserializerCacheWarmer extends CacheWarmer
 {
-    private readonly TemplateHelper $templateHelper;
-
     /**
      * @param list<string> $formats
      */
     public function __construct(
         private readonly SerializableResolverInterface $serializableResolver,
+        private readonly Template $template,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
         private readonly array $formats,
         private readonly int $maxVariants,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
-        $this->templateHelper = new TemplateHelper();
     }
 
     public function warmUp(string $cacheDir): array
@@ -57,7 +53,7 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
         }
 
         foreach ($this->serializableResolver->resolve() as $className) {
-            $variants = $this->templateHelper->classTemplateVariants($className);
+            $variants = $this->template->classVariants($className);
 
             if (\count($variants) > $this->maxVariants) {
                 $this->logger->debug('Too many variants for "{className}", keeping only the first {maxVariants}.', ['className' => $className, 'maxVariants' => $this->maxVariants]);
@@ -94,11 +90,11 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
                     $variantContext['groups'] = array_map(fn (TemplateVariation $v): string => $v->value, $groupVariations);
                 }
 
-                $variantFilename = $this->templateHelper->templateFilename($className, $format, $variantContext);
+                $type = TypeFactory::createFromString($className);
 
                 $this->writeCacheFile(
-                    $this->templateCacheDir.\DIRECTORY_SEPARATOR.$variantFilename,
-                    serialize_generate(TypeFactory::createFromString($className), $format, $variantContext),
+                    $this->template->path($type, $format, $variantContext),
+                    $this->template->content($type, $format, $variantContext),
                 );
             }
         } catch (ExceptionInterface $e) {
