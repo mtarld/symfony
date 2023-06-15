@@ -17,7 +17,12 @@ use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\Serializer\Serialize\Template\Template;
+use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
+use Symfony\Component\Serializer\Serialize\Template\TemplateHelper;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariant;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariantConverter;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariation;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariations;
 use Symfony\Component\Serializer\Type\TypeFactory;
 use Symfony\Component\VarExporter\ProxyHelper;
 
@@ -33,7 +38,9 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
      */
     public function __construct(
         private readonly SerializableResolverInterface $serializableResolver,
-        private readonly Template $template,
+        private readonly TemplateFactory $templateFactory,
+        private readonly TemplateVariations $templateVariations,
+        private readonly TemplateVariantConverter $templateVariantConverter,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
         private readonly array $formats,
@@ -53,7 +60,8 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
         }
 
         foreach ($this->serializableResolver->resolve() as $className) {
-            $variants = $this->template->classVariants($className);
+            $variations = $this->templateVariations->classVariations($className);
+            $variants = $this->variants($variations);
 
             if (\count($variants) > $this->maxVariants) {
                 $this->logger->debug('Too many variants for "{className}", keeping only the first {maxVariants}.', ['className' => $className, 'maxVariants' => $this->maxVariants]);
@@ -76,26 +84,20 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
     }
 
     /**
-     * @param class-string                  $className
-     * @param list<list<TemplateVariation>> $variants
+     * @param class-string          $className
+     * @param list<TemplateVariant> $variants
      */
     private function warmClassTemplate(string $className, array $variants, string $format): void
     {
         try {
             foreach ($variants as $variant) {
-                $variantContext = [];
-
-                $groupVariations = array_filter($variant, fn (TemplateVariation $v): bool => 'group' === $v->type);
-                if ([] !== $groupVariations) {
-                    $variantContext['groups'] = array_map(fn (TemplateVariation $v): string => $v->value, $groupVariations);
-                }
-
-                $type = TypeFactory::createFromString($className);
-
-                $this->writeCacheFile(
-                    $this->template->path($type, $format, $variantContext),
-                    $this->template->content($type, $format, $variantContext),
+                $template = $this->templateFactory->create(
+                    TypeFactory::createFromString($className),
+                    $format,
+                    $this->templateVariantConverter->toContext($variant),
                 );
+
+                $this->writeCacheFile($template->path, $template->content());
             }
         } catch (ExceptionInterface $e) {
             $this->logger->debug('Cannot generate template for "{className}": {exception}', ['className' => $className, 'exception' => $e]);
@@ -114,5 +116,23 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
             sprintf('%sGhost', preg_replace('/\\\\/', '', $className)),
             ProxyHelper::generateLazyGhost(new \ReflectionClass($className)),
         ));
+    }
+
+    /**
+     * @param list<TemplateVariation> $variations
+     *
+     * @return list<TemplateVariant>
+     */
+    private function variants(array $variations): array
+    {
+        $variants = [[]];
+
+        foreach ($variations as $variation) {
+            foreach ($variants as $variant) {
+                $variants[] = array_merge([$variation], $variant);
+            }
+        }
+
+        return array_map(fn (array $variations): TemplateVariant => new TemplateVariant($variations));
     }
 }

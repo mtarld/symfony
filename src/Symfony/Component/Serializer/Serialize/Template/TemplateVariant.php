@@ -16,20 +16,19 @@ namespace Symfony\Component\Serializer\Serialize\Template;
  *
  * @experimental in 7.0
  */
-final readonly class Template
+final readonly class TemplateVariant
 {
     /**
-     * @param callable(): string $content
+     * @var list<TemplateVariation>
      */
-    public function __construct(
-        public string $path,
-        private mixed $contentGenerator,
-    ) {
-    }
+    public array $variations;
 
-    public function content(): string
+    /**
+     * @param list<TemplateVariation> $variations
+     */
+    public function __construct(array $variations)
     {
-        return ($this->contentGenerator)();
+        usort($variations, fn (TemplateVariation $a, TemplateVariation $b): int => $a->compare($b));
+        $this->variations = $variations;
     }
 }
-

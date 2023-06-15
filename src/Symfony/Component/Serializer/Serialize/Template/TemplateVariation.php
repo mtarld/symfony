@@ -24,11 +24,6 @@ final readonly class TemplateVariation implements \Stringable
     ) {
     }
 
-    public static function createGroup(string $group): self
-    {
-        return new self('group', $group);
-    }
-
     public function compare(self $other): int
     {
         return (string) $this <=> (string) $other;

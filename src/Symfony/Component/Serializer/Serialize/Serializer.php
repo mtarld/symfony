@@ -14,6 +14,7 @@ namespace Symfony\Component\Serializer\Serialize;
 use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Serializer\Serialize\Template\Template;
+use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\TypeFactory;
 
@@ -25,7 +26,7 @@ use Symfony\Component\Serializer\Type\TypeFactory;
 final class Serializer implements SerializerInterface
 {
     public function __construct(
-        private readonly Template $template,
+        private readonly TemplateFactory $templateFactory,
         private readonly string $templateCacheDir,
     ) {
     }
@@ -44,22 +45,22 @@ final class Serializer implements SerializerInterface
             $type = TypeFactory::createFromString($type);
         }
 
-        $templatePath = $this->template->path($type, $format, $context);
+        $template = $this->templateFactory->create($type, $format, $context);
 
-        if (!file_exists($templatePath) || ($context['force_generate_template'] ?? false)) {
+        if (!file_exists($template->path) || ($context['force_generate_template'] ?? false)) {
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
             }
 
-            $tmpFile = @tempnam(\dirname($templatePath), basename($templatePath));
-            if (false === @file_put_contents($tmpFile, $this->template->content($type, $format, $context))) {
-                throw new RuntimeException(sprintf('Failed to write "%s" template file.', $templatePath));
+            $tmpFile = @tempnam(\dirname($template->path), basename($template->path));
+            if (false === @file_put_contents($tmpFile, $template->content())) {
+                throw new RuntimeException(sprintf('Failed to write "%s" template file.', $template->path));
             }
 
-            @rename($tmpFile, $templatePath);
-            @chmod($templatePath, 0666 & ~umask());
+            @rename($tmpFile, $template->path);
+            @chmod($template->path, 0666 & ~umask());
         }
 
-        (require $templatePath)($data, $output, $context);
+        (require $template->path)($data, $output, $context);
     }
 }
