@@ -26,6 +26,7 @@ use Symfony\Component\Serializer\Debug\TraceableNormalizer;
  *
  * @author Javier Lopez <f12loalf@gmail.com>
  * @author Robin Chalas <robin.chalas@gmail.com>
+ * @author Mathias Arlaud<mathias.arlaud@gmail.com>
  */
 class SerializerPass implements CompilerPassInterface
 {
@@ -73,5 +74,30 @@ class SerializerPass implements CompilerPassInterface
         $serializerDefinition = $container->getDefinition('serializer');
         $serializerDefinition->replaceArgument(0, $normalizers);
         $serializerDefinition->replaceArgument(1, $encoders);
+
+        $templateGenerators = [];
+        foreach ($container->findTaggedServiceIds('serializer.template_generator') as $id => $tags) {
+            $tag = reset($tags);
+            $templateGenerators[$tag['format']] = new Reference($id);
+        }
+
+        $container->getDefinition('serializer.serializer')
+            ->replaceArgument(1, $templateGenerators);
+
+        $eagerUnmarshallers = [];
+        foreach ($container->findTaggedServiceIds('serializer.unmarshaller.eager') as $id => $tags) {
+            $tag = reset($tags);
+            $eagerUnmarshallers[$tag['format']] = new Reference($id);
+        }
+
+        $lazyUnmarshallers = [];
+        foreach ($container->findTaggedServiceIds('serializer.unmarshaller.lazy') as $id => $tags) {
+            $tag = reset($tags);
+            $lazyUnmarshallers[$tag['format']] = new Reference($id);
+        }
+
+        $container->getDefinition('serializer.deserializer')
+            ->replaceArgument(0, $eagerUnmarshallers)
+            ->replaceArgument(1, $lazyUnmarshallers);
     }
 }

@@ -186,8 +186,7 @@
             "Symfony\\Component\\": "src/Symfony/Component/"
         },
         "files": [
-            "src/Symfony/Component/String/Resources/functions.php",
-            "src/Symfony/Component/Serializer/Resources/functions.php"
+            "src/Symfony/Component/String/Resources/functions.php"
         ],
         "classmap": [
             "src/Symfony/Component/Cache/Traits/ValueWrapper.php"

@@ -14,7 +14,6 @@ namespace Symfony\Bundle\FrameworkBundle\CacheWarmer;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
-use Symfony\Component\Serializer\Context\ContextBuilder;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\Serializer\Serialize\Template\TemplateHelper;
@@ -29,7 +28,7 @@ use function Symfony\Component\Serializer\serialize_generate;
  *
  * @experimental in 7.0
  */
-final class SerializeDeserializeCacheWarmer extends CacheWarmer
+final class SerializerDeserializerCacheWarmer extends CacheWarmer
 {
     private readonly TemplateHelper $templateHelper;
 
@@ -37,7 +36,6 @@ final class SerializeDeserializeCacheWarmer extends CacheWarmer
      * @param list<string> $formats
      */
     public function __construct(
-        // private readonly ContextBuilder $contextBuilder,
         private readonly SerializableResolverInterface $serializableResolver,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
@@ -67,8 +65,7 @@ final class SerializeDeserializeCacheWarmer extends CacheWarmer
             }
 
             foreach ($this->formats as $format) {
-                // TODO
-                // $this->warmClassTemplate($className, $variants, $format);
+                $this->warmClassTemplate($className, $variants, $format);
             }
 
             $this->warmClassLazyObject($className);
@@ -89,14 +86,8 @@ final class SerializeDeserializeCacheWarmer extends CacheWarmer
     private function warmClassTemplate(string $className, array $variants, string $format): void
     {
         try {
-            $context = [
-                'cache_dir' => $this->templateCacheDir,
-            ];
-
-            $context = $this->contextBuilder->build($context, isSerialization: true);
-
             foreach ($variants as $variant) {
-                $variantContext = $context;
+                $variantContext = [];
 
                 $groupVariations = array_filter($variant, fn (TemplateVariation $v): bool => 'group' === $v->type);
                 if ([] !== $groupVariations) {

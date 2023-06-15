@@ -12,7 +12,7 @@
 namespace Symfony\Bundle\FrameworkBundle\Tests\CacheWarmer;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializeDeserializeCacheWarmer;
+use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializerDeserializerCacheWarmer;
 use Symfony\Bundle\FrameworkBundle\Tests\TestCase;
 use Symfony\Component\Serializer\Context\ContextBuilder;
 use Symfony\Component\Serializer\Deserialize\Hook\ObjectHookInterface as DeserializeObjectHookInterface;
@@ -88,7 +88,7 @@ class SerializeDeserializeCacheWarmerTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())->method('debug');
 
-        $cacheWarmer = new SerializeDeserializeCacheWarmer(
+        $cacheWarmer = new SerializerDeserializerCacheWarmer(
             new ContextBuilder(
                 $serializableResolver,
                 $this->createStub(InstantiatorInterface::class),
@@ -137,12 +137,12 @@ class SerializeDeserializeCacheWarmerTest extends TestCase
      * @param list<class-string> $serializable
      * @param list<string>       $formats
      */
-    private function cacheWarmer(array $serializable, array $formats, int $maxVariants): SerializeDeserializeCacheWarmer
+    private function cacheWarmer(array $serializable, array $formats, int $maxVariants): SerializerDeserializerCacheWarmer
     {
         $serializableResolver = $this->createStub(SerializableResolverInterface::class);
         $serializableResolver->method('resolve')->willReturn(new \ArrayIterator($serializable));
 
-        return new SerializeDeserializeCacheWarmer(
+        return new SerializerDeserializerCacheWarmer(
             new ContextBuilder(
                 $serializableResolver,
                 $this->createStub(InstantiatorInterface::class),

@@ -13,6 +13,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializerCacheWarmer;
+use Symfony\Bundle\FrameworkBundle\CacheWarmer\SerializerDeserializerCacheWarmer;
 use Symfony\Component\Cache\Adapter\PhpArrayAdapter;
 use Symfony\Component\ErrorHandler\ErrorRenderer\HtmlErrorRenderer;
 use Symfony\Component\ErrorHandler\ErrorRenderer\SerializerErrorRenderer;
@@ -39,7 +40,6 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\CsvTemplateGenerator;
 use Symfony\Component\Serializer\Serialize\TemplateGenerator\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
@@ -273,6 +273,7 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('serializer.template_generator', ['format' => 'json'])
 
+        // TODO
         // ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
         //     ->args([
         //         service('serializer.type_extractor'),
@@ -378,16 +379,15 @@ return static function (ContainerConfigurator $container) {
         ->alias(SerializableResolverInterface::class, 'serializer.serializable_resolver')
 
         // Cache
-        // ->set('serializer.cache_warmer.serialize_deserialize', SerializeDeserializeCacheWarmer::class)
-        //     ->args([
-        //         // service('.serializer.context_builder'),
-        //         service('serializer.serializable_resolver'),
-        //         param('.serializer.cache_dir.template'),
-        //         param('.serializer.cache_dir.lazy_object'),
-        //         param('serializer.template_warm_up.formats'),
-        //         param('serializer.template_warm_up.max_variants'),
-        //         service('logger')->ignoreOnInvalid(),
-        //     ])
-        //     ->tag('kernel.cache_warmer')
+        ->set('serializer.cache_warmer', SerializerDeserializerCacheWarmer::class)
+            ->args([
+                service('serializer.serializable_resolver'),
+                param('.serializer.cache_dir.template'),
+                param('.serializer.cache_dir.lazy_object'),
+                param('serializer.template_warm_up.formats'),
+                param('serializer.template_warm_up.max_variants'),
+                service('logger')->ignoreOnInvalid(),
+            ])
+            ->tag('kernel.cache_warmer')
     ;
 };
