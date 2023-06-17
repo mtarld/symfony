@@ -9,19 +9,26 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\Dom;
-
-use Symfony\Component\Serializer\Type\Type;
+namespace Symfony\Component\Serializer\Serialize\Template;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface DomTreeBuilderInterface
+interface TemplateVariationExtractorInterface
 {
     /**
-     * @param array<string, mixed> $context
+     * @param class-string $className
+     *
+     * @return list<TemplateVariation>
      */
-    public function build(Type $type, string $accessor, array $context): DomNode;
+    public function extractFromClass(string $className): array;
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return list<TemplateVariation>
+     */
+    public function extractFromContext(array $context): array;
 }

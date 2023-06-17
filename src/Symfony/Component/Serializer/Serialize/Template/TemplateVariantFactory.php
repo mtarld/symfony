@@ -9,19 +9,26 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\Dom;
-
-use Symfony\Component\Serializer\Type\Type;
+namespace Symfony\Component\Serializer\Serialize\Template;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface DomTreeBuilderInterface
+final class TemplateVariantFactory
 {
     /**
      * @param array<string, mixed> $context
      */
-    public function build(Type $type, string $accessor, array $context): DomNode;
+    public function createFromContext(array $context): TemplateVariant
+    {
+        $variations = [];
+
+        foreach ($context['groups'] ?? [] as $group) {
+            $variations[] = new GroupTemplateVariation($group);
+        }
+
+        return new TemplateVariant($variations);
+    }
 }

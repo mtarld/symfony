@@ -24,11 +24,23 @@ final readonly class TemplateVariant
     public array $variations;
 
     /**
+     * @var array<string, mixed>
+     */
+    public array $context;
+
+    /**
      * @param list<TemplateVariation> $variations
      */
     public function __construct(array $variations)
     {
         usort($variations, fn (TemplateVariation $a, TemplateVariation $b): int => $a->compare($b));
+
+        $context = [];
+        foreach ($variations as $variation) {
+            $context = $variation->updateContext($context);
+        }
+
         $this->variations = $variations;
+        $this->context = $context;
     }
 }

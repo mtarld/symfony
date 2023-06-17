@@ -13,7 +13,7 @@ namespace Symfony\Component\Serializer\Serialize\Dom;
 
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
 use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\VariableNameScoperTrait;
+use Symfony\Component\Serializer\Serialize\VariableNameScoperTrait;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 use Symfony\Component\Serializer\Type\TypeFactory;

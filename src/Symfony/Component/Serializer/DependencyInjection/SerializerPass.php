@@ -81,8 +81,8 @@ class SerializerPass implements CompilerPassInterface
             $templateGenerators[$tag['format']] = new Reference($id);
         }
 
-        $container->getDefinition('serializer.template')
-            ->replaceArgument(1, $templateGenerators);
+        $container->getDefinition('serializer.template_factory')
+            ->replaceArgument(2, $templateGenerators);
 
         $eagerUnmarshallers = [];
         foreach ($container->findTaggedServiceIds('serializer.unmarshaller.eager') as $id => $tags) {

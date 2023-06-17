@@ -16,13 +16,10 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
-use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
-use Symfony\Component\Serializer\Serialize\Template\TemplateHelper;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariant;
-use Symfony\Component\Serializer\Serialize\Template\TemplateVariantConverter;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariation;
-use Symfony\Component\Serializer\Serialize\Template\TemplateVariations;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractorInterface;
 use Symfony\Component\Serializer\Type\TypeFactory;
 use Symfony\Component\VarExporter\ProxyHelper;
 
@@ -39,8 +36,7 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
     public function __construct(
         private readonly SerializableResolverInterface $serializableResolver,
         private readonly TemplateFactory $templateFactory,
-        private readonly TemplateVariations $templateVariations,
-        private readonly TemplateVariantConverter $templateVariantConverter,
+        private readonly TemplateVariationExtractorInterface $templateVariationExtractor,
         private readonly string $templateCacheDir,
         private readonly string $lazyObjectCacheDir,
         private readonly array $formats,
@@ -60,7 +56,7 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
         }
 
         foreach ($this->serializableResolver->resolve() as $className) {
-            $variations = $this->templateVariations->classVariations($className);
+            $variations = $this->templateVariationExtractor->extractFromClass($className);
             $variants = $this->variants($variations);
 
             if (\count($variants) > $this->maxVariants) {
@@ -91,11 +87,7 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
     {
         try {
             foreach ($variants as $variant) {
-                $template = $this->templateFactory->create(
-                    TypeFactory::createFromString($className),
-                    $format,
-                    $this->templateVariantConverter->toContext($variant),
-                );
+                $template = $this->templateFactory->create(TypeFactory::createFromString($className), $format, $variant->context);
 
                 $this->writeCacheFile($template->path, $template->content());
             }
@@ -133,6 +125,6 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
             }
         }
 
-        return array_map(fn (array $variations): TemplateVariant => new TemplateVariant($variations));
+        return array_map(fn (array $variations): TemplateVariant => new TemplateVariant($variations), $variants);
     }
 }

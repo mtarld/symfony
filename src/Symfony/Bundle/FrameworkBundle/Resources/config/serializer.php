@@ -40,7 +40,7 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\JsonTemplateGenerator;
+use Symfony\Component\Serializer\Serialize\Template\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
 use Symfony\Component\Serializer\Mapping\Factory\CacheClassMetadataFactory;
@@ -72,7 +72,9 @@ use Symfony\Component\Serializer\SerializableResolver\PathSerializableResolver;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\Serializer\Serialize\Serializer as ExperimentalSerializer;
 use Symfony\Component\Serializer\Serialize\SerializerInterface as ExperimentalSerializerInterface;
-use Symfony\Component\Serializer\Serialize\Template\Template;
+use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractor;
+use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractorInterface;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Serializer\Type\PhpstanTypeExtractor;
@@ -261,18 +263,22 @@ return static function (ContainerConfigurator $container) {
         // Serializer
         ->set('serializer.serializer', ExperimentalSerializer::class)
             ->args([
-                service('serializer.template'),
+                service('serializer.template_factory'),
                 param('.serializer.cache_dir.template'),
             ])
         ->alias(ExperimentalSerializerInterface::class, 'serializer.serializer')
 
         // Template
-        ->set('serializer.template', Template::class)
+        ->set('serializer.template_factory', TemplateFactory::class)
             ->args([
                 service('serializer.dom_tree_builder'),
+                service('serializer.template_variation_extractor'),
                 abstract_arg('template generators'),
                 param('.serializer.cache_dir.template'),
             ])
+
+        ->set('serializer.template_variation_extractor', TemplateVariationExtractor::class)
+        ->alias(TemplateVariationExtractorInterface::class, 'serializer.template_variation_extractor')
 
         // Template generators
         ->set('serializer.template_generator.json', JsonTemplateGenerator::class)
@@ -390,7 +396,8 @@ return static function (ContainerConfigurator $container) {
         ->set('serializer.cache_warmer', SerializerDeserializerCacheWarmer::class)
             ->args([
                 service('serializer.serializable_resolver'),
-                service('serializer.template'),
+                service('serializer.template_factory'),
+                service('serializer.template_variation_extractor'),
                 param('.serializer.cache_dir.template'),
                 param('.serializer.cache_dir.lazy_object'),
                 param('serializer.template_warm_up.formats'),

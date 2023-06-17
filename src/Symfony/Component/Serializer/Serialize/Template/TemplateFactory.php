@@ -13,13 +13,12 @@ namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Compiler;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ArgumentsNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ClosureNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ExpressionNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\PhpDocNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\Node\ReturnNode;
-use Symfony\Component\Serializer\Serialize\TemplateGenerator\TemplateGeneratorInterface;
+use Symfony\Component\Serializer\Serialize\Php\ArgumentsNode;
+use Symfony\Component\Serializer\Serialize\Php\ClosureNode;
+use Symfony\Component\Serializer\Serialize\Php\Compiler;
+use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
+use Symfony\Component\Serializer\Serialize\Php\ReturnNode;
+use Symfony\Component\Serializer\Serialize\Php\PhpDocNode;
 use Symfony\Component\Serializer\Type\Type;
 
 /**
@@ -34,7 +33,7 @@ final class TemplateFactory
      */
     public function __construct(
         private readonly DomTreeBuilderInterface $domTreeBuilder,
-        private readonly TemplateVariantConverter $templateVariantConverter,
+        private readonly TemplateVariationExtractorInterface $templateVariationExtractor,
         private readonly array $templateGenerators,
         private readonly string $templateCacheDir,
     ) {
@@ -57,9 +56,10 @@ final class TemplateFactory
     private function path(Type $type, string $format, array $context): string
     {
         $hash = hash('xxh128', (string) $type);
+        $variations = $this->templateVariationExtractor->extractFromContext($context);
 
-        if ($variant = $this->templateVariantConverter->fromContext($context)) {
-            $hash .= '.'.hash('xxh128', implode('_', array_map(fn (TemplateVariation $t): string => (string) $t, $variant->variations)));
+        if ([] !== $variations) {
+            $hash .= '.'.hash('xxh128', implode('_', array_map(fn (TemplateVariation $t): string => (string) $t, $variations)));
         }
 
         return sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, $hash, $format);
