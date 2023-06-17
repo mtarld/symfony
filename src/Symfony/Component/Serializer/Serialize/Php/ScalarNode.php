@@ -12,8 +12,6 @@
 namespace Symfony\Component\Serializer\Serialize\Php;
 
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
-use Symfony\Component\Serializer\Serialize\Template\Compiler;
-use Symfony\Component\Serializer\Serialize\Template\Optimizer;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

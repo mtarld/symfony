@@ -40,6 +40,7 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
+use Symfony\Component\Serializer\Serialize\Template\CsvTemplateGenerator;
 use Symfony\Component\Serializer\Serialize\Template\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
@@ -287,12 +288,11 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('serializer.template_generator', ['format' => 'json'])
 
-        // TODO
-        // ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
-        //     ->args([
-        //         service('serializer.type_extractor'),
-        //     ])
-        //     ->tag('serializer.template_generator', ['format' => 'csv'])
+        ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+            ->tag('serializer.template_generator', ['format' => 'csv'])
 
         // DOM tree builders
         ->set('serializer.dom_tree_builder', DomTreeBuilder::class)
