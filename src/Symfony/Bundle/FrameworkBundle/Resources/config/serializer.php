@@ -30,6 +30,7 @@ use Symfony\Component\Serializer\Deserialize\Deserializer;
 use Symfony\Component\Serializer\Deserialize\DeserializerInterface;
 use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfigurator;
 use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Serialize\Encoder\CsvEncoder as ExperimentalCsvEncoder;
 use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfigurator;
 use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
@@ -40,7 +41,6 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
-use Symfony\Component\Serializer\Serialize\Template\CsvTemplateGenerator;
 use Symfony\Component\Serializer\Serialize\Template\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
@@ -73,6 +73,7 @@ use Symfony\Component\Serializer\SerializableResolver\PathSerializableResolver;
 use Symfony\Component\Serializer\SerializableResolver\SerializableResolverInterface;
 use Symfony\Component\Serializer\Serialize\Serializer as ExperimentalSerializer;
 use Symfony\Component\Serializer\Serialize\SerializerInterface as ExperimentalSerializerInterface;
+use Symfony\Component\Serializer\Serialize\Template\NormalizerEncoderTemplateGenerator;
 use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractor;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractorInterface;
@@ -288,9 +289,10 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('serializer.template_generator', ['format' => 'json'])
 
-        ->set('serializer.template_generator.csv', CsvTemplateGenerator::class)
+        ->set('serializer.template_generator.csv', NormalizerEncoderTemplateGenerator::class)
             ->args([
                 service('serializer.type_extractor'),
+                ExperimentalCsvEncoder::class,
             ])
             ->tag('serializer.template_generator', ['format' => 'csv'])
 
@@ -377,6 +379,7 @@ return static function (ContainerConfigurator $container) {
             ->lazy()
             ->tag('proxy', ['interface' => TypeExtractorInterface::class])
         ->alias('serializer.type_extractor', 'serializer.type_extractor.reflection')
+        ->alias(TypeExtractorInterface::class, 'serializer.type_extractor')
 
         // Serializable resolvers
         ->set('serializer.serializable_resolver', PathSerializableResolver::class)

@@ -122,7 +122,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
     {
         return new FunctionNode('\json_encode', [
             $node,
-            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(\JSON_PRESERVE_ZERO_FRACTION)),
         ]);
     }
 

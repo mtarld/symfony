@@ -41,7 +41,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
      */
     abstract protected function doGenerate(DomNode $domNode, array $context): array;
 
-    public function generate(DomNode $domNode, array $context): array
+    final public function generate(DomNode $domNode, array $context): array
     {
         if ($domNode instanceof UnionDomNode) {
             $domNodes = $domNode->domNodes;
@@ -70,7 +70,7 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
         return $this->doGenerate($domNode, $context);
     }
 
-    protected function typeValidator(DomNode $domNode): NodeInterface
+    private function typeValidator(DomNode $domNode): NodeInterface
     {
         $accessor = new RawNode($domNode->accessor);
 
