@@ -11,21 +11,21 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
-use Symfony\Component\Serializer\Exception\RuntimeException;
+use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
-use Symfony\Component\Serializer\Serialize\Dom\UnionDomNode;
+use Symfony\Component\Serializer\Serialize\Php\ArrayAccessNode;
+use Symfony\Component\Serializer\Serialize\Php\ArrayNode;
 use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
 use Symfony\Component\Serializer\Serialize\Php\AssignNode;
 use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
-use Symfony\Component\Serializer\Serialize\Php\TemplateStringNode;
 use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
-use Symfony\Component\Serializer\Serialize\Php\IfNode;
+use Symfony\Component\Serializer\Serialize\Php\MethodNode;
+use Symfony\Component\Serializer\Serialize\Php\NewNode;
 use Symfony\Component\Serializer\Serialize\Php\VariableNode;
 use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
 use Symfony\Component\Serializer\Serialize\Php\RawNode;
-use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 
 /**
@@ -42,80 +42,54 @@ final class CsvTemplateGenerator extends TemplateGenerator
 
     public function doGenerate(DomNode $domNode, array $context): array
     {
-        throw new \RuntimeException('Not implemented yet.');
+        $context['nested'] ??= false;
+
         $accessor = new RawNode($domNode->accessor);
+        $normalizedAccessor = $context['normalized_accessor'] ?? new VariableNode('normalized');
 
         if ($domNode instanceof CollectionDomNode) {
-            $prefixName = $this->scopeVariableName('prefix', $context);
-
-            if ($domNode->isList) {
-                return [
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('[')])),
-                    new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
-
-                    new ForEachNode($accessor, null, substr($domNode->childrenDomNode->accessor, 1), [
-                        new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
-                        ...$this->generate($domNode->childrenDomNode, $context),
-                        new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
-                    ]),
-
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode(']')])),
-                ];
-            }
-
             $keyName = $this->scopeVariableName('key', $context);
 
-            return [
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
-                new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(''))),
-
+            $nodes = [
+                new ExpressionNode(new AssignNode($normalizedAccessor, new ArrayNode([]))),
                 new ForEachNode($accessor, $keyName, substr($domNode->childrenDomNode->accessor, 1), [
-                    new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->escapeString(new VariableNode($keyName)))),
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new TemplateStringNode(
-                        new VariableNode($prefixName),
-                        '"',
-                        new VariableNode($keyName),
-                        '":',
-                    )])),
-                    ...$this->generate($domNode->childrenDomNode, $context),
-                    new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
+                    ...$this->generate($domNode->childrenDomNode, [
+                        'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new VariableNode($keyName)),
+                        'nested' => true,
+                    ] + $context),
                 ]),
+            ];
+        } elseif ($domNode instanceof ObjectDomNode) {
+            $nodes = [];
 
-                new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('}')])),
+            foreach ($domNode->properties as $name => $propertyDomNode) {
+                array_push(
+                    $nodes,
+                    ...$this->generate($propertyDomNode, [
+                        'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new ScalarNode($name)),
+                        'nested' => true,
+                    ] + $context),
+                );
+            }
+        } else {
+            $nodes = [
+                new ExpressionNode(new AssignNode($normalizedAccessor, $accessor)),
             ];
         }
 
-        if ($domNode instanceof ObjectDomNode) {
-            $nodes = [new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')]))];
-            $separator = '';
+        if (!$context['nested']) {
+            $encoder = $this->scopeVariableName('encoder', $context);
 
-            foreach ($domNode->properties as $name => $propertyDomNode) {
-                $encodedName = json_encode($name);
-                if (false === $encodedName) {
-                    throw new RuntimeException(sprintf('Cannot encode "%s"', $name));
-                }
-
-                $encodedName = substr($encodedName, 1, -1);
-
-                array_push(
-                    $nodes,
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($separator)])),
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($encodedName)])),
-                    new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
-                    ...$this->generate($propertyDomNode, $context),
-                );
-
-                $separator = ',';
-            }
-
-            $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('}')]));
-
-            return $nodes;
+            array_push(
+                $nodes,
+                new ExpressionNode(new AssignNode(new VariableNode($encoder), new NewNode('\\'.CsvEncoder::class, []))),
+                new ExpressionNode(new FunctionNode('\fwrite', [
+                    new VariableNode('resource'),
+                    new MethodNode(new VariableNode($encoder), 'encode', [$normalizedAccessor, new ScalarNode('csv'), new VariableNode('context')]),
+                ])),
+            );
         }
 
-        return [
-            new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), $this->encodeValue($accessor)])),
-        ];
+        return $nodes;
     }
 }

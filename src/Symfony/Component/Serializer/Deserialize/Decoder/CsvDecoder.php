@@ -21,9 +21,11 @@ use Symfony\Component\Serializer\Exception\InvalidResourceException;
  */
 final class CsvDecoder implements DecoderInterface
 {
-    public function __construct(
-        private readonly CsvEncoder $decoder,
-    ) {
+    private readonly CsvEncoder $decoder;
+
+    public function __construct() 
+    {
+        $this->decoder = new CsvEncoder();
     }
 
     public function decode(mixed $resource, int $offset, int $length, array $context): mixed
