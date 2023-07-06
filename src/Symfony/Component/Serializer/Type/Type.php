@@ -13,15 +13,21 @@ namespace Symfony\Component\Serializer\Type;
 
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\LogicException;
+use Symfony\Component\Serializer\Exception\UnsupportedException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-final readonly class Type implements \Stringable
+final class Type implements \Stringable
 {
-    private string $stringValue;
+    /**
+     * @var array<string, Type>
+     */
+    private static array $cache = [];
+
+    private readonly string $stringValue;
 
     /**
      * @param class-string|null $className
@@ -29,11 +35,11 @@ final readonly class Type implements \Stringable
      * @param list<self>        $unionTypes
      */
     public function __construct(
-        private string $name,
-        private bool $isNullable = false,
-        private ?string $className = null,
-        private array $genericParameterTypes = [],
-        private array $unionTypes = [],
+        private readonly string $name,
+        private readonly bool $isNullable = false,
+        private readonly ?string $className = null,
+        private readonly array $genericParameterTypes = [],
+        private readonly array $unionTypes = [],
     ) {
         if (1 === \count($this->unionTypes)) {
             throw new InvalidArgumentException(sprintf('Cannot define only one union type for "%s" type.', $this->name));
@@ -193,6 +199,158 @@ final readonly class Type implements \Stringable
         return $this->genericParameterTypes[1] ?? new self('mixed');
     }
 
+    public function __toString(): string
+    {
+        return $this->stringValue;
+    }
+
+    public static function createFromString(string $string): Type
+    {
+        if (isset(self::$cache[$cacheKey = $string])) {
+            return self::$cache[$cacheKey];
+        }
+
+        $currentTypeString = '';
+        $typeStrings = [];
+        $nestedLevel = 0;
+
+        foreach (str_split(str_replace(' ', '', $string)) as $char) {
+            if ('<' === $char) {
+                ++$nestedLevel;
+            }
+
+            if ('>' === $char) {
+                --$nestedLevel;
+            }
+
+            if ('|' === $char && 0 === $nestedLevel) {
+                $typeStrings[] = $currentTypeString;
+                $currentTypeString = '';
+
+                continue;
+            }
+
+            $currentTypeString .= $char;
+        }
+
+        $typeStrings[] = $currentTypeString;
+
+        if (0 !== $nestedLevel) {
+            throw new InvalidArgumentException(sprintf('Invalid "%s" type.', $string));
+        }
+
+        if (\count($typeStrings) > 1) {
+            $nullable = false;
+
+            $types = [];
+
+            foreach ($typeStrings as $typeString) {
+                if (str_starts_with($typeString, '?')) {
+                    $nullable = true;
+                    $typeString = substr($typeString, 1);
+                }
+
+                if ('null' === $typeString) {
+                    $nullable = true;
+
+                    continue;
+                }
+
+                /** @var Type $type */
+                $type = self::createFromString($typeString);
+                $types[] = $type;
+            }
+
+            if ($nullable) {
+                $types[] = new Type('null');
+            }
+
+            return self::$cache[$cacheKey] = new Type($string, unionTypes: $types);
+        }
+
+        if ('null' === $string) {
+            return self::$cache[$cacheKey] = new Type('null');
+        }
+
+        if ($isNullable = str_starts_with($string, '?')) {
+            $string = substr($string, 1);
+        }
+
+        if (\count(explode('&', $string)) > 1) {
+            throw new UnsupportedException(sprintf('"%s" type is not supported.', $string));
+        }
+
+        if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
+            return self::$cache[$cacheKey] = new Type($string, $isNullable);
+        }
+
+        if (is_subclass_of($string, \UnitEnum::class)) {
+            if (is_subclass_of($string, \BackedEnum::class)) {
+                return self::$cache[$cacheKey] = new Type('enum', $isNullable, $string);
+            }
+
+            throw self::invalidTypeException($string);
+        }
+
+        if (class_exists($string) || interface_exists($string)) {
+            return self::$cache[$cacheKey] = new Type('object', $isNullable, $string);
+        }
+
+        $results = [];
+        if (preg_match('/^(?P<type>[^<]+)<(?P<diamond>.+)>$/', $string, $results)) {
+            $genericType = $results['type'];
+            $genericParameters = [];
+            $currentGenericParameter = '';
+            $nestedLevel = 0;
+
+            foreach (str_split(str_replace(' ', '', $results['diamond'])) as $char) {
+                if (',' === $char && 0 === $nestedLevel) {
+                    $genericParameters[] = $currentGenericParameter;
+                    $currentGenericParameter = '';
+
+                    continue;
+                }
+
+                if ('<' === $char) {
+                    ++$nestedLevel;
+                }
+
+                if ('>' === $char) {
+                    --$nestedLevel;
+                }
+
+                $currentGenericParameter .= $char;
+            }
+
+            $genericParameters[] = $currentGenericParameter;
+
+            if (0 !== $nestedLevel) {
+                throw self::invalidTypeException($string);
+            }
+
+            if (\in_array($genericType, ['array', 'iterable'], true) && 1 === \count($genericParameters)) {
+                array_unshift($genericParameters, 'int');
+            }
+
+            $type = $genericType;
+            $className = null;
+
+            if (class_exists($genericType)) {
+                $type = 'object';
+                $className = $genericType;
+            }
+
+            return self::$cache[$cacheKey] = new Type(
+                name: $type,
+                isNullable: $isNullable,
+                className: $className,
+                genericParameterTypes: array_map(fn (string $t): Type => self::createFromString($t), $genericParameters),
+            );
+        }
+
+        return self::$cache[$cacheKey] = new Type($string, $isNullable);
+    }
+
     private function computeStringValue(): string
     {
         if ($this->isUnion()) {
@@ -212,8 +370,8 @@ final readonly class Type implements \Stringable
         return ($this->isNullable() ? '?' : '').$name;
     }
 
-    public function __toString(): string
+    private static function invalidTypeException(string $type): InvalidArgumentException
     {
-        return $this->stringValue;
+        return new InvalidArgumentException(sprintf('Invalid "%s" type.', $type));
     }
 }

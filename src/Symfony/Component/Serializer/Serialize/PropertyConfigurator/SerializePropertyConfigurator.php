@@ -47,7 +47,7 @@ final class SerializePropertyConfigurator implements SerializePropertyConfigurat
 
         $genericTypes = self::$cache['generic_types'][$className.$context['type']] ??= $this->genericTypes($className, $context['type']);
 
-        foreach ($properties as $propertyName => $property) {
+        foreach ($properties as $propertyName => $configuration) {
             $cacheKey = $className.$propertyName;
             $reflection = self::$cache['reflection'][$cacheKey] ??= new \ReflectionProperty($className, $propertyName);
             $metadata = self::$cache['metadata'][$cacheKey] ??= $this->propertyMetadata($reflection);
@@ -75,10 +75,7 @@ final class SerializePropertyConfigurator implements SerializePropertyConfigurat
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$name] = [
-                    'type' => $type,
-                    'accessor' => $property['accessor'],
-                ];
+                $result[$name] = new SerializePropertyConfiguration($type, $configuration->accessor);
 
                 continue;
             }
@@ -107,10 +104,10 @@ final class SerializePropertyConfigurator implements SerializePropertyConfigurat
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 
-            $result[$name] = [
-                'type' => $type,
-                'accessor' => sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $property['accessor']),
-            ];
+            $result[$name] = new SerializePropertyConfiguration(
+                $type,
+                sprintf('%s::%s(%s, $context)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $configuration->accessor),
+            );
         }
 
         return $result;

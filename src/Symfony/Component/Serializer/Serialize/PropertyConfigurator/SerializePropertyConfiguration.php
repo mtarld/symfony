@@ -11,19 +11,18 @@
 
 namespace Symfony\Component\Serializer\Serialize\PropertyConfigurator;
 
+use Symfony\Component\Serializer\Type\Type;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-interface SerializePropertyConfiguratorInterface
+final readonly class SerializePropertyConfiguration
 {
-    /**
-     * @param class-string              $className
-     * @param array<string, SerializePropertyConfiguration> $properties
-     * @param array<string, mixed> $context
-     *
-     * @return array<string, SerializePropertyConfiguration>
-     */
-    public function configure(string $className, array $properties, array $context): array;
+    public function __construct(
+        public Type $type,
+        public string $accessor,
+    ) {
+    }
 }

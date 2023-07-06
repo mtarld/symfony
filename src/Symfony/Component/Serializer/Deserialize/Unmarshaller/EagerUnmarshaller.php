@@ -12,11 +12,11 @@
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguration;
 use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
-use Symfony\Component\Serializer\Type\TypeFactory;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -57,7 +57,7 @@ final class EagerUnmarshaller implements UnmarshallerInterface
             }
 
             /** @var Type $type */
-            $type = \is_string($selectedType) ? TypeFactory::createFromString($selectedType) : $selectedType;
+            $type = \is_string($selectedType) ? Type::createFromString($selectedType) : $selectedType;
         }
 
         if ($type->isScalar()) {
@@ -147,12 +147,12 @@ final class EagerUnmarshaller implements UnmarshallerInterface
 
             $properties = [];
             foreach ($data as $name => $value) {
-                $properties[$name] = fn (Type $type = null) => $this->denormalize(
+                $properties[$name] = new DeserializePropertyConfiguration(fn (Type $type = null) => $this->denormalize(
                     $value,
                     $type ?? (self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name))),
                     $instantiator,
                     $context,
-                );
+                ));
             }
 
             return $instantiator($className, $properties, $context);

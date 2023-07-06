@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
 use Symfony\Component\Serializer\Stream\StreamInterface;
-use Symfony\Component\Serializer\Type\TypeFactory;
+use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -42,7 +42,7 @@ final class Serializer implements SerializerInterface
         }
 
         if (\is_string($type = $context['type'] ?? get_debug_type($data))) {
-            $type = TypeFactory::createFromString($type);
+            $type = Type::createFromString($type);
         }
 
         $template = $this->templateFactory->create($type, $format, $context);

@@ -63,7 +63,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
 
         $genericTypes = self::$cache['generic_types'][$className.$context['type']] ??= $this->genericTypes($className, $context['type']);
 
-        foreach ($properties as $name => $valueCallable) {
+        foreach ($properties as $name => $configuration) {
             $cacheKey = $className.$name;
             $metadata = self::$cache['metadata'][$cacheKey] ?? [];
 
@@ -91,7 +91,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$propertyName] = fn () => $valueCallable($type);
+                $result[$propertyName] = new DeserializePropertyConfiguration(fn () => ($configuration->value)($type));
 
                 continue;
             }
@@ -104,7 +104,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 
-            $result[$propertyName] = fn () => $valueCallable($type);
+            $result[$propertyName] = new DeserializePropertyConfiguration(fn () => ($configuration->value)($type));
         }
 
         return $result;

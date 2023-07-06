@@ -20,7 +20,7 @@ use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariant;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariation;
 use Symfony\Component\Serializer\Serialize\Template\TemplateVariationExtractorInterface;
-use Symfony\Component\Serializer\Type\TypeFactory;
+use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -87,7 +87,7 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
     {
         try {
             foreach ($variants as $variant) {
-                $template = $this->templateFactory->create(TypeFactory::createFromString($className), $format, $variant->context);
+                $template = $this->templateFactory->create(Type::createFromString($className), $format, $variant->context);
 
                 $this->writeCacheFile($template->path, $template->content());
             }

@@ -16,14 +16,13 @@ namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
  *
  * @experimental in 7.0
  */
-interface DeserializePropertyConfiguratorInterface
+final readonly class DeserializePropertyConfiguration
 {
     /**
-     * @param class-string              $className
-     * @param array<string, DeserializePropertyConfiguration> $properties
-     * @param array<string, mixed> $context
-     *
-     * @return array<string, DeserializePropertyConfiguration>
+     * @param callable(): mixed $value
      */
-    public function configure(string $className, array $properties, array $context): array;
+    public function __construct(
+        public mixed $value,
+    ) {
+    }
 }

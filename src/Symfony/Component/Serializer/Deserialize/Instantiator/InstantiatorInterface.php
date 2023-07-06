@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Instantiator;
 
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguration;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 
 /**
@@ -24,7 +25,7 @@ interface InstantiatorInterface
      * @template T of object
      *
      * @param class-string<T>                  $className
-     * @param array<string, callable(): mxed> $properties
+     * @param array<string, DeserializePropertyConfiguration> $properties
      * @param array<string, mixed>             $context
      *
      * @return T

@@ -12,12 +12,12 @@
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
+use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguration;
 use Symfony\Component\Serializer\Deserialize\Splitter\SplitterInterface;
 use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
-use Symfony\Component\Serializer\Type\TypeFactory;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -51,7 +51,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             }
 
             /** @var Type $type */
-            $type = \is_string($selectedType) ? TypeFactory::createFromString($selectedType) : $selectedType;
+            $type = \is_string($selectedType) ? Type::createFromString($selectedType) : $selectedType;
         }
 
         if ($type->isScalar()) {
@@ -150,12 +150,12 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
             $properties = [];
             foreach ($boundaries as $name => $boundary) {
-                $properties[$name] = fn () => $this->unmarshal(
+                $properties[$name] = new DeserializePropertyConfiguration(fn (Type $type = null) => $this->unmarshal(
                     $resource,
-                    self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name)),
+                    $type ?? (self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name))),
                     $instantiator,
                     ['boundary' => $boundary] + $context,
-                );
+                ));
             }
 
             return $instantiator($className, $properties, $context);

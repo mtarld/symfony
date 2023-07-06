@@ -39,7 +39,7 @@ final class PhpstanTypeHelper
     {
         $templateNodeNames = array_map(fn (TemplateTagValueNode $t): string => $t->name, $templateNodes);
 
-        return TypeFactory::createFromString($this->extractType($typeNode, TypeNameResolver::createForClass($declaringClass, $templateNodeNames)));
+        return Type::createFromString($this->extractType($typeNode, TypeNameResolver::createForClass($declaringClass, $templateNodeNames)));
     }
 
     private function extractType(TypeNode $node, TypeNameResolver $nameResolver): string

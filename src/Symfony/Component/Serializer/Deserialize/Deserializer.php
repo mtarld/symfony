@@ -17,7 +17,6 @@ use Symfony\Component\Serializer\Deserialize\Unmarshaller\UnmarshallerInterface;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\Type;
-use Symfony\Component\Serializer\Type\TypeFactory;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -45,7 +44,7 @@ final class Deserializer implements DeserializerInterface
         }
 
         if (\is_string($type)) {
-            $type = TypeFactory::createFromString($type);
+            $type = Type::createFromString($type);
         }
 
         if ($context instanceof ContextInterface) {

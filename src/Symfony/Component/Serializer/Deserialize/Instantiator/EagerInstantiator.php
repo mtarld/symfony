@@ -45,13 +45,13 @@ final class EagerInstantiator implements InstantiatorInterface
         $object = new $className();
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);
 
-        foreach ($properties as $name => $value) {
+        foreach ($properties as $name => $configuration) {
             if (!(self::$cache['has_property'][$identifier = $className.$name] ??= $reflection->hasProperty($name))) {
                 continue;
             }
 
             try {
-                $object->{$name} = $value();
+                $object->{$name} = ($configuration->value)();
             } catch (\TypeError|UnexpectedValueException $e) {
                 throw new UnexpectedValueException($e->getMessage(), previous: $e);
             }

@@ -354,17 +354,17 @@ return static function (ContainerConfigurator $container) {
             ])
 
         // Property configurators
-        ->set('serializer.deserialize.property_configurator', DeserializePropertyConfigurator::class)
-            ->args([
-                service('serializer.type_extractor'),
-            ])
-        ->alias(DeserializePropertyConfiguratorInterface::class, 'serializer.deserialize.property_configurator')
-
         ->set('serializer.serialize.property_configurator', SerializePropertyConfigurator::class)
             ->args([
                 service('serializer.type_extractor'),
             ])
         ->alias(SerializePropertyConfiguratorInterface::class, 'serializer.serialize.property_configurator')
+
+        ->set('serializer.deserialize.property_configurator', DeserializePropertyConfigurator::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(DeserializePropertyConfiguratorInterface::class, 'serializer.deserialize.property_configurator')
 
         // Type extractors
         ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)
