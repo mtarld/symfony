@@ -88,6 +88,8 @@ final class JsonLexer
 
                 if (isset(self::STRUCTURE_CHARS[$byte]) || isset(self::WHITESPACE_CHARS[$byte])) {
                     if ('' !== $token) {
+                        yield [$token, $currentTokenPosition];
+
                         $currentTokenPosition += \strlen($token);
                         $token = '';
                     }

@@ -64,6 +64,7 @@ readonly class DeserializeContext implements ContextInterface
         return new self(['lazy_reading' => false] + $this->options);
     }
 
+    // TODO lazy_unmarshal?
     public function withLazyReading(): self
     {
         return new self(['lazy_reading' => true] + $this->options);
