@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
@@ -42,23 +43,23 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
     ) {
     }
 
-    protected function doGenerate(DomNode $domNode, array $context): array
+    protected function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array
     {
-        $context['nested'] ??= false;
+        $runtime['nested'] ??= false;
 
         $accessor = new RawNode($domNode->accessor);
-        $normalizedAccessor = $context['normalized_accessor'] ?? new VariableNode('normalized');
+        $normalizedAccessor = $runtime['normalized_accessor'] ?? new VariableNode('normalized');
 
         if ($domNode instanceof CollectionDomNode) {
-            $keyName = $this->scopeVariableName('key', $context);
+            $keyName = $this->scopeVariableName('key', $runtime);
 
             $nodes = [
                 new ExpressionNode(new AssignNode($normalizedAccessor, new ArrayNode([]))),
                 new ForEachNode($accessor, $keyName, substr($domNode->childrenDomNode->accessor, 1), [
-                    ...$this->generate($domNode->childrenDomNode, [
+                    ...$this->generate($domNode->childrenDomNode, $configuration, [
                         'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new VariableNode($keyName)),
                         'nested' => true,
-                    ] + $context),
+                    ] + $runtime),
                 ]),
             ];
         } elseif ($domNode instanceof ObjectDomNode) {
@@ -67,10 +68,10 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
             foreach ($domNode->properties as $name => $propertyDomNode) {
                 array_push(
                     $nodes,
-                    ...$this->generate($propertyDomNode, [
+                    ...$this->generate($propertyDomNode, $configuration, [
                         'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new ScalarNode($name)),
                         'nested' => true,
-                    ] + $context),
+                    ] + $runtime),
                 );
             }
         } else {
@@ -79,12 +80,11 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
             ];
         }
 
-        if (!$context['nested']) {
-            $nodes[] = new ExpressionNode(
-            new FunctionNode(sprintf('\\%s::encode', $this->encoderClassName), [
+        if (!$runtime['nested']) {
+            $nodes[] = new ExpressionNode(new FunctionNode(sprintf('\\%s::encode', $this->encoderClassName), [
                 new VariableNode('resource'),
                 $normalizedAccessor,
-                new VariableNode('context'),
+                new VariableNode('configuration'),
             ]));
         }
 

@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Type\Type;
 
 /**
@@ -21,7 +22,7 @@ use Symfony\Component\Serializer\Type\Type;
 interface DomTreeBuilderInterface
 {
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, mixed> $runtime
      */
-    public function build(Type $type, string $accessor, array $context): DomNode;
+    public function build(Type $type, string $accessor, Configuration $configuration, array $runtime): DomNode;
 }

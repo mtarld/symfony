@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\Metadata;
+namespace Symfony\Component\Serializer\Serialize\Mapping;
 
 use Symfony\Component\Serializer\Type\Type;
 

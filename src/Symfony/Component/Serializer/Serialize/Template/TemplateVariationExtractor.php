@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Serialize\Configuration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -42,11 +43,11 @@ final class TemplateVariationExtractor implements TemplateVariationExtractorInte
         return array_map(fn (string $g): TemplateVariation => new GroupTemplateVariation($g), $groups);
     }
 
-    public function extractFromContext(array $context): array
+    public function extractFromConfiguration(Configuration $configuration): array
     {
         $variations = [];
 
-        foreach ($context['groups'] ?? [] as $group) {
+        foreach ($configuration->groups ?? [] as $group) {
             $variations[] = new GroupTemplateVariation($group);
         }
 

@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -26,9 +28,7 @@ interface TemplateVariationExtractorInterface
     public function extractFromClass(string $className): array;
 
     /**
-     * @param array<string, mixed> $context
-     *
      * @return list<TemplateVariation>
      */
-    public function extractFromContext(array $context): array;
+    public function extractFromConfiguration(Configuration $context): array;
 }

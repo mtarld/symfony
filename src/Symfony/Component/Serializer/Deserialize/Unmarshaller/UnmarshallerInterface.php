@@ -12,7 +12,6 @@
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
 use Symfony\Component\Serializer\Deserialize\Configuration;
-use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Type\Type;
 
 /**
@@ -24,6 +23,7 @@ interface UnmarshallerInterface
 {
     /**
      * @param resource $resource
+     * @param array<string, mixed> $runtime
      */
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, Runtime $runtime = null): mixed;
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed;
 }

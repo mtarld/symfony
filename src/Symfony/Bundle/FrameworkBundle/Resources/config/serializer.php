@@ -23,8 +23,8 @@ use Symfony\Component\Serializer\Deserialize\Decoder\JsonDecoder;
 use Symfony\Component\Serializer\Deserialize\Instantiator\EagerInstantiator;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\LazyInstantiator;
-use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoader;
-use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoader as DeserializePropertyMetadataLoader;
+use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface as DeserializePropertyMetadataLoaderInterface;
 use Symfony\Component\Serializer\Deserialize\Splitter\JsonDictSplitter;
 use Symfony\Component\Serializer\Deserialize\Splitter\JsonListSplitter;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\EagerUnmarshaller;
@@ -32,8 +32,6 @@ use Symfony\Component\Serializer\Deserialize\Unmarshaller\LazyUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Deserializer;
 use Symfony\Component\Serializer\Deserialize\DeserializerInterface;
 use Symfony\Component\Serializer\Serialize\Encoder\CsvEncoder as ExperimentalCsvEncoder;
-use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfigurator;
-use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
@@ -42,6 +40,8 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilder;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
+use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadataLoader as SerializePropertyMetadataLoader;
+use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadataLoaderInterface as SerializePropertyMetadataLoaderInterface;
 use Symfony\Component\Serializer\Serialize\Template\JsonTemplateGenerator;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorFromClassMetadata;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
@@ -300,8 +300,7 @@ return static function (ContainerConfigurator $container) {
         // DOM tree builders
         ->set('serializer.dom_tree_builder', DomTreeBuilder::class)
             ->args([
-                service('serializer.type_extractor'),
-                service('serializer.serialize.property_configurator'),
+                service('serializer.serialize.metadata.property_loader'),
             ])
         ->alias(DomTreeBuilderInterface::class, 'serializer.dom_tree_builder')
 
@@ -354,19 +353,18 @@ return static function (ContainerConfigurator $container) {
         ->alias('serializer.instantiator', 'serializer.instantiator.eager')
         ->alias(InstantiatorInterface::class, 'serializer.instantiator')
 
-        // Property configurators
-        ->set('serializer.serialize.property_configurator', SerializePropertyConfigurator::class)
-            ->args([
-                service('serializer.type_extractor'),
-            ])
-        ->alias(SerializePropertyConfiguratorInterface::class, 'serializer.serialize.property_configurator')
-
         // Metadata
-        ->set('serializer.deserialize.metadata.property_loader', PropertyMetadataLoader::class)
+        ->set('serializer.serialize.metadata.property_loader', SerializePropertyMetadataLoader::class)
             ->args([
                 service('serializer.type_extractor'),
             ])
-        ->alias(PropertyMetadataLoaderInterface::class, 'serializer.deserialize.metadata.property_loader')
+        ->alias(SerializePropertyMetadataLoaderInterface::class, 'serializer.serialize.metadata.property_loader')
+
+        ->set('serializer.deserialize.metadata.property_loader', DeserializePropertyMetadataLoader::class)
+            ->args([
+                service('serializer.type_extractor'),
+            ])
+        ->alias(DeserializePropertyMetadataLoaderInterface::class, 'serializer.deserialize.metadata.property_loader')
 
         // Type extractors
         ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)

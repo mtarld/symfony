@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
+
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -23,11 +26,12 @@ readonly class GroupTemplateVariation extends TemplateVariation
         parent::__construct('group', $group);
     }
 
-    public function updateContext(array $context): array
+    public function configure(Configuration $configuration): Configuration
     {
-        $context['groups'][] = $this->value;
-        $context['groups'] = array_values(array_unique($context['groups']));
+        $groups = $configuration->groups();
+        $groups[] = $this->value;
+        $groups = array_values(array_unique($groups));
 
-        return $context;
+        return $configuration->withGroups($groups);
     }
 }

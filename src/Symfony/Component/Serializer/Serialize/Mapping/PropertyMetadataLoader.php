@@ -9,12 +9,12 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\Mapping;
+namespace Symfony\Component\Serializer\Serialize\Mapping;
 
-use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializeFormatter;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
@@ -30,7 +30,6 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
     private static array $cache = [
         'metadata' => [],
         'reflection' => [],
-        'formatter_reflection' => [],
         'generic_types' => [],
         'type' => [],
     ];
@@ -54,9 +53,13 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
             $cacheKey = $className.$reflectionProperty->getName();
             $metadata = (self::$cache['metadata'][$cacheKey] ??= ($this->propertyMetadata($reflectionProperty) ?? []));
 
-            if ([] !== $configuration->groups) {
+            if (!$reflectionProperty->isPublic()) {
+                continue;
+            }
+
+            if ([] !== $configuration->groups()) {
                 $matchingGroup = false;
-                foreach ($configuration->groups as $group) {
+                foreach ($configuration->groups() as $group) {
                     if (isset($metadata['groups'][$group])) {
                         $matchingGroup = true;
 
@@ -77,25 +80,38 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$name] = new PropertyMetadata(
-                    name: $reflectionProperty->getName(),
-                    valueProvider: fn (callable $valueProvider): mixed => $valueProvider($type),
-                );
+                $result[$name] = new PropertyMetadata($type, sprintf('%s->%s', $runtime['accessor'], $reflectionProperty->getName()));
 
                 continue;
             }
 
             $cacheKey .= json_encode($formatter);
             $formatterReflection = self::$cache['formatter_reflection'][$cacheKey] ??= new \ReflectionFunction(\Closure::fromCallable($formatter));
-            $type = self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromFunctionParameter($formatterReflection->getParameters()[0]);
 
+            if (!$formatterReflection->getClosureScopeClass()?->hasMethod($formatterReflection->getName()) || !$formatterReflection->isStatic()) {
+                throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must be a static method.', sprintf('%s::$%s', $className, $reflectionProperty->getName())));
+            }
+
+            if (($returnType = $formatterReflection->getReturnType()) instanceof \ReflectionNamedType && ('void' === $returnType->getName() || 'never' === $returnType->getName())) {
+                throw new InvalidArgumentException(sprintf('"%s"\'s property formatter return type must not be "void" nor "never".', sprintf('%s::$%s', $className, $reflectionProperty->getName())));
+            }
+
+            if (null !== ($configurationParameter = $formatterReflection->getParameters()[1] ?? null)) {
+                $configurationParameterType = $configurationParameter->getType();
+
+                if (!$configurationParameterType instanceof \ReflectionNamedType || is_subclass_of($configurationParameterType->getName(), Configuration::class)) {
+                    throw new InvalidArgumentException(sprintf('Second argument of "%s"\'s property formatter must be an array.', sprintf('%s::$%s', $className, $reflectionProperty->getName())));
+                }
+            }
+
+            $type = self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromFunctionReturn($formatterReflection);
             if (isset($genericTypes[(string) $type]) && $formatterReflection->getClosureScopeClass()?->getName() !== $className) {
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 
             $result[$name] = new PropertyMetadata(
-                name: $reflectionProperty->getName(),
-                valueProvider: fn (callable $valueProvider): mixed => $formatter($valueProvider($type)),
+                $type,
+                sprintf('%s::%s(%s->%s, $configuration)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $runtime['accessor'], $reflectionProperty->getName()),
             );
         }
 
@@ -128,8 +144,8 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
                 continue;
             }
 
-            if (DeserializeFormatter::class === $attribute->getName()) {
-                /** @var DeserializeFormatter $attributeInstance */
+            if (SerializeFormatter::class === $attribute->getName()) {
+                /** @var SerializeFormatter $attributeInstance */
                 $attributeInstance = $attribute->newInstance();
                 $metadata['formatter'] = $attributeInstance->formatter;
 
@@ -140,6 +156,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
         return $metadata;
     }
 
+    // TODO factorize
     /**
      * @param class-string $className
      *

@@ -12,11 +12,11 @@
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
-use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguration;
-use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
+use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadata;
+use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\Serializer\Serialize\VariableNameScoperTrait;
 use Symfony\Component\Serializer\Type\Type;
-use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 use Symfony\Component\Serializer\Type\TypeSorter;
 
 /**
@@ -31,50 +31,43 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
     private readonly TypeSorter $typeSorter;
 
     public function __construct(
-        private readonly TypeExtractorInterface $typeExtractor,
-        private readonly SerializePropertyConfiguratorInterface $propertyConfigurator,
+        private readonly PropertyMetadataLoaderInterface $propertyMetadataLoader,
     ) {
         $this->typeSorter = new TypeSorter();
     }
 
-    public function build(Type $type, string $accessor, array $context): DomNode
+    public function build(Type $type, string $accessor, Configuration $configuration, array $runtime): DomNode
     {
         if ($type->isNullable()) {
             return new UnionDomNode($accessor, [
                 new ValueDomNode($accessor, 'null'),
-                $this->build(Type::createFromString(substr((string) $type, 1)), $accessor, $context),
+                $this->build(Type::createFromString(substr((string) $type, 1)), $accessor, $configuration, $runtime),
             ]);
         }
 
         if ($type->isUnion()) {
             return new UnionDomNode($accessor, array_map(
-                fn (Type $t): DomNode => $this->build($t, $accessor, $context),
+                fn (Type $t): DomNode => $this->build($t, $accessor, $configuration, $runtime),
                 $this->typeSorter->sortByPrecision($type->unionTypes()),
             ));
         }
 
         if ($type->isObject() && $type->hasClass()) {
-            if (isset($context['generated_classes'][$type->className()])) {
-                throw new CircularReferenceException($type->className());
+            $className = $type->className();
+
+            if (isset($runtime['generated_classes'][$className])) {
+                throw new CircularReferenceException($className);
             }
 
-            $context['generated_classes'][$type->className()] = true;
+            $runtime['generated_classes'][$className] = true;
+            $runtime['accessor'] = $accessor;
 
-            $properties = [];
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $runtime);
 
-            foreach ((new \ReflectionClass($type->className()))->getProperties() as $property) {
-                if (!$property->isPublic()) {
-                    continue;
-                }
-
-                $properties[$property->getName()] = new SerializePropertyConfiguration(
-                    $this->typeExtractor->extractFromProperty($property),
-                    sprintf('%s->%s', $accessor, $property->getName()),
-                );
-            }
-
-            $properties = $this->propertyConfigurator->configure($type->className(), $properties, $context);
-            $propertiesDomNodes = array_map(fn (SerializePropertyConfiguration $p) => $this->build($p->type, $p->accessor, $context), $properties);
+            $propertiesDomNodes = array_map(
+                fn (PropertyMetadata $p) => $this->build($p->type, $p->accessor, $configuration, $runtime),
+                $propertiesMetadata,
+            );
 
             return new ObjectDomNode($accessor, $type->className(), $propertiesDomNodes);
         }
@@ -91,7 +84,7 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
         if ($type->isCollection()) {
             return new CollectionDomNode(
                 $accessor,
-                $this->build($type->collectionValueType(), '$'.$this->scopeVariableName('value', $context), $context),
+                $this->build($type->collectionValueType(), '$'.$this->scopeVariableName('value', $runtime), $configuration, $runtime),
                 $type->isList(),
                 'array' === $type->name(),
             );

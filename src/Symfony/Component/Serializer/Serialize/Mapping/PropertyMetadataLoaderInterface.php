@@ -9,10 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize\Metadata;
+namespace Symfony\Component\Serializer\Serialize\Mapping;
 
-use Symfony\Component\Serializer\Deserialize\Configuration;
-use Symfony\Component\Serializer\Type\Type;
+use Symfony\Component\Serializer\Serialize\Configuration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -22,9 +21,10 @@ use Symfony\Component\Serializer\Type\Type;
 interface PropertyMetadataLoaderInterface
 {
     /**
+     * @param array<string, mixed> $runtime
      * @param class-string         $className
      *
      * @return array<string, PropertyMetadata>
      */
-    public function load(Type $originalType, string $className, Configuration $configuration): array;
+    public function load(string $className, Configuration $configuration, array $runtime): array;
 }

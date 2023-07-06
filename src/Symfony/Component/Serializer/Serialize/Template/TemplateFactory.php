@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Exception\UnsupportedException;
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
 use Symfony\Component\Serializer\Serialize\Php\ArgumentsNode;
 use Symfony\Component\Serializer\Serialize\Php\ClosureNode;
@@ -40,23 +41,20 @@ final class TemplateFactory
     }
 
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, mixed> $runtime
      */
-    public function create(Type $type, string $format, array $context): Template
+    public function create(Type $type, string $format, Configuration $configuration): Template
     {
         return new Template(
-            $this->path($type, $format, $context),
-            fn () => $this->content($type, $format, $context),
+            $this->path($type, $format, $configuration),
+            fn () => $this->content($type, $format, $configuration),
         );
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
-    private function path(Type $type, string $format, array $context): string
+    private function path(Type $type, string $format, Configuration $configuration): string
     {
         $hash = hash('xxh128', (string) $type);
-        $variations = $this->templateVariationExtractor->extractFromContext($context);
+        $variations = $this->templateVariationExtractor->extractFromConfiguration($configuration);
 
         if ([] !== $variations) {
             $hash .= '.'.hash('xxh128', implode('_', array_map(fn (TemplateVariation $t): string => (string) $t, $variations)));
@@ -66,12 +64,10 @@ final class TemplateFactory
     }
 
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, mixed> $runtime
      */
-    private function content(Type $type, string $format, array $context): string
+    private function content(Type $type, string $format, Configuration $configuration): string
     {
-        $context['type'] = $type;
-
         /** @var TemplateGeneratorInterface|null $templateGenerator */
         $templateGenerator = $this->templateGenerators[$format] ?? null;
         if (null === $templateGenerator) {
@@ -84,10 +80,22 @@ final class TemplateFactory
         $phpDoc = $compiler->source();
         $compiler->reset();
 
-        $argumentsNode = new ArgumentsNode(['data' => 'mixed', 'resource' => 'mixed', 'context' => 'array']);
+        $argumentsNode = new ArgumentsNode([
+            'data' => 'mixed',
+            'resource' => 'mixed',
+            'configuration' => '\\'.Configuration::class,
+        ]);
 
         $compiler->indent();
-        $bodyNodes = $templateGenerator->generate($this->domTreeBuilder->build($type, '$data', $context), $context);
+
+        $runtime = ['original_type' => $type];
+
+        $bodyNodes = $templateGenerator->generate(
+            $this->domTreeBuilder->build($type, '$data', $configuration, $runtime),
+            $configuration,
+            $runtime,
+        );
+
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

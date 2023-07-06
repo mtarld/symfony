@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
 
@@ -22,9 +23,9 @@ use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
 interface TemplateGeneratorInterface
 {
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, mixed> $runtime
      *
      * @return list<NodeInterface>
      */
-    public function generate(DomNode $domNode, array $context): array;
+    public function generate(DomNode $domNode, Configuration $configuration, array $runtime): array;
 }

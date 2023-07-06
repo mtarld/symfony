@@ -15,7 +15,6 @@ use Symfony\Component\Serializer\Deserialize\Configuration;
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Deserialize\Splitter\SplitterInterface;
 use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -37,7 +36,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
     ) {
     }
 
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, Runtime $runtime = null): mixed
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed
     {
         if ($type->isUnion()) {
             // TODO
@@ -51,7 +50,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         }
 
         if ($type->isScalar()) {
-            $scalar = $this->decoder->decode($resource, $runtime->offset, $runtime->length, $configuration);
+            $scalar = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
 
             if (null === $scalar) {
                 if (!$type->isNullable()) {
@@ -75,7 +74,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         }
 
         if ($type->isEnum()) {
-            $enum = $this->decoder->decode($resource, $runtime->offset, $runtime->length, $configuration);
+            $enum = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
 
             if (null === $enum) {
                 if (!$type->isNullable()) {
@@ -96,15 +95,15 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             $collection = null;
 
             if ($type->isList()) {
-                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $runtime->offset, $runtime->length)) {
+                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $runtime['offset'], $runtime['length'])) {
                     $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
                 }
             } elseif ($type->isDict()) {
-                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $runtime->offset, $runtime->length)) {
+                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $runtime['offset'], $runtime['length'])) {
                     $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
                 }
             } else {
-                $collection = $this->decoder->decode($resource, $runtime->offset, $runtime->length);
+                $collection = $this->decoder->decode($resource, $runtime['offset'], $runtime['length']);
             }
 
             if (null === $collection) {
@@ -120,10 +119,10 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
         if ($type->isObject()) {
             if (!$type->hasClass()) {
-                return (object) ($this->decoder->decode($resource, $runtime->offset, $runtime->length));
+                return (object) ($this->decoder->decode($resource, $runtime['offset'], $runtime['length']));
             }
 
-            $boundaries = $this->dictSplitter->split($resource, $type, $runtime->offset, $runtime->length);
+            $boundaries = $this->dictSplitter->split($resource, $type, $runtime['offset'], $runtime['length']);
 
             if (null === $boundaries) {
                 if (!$type->isNullable()) {
@@ -134,7 +133,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             }
 
             $className = $type->className();
-            $propertiesMetadata = $this->propertyMetadataLoader->load($runtime->originalType, $className, $configuration);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $runtime);
 
             $properties = [];
             foreach ($boundaries as $name => $boundary) {
@@ -142,33 +141,34 @@ final class LazyUnmarshaller implements UnmarshallerInterface
                     continue;
                 }
 
-                $propertyName = $propertiesMetadata[$name]->name;
+                $propertyName = $propertiesMetadata[$name]->name();
 
-                $runtime->offset = $boundary[0];
-                $runtime->length = $boundary[1];
+                $runtime['offset'] = $boundary[0];
+                $runtime['length'] = $boundary[1];
 
                 $unmarshal = fn (Type $type) => $this->unmarshal($resource, $type, $configuration, $runtime);
 
-                $properties[$propertyName] = fn () => ($propertiesMetadata[$name]->valueProvider)($unmarshal);
+                $properties[$propertyName] = fn () => $propertiesMetadata[$name]->valueProvider()($unmarshal);
             }
 
             return $this->instantiator->instantiate($className, $properties);
         }
 
-        return $this->decoder->decode($resource, $runtime->offset, $runtime->length);
+        return $this->decoder->decode($resource, $runtime['offset'], $runtime['length']);
     }
 
     /**
      * @param resource                         $resource
      * @param \Iterator<array{0: int, 1: int}> $boundaries
+     * @param array<string, mixed> $runtime
      *
      * @return \Iterator<int|string, mixed>
      */
-    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, Configuration $configuration, Runtime $runtime): \Iterator
+    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, Configuration $configuration, array $runtime): \Iterator
     {
         foreach ($boundaries as $key => $boundary) {
-            $runtime->offset = $boundary[0];
-            $runtime->length = $boundary[1];
+            $runtime['offset'] = $boundary[0];
+            $runtime['length'] = $boundary[1];
 
             yield $key => $this->unmarshal($resource, $type, $configuration, $runtime);
         }

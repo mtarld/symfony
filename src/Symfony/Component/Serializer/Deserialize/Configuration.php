@@ -16,14 +16,14 @@ namespace Symfony\Component\Serializer\Deserialize;
  *
  * @experimental in 7.0
  */
-readonly class Configuration
+class Configuration
 {
     /**
      * @param list<string> $groups
      */
     public function __construct(
-        public array $groups = [],
-        public bool $lazyUnmarshal = false,
+        public readonly array $groups = [],
+        public readonly bool $lazyUnmarshal = false,
     ) {
     }
 }

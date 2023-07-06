@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
@@ -35,19 +36,19 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
     use VariableNameScoperTrait;
 
     /**
-     * @param array<string, mixed> $context
+     * @param array<string, mixed> $runtime
      *
      * @return list<NodeInterface>
      */
-    abstract protected function doGenerate(DomNode $domNode, array $context): array;
+    abstract protected function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array;
 
-    final public function generate(DomNode $domNode, array $context): array
+    final public function generate(DomNode $domNode, Configuration $configuration, array $runtime): array
     {
         if ($domNode instanceof UnionDomNode) {
             $domNodes = $domNode->domNodes;
 
             if (1 === \count($domNodes)) {
-                return $this->generate($domNodes[0], $context);
+                return $this->generate($domNodes[0], $configuration, $runtime);
             }
 
             /** @var Type $ifType */
@@ -58,16 +59,16 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
 
             return [new IfNode(
                 $this->typeValidator($ifDomNode),
-                $this->generate($ifDomNode, $context),
-                $this->generate($elseDomNode, $context),
+                $this->generate($ifDomNode, $configuration, $runtime),
+                $this->generate($elseDomNode, $configuration, $runtime),
                 array_map(fn (DomNode $n): array => [
                     'condition' => $this->typeValidator($n),
-                    'body' => $this->generate($n, $context),
+                    'body' => $this->generate($n, $configuration, $runtime),
                 ], $domNodes),
             )];
         }
 
-        return $this->doGenerate($domNode, $context);
+        return $this->doGenerate($domNode, $configuration, $runtime);
     }
 
     private function typeValidator(DomNode $domNode): NodeInterface

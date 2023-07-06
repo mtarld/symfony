@@ -15,7 +15,6 @@ use Symfony\Component\Serializer\Deserialize\Configuration;
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\Type;
@@ -34,12 +33,15 @@ final class EagerUnmarshaller implements UnmarshallerInterface
     ) {
     }
 
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, Runtime $runtime = null): mixed
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed
     {
-        return $this->denormalize($this->decoder->decode($resource, 0, -1), $type, $configuration, $runtime ?? new Runtime());
+        return $this->denormalize($this->decoder->decode($resource, 0, -1), $type, $configuration, $runtime ?? []);
     }
 
-    private function denormalize(mixed $data, Type $type, Configuration $configuration, Runtime $runtime): mixed
+    /**
+     * @param array<string, mixed> $runtime
+     */
+    private function denormalize(mixed $data, Type $type, Configuration $configuration, array $runtime): mixed
     {
         if ($type->isUnion()) {
             // TODO
@@ -129,7 +131,7 @@ final class EagerUnmarshaller implements UnmarshallerInterface
             }
 
             $className = $type->className();
-            $propertiesMetadata = $this->propertyMetadataLoader->load($runtime->originalType, $className, $configuration);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $runtime);
 
             $properties = [];
             foreach ($data as $name => $value) {
@@ -137,10 +139,10 @@ final class EagerUnmarshaller implements UnmarshallerInterface
                     continue;
                 }
 
-                $propertyName = $propertiesMetadata[$name]->name;
+                $propertyName = $propertiesMetadata[$name]->name();
                 $unmarshal = fn (Type $type) => $this->denormalize($value, $type, $configuration, $runtime);
 
-                $properties[$propertyName] = fn () => ($propertiesMetadata[$name]->valueProvider)($unmarshal);
+                $properties[$propertyName] = fn () => $propertiesMetadata[$name]->valueProvider()($unmarshal);
             }
 
             return $this->instantiator->instantiate($className, $properties);
@@ -151,10 +153,11 @@ final class EagerUnmarshaller implements UnmarshallerInterface
 
     /**
      * @param array<string, mixed>|list<mixed> $collection
+     * @param array<string, mixed> $runtime
      *
      * @return \Iterator<mixed>|\Iterator<string, mixed>
      */
-    private function denormalizeCollectionItems(array $collection, Type $type, Configuration $configuration, Runtime $runtime): \Iterator
+    private function denormalizeCollectionItems(array $collection, Type $type, Configuration $configuration, array $runtime): \Iterator
     {
         foreach ($collection as $key => $value) {
             yield $key => $this->denormalize($value, $type, $configuration, $runtime);

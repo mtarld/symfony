@@ -44,13 +44,17 @@ final class Deserializer implements DeserializerInterface
         }
 
         $configuration ??= new Configuration();
-        $runtime = new Runtime(originalType: $type);
-
         /** @var UnmarshallerInterface|null $unmarshaller */
         $unmarshaller = $configuration->lazyUnmarshal ? ($this->lazyUnmarshallers[$format] ?? null) : ($this->eagerUnmarshallers[$format] ?? null);
         if (null === $unmarshaller) {
             throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
         }
+
+        $runtime = [
+            'original_type' => $type,
+            'offset' => 0,
+            'length' => -1,
+        ];
 
         return $unmarshaller->unmarshal($input, $type, $configuration, $runtime);
     }

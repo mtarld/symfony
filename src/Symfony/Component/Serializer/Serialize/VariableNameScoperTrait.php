@@ -21,15 +21,15 @@ trait VariableNameScoperTrait
     /**
      * @param array<string, mixed> $context
      */
-    protected function scopeVariableName(string $variableName, array &$context): string
+    protected function scopeVariableName(string $variableName, array &$runtime): string
     {
-        if (!isset($context['variable_counters'][$variableName])) {
-            $context['variable_counters'][$variableName] = 0;
+        if (!isset($runtime['variable_counters'][$variableName])) {
+            $runtime['variable_counters'][$variableName] = 0;
         }
 
-        $name = sprintf('%s_%d', $variableName, $context['variable_counters'][$variableName]);
+        $name = sprintf('%s_%d', $variableName, $runtime['variable_counters'][$variableName]);
 
-        ++$context['variable_counters'][$variableName];
+        ++$runtime['variable_counters'][$variableName];
 
         return $name;
     }

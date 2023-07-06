@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
+
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -25,11 +28,9 @@ abstract readonly class TemplateVariation implements \Stringable
     }
 
     /**
-     * @param array<string, mixed> $context
-     *
      * @return array<string, mixed>
      */
-    abstract public function updateContext(array $context): array;
+    abstract public function configure(Configuration $configuration): Configuration;
 
     public function compare(self $other): int
     {

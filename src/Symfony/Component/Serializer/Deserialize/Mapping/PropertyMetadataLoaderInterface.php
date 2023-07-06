@@ -12,7 +12,6 @@
 namespace Symfony\Component\Serializer\Deserialize\Mapping;
 
 use Symfony\Component\Serializer\Deserialize\Configuration;
-use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -23,8 +22,9 @@ interface PropertyMetadataLoaderInterface
 {
     /**
      * @param class-string $className
+     * @param array<string, mixed> $runtime
      *
      * @return array<string, PropertyMetadata>
      */
-    public function load(Type $originalType, string $className, Configuration $configuration): array;
+    public function load(string $className, Configuration $configuration, array $runtime): array;
 }

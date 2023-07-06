@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Serializer\Serialize;
 
-use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 
 /**
@@ -22,8 +21,7 @@ use Symfony\Component\Serializer\Stream\StreamInterface;
 interface SerializerInterface
 {
     /**
-     * @param StreamInterface|resource              $output
-     * @param ContextInterface|array<string, mixed> $context
+     * @param StreamInterface|resource $output
      */
-    public function serialize(mixed $data, string $format, mixed $output, ContextInterface|array $context = []): void;
+    public function serialize(mixed $data, string $format, mixed $output, Configuration $configuration = null): void;
 }

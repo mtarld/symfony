@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Serializer\Serialize\Encoder;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -20,8 +22,7 @@ interface EncoderInterface
 {
     /**
      * @param resource             $resource
-     * @param array<string, mixed> $context
      */
-    public static function encode(mixed $resource, mixed $normalized, array $context): void;
+    public static function encode(mixed $resource, mixed $normalized, Configuration $context): void;
 }
 

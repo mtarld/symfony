@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Exception\RuntimeException;
+use Symfony\Component\Serializer\Serialize\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
@@ -40,12 +41,12 @@ final class JsonTemplateGenerator extends TemplateGenerator
     ) {
     }
 
-    public function doGenerate(DomNode $domNode, array $context): array
+    public function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array
     {
         $accessor = new RawNode($domNode->accessor);
 
         if ($domNode instanceof CollectionDomNode) {
-            $prefixName = $this->scopeVariableName('prefix', $context);
+            $prefixName = $this->scopeVariableName('prefix', $runtime);
 
             if ($domNode->isList) {
                 return [
@@ -54,7 +55,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
 
                     new ForEachNode($accessor, null, substr($domNode->childrenDomNode->accessor, 1), [
                         new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
-                        ...$this->generate($domNode->childrenDomNode, $context),
+                        ...$this->generate($domNode->childrenDomNode, $configuration, $runtime),
                         new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
                     ]),
 
@@ -62,7 +63,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                 ];
             }
 
-            $keyName = $this->scopeVariableName('key', $context);
+            $keyName = $this->scopeVariableName('key', $configuration, $runtime);
 
             return [
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
@@ -76,7 +77,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                         new VariableNode($keyName),
                         '":',
                     )])),
-                    ...$this->generate($domNode->childrenDomNode, $context),
+                    ...$this->generate($domNode->childrenDomNode, $configuration, $runtime),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
                 ]),
 
@@ -102,7 +103,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($encodedName)])),
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
-                    ...$this->generate($propertyDomNode, $context),
+                    ...$this->generate($propertyDomNode, $configuration, $runtime),
                 );
 
                 $separator = ',';
@@ -120,18 +121,20 @@ final class JsonTemplateGenerator extends TemplateGenerator
 
     private function encodeValue(NodeInterface $node): NodeInterface
     {
+        // TODO
         return new FunctionNode('\json_encode', [
             $node,
-            new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(\JSON_PRESERVE_ZERO_FRACTION)),
+            new BinaryNode('??', new ArrayAccessNode(new VariableNode('configuration'), new ScalarNode('json_encode_flags')), new ScalarNode(\JSON_PRESERVE_ZERO_FRACTION)),
         ]);
     }
 
     private function escapeString(NodeInterface $node): NodeInterface
     {
+        // TODO
         return new FunctionNode('\substr', [
             new FunctionNode('\json_encode', [
                 $node,
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('context'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+                new BinaryNode('??', new ArrayAccessNode(new VariableNode('configuration'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
             ]),
             new ScalarNode(1),
             new ScalarNode(-1),

@@ -31,23 +31,19 @@ final class Serializer implements SerializerInterface
     ) {
     }
 
-    public function serialize(mixed $data, string $format, mixed $output, ContextInterface|array $context = []): void
+    public function serialize(mixed $data, string $format, mixed $output, Configuration $configuration = null): void
     {
         if ($output instanceof StreamInterface) {
             $output = $output->resource();
         }
 
-        if ($context instanceof ContextInterface) {
-            $context = $context->toArray();
-        }
+        $type = $configuration->type() ?? Type::createFromString(get_debug_type($data));
 
-        if (\is_string($type = $context['type'] ?? get_debug_type($data))) {
-            $type = Type::createFromString($type);
-        }
+        $configuration ??= new Configuration();
 
-        $template = $this->templateFactory->create($type, $format, $context);
+        $template = $this->templateFactory->create($type, $format, $configuration);
 
-        if (!file_exists($template->path) || ($context['force_generate_template'] ?? false)) {
+        if (!file_exists($template->path) || $configuration->forceGenerateTemplate()) {
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
             }
@@ -61,6 +57,6 @@ final class Serializer implements SerializerInterface
             @chmod($template->path, 0666 & ~umask());
         }
 
-        (require $template->path)($data, $output, $context);
+        (require $template->path)($data, $output, $configuration);
     }
 }

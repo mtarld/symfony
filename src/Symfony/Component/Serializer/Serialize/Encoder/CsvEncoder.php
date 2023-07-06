@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Encoder;
 
 use Symfony\Component\Serializer\Encoder\CsvEncoder as LegacyCsvEncoder;
+use Symfony\Component\Serializer\Serialize\Configuration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -22,8 +23,10 @@ final class CsvEncoder implements EncoderInterface
 {
     private static LegacyCsvEncoder|null $legacyCsvEncoder = null;
 
-    public static function encode(mixed $resource, mixed $normalized, array $context): void
+    public static function encode(mixed $resource, mixed $normalized, Configuration $configuration): void
     {
-        fwrite($resource, (self::$legacyCsvEncoder ??= new LegacyCsvEncoder())->encode($normalized, 'csv', $context));
+        // TODO to context
+
+        fwrite($resource, (self::$legacyCsvEncoder ??= new LegacyCsvEncoder())->encode($normalized, 'csv'));
     }
 }

@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
+use Symfony\Component\Serializer\Serialize\Configuration;
+
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -23,10 +26,7 @@ final readonly class TemplateVariant
      */
     public array $variations;
 
-    /**
-     * @var array<string, mixed>
-     */
-    public array $context;
+    public Configuration $configuration;
 
     /**
      * @param list<TemplateVariation> $variations
@@ -35,12 +35,13 @@ final readonly class TemplateVariant
     {
         usort($variations, fn (TemplateVariation $a, TemplateVariation $b): int => $a->compare($b));
 
-        $context = [];
+        $configuration = new Configuration();
+
         foreach ($variations as $variation) {
-            $context = $variation->updateContext($context);
+            $configuration = $variation->configure($configuration);
         }
 
         $this->variations = $variations;
-        $this->context = $context;
+        $this->configuration = $configuration;
     }
 }
