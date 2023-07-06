@@ -147,9 +147,9 @@ final class EagerUnmarshaller implements UnmarshallerInterface
 
             $properties = [];
             foreach ($data as $name => $value) {
-                $properties[$name] = fn () => $this->denormalize(
+                $properties[$name] = fn (Type $type = null) => $this->denormalize(
                     $value,
-                    self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name)),
+                    $type ?? (self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name))),
                     $instantiator,
                     $context,
                 );

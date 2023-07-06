@@ -14,7 +14,6 @@ namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
 use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
@@ -29,6 +28,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
 {
     private static array $cache = [
         'metadata' => [],
+        'names' => [],
         'reflection' => [],
         'formatter_reflection' => [],
         'generic_types' => [],
@@ -47,12 +47,25 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
     {
         $result = [];
 
+        if (!isset(self::$cache['reflection'][$className])) {
+            $reflectionClass = self::$cache['reflection'][$className] = new \ReflectionClass($className);
+
+            foreach ($reflectionClass->getProperties() as $reflectionProperty) {
+                $cacheKey = $className.$reflectionProperty->getName();
+
+                self::$cache['reflection'][$cacheKey] = $reflectionProperty;
+                self::$cache['metadata'][$cacheKey] ??= $this->propertyMetadata($reflectionProperty);
+                if (isset(self::$cache['metadata'][$cacheKey]['name'])) {
+                    self::$cache['names'][self::$cache['metadata'][$cacheKey]['name']] = $reflectionProperty->getName();
+                }
+            }
+        }
+
         $genericTypes = self::$cache['generic_types'][$className.$context['type']] ??= $this->genericTypes($className, $context['type']);
 
-        foreach ($properties as $propertyName => $propertyValue) {
-            $cacheKey = $className.$propertyName;
-            $reflection = self::$cache['reflection'][$cacheKey] ??= new \ReflectionProperty($className, $propertyName);
-            $metadata = self::$cache['metadata'][$cacheKey] ??= $this->propertyMetadata($reflection);
+        foreach ($properties as $name => $valueCallable) {
+            $cacheKey = $className.$name;
+            $metadata = self::$cache['metadata'][$cacheKey] ?? [];
 
             if (isset($context['groups'])) {
                 $matchingGroup = false;
@@ -69,7 +82,8 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                 }
             }
 
-            $propertyName = $metadata['name'] ?? $propertyName;
+            $propertyName = self::$cache['names'][$name] ?? $name;
+            $reflection = self::$cache['reflection'][$className.$propertyName] ??= new \ReflectionProperty($className, $propertyName);
 
             if (null === $formatter = $metadata['formatter'] ?? null) {
                 $type = (self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromProperty($reflection));
@@ -77,7 +91,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$propertyName] = fn () => $propertyValue($type);
+                $result[$propertyName] = fn () => $valueCallable($type);
 
                 continue;
             }
@@ -90,7 +104,7 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 
-            $result[$propertyName] = fn () => $propertyValue($type);
+            $result[$propertyName] = fn () => $valueCallable($type);
         }
 
         return $result;

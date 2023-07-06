@@ -16,7 +16,7 @@ namespace Symfony\Component\Serializer\Serialize\Template;
  *
  * @experimental in 7.0
  */
-abstract readonly class GroupTemplateVariation extends TemplateVariation
+readonly class GroupTemplateVariation extends TemplateVariation
 {
     public function __construct(string $group)
     {
@@ -27,5 +27,7 @@ abstract readonly class GroupTemplateVariation extends TemplateVariation
     {
         $context['groups'][] = $this->value;
         $context['groups'] = array_values(array_unique($context['groups']));
+
+        return $context;
     }
 }

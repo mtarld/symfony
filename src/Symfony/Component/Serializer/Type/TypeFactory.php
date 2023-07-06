@@ -19,6 +19,7 @@ use Symfony\Component\Serializer\Exception\UnsupportedException;
  *
  * @experimental in 7.0
  */
+// TODO move in Type
 abstract class TypeFactory
 {
     /**

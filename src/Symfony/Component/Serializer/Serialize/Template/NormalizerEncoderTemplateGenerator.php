@@ -80,13 +80,11 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
         }
 
         if (!$context['nested']) {
-            $nodes[] = new ExpressionNode(new FunctionNode('\fwrite', [
+            $nodes[] = new ExpressionNode(
+            new FunctionNode(sprintf('\\%s::encode', $this->encoderClassName), [
                 new VariableNode('resource'),
-                new FunctionNode(sprintf('\\%s::encode', $this->encoderClassName), [
-                    new VariableNode('resource'),
-                    $normalizedAccessor,
-                    new VariableNode('context'),
-                ]),
+                $normalizedAccessor,
+                new VariableNode('context'),
             ]));
         }
 
