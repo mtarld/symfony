@@ -14,7 +14,7 @@ namespace Symfony\Component\Serializer\Deserialize\Mapping;
 use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
@@ -54,9 +54,9 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
             $cacheKey = $className.$reflectionProperty->getName();
             $metadata = (self::$cache['metadata'][$cacheKey] ??= ($this->propertyMetadata($reflectionProperty) ?? []));
 
-            if ([] !== $configuration->groups) {
+            if ([] !== $configuration->groups()) {
                 $matchingGroup = false;
-                foreach ($configuration->groups as $group) {
+                foreach ($configuration->groups() as $group) {
                     if (isset($metadata['groups'][$group])) {
                         $matchingGroup = true;
 

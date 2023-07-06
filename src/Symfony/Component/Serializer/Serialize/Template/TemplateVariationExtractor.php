@@ -12,7 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

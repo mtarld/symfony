@@ -12,7 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Dom;
 
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadata;
 use Symfony\Component\Serializer\Serialize\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\Serializer\Serialize\VariableNameScoperTrait;

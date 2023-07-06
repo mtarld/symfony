@@ -12,7 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Exception\UnsupportedException;
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\DomTreeBuilderInterface;
 use Symfony\Component\Serializer\Serialize\Php\ArgumentsNode;
 use Symfony\Component\Serializer\Serialize\Php\ClosureNode;

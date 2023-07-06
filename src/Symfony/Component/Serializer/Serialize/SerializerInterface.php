@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize;
 
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 
 /**

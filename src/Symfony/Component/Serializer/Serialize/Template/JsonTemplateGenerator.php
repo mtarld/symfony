@@ -12,7 +12,7 @@
 namespace Symfony\Component\Serializer\Serialize\Template;
 
 use Symfony\Component\Serializer\Exception\RuntimeException;
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
@@ -21,6 +21,7 @@ use Symfony\Component\Serializer\Serialize\Php\BinaryNode;
 use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
 use Symfony\Component\Serializer\Serialize\Php\AssignNode;
 use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
+use Symfony\Component\Serializer\Serialize\Php\MethodNode;
 use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
 use Symfony\Component\Serializer\Serialize\Php\TemplateStringNode;
 use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
@@ -63,7 +64,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                 ];
             }
 
-            $keyName = $this->scopeVariableName('key', $configuration, $runtime);
+            $keyName = $this->scopeVariableName('key', $runtime);
 
             return [
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
@@ -121,20 +122,18 @@ final class JsonTemplateGenerator extends TemplateGenerator
 
     private function encodeValue(NodeInterface $node): NodeInterface
     {
-        // TODO
         return new FunctionNode('\json_encode', [
             $node,
-            new BinaryNode('??', new ArrayAccessNode(new VariableNode('configuration'), new ScalarNode('json_encode_flags')), new ScalarNode(\JSON_PRESERVE_ZERO_FRACTION)),
+            new MethodNode(new MethodNode(new VariableNode('configuration'), 'json', []), 'flags', []),
         ]);
     }
 
     private function escapeString(NodeInterface $node): NodeInterface
     {
-        // TODO
         return new FunctionNode('\substr', [
             new FunctionNode('\json_encode', [
                 $node,
-                new BinaryNode('??', new ArrayAccessNode(new VariableNode('configuration'), new ScalarNode('json_encode_flags')), new ScalarNode(0)),
+                new MethodNode(new MethodNode(new VariableNode('configuration'), 'json', []), 'flags', []),
             ]),
             new ScalarNode(1),
             new ScalarNode(-1),

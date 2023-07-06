@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Mapping;
 
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

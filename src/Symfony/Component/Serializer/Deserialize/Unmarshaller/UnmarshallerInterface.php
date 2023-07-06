@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
-use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Type\Type;
 
 /**

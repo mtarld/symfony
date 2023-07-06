@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Decoder;
 
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
 
 /**
@@ -25,5 +26,5 @@ interface DecoderInterface
      *
      * @throws InvalidResourceException
      */
-    public function decode(mixed $resource, int $offset, int $length): mixed;
+    public function decode(mixed $resource, int $offset, int $length, Configuration $configuration): mixed;
 }

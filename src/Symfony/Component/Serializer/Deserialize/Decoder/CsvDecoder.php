@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Decoder;
 
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Exception\InvalidResourceException;
 
@@ -28,7 +29,7 @@ final class CsvDecoder implements DecoderInterface
         $this->decoder = new CsvEncoder();
     }
 
-    public function decode(mixed $resource, int $offset, int $length): mixed
+    public function decode(mixed $resource, int $offset, int $length, Configuration $configuration): mixed
     {
         try {
             /** @var string $content */

@@ -13,6 +13,7 @@ namespace Symfony\Component\Serializer\Serialize;
 
 use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Exception\RuntimeException;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
 use Symfony\Component\Serializer\Stream\StreamInterface;

@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
-use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
@@ -35,7 +35,12 @@ final class EagerUnmarshaller implements UnmarshallerInterface
 
     public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed
     {
-        return $this->denormalize($this->decoder->decode($resource, 0, -1), $type, $configuration, $runtime ?? []);
+        return $this->denormalize(
+            $this->decoder->decode($resource, 0, -1, $configuration),
+            $type,
+            $configuration,
+            $runtime ?? [],
+        );
     }
 
     /**

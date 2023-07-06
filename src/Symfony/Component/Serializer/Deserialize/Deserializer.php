@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize;
 
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\UnmarshallerInterface;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
@@ -44,8 +45,9 @@ final class Deserializer implements DeserializerInterface
         }
 
         $configuration ??= new Configuration();
+
         /** @var UnmarshallerInterface|null $unmarshaller */
-        $unmarshaller = $configuration->lazyUnmarshal ? ($this->lazyUnmarshallers[$format] ?? null) : ($this->eagerUnmarshallers[$format] ?? null);
+        $unmarshaller = $configuration->lazyUnmarshal() ? ($this->lazyUnmarshallers[$format] ?? null) : ($this->eagerUnmarshallers[$format] ?? null);
         if (null === $unmarshaller) {
             throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
         }

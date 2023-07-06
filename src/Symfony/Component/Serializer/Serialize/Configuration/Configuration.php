@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Serialize;
+namespace Symfony\Component\Serializer\Serialize\Configuration;
 
 use Symfony\Component\Serializer\Type\Type;
 
@@ -20,27 +20,20 @@ use Symfony\Component\Serializer\Type\Type;
  */
 class Configuration
 {
-    protected ?Type $type;
+    protected ?Type $type = null;
 
     /**
      * @var list<string> $groups
      */
-    protected array $groups;
+    protected array $groups = [];
 
-    /**
-     * @param list<string>|string $groups
-     */
-    public function __construct(
-        Type|string|null $type = null,
-        array|string $groups = [],
-        protected bool $forceGenerateTemplate = false,
-    ) {
-        if (\is_string($type)) {
-            $type = Type::createFromString($type);
-        }
+    protected bool $forceGenerateTemplate = false;
 
-        $this->type = $type;
-        $this->groups = (array) $groups;
+    protected JsonConfiguration $jsonConfiguration;
+
+    public function __construct() 
+    {
+        $this->jsonConfiguration = new JsonConfiguration();
     }
 
     public function type(): ?Type
@@ -50,15 +43,14 @@ class Configuration
 
     public function withType(Type|string $type): static
     {
-        $clone = clone $this;
-
         if (\is_string($type)) {
             $type = Type::createFromString($type);
         }
 
+        $clone = clone $this;
         $clone->type = $type;
 
-        return $this;
+        return $clone;
     }
 
     /**
@@ -70,12 +62,12 @@ class Configuration
     }
 
     /**
-     * @param list<string>|string $groups
+     * @param non-empty-string|non-empty-array<int, non-empty-string> $groups
      */
     public function withGroups(array|string $groups): static
     {
         $clone = clone $this;
-        $clone->groups = (array) $groups;
+        $clone->groups = array_values(array_unique((array) $groups));
 
         return $clone;
     }
@@ -89,6 +81,19 @@ class Configuration
     {
         $clone = clone $this;
         $clone->forceGenerateTemplate = $forceGenerateTemplate;
+
+        return $clone;
+    }
+
+    public function json(): JsonConfiguration
+    {
+        return $this->jsonConfiguration;
+    }
+
+    public function withJsonConfiguration(JsonConfiguration $configuration): static
+    {
+        $clone = clone $this;
+        $clone->jsonConfiguration = $configuration;
 
         return $clone;
     }

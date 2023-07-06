@@ -12,6 +12,7 @@
 namespace Symfony\Component\Serializer\Deserialize;
 
 use Symfony\Component\Serializer\ContextInterface;
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\Type;

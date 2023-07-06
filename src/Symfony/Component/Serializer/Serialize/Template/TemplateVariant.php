@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Serialize\Template;
 
-use Symfony\Component\Serializer\Serialize\Configuration;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 
 
 /**

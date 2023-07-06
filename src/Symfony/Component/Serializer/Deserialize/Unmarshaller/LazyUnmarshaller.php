@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
-use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
@@ -103,7 +103,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
                     $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
                 }
             } else {
-                $collection = $this->decoder->decode($resource, $runtime['offset'], $runtime['length']);
+                $collection = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
             }
 
             if (null === $collection) {
@@ -119,7 +119,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
         if ($type->isObject()) {
             if (!$type->hasClass()) {
-                return (object) ($this->decoder->decode($resource, $runtime['offset'], $runtime['length']));
+                return (object) ($this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration));
             }
 
             $boundaries = $this->dictSplitter->split($resource, $type, $runtime['offset'], $runtime['length']);
@@ -154,7 +154,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             return $this->instantiator->instantiate($className, $properties);
         }
 
-        return $this->decoder->decode($resource, $runtime['offset'], $runtime['length']);
+        return $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
     }
 
     /**
