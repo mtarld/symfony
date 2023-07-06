@@ -9,20 +9,20 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
+namespace Symfony\Component\Serializer\Serialize\Metadata;
+
+use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-final readonly class DeserializePropertyConfiguration
+final readonly class PropertyMetadata
 {
-    /**
-     * @param callable(): mixed $value
-     */
     public function __construct(
-        public mixed $value,
+        public Type $type,
+        public string $accessor,
     ) {
     }
 }

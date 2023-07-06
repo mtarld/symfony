@@ -11,13 +11,15 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
 
+use Symfony\Component\Serializer\Deserialize\Configuration;
 use Symfony\Component\Serializer\Deserialize\Decoder\DecoderInterface;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguration;
+use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
+use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Deserialize\Splitter\SplitterInterface;
 use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\Type;
-use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -26,36 +28,30 @@ use Symfony\Component\Serializer\Type\TypeExtractorInterface;
  */
 final class LazyUnmarshaller implements UnmarshallerInterface
 {
-    /**
-     * @var array{property_type: array<string, Type>, class_reflection: array<string, \ReflectionClass<object>}
-     */
-    protected static array $cache = [
-        'property_type' => [],
-        'class_reflection' => [],
-    ];
-
     public function __construct(
-        private readonly TypeExtractorInterface $typeExtractor,
         private readonly DecoderInterface $decoder,
         private readonly SplitterInterface $listSplitter,
         private readonly SplitterInterface $dictSplitter,
+        private readonly PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private readonly InstantiatorInterface $instantiator,
     ) {
     }
 
-    public function unmarshal(mixed $resource, Type $type, callable $instantiator, array $context): mixed
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, Runtime $runtime = null): mixed
     {
         if ($type->isUnion()) {
-            $selectedType = ($context['union_selector'][$typeString = (string) $type] ?? null);
-            if (null === $selectedType) {
-                throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
-            }
-
-            /** @var Type $type */
-            $type = \is_string($selectedType) ? Type::createFromString($selectedType) : $selectedType;
+            // TODO
+            // $selectedType = ($context['union_selector'][$typeString = (string) $type] ?? null);
+            // if (null === $selectedType) {
+            //     throw new UnexpectedValueException(sprintf('Cannot guess type to use for "%s", you may specify a type in "$context[\'union_selector\'][\'%1$s\']".', (string) $type));
+            // }
+            //
+            // /** @var Type $type */
+            // $type = \is_string($selectedType) ? Type::createFromString($selectedType) : $selectedType;
         }
 
         if ($type->isScalar()) {
-            $scalar = $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
+            $scalar = $this->decoder->decode($resource, $runtime->offset, $runtime->length, $configuration);
 
             if (null === $scalar) {
                 if (!$type->isNullable()) {
@@ -79,7 +75,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         }
 
         if ($type->isEnum()) {
-            $enum = $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
+            $enum = $this->decoder->decode($resource, $runtime->offset, $runtime->length, $configuration);
 
             if (null === $enum) {
                 if (!$type->isNullable()) {
@@ -100,15 +96,15 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             $collection = null;
 
             if ($type->isList()) {
-                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $context)) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $instantiator, $context);
+                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $runtime->offset, $runtime->length)) {
+                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
                 }
             } elseif ($type->isDict()) {
-                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $context)) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $instantiator, $context);
+                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $runtime->offset, $runtime->length)) {
+                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
                 }
             } else {
-                $collection = $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
+                $collection = $this->decoder->decode($resource, $runtime->offset, $runtime->length);
             }
 
             if (null === $collection) {
@@ -124,21 +120,10 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
         if ($type->isObject()) {
             if (!$type->hasClass()) {
-                $object = new \stdClass();
-                $properties = $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
-               
-                foreach ($properties as $name => $value) {
-                    $object->{$name} = $value;
-                }
-
-                return $object;
+                return (object) ($this->decoder->decode($resource, $runtime->offset, $runtime->length));
             }
 
-            $className = $type->className();
-
-            /** @var \ReflectionClass<object> $reflection */
-            $reflection = (self::$cache['class_reflection'][$className] ??= new \ReflectionClass($className));
-            $boundaries = $this->dictSplitter->split($resource, $type, $context);
+            $boundaries = $this->dictSplitter->split($resource, $type, $runtime->offset, $runtime->length);
 
             if (null === $boundaries) {
                 if (!$type->isNullable()) {
@@ -148,34 +133,44 @@ final class LazyUnmarshaller implements UnmarshallerInterface
                 return null;
             }
 
+            $className = $type->className();
+            $propertiesMetadata = $this->propertyMetadataLoader->load($runtime->originalType, $className, $configuration);
+
             $properties = [];
             foreach ($boundaries as $name => $boundary) {
-                $properties[$name] = new DeserializePropertyConfiguration(fn (Type $type = null) => $this->unmarshal(
-                    $resource,
-                    $type ?? (self::$cache['property_type'][$className.$name] ??= $this->typeExtractor->extractFromProperty($reflection->getProperty($name))),
-                    $instantiator,
-                    ['boundary' => $boundary] + $context,
-                ));
+                if (!isset($propertiesMetadata[$name])) {
+                    continue;
+                }
+
+                $propertyName = $propertiesMetadata[$name]->name;
+
+                $runtime->offset = $boundary[0];
+                $runtime->length = $boundary[1];
+
+                $unmarshal = fn (Type $type) => $this->unmarshal($resource, $type, $configuration, $runtime);
+
+                $properties[$propertyName] = fn () => ($propertiesMetadata[$name]->valueProvider)($unmarshal);
             }
 
-            return $instantiator($className, $properties, $context);
+            return $this->instantiator->instantiate($className, $properties);
         }
 
-        return $this->decoder->decode($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
+        return $this->decoder->decode($resource, $runtime->offset, $runtime->length);
     }
 
     /**
      * @param resource                         $resource
      * @param \Iterator<array{0: int, 1: int}> $boundaries
-     * @param callable(class-string, array<string, callable(): mixed>, array<string, mixed>): object $instantiator
-     * @param array<string, mixed>             $context
      *
      * @return \Iterator<int|string, mixed>
      */
-    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, callable $instantiator, array $context): \Iterator
+    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, Configuration $configuration, Runtime $runtime): \Iterator
     {
         foreach ($boundaries as $key => $boundary) {
-            yield $key => $this->unmarshal($resource, $type, $instantiator, ['boundary' => $boundary] + $context);
+            $runtime->offset = $boundary[0];
+            $runtime->length = $boundary[1];
+
+            yield $key => $this->unmarshal($resource, $type, $configuration, $runtime);
         }
     }
 }

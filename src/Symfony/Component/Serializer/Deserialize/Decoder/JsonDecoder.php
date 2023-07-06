@@ -20,7 +20,7 @@ use Symfony\Component\Serializer\Exception\InvalidResourceException;
  */
 final class JsonDecoder implements DecoderInterface
 {
-    public function decode(mixed $resource, int $offset, int $length, array $context): mixed
+    public function decode(mixed $resource, int $offset, int $length): mixed
     {
         try {
             /** @var string $content */
@@ -30,7 +30,7 @@ final class JsonDecoder implements DecoderInterface
         }
 
         try {
-            return json_decode($content, associative: true, flags: ($context['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
+            return json_decode($content, associative: true, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             throw new InvalidResourceException($resource);
         }

@@ -31,25 +31,24 @@ final class JsonListSplitter implements SplitterInterface
         $this->lexer = new JsonLexer();
     }
 
-    public function split(mixed $resource, Type $type, array $context): ?\Iterator
+    public function split(mixed $resource, Type $type, int $offset = 0, int $length = -1): ?\Iterator
     {
-        $tokens = $this->lexer->tokens($resource, $context['boundary'][0] ?? 0, $context['boundary'][1] ?? -1, $context);
+        $tokens = $this->lexer->tokens($resource, $offset, $length);
 
         if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource, $context);
+        return $this->createBoundaries($tokens, $resource);
     }
 
     /**
      * @param \Iterator<array{0: string, 1: int}> $tokens
      * @param resource                            $resource
-     * @param array<string, mixed>                $context
      *
      * @return \Iterator<array{0: int, 1: int}>
      */
-    private function createBoundaries(\Iterator $tokens, mixed $resource, array $context): \Iterator
+    private function createBoundaries(\Iterator $tokens, mixed $resource): \Iterator
     {
         $level = 0;
 

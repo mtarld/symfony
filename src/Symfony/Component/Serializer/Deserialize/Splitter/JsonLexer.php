@@ -27,13 +27,12 @@ final class JsonLexer
 
     /**
      * @param resource             $resource
-     * @param array<string, mixed> $context
      *
      * @return \Iterator<array{0: string, 1: int}>
      *
      * @throws InvalidResourceException
      */
-    public function tokens(mixed $resource, int $offset, int $length, array $context): \Iterator
+    public function tokens(mixed $resource, int $offset, int $length): \Iterator
     {
         $currentTokenPosition = $offset;
 

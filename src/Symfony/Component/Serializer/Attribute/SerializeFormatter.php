@@ -20,7 +20,7 @@ namespace Symfony\Component\Serializer\Attribute;
 final readonly class SerializeFormatter
 {
     /**
-     * @param callable(mixed, array<string, mixed>=): mixed $formatter
+     * @param callable(mixed): mixed $formatter
      */
     public function __construct(
         public mixed $formatter,

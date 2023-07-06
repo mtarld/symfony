@@ -9,11 +9,13 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\PropertyConfigurator;
+namespace Symfony\Component\Serializer\Deserialize\Mapping;
 
 use Symfony\Component\Serializer\Attribute\DeserializeFormatter;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
+use Symfony\Component\Serializer\Deserialize\Configuration;
+use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
@@ -24,11 +26,10 @@ use Symfony\Component\Serializer\Type\TypeGenericsHelper;
  *
  * @experimental in 7.0
  */
-final class DeserializePropertyConfigurator implements DeserializePropertyConfiguratorInterface
+final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     private static array $cache = [
         'metadata' => [],
-        'names' => [],
         'reflection' => [],
         'formatter_reflection' => [],
         'generic_types' => [],
@@ -43,33 +44,20 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    public function configure(string $className, array $properties, array $context): array
+    public function load(Type $originalType, string $className, Configuration $configuration): array
     {
         $result = [];
 
-        if (!isset(self::$cache['reflection'][$className])) {
-            $reflectionClass = self::$cache['reflection'][$className] = new \ReflectionClass($className);
+        $reflectionClass = self::$cache['reflection'][$className] = new \ReflectionClass($className);
+        $genericTypes = self::$cache['generic_types'][$className.$originalType] ??= $this->genericTypes($className, $originalType);
 
-            foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-                $cacheKey = $className.$reflectionProperty->getName();
+        foreach ($reflectionClass->getProperties() as $reflectionProperty) {
+            $cacheKey = $className.$reflectionProperty->getName();
+            $metadata = (self::$cache['metadata'][$cacheKey] ??= ($this->propertyMetadata($reflectionProperty) ?? []));
 
-                self::$cache['reflection'][$cacheKey] = $reflectionProperty;
-                self::$cache['metadata'][$cacheKey] ??= $this->propertyMetadata($reflectionProperty);
-                if (isset(self::$cache['metadata'][$cacheKey]['name'])) {
-                    self::$cache['names'][self::$cache['metadata'][$cacheKey]['name']] = $reflectionProperty->getName();
-                }
-            }
-        }
-
-        $genericTypes = self::$cache['generic_types'][$className.$context['type']] ??= $this->genericTypes($className, $context['type']);
-
-        foreach ($properties as $name => $configuration) {
-            $cacheKey = $className.$name;
-            $metadata = self::$cache['metadata'][$cacheKey] ?? [];
-
-            if (isset($context['groups'])) {
+            if ([] !== $configuration->groups) {
                 $matchingGroup = false;
-                foreach ($context['groups'] as $group) {
+                foreach ($configuration->groups as $group) {
                     if (isset($metadata['groups'][$group])) {
                         $matchingGroup = true;
 
@@ -82,16 +70,18 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                 }
             }
 
-            $propertyName = self::$cache['names'][$name] ?? $name;
-            $reflection = self::$cache['reflection'][$className.$propertyName] ??= new \ReflectionProperty($className, $propertyName);
+            $name = self::$cache['metadata'][$cacheKey]['name'] ?? $reflectionProperty->getName();
 
             if (null === $formatter = $metadata['formatter'] ?? null) {
-                $type = (self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromProperty($reflection));
+                $type = (self::$cache['type'][$cacheKey] ??= $this->typeExtractor->extractFromProperty($reflectionProperty));
                 if (isset($genericTypes[(string) $type])) {
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$propertyName] = new DeserializePropertyConfiguration(fn () => ($configuration->value)($type));
+                $result[$name] = new PropertyMetadata(
+                    name: $reflectionProperty->getName(),
+                    valueProvider: fn (callable $valueProvider): mixed => $valueProvider($type),
+                );
 
                 continue;
             }
@@ -104,14 +94,17 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
                 $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
             }
 
-            $result[$propertyName] = new DeserializePropertyConfiguration(fn () => ($configuration->value)($type));
+            $result[$name] = new PropertyMetadata(
+                name: $reflectionProperty->getName(),
+                valueProvider: fn (callable $valueProvider): mixed => $formatter($valueProvider($type)),
+            );
         }
 
         return $result;
     }
 
     /**
-     * @return array{groups?: array<string, true>, name?: string, formatter?: callable}
+     * @return array{groups?: array<string, true>, name?: string, formatter?: callable(mixed): mixed}
      */
     private function propertyMetadata(\ReflectionProperty $reflection): array
     {
@@ -150,7 +143,6 @@ final class DeserializePropertyConfigurator implements DeserializePropertyConfig
 
     /**
      * @param class-string $className
-     * @param array<string, mixed> $context
      *
      * @return array<string, Type>
      */

@@ -42,7 +42,7 @@ class DeserializeTest extends TestCase
     public function testDeserializeUnion(callable $deserialize)
     {
         $this->assertSame([1, 2, 3], $deserialize('[1, "2", "3"]', 'array<int, int|string>', context: ['union_selector' => ['int|string' => 'int']]));
-        $this->assertEquals(1, $deserialize('1', 'int', context: ['lazy_reading' => true]));
+        $this->assertEquals(1, $deserialize('1', 'int', context: ['lazy_unmarshal' => true]));
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot guess type to use for "int|string", you may specify a type in "$context[\'union_selector\'][\'int|string\']".');
@@ -254,7 +254,7 @@ class DeserializeTest extends TestCase
 
     public function testNotThrowWhenNotValidateInvalidStream()
     {
-        self::deserialize('{[]}', ClassicDummy::class, ['lazy_reading' => true]);
+        self::deserialize('{[]}', ClassicDummy::class, ['lazy_unmarshal' => true]);
 
         $this->addToAssertionCount(1);
     }
@@ -272,7 +272,7 @@ class DeserializeTest extends TestCase
     public static function deserializeDataProvider(): iterable
     {
         yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, $context), false];
-        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, ['lazy_reading' => true] + $context), true];
+        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, ['lazy_unmarshal' => true] + $context), true];
     }
 
     /**

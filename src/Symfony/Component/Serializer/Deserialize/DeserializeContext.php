@@ -18,6 +18,7 @@ use Symfony\Component\Serializer\ContextInterface;
  *
  * @experimental in 7.0
  */
+// TODO delete me after handling each option properly
 readonly class DeserializeContext implements ContextInterface
 {
     /**
@@ -59,15 +60,14 @@ readonly class DeserializeContext implements ContextInterface
         return new self(['union_selector' => $unionSelector] + $this->options);
     }
 
-    public function withEagerReading(): self
+    public function withEagerUnmarshal(): self
     {
-        return new self(['lazy_reading' => false] + $this->options);
+        return new self(['lazy_unmarshal' => false] + $this->options);
     }
 
-    // TODO lazy_unmarshal?
-    public function withLazyReading(): self
+    public function withLazyUnmarshal(): self
     {
-        return new self(['lazy_reading' => true] + $this->options);
+        return new self(['lazy_unmarshal' => true] + $this->options);
     }
 
     public function withEagerInstantiation(): self

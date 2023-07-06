@@ -22,9 +22,8 @@ interface SplitterInterface
 {
     /**
      * @param resource             $resource
-     * @param array<string, mixed> $context
      *
      * @return \Iterator<int|string, array{0: int, 1: int}>|null
      */
-    public function split(mixed $resource, Type $type, array $context): ?\Iterator;
+    public function split(mixed $resource, Type $type, int $offset = 0, int $length = -1): ?\Iterator;
 }

@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Instantiator;
 
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Type\TypeGenericsHelper;
 
@@ -23,7 +22,7 @@ use Symfony\Component\Serializer\Type\TypeGenericsHelper;
 final class EagerInstantiator implements InstantiatorInterface
 {
     /**
-     * @var array{reflection: \ReflectionClass<object>, class_has_property: array<string, bool>}
+     * @var array{reflection: array<class-string, \ReflectionClass<object>>, class_has_property: array<class-string, bool>}
      */
     private static array $cache = [
         'reflection' => [],
@@ -32,26 +31,23 @@ final class EagerInstantiator implements InstantiatorInterface
 
     private readonly TypeGenericsHelper $typeGenericsHelper;
 
-    public function __construct(
-        private readonly DeserializePropertyConfiguratorInterface $propertyConfigurator,
-    ) {
+    public function __construct()
+    {
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    public function instantiate(string $className, array $properties, array $context): object
+    public function instantiate(string $className, array $properties): object
     {
-        $properties = $this->propertyConfigurator->configure($className, $properties, $context);
-
         $object = new $className();
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);
 
-        foreach ($properties as $name => $configuration) {
+        foreach ($properties as $name => $value) {
             if (!(self::$cache['has_property'][$identifier = $className.$name] ??= $reflection->hasProperty($name))) {
                 continue;
             }
 
             try {
-                $object->{$name} = ($configuration->value)();
+                $object->{$name} = $value();
             } catch (\TypeError|UnexpectedValueException $e) {
                 throw new UnexpectedValueException($e->getMessage(), previous: $e);
             }

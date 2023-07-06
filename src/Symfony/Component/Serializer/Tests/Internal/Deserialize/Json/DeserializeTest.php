@@ -100,7 +100,7 @@ class DeserializeTest extends TestCase
     public static function deserializeDataProvider(): iterable
     {
         yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, $context), false];
-        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, ['lazy_reading' => true] + $context), true];
+        yield [fn (string $content, string $type, array $context = []): mixed => self::deserialize($content, $type, ['lazy_unmarshal' => true] + $context), true];
     }
 
     /**

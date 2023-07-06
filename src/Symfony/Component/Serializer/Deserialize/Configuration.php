@@ -9,21 +9,21 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Attribute;
+namespace Symfony\Component\Serializer\Deserialize;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class DeserializeFormatter
+readonly class Configuration
 {
     /**
-     * @param callable(mixed): mixed $formatter
+     * @param list<string> $groups
      */
     public function __construct(
-        public mixed $formatter,
+        public array $groups = [],
+        public bool $lazyUnmarshal = false,
     ) {
     }
 }

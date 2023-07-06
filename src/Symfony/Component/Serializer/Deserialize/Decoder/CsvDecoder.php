@@ -28,7 +28,7 @@ final class CsvDecoder implements DecoderInterface
         $this->decoder = new CsvEncoder();
     }
 
-    public function decode(mixed $resource, int $offset, int $length, array $context): mixed
+    public function decode(mixed $resource, int $offset, int $length): mixed
     {
         try {
             /** @var string $content */
@@ -37,6 +37,6 @@ final class CsvDecoder implements DecoderInterface
             throw new InvalidResourceException($resource);
         }
 
-        return $this->decoder->decode($content, 'csv', $context);
+        return $this->decoder->decode($content, 'csv');
     }
 }

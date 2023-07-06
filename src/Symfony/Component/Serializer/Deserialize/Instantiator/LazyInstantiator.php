@@ -11,8 +11,6 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Instantiator;
 
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguration;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -23,7 +21,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
 final class LazyInstantiator implements InstantiatorInterface
 {
     /**
-     * @var array{reflection: \ReflectionClass<object>, lazy_class_name: array<string, class-string>}
+     * @var array{reflection: array<class-string, \ReflectionClass<object>>, lazy_class_name: array<class-string, class-string>, lazy_classes_loaded: array<class-string, bool>}
      */
     private static array $cache = [
         'reflection' => [],
@@ -37,20 +35,17 @@ final class LazyInstantiator implements InstantiatorInterface
     private static array $lazyClassesLoaded = [];
 
     public function __construct(
-        private readonly DeserializePropertyConfiguratorInterface $propertyConfigurator,
         private readonly string $cacheDir,
     ) {
     }
 
-    public function instantiate(string $className, array $properties, array $context): object
+    public function instantiate(string $className, array $properties): object
     {
-        $values = array_map(fn (DeserializePropertyConfiguration $c) => $c->value, $this->propertyConfigurator->configure($className, $properties, $context));
-
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);
-        self::$cache['lazy_class_name'][$className] ??= sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+        $lazyClassName = self::$cache['lazy_class_name'][$className] ??= sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
 
-        if (isset(self::$lazyClassesLoaded[$className]) && class_exists(self::$cache['lazy_class_name'][$className])) {
-            return self::$cache['lazy_class_name'][$className]::createLazyGhost($values);
+        if (isset(self::$lazyClassesLoaded[$className]) && class_exists($lazyClassName)) {
+            return $lazyClassName::createLazyGhost($properties);
         }
 
         if (!file_exists($path = sprintf('%s%s%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
@@ -59,6 +54,7 @@ final class LazyInstantiator implements InstantiatorInterface
             }
 
             $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+
             file_put_contents($path, sprintf('class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($reflection)));
         }
 
@@ -66,6 +62,6 @@ final class LazyInstantiator implements InstantiatorInterface
 
         self::$lazyClassesLoaded[$className] = true;
 
-        return self::$cache['lazy_class_name'][$className]::createLazyGhost($values);
+        return $lazyClassName::createLazyGhost($properties);
     }
 }

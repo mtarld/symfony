@@ -9,21 +9,21 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Attribute;
+namespace Symfony\Component\Serializer\Deserialize;
+
+use Symfony\Component\Serializer\Type\Type;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class DeserializeFormatter
+class Runtime
 {
-    /**
-     * @param callable(mixed): mixed $formatter
-     */
     public function __construct(
-        public mixed $formatter,
+        public Type $originalType,
+        public int $offset = 0,
+        public int $length = -1,
     ) {
     }
 }

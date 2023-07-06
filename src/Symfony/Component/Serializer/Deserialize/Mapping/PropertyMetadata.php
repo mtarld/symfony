@@ -9,21 +9,22 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Attribute;
+namespace Symfony\Component\Serializer\Deserialize\Mapping;
+
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class DeserializeFormatter
+final readonly class PropertyMetadata
 {
     /**
-     * @param callable(mixed): mixed $formatter
+     * @param callable(callable(Type): mixed): mixed $valueProvider
      */
     public function __construct(
-        public mixed $formatter,
+        public string $name,
+        public mixed $valueProvider
     ) {
     }
 }

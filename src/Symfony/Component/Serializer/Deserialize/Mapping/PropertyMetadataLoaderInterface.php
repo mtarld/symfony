@@ -9,10 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\Unmarshaller;
+namespace Symfony\Component\Serializer\Deserialize\Mapping;
 
 use Symfony\Component\Serializer\Deserialize\Configuration;
-use Symfony\Component\Serializer\Deserialize\Runtime;
 use Symfony\Component\Serializer\Type\Type;
 
 /**
@@ -20,10 +19,12 @@ use Symfony\Component\Serializer\Type\Type;
  *
  * @experimental in 7.0
  */
-interface UnmarshallerInterface
+interface PropertyMetadataLoaderInterface
 {
     /**
-     * @param resource $resource
+     * @param class-string $className
+     *
+     * @return array<string, PropertyMetadata>
      */
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, Runtime $runtime = null): mixed;
+    public function load(Type $originalType, string $className, Configuration $configuration): array;
 }

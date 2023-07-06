@@ -21,15 +21,16 @@ use Symfony\Component\PropertyInfo\Extractor\SerializerExtractor;
 use Symfony\Component\Serializer\Deserialize\Decoder\CsvDecoder;
 use Symfony\Component\Serializer\Deserialize\Decoder\JsonDecoder;
 use Symfony\Component\Serializer\Deserialize\Instantiator\EagerInstantiator;
+use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\LazyInstantiator;
+use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoader;
+use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\Serializer\Deserialize\Splitter\JsonDictSplitter;
 use Symfony\Component\Serializer\Deserialize\Splitter\JsonListSplitter;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\EagerUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\LazyUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Deserializer;
 use Symfony\Component\Serializer\Deserialize\DeserializerInterface;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfigurator;
-use Symfony\Component\Serializer\Deserialize\PropertyConfigurator\DeserializePropertyConfiguratorInterface;
 use Symfony\Component\Serializer\Serialize\Encoder\CsvEncoder as ExperimentalCsvEncoder;
 use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfigurator;
 use Symfony\Component\Serializer\Serialize\PropertyConfigurator\SerializePropertyConfiguratorInterface;
@@ -309,49 +310,49 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('eager unmarshallers'),
                 abstract_arg('lazy unmarshallers'),
-                service('serializer.instantiator.eager'),
-                service('serializer.instantiator.lazy'),
             ])
         ->alias(DeserializerInterface::class, 'serializer.deserializer')
 
         // Unmarshallers
         ->set('serializer.unmarshaller.json.eager', EagerUnmarshaller::class)
             ->args([
-                service('serializer.type_extractor'),
                 inline_service(JsonDecoder::class),
+                service('serializer.deserialize.metadata.property_loader'),
+                service('serializer.instantiator'),
             ])
             ->tag('serializer.unmarshaller.eager', ['format' => 'json'])
 
         ->set('serializer.unmarshaller.json.lazy', LazyUnmarshaller::class)
             ->args([
-                service('serializer.type_extractor'),
                 inline_service(JsonDecoder::class),
                 inline_service(JsonListSplitter::class),
                 inline_service(JsonDictSplitter::class),
+                service('serializer.deserialize.metadata.property_loader'),
+                service('serializer.instantiator'),
             ])
             ->tag('serializer.unmarshaller.lazy', ['format' => 'json'])
 
         ->set('serializer.unmarshaller.csv.eager', EagerUnmarshaller::class)
             ->args([
-                service('serializer.type_extractor'),
                 inline_service(CsvDecoder::class)
                     ->args([
                         service('serializer.encoder.csv'),
                     ]),
+                service('serializer.deserialize.metadata.property_loader'),
+                service('serializer.instantiator'),
             ])
             ->tag('serializer.unmarshaller.eager', ['format' => 'csv'])
 
         // Instantiators
         ->set('serializer.instantiator.eager', EagerInstantiator::class)
-            ->args([
-                service('serializer.deserialize.property_configurator'),
-            ])
 
         ->set('serializer.instantiator.lazy', LazyInstantiator::class)
             ->args([
-                service('serializer.deserialize.property_configurator'),
                 param('.serializer.cache_dir.lazy_object'),
             ])
+
+        ->alias('serializer.instantiator', 'serializer.instantiator.eager')
+        ->alias(InstantiatorInterface::class, 'serializer.instantiator')
 
         // Property configurators
         ->set('serializer.serialize.property_configurator', SerializePropertyConfigurator::class)
@@ -360,11 +361,12 @@ return static function (ContainerConfigurator $container) {
             ])
         ->alias(SerializePropertyConfiguratorInterface::class, 'serializer.serialize.property_configurator')
 
-        ->set('serializer.deserialize.property_configurator', DeserializePropertyConfigurator::class)
+        // Metadata
+        ->set('serializer.deserialize.metadata.property_loader', PropertyMetadataLoader::class)
             ->args([
                 service('serializer.type_extractor'),
             ])
-        ->alias(DeserializePropertyConfiguratorInterface::class, 'serializer.deserialize.property_configurator')
+        ->alias(PropertyMetadataLoaderInterface::class, 'serializer.deserialize.metadata.property_loader')
 
         // Type extractors
         ->set('serializer.type_extractor.reflection', ReflectionTypeExtractor::class)

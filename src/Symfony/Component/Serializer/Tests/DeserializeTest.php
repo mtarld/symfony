@@ -129,7 +129,7 @@ class DeserializeTest extends TestCase
         $expectedResult->one = 'updated';
         $expectedResult->oneAndTwo = 'updated';
 
-        $result = ($this->deserialize)($input, DummyWithGroups::class, 'json', (new DeserializeContext())->withGroups('one')->withLazyReading());
+        $result = ($this->deserialize)($input, DummyWithGroups::class, 'json', (new DeserializeContext())->withGroups('one')->withLazyUnmarshal());
 
         $this->assertEquals($expectedResult, $result);
     }

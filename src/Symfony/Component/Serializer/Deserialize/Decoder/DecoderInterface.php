@@ -22,9 +22,8 @@ interface DecoderInterface
 {
     /**
      * @param resource             $resource
-     * @param array<string, mixed> $context
      *
      * @throws InvalidResourceException
      */
-    public function decode(mixed $resource, int $offset, int $length, array $context): mixed;
+    public function decode(mixed $resource, int $offset, int $length): mixed;
 }

@@ -148,7 +148,7 @@ class DeserializeTest extends TestCase
         ];
 
         yield [
-            fn (string $content, string $type, array $context = []): mixed => iterator_to_array(self::deserialize($content, $type, ['lazy_reading' => true] + $context)),
+            fn (string $content, string $type, array $context = []): mixed => iterator_to_array(self::deserialize($content, $type, ['lazy_unmarshal' => true] + $context)),
             true,
         ];
     }

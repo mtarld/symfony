@@ -25,9 +25,8 @@ interface DeserializerInterface
 {
     /**
      * @param StreamInterface|resource              $input
-     * @param ContextInterface|array<string, mixed> $context
      *
      * @throws UnsupportedException
      */
-    public function deserialize(mixed $input, Type|string $type, string $format, ContextInterface|array $context = []): mixed;
+    public function deserialize(mixed $input, Type|string $type, string $format, Configuration $configuration = null): mixed;
 }

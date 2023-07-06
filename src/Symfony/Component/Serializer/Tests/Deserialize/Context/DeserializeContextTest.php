@@ -28,12 +28,12 @@ class DeserializeContextTest extends TestCase
             ->withUnionSelector(['int|string' => 'int'])
             ->withHook($hook)
             ->withHook($hook, 'className')
-            ->withEagerReading()
+            ->withEagerUnmarshal()
             ->withLazyInstantiation();
 
         $this->assertSame([
             'instantiator' => 'lazy',
-            'lazy_reading' => false,
+            'lazy_unmarshal' => false,
             'hooks' => [
                 'deserialize' => [
                     'object' => $hook,
