@@ -42,12 +42,12 @@ final class JsonTemplateGenerator extends TemplateGenerator
     ) {
     }
 
-    public function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array
+    public function doGenerate(DomNode $domNode, Configuration $configuration, array $context): array
     {
         $accessor = new RawNode($domNode->accessor);
 
         if ($domNode instanceof CollectionDomNode) {
-            $prefixName = $this->scopeVariableName('prefix', $runtime);
+            $prefixName = $this->scopeVariableName('prefix', $context);
 
             if ($domNode->isList) {
                 return [
@@ -56,7 +56,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
 
                     new ForEachNode($accessor, null, substr($domNode->childrenDomNode->accessor, 1), [
                         new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new VariableNode($prefixName)])),
-                        ...$this->generate($domNode->childrenDomNode, $configuration, $runtime),
+                        ...$this->generate($domNode->childrenDomNode, $configuration, $context),
                         new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
                     ]),
 
@@ -64,7 +64,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                 ];
             }
 
-            $keyName = $this->scopeVariableName('key', $runtime);
+            $keyName = $this->scopeVariableName('key', $context);
 
             return [
                 new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('{')])),
@@ -78,7 +78,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                         new VariableNode($keyName),
                         '":',
                     )])),
-                    ...$this->generate($domNode->childrenDomNode, $configuration, $runtime),
+                    ...$this->generate($domNode->childrenDomNode, $configuration, $context),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new ScalarNode(','))),
                 ]),
 
@@ -104,7 +104,7 @@ final class JsonTemplateGenerator extends TemplateGenerator
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('"')])),
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode($encodedName)])),
                     new ExpressionNode(new FunctionNode('\fwrite', [new VariableNode('resource'), new ScalarNode('":')])),
-                    ...$this->generate($propertyDomNode, $configuration, $runtime),
+                    ...$this->generate($propertyDomNode, $configuration, $context),
                 );
 
                 $separator = ',';

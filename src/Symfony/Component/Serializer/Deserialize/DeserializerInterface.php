@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Serializer\Deserialize;
 
-use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 use Symfony\Component\Serializer\Stream\StreamInterface;
@@ -25,9 +24,7 @@ use Symfony\Component\Serializer\Type\Type;
 interface DeserializerInterface
 {
     /**
-     * @param StreamInterface|resource              $input
-     *
      * @throws UnsupportedException
      */
-    public function deserialize(mixed $input, Type|string $type, string $format, Configuration $configuration = null): mixed;
+    public function deserialize(StreamInterface|string $input, Type|string $type, string $format, Configuration $configuration = null): mixed;
 }

@@ -42,12 +42,12 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    public function load(string $className, Configuration $configuration, array $runtime): array
+    public function load(string $className, Configuration $configuration, array $context): array
     {
         $result = [];
 
         $reflectionClass = self::$cache['reflection'][$className] = new \ReflectionClass($className);
-        $genericTypes = self::$cache['generic_types'][$className.$runtime['original_type']] ??= $this->genericTypes($className, $runtime['original_type']);
+        $genericTypes = self::$cache['generic_types'][$className.$context['original_type']] ??= $this->genericTypes($className, $context['original_type']);
 
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
             $cacheKey = $className.$reflectionProperty->getName();
@@ -80,7 +80,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
                     $type = $this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes);
                 }
 
-                $result[$name] = new PropertyMetadata($type, sprintf('%s->%s', $runtime['accessor'], $reflectionProperty->getName()));
+                $result[$name] = new PropertyMetadata($type, sprintf('%s->%s', $context['accessor'], $reflectionProperty->getName()));
 
                 continue;
             }
@@ -111,7 +111,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
 
             $result[$name] = new PropertyMetadata(
                 $type,
-                sprintf('%s::%s(%s->%s, $configuration)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $runtime['accessor'], $reflectionProperty->getName()),
+                sprintf('%s::%s(%s->%s, $configuration)', $formatterReflection->getClosureScopeClass()->getName(), $formatterReflection->getName(), $context['accessor'], $reflectionProperty->getName()),
             );
         }
 

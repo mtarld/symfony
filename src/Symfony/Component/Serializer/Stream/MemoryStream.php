@@ -18,8 +18,8 @@ namespace Symfony\Component\Serializer\Stream;
  */
 final class MemoryStream extends Stream
 {
-    public function __construct(string $mode = 'w+b')
+    public function __construct(string $content = null, string $mode = 'w+b')
     {
-        parent::__construct('php://memory', $mode);
+        parent::__construct('php://memory', $mode, $content);
     }
 }

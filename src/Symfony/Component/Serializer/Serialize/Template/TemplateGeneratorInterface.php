@@ -23,9 +23,9 @@ use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
 interface TemplateGeneratorInterface
 {
     /**
-     * @param array<string, mixed> $runtime
+     * @param array<string, mixed> $context
      *
      * @return list<NodeInterface>
      */
-    public function generate(DomNode $domNode, Configuration $configuration, array $runtime): array;
+    public function generate(DomNode $domNode, Configuration $configuration, array $context): array;
 }

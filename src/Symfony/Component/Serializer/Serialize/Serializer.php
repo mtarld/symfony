@@ -11,11 +11,10 @@
 
 namespace Symfony\Component\Serializer\Serialize;
 
-use Symfony\Component\Serializer\ContextInterface;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
-use Symfony\Component\Serializer\Serialize\Template\Template;
 use Symfony\Component\Serializer\Serialize\Template\TemplateFactory;
+use Symfony\Component\Serializer\Stream\MemoryStream;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\Type;
 
@@ -32,15 +31,14 @@ final class Serializer implements SerializerInterface
     ) {
     }
 
-    public function serialize(mixed $data, string $format, mixed $output, Configuration $configuration = null): void
+    public function serialize(mixed $data, string $format, StreamInterface $output = null, Configuration $configuration = null): string|null
     {
-        if ($output instanceof StreamInterface) {
-            $output = $output->resource();
-        }
-
-        $type = $configuration->type() ?? Type::createFromString(get_debug_type($data));
+        $shouldOutputString = null === $output;
+        $output ??= new MemoryStream();
 
         $configuration ??= new Configuration();
+
+        $type = $configuration->type() ?? Type::createFromString(get_debug_type($data));
 
         $template = $this->templateFactory->create($type, $format, $configuration);
 
@@ -58,6 +56,8 @@ final class Serializer implements SerializerInterface
             @chmod($template->path, 0666 & ~umask());
         }
 
-        (require $template->path)($data, $output, $configuration);
+        (require $template->path)($data, $output->resource(), $configuration);
+
+        return $shouldOutputString ? (string) $output : null;
     }
 }

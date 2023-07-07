@@ -36,7 +36,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
     ) {
     }
 
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $context): mixed
     {
         if ($type->isUnion()) {
             // TODO
@@ -50,7 +50,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         }
 
         if ($type->isScalar()) {
-            $scalar = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
+            $scalar = $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
 
             if (null === $scalar) {
                 if (!$type->isNullable()) {
@@ -74,7 +74,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         }
 
         if ($type->isEnum()) {
-            $enum = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
+            $enum = $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
 
             if (null === $enum) {
                 if (!$type->isNullable()) {
@@ -95,15 +95,15 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             $collection = null;
 
             if ($type->isList()) {
-                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $runtime['offset'], $runtime['length'])) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
+                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $context['offset'], $context['length'])) {
+                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $context);
                 }
             } elseif ($type->isDict()) {
-                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $runtime['offset'], $runtime['length'])) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $runtime);
+                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $context['offset'], $context['length'])) {
+                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $context);
                 }
             } else {
-                $collection = $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
+                $collection = $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
             }
 
             if (null === $collection) {
@@ -119,10 +119,10 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
         if ($type->isObject()) {
             if (!$type->hasClass()) {
-                return (object) ($this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration));
+                return (object) ($this->decoder->decode($resource, $context['offset'], $context['length'], $configuration));
             }
 
-            $boundaries = $this->dictSplitter->split($resource, $type, $runtime['offset'], $runtime['length']);
+            $boundaries = $this->dictSplitter->split($resource, $type, $context['offset'], $context['length']);
 
             if (null === $boundaries) {
                 if (!$type->isNullable()) {
@@ -133,7 +133,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             }
 
             $className = $type->className();
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $runtime);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $context);
 
             $properties = [];
             foreach ($boundaries as $name => $boundary) {
@@ -143,10 +143,10 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
                 $propertyName = $propertiesMetadata[$name]->name();
 
-                $runtime['offset'] = $boundary[0];
-                $runtime['length'] = $boundary[1];
+                $context['offset'] = $boundary[0];
+                $context['length'] = $boundary[1];
 
-                $unmarshal = fn (Type $type) => $this->unmarshal($resource, $type, $configuration, $runtime);
+                $unmarshal = fn (Type $type) => $this->unmarshal($resource, $type, $configuration, $context);
 
                 $properties[$propertyName] = fn () => $propertiesMetadata[$name]->valueProvider()($unmarshal);
             }
@@ -154,23 +154,23 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             return $this->instantiator->instantiate($className, $properties);
         }
 
-        return $this->decoder->decode($resource, $runtime['offset'], $runtime['length'], $configuration);
+        return $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
     }
 
     /**
      * @param resource                         $resource
      * @param \Iterator<array{0: int, 1: int}> $boundaries
-     * @param array<string, mixed> $runtime
+     * @param array<string, mixed>             $context
      *
      * @return \Iterator<int|string, mixed>
      */
-    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, Configuration $configuration, array $runtime): \Iterator
+    private function deserializeCollectionItems(mixed $resource, \Iterator $boundaries, Type $type, Configuration $configuration, array $context): \Iterator
     {
         foreach ($boundaries as $key => $boundary) {
-            $runtime['offset'] = $boundary[0];
-            $runtime['length'] = $boundary[1];
+            $context['offset'] = $boundary[0];
+            $context['length'] = $boundary[1];
 
-            yield $key => $this->unmarshal($resource, $type, $configuration, $runtime);
+            yield $key => $this->unmarshal($resource, $type, $configuration, $context);
         }
     }
 }

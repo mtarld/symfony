@@ -43,15 +43,15 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
     ) {
     }
 
-    protected function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array
+    protected function doGenerate(DomNode $domNode, Configuration $configuration, array $context): array
     {
-        $runtime['nested'] ??= false;
+        $context['nested'] ??= false;
 
         $accessor = new RawNode($domNode->accessor);
-        $normalizedAccessor = $runtime['normalized_accessor'] ?? new VariableNode('normalized');
+        $normalizedAccessor = $context['normalized_accessor'] ?? new VariableNode('normalized');
 
         if ($domNode instanceof CollectionDomNode) {
-            $keyName = $this->scopeVariableName('key', $runtime);
+            $keyName = $this->scopeVariableName('key', $context);
 
             $nodes = [
                 new ExpressionNode(new AssignNode($normalizedAccessor, new ArrayNode([]))),
@@ -59,7 +59,7 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
                     ...$this->generate($domNode->childrenDomNode, $configuration, [
                         'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new VariableNode($keyName)),
                         'nested' => true,
-                    ] + $runtime),
+                    ] + $context),
                 ]),
             ];
         } elseif ($domNode instanceof ObjectDomNode) {
@@ -71,7 +71,7 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
                     ...$this->generate($propertyDomNode, $configuration, [
                         'normalized_accessor' => new ArrayAccessNode($normalizedAccessor, new ScalarNode($name)),
                         'nested' => true,
-                    ] + $runtime),
+                    ] + $context),
                 );
             }
         } else {
@@ -80,7 +80,7 @@ final class NormalizerEncoderTemplateGenerator extends TemplateGenerator
             ];
         }
 
-        if (!$runtime['nested']) {
+        if (!$context['nested']) {
             $nodes[] = new ExpressionNode(new FunctionNode(sprintf('\\%s::encode', $this->encoderClassName), [
                 new VariableNode('resource'),
                 $normalizedAccessor,

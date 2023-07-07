@@ -21,8 +21,5 @@ use Symfony\Component\Serializer\Stream\StreamInterface;
  */
 interface SerializerInterface
 {
-    /**
-     * @param StreamInterface|resource $output
-     */
-    public function serialize(mixed $data, string $format, mixed $output, Configuration $configuration = null): void;
+    public function serialize(mixed $data, string $format, StreamInterface $output = null, Configuration $configuration = null): string|null;
 }

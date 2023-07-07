@@ -18,8 +18,8 @@ namespace Symfony\Component\Serializer\Stream;
  */
 final class InputStream extends Stream
 {
-    public function __construct()
+    public function __construct(string $content = null)
     {
-        parent::__construct('php://input', 'placeholder');
+        parent::__construct('php://input', 'placeholder', $content);
     }
 }

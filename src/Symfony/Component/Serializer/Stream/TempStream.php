@@ -18,8 +18,8 @@ namespace Symfony\Component\Serializer\Stream;
  */
 final class TempStream extends Stream
 {
-    public function __construct(int $memoryThreshold = 2048, string $mode = 'w+b')
+    public function __construct(string $content = null, int $memoryThreshold = 2048, string $mode = 'w+b')
     {
-        parent::__construct(sprintf('php://temp/maxmemory:%d', $memoryThreshold), $mode);
+        parent::__construct(sprintf('php://temp/maxmemory:%d', $memoryThreshold), $mode, $content);
     }
 }

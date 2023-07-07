@@ -43,12 +43,12 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
         $this->typeGenericsHelper = new TypeGenericsHelper();
     }
 
-    public function load(string $className, Configuration $configuration, array $runtime): array
+    public function load(string $className, Configuration $configuration, array $context): array
     {
         $result = [];
 
         $reflectionClass = self::$cache['reflection'][$className] = new \ReflectionClass($className);
-        $genericTypes = self::$cache['generic_types'][$className.$runtime['original_type']] ??= $this->genericTypes($className, $runtime['original_type']);
+        $genericTypes = self::$cache['generic_types'][$className.$context['original_type']] ??= $this->genericTypes($className, $context['original_type']);
 
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
             $cacheKey = $className.$reflectionProperty->getName();

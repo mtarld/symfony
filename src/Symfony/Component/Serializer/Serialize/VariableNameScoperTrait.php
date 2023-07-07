@@ -19,17 +19,17 @@ namespace Symfony\Component\Serializer\Serialize;
 trait VariableNameScoperTrait
 {
     /**
-     * @param array{variable_counters?: array<string, int>} $runtime
+     * @param array{variable_counters?: array<string, int>} $context
      */
-    protected function scopeVariableName(string $variableName, array &$runtime): string
+    protected function scopeVariableName(string $variableName, array &$context): string
     {
-        if (!isset($runtime['variable_counters'][$variableName])) {
-            $runtime['variable_counters'][$variableName] = 0;
+        if (!isset($context['variable_counters'][$variableName])) {
+            $context['variable_counters'][$variableName] = 0;
         }
 
-        $name = sprintf('%s_%d', $variableName, $runtime['variable_counters'][$variableName]);
+        $name = sprintf('%s_%d', $variableName, $context['variable_counters'][$variableName]);
 
-        ++$runtime['variable_counters'][$variableName];
+        ++$context['variable_counters'][$variableName];
 
         return $name;
     }

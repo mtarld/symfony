@@ -29,28 +29,40 @@ class Stream implements StreamInterface
     public function __construct(
         protected readonly string $filename,
         protected readonly string $mode,
+        string $content = null,
     ) {
-    }
-
-    final public function resource()
-    {
-        if (null !== $this->resource) {
-            return $this->resource;
-        }
-
         if (false === $resource = @fopen($this->filename, $this->mode)) {
             throw new RuntimeException(sprintf('Cannot open "%s" resource', $this->filename));
         }
 
-        return $this->resource = $resource;
+        $this->resource = $resource;
+
+        if (null === $content) {
+            return;
+        }
+
+        if (false === @fwrite($this->resource, $content)) {
+            throw new InvalidResourceException($this->resource);
+        }
+
+        if (false === @rewind($this->resource)) {
+            throw new InvalidResourceException($this->resource);
+        }
+    }
+
+    final public function resource()
+    {
+        return $this->resource;
     }
 
     final public function __toString(): string
     {
-        rewind($this->resource());
+        if (false === @rewind($this->resource)) {
+            throw new InvalidResourceException($this->resource);
+        }
 
-        if (false === $content = stream_get_contents($this->resource())) {
-            throw new InvalidResourceException($this->resource());
+        if (false === $content = @stream_get_contents($this->resource)) {
+            throw new InvalidResourceException($this->resource);
         }
 
         return $content;

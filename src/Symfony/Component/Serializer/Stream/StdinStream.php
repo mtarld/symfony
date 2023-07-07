@@ -18,8 +18,8 @@ namespace Symfony\Component\Serializer\Stream;
  */
 final class StdinStream extends Stream
 {
-    public function __construct()
+    public function __construct(string $content = null)
     {
-        parent::__construct('php://stdin', 'placeholder');
+        parent::__construct('php://stdin', 'placeholder', $content);
     }
 }

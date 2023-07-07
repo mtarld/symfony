@@ -22,8 +22,8 @@ use Symfony\Component\Serializer\Type\Type;
 interface UnmarshallerInterface
 {
     /**
-     * @param resource $resource
-     * @param array<string, mixed> $runtime
+     * @param resource             $resource
+     * @param array<string, mixed> $context
      */
-    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $runtime): mixed;
+    public function unmarshal(mixed $resource, Type $type, Configuration $configuration, array $context): mixed;
 }

@@ -40,9 +40,6 @@ final class TemplateFactory
     ) {
     }
 
-    /**
-     * @param array<string, mixed> $runtime
-     */
     public function create(Type $type, string $format, Configuration $configuration): Template
     {
         return new Template(
@@ -63,9 +60,6 @@ final class TemplateFactory
         return sprintf('%s%s%s.%s.php', $this->templateCacheDir, \DIRECTORY_SEPARATOR, $hash, $format);
     }
 
-    /**
-     * @param array<string, mixed> $runtime
-     */
     private function content(Type $type, string $format, Configuration $configuration): string
     {
         /** @var TemplateGeneratorInterface|null $templateGenerator */
@@ -88,12 +82,12 @@ final class TemplateFactory
 
         $compiler->indent();
 
-        $runtime = ['original_type' => $type];
+        $context = ['original_type' => $type];
 
         $bodyNodes = $templateGenerator->generate(
-            $this->domTreeBuilder->build($type, '$data', $configuration, $runtime),
+            $this->domTreeBuilder->build($type, '$data', $configuration, $context),
             $configuration,
-            $runtime,
+            $context,
         );
 
         $compiler->outdent();

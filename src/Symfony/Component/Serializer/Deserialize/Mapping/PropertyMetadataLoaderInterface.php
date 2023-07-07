@@ -21,10 +21,10 @@ use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 interface PropertyMetadataLoaderInterface
 {
     /**
-     * @param class-string $className
-     * @param array<string, mixed> $runtime
+     * @param class-string         $className
+     * @param array<string, mixed> $context
      *
      * @return array<string, PropertyMetadata>
      */
-    public function load(string $className, Configuration $configuration, array $runtime): array;
+    public function load(string $className, Configuration $configuration, array $context): array;
 }

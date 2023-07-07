@@ -22,7 +22,7 @@ use Symfony\Component\Serializer\Type\Type;
 interface DomTreeBuilderInterface
 {
     /**
-     * @param array<string, mixed> $runtime
+     * @param array<string, mixed> $context
      */
-    public function build(Type $type, string $accessor, Configuration $configuration, array $runtime): DomNode;
+    public function build(Type $type, string $accessor, Configuration $configuration, array $context): DomNode;
 }

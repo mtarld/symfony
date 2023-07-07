@@ -36,19 +36,19 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
     use VariableNameScoperTrait;
 
     /**
-     * @param array<string, mixed> $runtime
+     * @param array<string, mixed> $context
      *
      * @return list<NodeInterface>
      */
-    abstract protected function doGenerate(DomNode $domNode, Configuration $configuration, array $runtime): array;
+    abstract protected function doGenerate(DomNode $domNode, Configuration $configuration, array $context): array;
 
-    final public function generate(DomNode $domNode, Configuration $configuration, array $runtime): array
+    final public function generate(DomNode $domNode, Configuration $configuration, array $context): array
     {
         if ($domNode instanceof UnionDomNode) {
             $domNodes = $domNode->domNodes;
 
             if (1 === \count($domNodes)) {
-                return $this->generate($domNodes[0], $configuration, $runtime);
+                return $this->generate($domNodes[0], $configuration, $context);
             }
 
             /** @var Type $ifType */
@@ -59,16 +59,16 @@ abstract class TemplateGenerator implements TemplateGeneratorInterface
 
             return [new IfNode(
                 $this->typeValidator($ifDomNode),
-                $this->generate($ifDomNode, $configuration, $runtime),
-                $this->generate($elseDomNode, $configuration, $runtime),
+                $this->generate($ifDomNode, $configuration, $context),
+                $this->generate($elseDomNode, $configuration, $context),
                 array_map(fn (DomNode $n): array => [
                     'condition' => $this->typeValidator($n),
-                    'body' => $this->generate($n, $configuration, $runtime),
+                    'body' => $this->generate($n, $configuration, $context),
                 ], $domNodes),
             )];
         }
 
-        return $this->doGenerate($domNode, $configuration, $runtime);
+        return $this->doGenerate($domNode, $configuration, $context);
     }
 
     private function typeValidator(DomNode $domNode): NodeInterface

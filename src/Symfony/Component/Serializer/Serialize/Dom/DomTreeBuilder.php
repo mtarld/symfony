@@ -36,18 +36,18 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
         $this->typeSorter = new TypeSorter();
     }
 
-    public function build(Type $type, string $accessor, Configuration $configuration, array $runtime): DomNode
+    public function build(Type $type, string $accessor, Configuration $configuration, array $context): DomNode
     {
         if ($type->isNullable()) {
             return new UnionDomNode($accessor, [
                 new ValueDomNode($accessor, 'null'),
-                $this->build(Type::createFromString(substr((string) $type, 1)), $accessor, $configuration, $runtime),
+                $this->build(Type::createFromString(substr((string) $type, 1)), $accessor, $configuration, $context),
             ]);
         }
 
         if ($type->isUnion()) {
             return new UnionDomNode($accessor, array_map(
-                fn (Type $t): DomNode => $this->build($t, $accessor, $configuration, $runtime),
+                fn (Type $t): DomNode => $this->build($t, $accessor, $configuration, $context),
                 $this->typeSorter->sortByPrecision($type->unionTypes()),
             ));
         }
@@ -55,17 +55,17 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
         if ($type->isObject() && $type->hasClass()) {
             $className = $type->className();
 
-            if (isset($runtime['generated_classes'][$className])) {
+            if (isset($context['generated_classes'][$className])) {
                 throw new CircularReferenceException($className);
             }
 
-            $runtime['generated_classes'][$className] = true;
-            $runtime['accessor'] = $accessor;
+            $context['generated_classes'][$className] = true;
+            $context['accessor'] = $accessor;
 
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $runtime);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $configuration, $context);
 
             $propertiesDomNodes = array_map(
-                fn (PropertyMetadata $p) => $this->build($p->type, $p->accessor, $configuration, $runtime),
+                fn (PropertyMetadata $p) => $this->build($p->type, $p->accessor, $configuration, $context),
                 $propertiesMetadata,
             );
 
@@ -84,7 +84,7 @@ final class DomTreeBuilder implements DomTreeBuilderInterface
         if ($type->isCollection()) {
             return new CollectionDomNode(
                 $accessor,
-                $this->build($type->collectionValueType(), '$'.$this->scopeVariableName('value', $runtime), $configuration, $runtime),
+                $this->build($type->collectionValueType(), '$'.$this->scopeVariableName('value', $context), $configuration, $context),
                 $type->isList(),
                 'array' === $type->name(),
             );

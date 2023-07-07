@@ -14,6 +14,7 @@ namespace Symfony\Component\Serializer\Deserialize;
 use Symfony\Component\Serializer\Deserialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\UnmarshallerInterface;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
+use Symfony\Component\Serializer\Stream\MemoryStream;
 use Symfony\Component\Serializer\Stream\StreamInterface;
 use Symfony\Component\Serializer\Type\Type;
 
@@ -34,10 +35,10 @@ final class Deserializer implements DeserializerInterface
     ) {
     }
 
-    public function deserialize(mixed $input, Type|string $type, string $format, Configuration $configuration = null): mixed
+    public function deserialize(StreamInterface|string $input, Type|string $type, string $format, Configuration $configuration = null): mixed
     {
-        if ($input instanceof StreamInterface) {
-            $input = $input->resource();
+        if (\is_string($input)) {
+            $input = new MemoryStream($input);
         }
 
         if (\is_string($type)) {
@@ -52,12 +53,12 @@ final class Deserializer implements DeserializerInterface
             throw new UnsupportedException(sprintf('"%s" format is not supported.', $format));
         }
 
-        $runtime = [
+        $context = [
             'original_type' => $type,
             'offset' => 0,
             'length' => -1,
         ];
 
-        return $unmarshaller->unmarshal($input, $type, $configuration, $runtime);
+        return $unmarshaller->unmarshal($input->resource(), $type, $configuration, $context);
     }
 }

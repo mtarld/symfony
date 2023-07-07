@@ -18,8 +18,8 @@ namespace Symfony\Component\Serializer\Stream;
  */
 final class StdoutStream extends Stream
 {
-    public function __construct()
+    public function __construct(string $content = null)
     {
-        parent::__construct('php://stdout', 'placeholder');
+        parent::__construct('php://stdout', 'placeholder', $content);
     }
 }
