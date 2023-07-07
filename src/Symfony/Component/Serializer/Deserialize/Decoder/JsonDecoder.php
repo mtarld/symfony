@@ -23,10 +23,7 @@ final class JsonDecoder implements DecoderInterface
 {
     public function decode(mixed $resource, int $offset, int $length, Configuration $configuration): mixed
     {
-        try {
-            /** @var string $content */
-            $content = stream_get_contents($resource, $length, $offset);
-        } catch (\Throwable) {
+        if (false === $content = @stream_get_contents($resource, $length, $offset)) {
             throw new InvalidResourceException($resource);
         }
 

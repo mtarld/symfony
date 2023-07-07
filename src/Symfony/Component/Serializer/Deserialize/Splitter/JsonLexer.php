@@ -42,15 +42,14 @@ final class JsonLexer
         $infiniteLength = -1 === $length;
         $chunkLength = $infiniteLength ? self::MAX_CHUNK_LENGTH : min($length, self::MAX_CHUNK_LENGTH);
 
-        rewind($resource);
+        if (false === @rewind($resource)) {
+            throw new InvalidResourceException($resource);
+        }
 
         $toReadLength = $length;
 
         while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
-            try {
-                /** @var string $buffer */
-                $buffer = stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset);
-            } catch (\Throwable) {
+            if (false === $buffer = @stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
                 throw new InvalidResourceException($resource);
             }
 

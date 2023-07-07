@@ -11,25 +11,17 @@
 
 namespace Symfony\Component\Serializer\Serialize\Configuration;
 
+use Symfony\Component\Serializer\Configuration\JsonConfiguration as BaseJsonConfiguration;
+
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-class JsonConfiguration
+class JsonConfiguration extends  BaseJsonConfiguration
 {
-    protected int $flags = \JSON_PRESERVE_ZERO_FRACTION;
-
-    public function flags(): int
+    public function __construct()
     {
-        return $this->flags;
-    }
-
-    public function withFlags(int $groups): static
-    {
-        $clone = clone $this;
-        $clone->flags = $groups;
-
-        return $clone;
+        $this->flags = \JSON_PRESERVE_ZERO_FRACTION;
     }
 }

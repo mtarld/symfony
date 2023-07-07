@@ -11,13 +11,13 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Configuration;
 
-use Symfony\Component\Serializer\Configuration\JsonConfiguration as BaseJsonConfiguration;
+use Symfony\Component\Serializer\Configuration\CsvConfiguration as BaseCsvConfiguration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-class JsonConfiguration extends BaseJsonConfiguration
+class CsvConfiguration extends BaseCsvConfiguration
 {
 }

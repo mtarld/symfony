@@ -25,8 +25,23 @@ final class CsvEncoder implements EncoderInterface
 
     public static function encode(mixed $resource, mixed $normalized, Configuration $configuration): void
     {
-        // TODO to context
+        $csvConfiguration = $configuration->csv();
 
-        fwrite($resource, (self::$legacyCsvEncoder ??= new LegacyCsvEncoder())->encode($normalized, 'csv'));
+        $legacyContext = [
+            LegacyCsvEncoder::DELIMITER_KEY => $csvConfiguration->delimiter(),
+            LegacyCsvEncoder::ENCLOSURE_KEY => $csvConfiguration->enclosure(),
+            LegacyCsvEncoder::ESCAPE_CHAR_KEY => $csvConfiguration->escapeChar(),
+            LegacyCsvEncoder::END_OF_LINE => $csvConfiguration->endOfLine(),
+            LegacyCsvEncoder::ESCAPE_FORMULAS_KEY => $csvConfiguration->escapedFormulas(),
+            LegacyCsvEncoder::HEADERS_KEY => $csvConfiguration->headers(),
+            LegacyCsvEncoder::KEY_SEPARATOR_KEY => $csvConfiguration->keySeparator(),
+            LegacyCsvEncoder::NO_HEADERS_KEY => $csvConfiguration->noHeaders(),
+            LegacyCsvEncoder::AS_COLLECTION_KEY => $csvConfiguration->asCollection(),
+            LegacyCsvEncoder::OUTPUT_UTF8_BOM_KEY => $csvConfiguration->utf8Bom(),
+        ];
+
+        $legacyCsvEncoder = self::$legacyCsvEncoder ??= new LegacyCsvEncoder();
+
+        fwrite($resource, $legacyCsvEncoder->encode($normalized, 'csv', $legacyContext));
     }
 }

@@ -30,10 +30,12 @@ class Configuration
     protected bool $forceGenerateTemplate = false;
 
     protected JsonConfiguration $jsonConfiguration;
+    protected CsvConfiguration $csvConfiguration;
 
     public function __construct() 
     {
         $this->jsonConfiguration = new JsonConfiguration();
+        $this->csvConfiguration = new CsvConfiguration();
     }
 
     public function type(): ?Type
@@ -94,6 +96,19 @@ class Configuration
     {
         $clone = clone $this;
         $clone->jsonConfiguration = $configuration;
+
+        return $clone;
+    }
+
+    public function csv(): CsvConfiguration
+    {
+        return $this->csvConfiguration;
+    }
+
+    public function withCsvConfiguration(CsvConfiguration $configuration): static
+    {
+        $clone = clone $this;
+        $clone->csvConfiguration = $configuration;
 
         return $clone;
     }

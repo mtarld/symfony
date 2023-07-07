@@ -88,9 +88,9 @@ final class SerializerDeserializerCacheWarmer extends CacheWarmer
         try {
             foreach ($variants as $variant) {
                 $type = Type::createFromString($className);
-                $runtime = ['original_type' => $type];
+                $context = ['original_type' => $type];
 
-                $template = $this->templateFactory->create($type, $format, $variant->configuration, $runtime);
+                $template = $this->templateFactory->create($type, $format, $variant->configuration, $context);
 
                 $this->writeCacheFile($template->path, $template->content());
             }

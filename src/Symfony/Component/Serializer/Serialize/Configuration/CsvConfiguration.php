@@ -9,15 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Serializer\Deserialize\Configuration;
+namespace Symfony\Component\Serializer\Serialize\Configuration;
 
-use Symfony\Component\Serializer\Configuration\JsonConfiguration as BaseJsonConfiguration;
+use Symfony\Component\Serializer\Configuration\CsvConfiguration as BaseCsvConfiguration;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
  */
-class JsonConfiguration extends BaseJsonConfiguration
+class CsvConfiguration extends BaseCsvConfiguration
 {
 }
