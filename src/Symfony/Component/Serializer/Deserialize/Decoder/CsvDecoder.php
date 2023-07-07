@@ -24,7 +24,7 @@ final class CsvDecoder implements DecoderInterface
 {
     private readonly LegacyCsvDecoder $legacyCsvDecoder;
 
-    public function __construct() 
+    public function __construct()
     {
         $this->legacyCsvDecoder = new LegacyCsvDecoder();
     }

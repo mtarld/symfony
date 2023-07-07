@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\Type\Type;
 interface SplitterInterface
 {
     /**
-     * @param resource             $resource
+     * @param resource $resource
      *
      * @return \Iterator<int|string, array{0: int, 1: int}>|null
      */

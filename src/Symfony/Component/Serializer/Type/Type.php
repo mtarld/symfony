@@ -204,7 +204,7 @@ final class Type implements \Stringable
         return $this->stringValue;
     }
 
-    public static function createFromString(string $string): Type
+    public static function createFromString(string $string): self
     {
         if (isset(self::$cache[$cacheKey = $string])) {
             return self::$cache[$cacheKey];
@@ -262,14 +262,14 @@ final class Type implements \Stringable
             }
 
             if ($nullable) {
-                $types[] = new Type('null');
+                $types[] = new self('null');
             }
 
-            return self::$cache[$cacheKey] = new Type($string, unionTypes: $types);
+            return self::$cache[$cacheKey] = new self($string, unionTypes: $types);
         }
 
         if ('null' === $string) {
-            return self::$cache[$cacheKey] = new Type('null');
+            return self::$cache[$cacheKey] = new self('null');
         }
 
         if ($isNullable = str_starts_with($string, '?')) {
@@ -281,19 +281,19 @@ final class Type implements \Stringable
         }
 
         if (\in_array($string, ['int', 'string', 'float', 'bool'])) {
-            return self::$cache[$cacheKey] = new Type($string, $isNullable);
+            return self::$cache[$cacheKey] = new self($string, $isNullable);
         }
 
         if (is_subclass_of($string, \UnitEnum::class)) {
             if (is_subclass_of($string, \BackedEnum::class)) {
-                return self::$cache[$cacheKey] = new Type('enum', $isNullable, $string);
+                return self::$cache[$cacheKey] = new self('enum', $isNullable, $string);
             }
 
             throw self::invalidTypeException($string);
         }
 
         if (class_exists($string) || interface_exists($string)) {
-            return self::$cache[$cacheKey] = new Type('object', $isNullable, $string);
+            return self::$cache[$cacheKey] = new self('object', $isNullable, $string);
         }
 
         $results = [];
@@ -340,7 +340,7 @@ final class Type implements \Stringable
                 $className = $genericType;
             }
 
-            return self::$cache[$cacheKey] = new Type(
+            return self::$cache[$cacheKey] = new self(
                 name: $type,
                 isNullable: $isNullable,
                 className: $className,
@@ -348,7 +348,7 @@ final class Type implements \Stringable
             );
         }
 
-        return self::$cache[$cacheKey] = new Type($string, $isNullable);
+        return self::$cache[$cacheKey] = new self($string, $isNullable);
     }
 
     private function computeStringValue(): string

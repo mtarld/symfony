@@ -18,9 +18,6 @@ namespace Symfony\Component\Serializer\Serialize\Template;
  */
 final readonly class Template
 {
-    /**
-     * @param callable(): string $content
-     */
     public function __construct(
         public string $path,
         private mixed $contentGenerator,
@@ -32,4 +29,3 @@ final readonly class Template
         return ($this->contentGenerator)();
     }
 }
-

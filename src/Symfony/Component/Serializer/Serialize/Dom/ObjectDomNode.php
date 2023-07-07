@@ -19,10 +19,10 @@ namespace Symfony\Component\Serializer\Serialize\Dom;
 final readonly class ObjectDomNode extends DomNode
 {
     /**
-     * @param class-string $className
+     * @param class-string           $className
      * @param array<string, DomNode> $properties
      */
-    public function  __construct(
+    public function __construct(
         string $accessor,
         public string $className,
         public array $properties,

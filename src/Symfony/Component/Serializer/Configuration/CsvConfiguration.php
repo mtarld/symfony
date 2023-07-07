@@ -18,7 +18,7 @@ use Symfony\Component\Serializer\Exception\InvalidArgumentException;
  *
  * @experimental in 7.0
  */
-class CsvConfiguration
+abstract class CsvConfiguration
 {
     protected string $delimiter = ',';
 
@@ -129,7 +129,7 @@ class CsvConfiguration
     }
 
     /**
-     * The CSV headers
+     * The CSV headers.
      *
      * @return list<mixed>
      */

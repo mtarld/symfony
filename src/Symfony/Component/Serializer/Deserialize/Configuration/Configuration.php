@@ -19,7 +19,7 @@ namespace Symfony\Component\Serializer\Deserialize\Configuration;
 class Configuration
 {
     /**
-     * @var list<string> $groups
+     * @var list<string>
      */
     protected array $groups = [];
 
@@ -29,7 +29,7 @@ class Configuration
 
     protected CsvConfiguration $csvConfiguration;
 
-    public function __construct() 
+    public function __construct()
     {
         $this->jsonConfiguration = new JsonConfiguration();
         $this->csvConfiguration = new CsvConfiguration();

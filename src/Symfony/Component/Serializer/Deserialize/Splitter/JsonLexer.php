@@ -26,7 +26,7 @@ final class JsonLexer
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
 
     /**
-     * @param resource             $resource
+     * @param resource $resource
      *
      * @return \Iterator<array{0: string, 1: int}>
      *

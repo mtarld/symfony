@@ -21,8 +21,7 @@ use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 interface EncoderInterface
 {
     /**
-     * @param resource             $resource
+     * @param resource $resource
      */
     public static function encode(mixed $resource, mixed $normalized, Configuration $context): void;
 }
-

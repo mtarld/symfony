@@ -173,12 +173,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
         $templates = $this->typeExtractor->extractTemplateFromClass(new \ReflectionClass($className));
 
         if (\count($templates) !== \count($genericParameterTypes)) {
-            throw new InvalidArgumentException(sprintf(
-                'Given %d generic parameters in "%s", but %d templates are defined in "%2$s".',
-                \count($genericParameterTypes),
-                $className,
-                \count($templates),
-            ));
+            throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%2$s".', \count($genericParameterTypes), $className, \count($templates)));
         }
 
         $genericTypes = [];

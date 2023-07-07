@@ -18,11 +18,11 @@ use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\UnionDomNode;
 use Symfony\Component\Serializer\Serialize\Php\BinaryNode;
 use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
-use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
-use Symfony\Component\Serializer\Serialize\Php\UnaryNode;
 use Symfony\Component\Serializer\Serialize\Php\IfNode;
-use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
+use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
 use Symfony\Component\Serializer\Serialize\Php\RawNode;
+use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
+use Symfony\Component\Serializer\Serialize\Php\UnaryNode;
 use Symfony\Component\Serializer\Serialize\VariableNameScoperTrait;
 use Symfony\Component\Serializer\Type\Type;
 

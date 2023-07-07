@@ -18,7 +18,7 @@ namespace Symfony\Component\Serializer\Serialize\Dom;
  */
 abstract readonly class DomNode
 {
-    public function  __construct(
+    public function __construct(
         public string $accessor,
     ) {
     }
@@ -33,4 +33,3 @@ abstract readonly class DomNode
         ];
     }
 }
-

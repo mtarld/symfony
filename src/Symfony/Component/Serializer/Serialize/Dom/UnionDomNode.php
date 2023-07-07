@@ -21,7 +21,7 @@ final readonly class UnionDomNode extends DomNode
     /**
      * @param list<DomNode> $domNodes
      */
-    public function  __construct(
+    public function __construct(
         string $accessor,
         public array $domNodes,
     ) {

@@ -16,16 +16,16 @@ use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Serialize\Dom\CollectionDomNode;
 use Symfony\Component\Serializer\Serialize\Dom\DomNode;
 use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
-use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
 use Symfony\Component\Serializer\Serialize\Php\AssignNode;
+use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
+use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
 use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
 use Symfony\Component\Serializer\Serialize\Php\MethodNode;
 use Symfony\Component\Serializer\Serialize\Php\NodeInterface;
-use Symfony\Component\Serializer\Serialize\Php\TemplateStringNode;
-use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
-use Symfony\Component\Serializer\Serialize\Php\VariableNode;
-use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
 use Symfony\Component\Serializer\Serialize\Php\RawNode;
+use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
+use Symfony\Component\Serializer\Serialize\Php\TemplateStringNode;
+use Symfony\Component\Serializer\Serialize\Php\VariableNode;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 
 /**

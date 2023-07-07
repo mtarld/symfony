@@ -114,7 +114,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 
         if ($type->isObject()) {
             if (!$type->hasClass()) {
-                return (object) ($this->decoder->decode($resource, $context['offset'], $context['length'], $configuration));
+                return (object) $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
             }
 
             $boundaries = $this->splitter->split($resource, $type, $context['offset'], $context['length']);

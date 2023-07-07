@@ -23,7 +23,7 @@ class Configuration
     protected ?Type $type = null;
 
     /**
-     * @var list<string> $groups
+     * @var list<string>
      */
     protected array $groups = [];
 
@@ -32,7 +32,7 @@ class Configuration
     protected JsonConfiguration $jsonConfiguration;
     protected CsvConfiguration $csvConfiguration;
 
-    public function __construct() 
+    public function __construct()
     {
         $this->jsonConfiguration = new JsonConfiguration();
         $this->csvConfiguration = new CsvConfiguration();

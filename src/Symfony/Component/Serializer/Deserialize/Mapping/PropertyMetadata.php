@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Serializer\Deserialize\Mapping;
 
-
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *

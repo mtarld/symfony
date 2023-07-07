@@ -18,13 +18,13 @@ use Symfony\Component\Serializer\Serialize\Dom\ObjectDomNode;
 use Symfony\Component\Serializer\Serialize\Encoder\EncoderInterface;
 use Symfony\Component\Serializer\Serialize\Php\ArrayAccessNode;
 use Symfony\Component\Serializer\Serialize\Php\ArrayNode;
-use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
 use Symfony\Component\Serializer\Serialize\Php\AssignNode;
-use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
 use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
-use Symfony\Component\Serializer\Serialize\Php\VariableNode;
-use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
+use Symfony\Component\Serializer\Serialize\Php\ForEachNode;
+use Symfony\Component\Serializer\Serialize\Php\FunctionNode;
 use Symfony\Component\Serializer\Serialize\Php\RawNode;
+use Symfony\Component\Serializer\Serialize\Php\ScalarNode;
+use Symfony\Component\Serializer\Serialize\Php\VariableNode;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 
 /**

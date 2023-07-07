@@ -18,8 +18,8 @@ use Symfony\Component\Serializer\Serialize\Php\ArgumentsNode;
 use Symfony\Component\Serializer\Serialize\Php\ClosureNode;
 use Symfony\Component\Serializer\Serialize\Php\Compiler;
 use Symfony\Component\Serializer\Serialize\Php\ExpressionNode;
-use Symfony\Component\Serializer\Serialize\Php\ReturnNode;
 use Symfony\Component\Serializer\Serialize\Php\PhpDocNode;
+use Symfony\Component\Serializer\Serialize\Php\ReturnNode;
 use Symfony\Component\Serializer\Type\Type;
 
 /**

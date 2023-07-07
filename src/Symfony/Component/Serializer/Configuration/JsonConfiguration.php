@@ -16,7 +16,7 @@ namespace Symfony\Component\Serializer\Configuration;
  *
  * @experimental in 7.0
  */
-class JsonConfiguration
+abstract class JsonConfiguration
 {
     protected int $flags = 0;
 
@@ -43,4 +43,3 @@ class JsonConfiguration
         return $clone;
     }
 }
-

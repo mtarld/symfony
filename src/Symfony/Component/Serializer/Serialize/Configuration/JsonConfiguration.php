@@ -18,7 +18,7 @@ use Symfony\Component\Serializer\Configuration\JsonConfiguration as BaseJsonConf
  *
  * @experimental in 7.0
  */
-class JsonConfiguration extends  BaseJsonConfiguration
+class JsonConfiguration extends BaseJsonConfiguration
 {
     public function __construct()
     {

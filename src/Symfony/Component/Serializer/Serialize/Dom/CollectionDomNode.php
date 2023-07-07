@@ -18,7 +18,7 @@ namespace Symfony\Component\Serializer\Serialize\Dom;
  */
 final readonly class CollectionDomNode extends DomNode
 {
-    public function  __construct(
+    public function __construct(
         string $accessor,
         public DomNode $childrenDomNode,
         public bool $isList,

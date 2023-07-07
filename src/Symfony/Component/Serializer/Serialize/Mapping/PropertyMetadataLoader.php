@@ -12,10 +12,10 @@
 namespace Symfony\Component\Serializer\Serialize\Mapping;
 
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Serializer\Attribute\SerializeFormatter;
 use Symfony\Component\Serializer\Attribute\SerializedName;
-use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
+use Symfony\Component\Serializer\Attribute\SerializeFormatter;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
+use Symfony\Component\Serializer\Serialize\Configuration\Configuration;
 use Symfony\Component\Serializer\Type\Type;
 use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 use Symfony\Component\Serializer\Type\TypeGenericsHelper;
@@ -190,12 +190,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
         $templates = $this->typeExtractor->extractTemplateFromClass(new \ReflectionClass($className));
 
         if (\count($templates) !== \count($genericParameterTypes)) {
-            throw new InvalidArgumentException(sprintf(
-                'Given %d generic parameters in "%s", but %d templates are defined in "%2$s".',
-                \count($genericParameterTypes),
-                $className,
-                \count($templates),
-            ));
+            throw new InvalidArgumentException(sprintf('Given %d generic parameters in "%s", but %d templates are defined in "%2$s".', \count($genericParameterTypes), $className, \count($templates)));
         }
 
         $genericTypes = [];

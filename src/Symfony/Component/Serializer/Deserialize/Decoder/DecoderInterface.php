@@ -22,7 +22,7 @@ use Symfony\Component\Serializer\Exception\InvalidResourceException;
 interface DecoderInterface
 {
     /**
-     * @param resource             $resource
+     * @param resource $resource
      *
      * @throws InvalidResourceException
      */
