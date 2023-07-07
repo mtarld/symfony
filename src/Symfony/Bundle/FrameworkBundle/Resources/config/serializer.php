@@ -25,8 +25,7 @@ use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use Symfony\Component\Serializer\Deserialize\Instantiator\LazyInstantiator;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoader as DeserializePropertyMetadataLoader;
 use Symfony\Component\Serializer\Deserialize\Mapping\PropertyMetadataLoaderInterface as DeserializePropertyMetadataLoaderInterface;
-use Symfony\Component\Serializer\Deserialize\Splitter\JsonDictSplitter;
-use Symfony\Component\Serializer\Deserialize\Splitter\JsonListSplitter;
+use Symfony\Component\Serializer\Deserialize\Splitter\JsonSplitter;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\EagerUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Unmarshaller\LazyUnmarshaller;
 use Symfony\Component\Serializer\Deserialize\Deserializer;
@@ -324,8 +323,7 @@ return static function (ContainerConfigurator $container) {
         ->set('serializer.unmarshaller.json.lazy', LazyUnmarshaller::class)
             ->args([
                 inline_service(JsonDecoder::class),
-                inline_service(JsonListSplitter::class),
-                inline_service(JsonDictSplitter::class),
+                inline_service(JsonSplitter::class),
                 service('serializer.deserialize.metadata.property_loader'),
                 service('serializer.instantiator'),
             ])
@@ -350,8 +348,7 @@ return static function (ContainerConfigurator $container) {
                 param('.serializer.cache_dir.lazy_object'),
             ])
 
-        ->alias('serializer.instantiator', 'serializer.instantiator.eager')
-        ->alias(InstantiatorInterface::class, 'serializer.instantiator')
+        // ->alias('serializer.instantiator', 'serializer.instantiator.eager')
 
         // Metadata
         ->set('serializer.serialize.metadata.property_loader', SerializePropertyMetadataLoader::class)

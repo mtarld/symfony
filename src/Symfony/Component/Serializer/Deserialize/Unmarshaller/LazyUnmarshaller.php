@@ -29,8 +29,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
 {
     public function __construct(
         private readonly DecoderInterface $decoder,
-        private readonly SplitterInterface $listSplitter,
-        private readonly SplitterInterface $dictSplitter,
+        private readonly SplitterInterface $splitter,
         private readonly PropertyMetadataLoaderInterface $propertyMetadataLoader,
         private readonly InstantiatorInterface $instantiator,
     ) {
@@ -94,13 +93,9 @@ final class LazyUnmarshaller implements UnmarshallerInterface
         if ($type->isCollection()) {
             $collection = null;
 
-            if ($type->isList()) {
-                if (null !== $boundaries = $this->listSplitter->split($resource, $type, $context['offset'], $context['length'])) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $context);
-                }
-            } elseif ($type->isDict()) {
-                if (null !== $boundaries = $this->dictSplitter->split($resource, $type, $context['offset'], $context['length'])) {
-                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type->collectionValueType(), $configuration, $context);
+            if ($type->isList() && $type->isDict()) {
+                if (null !== $boundaries = $this->splitter->split($resource, $type, $context['offset'], $context['length'])) {
+                    $collection = $this->deserializeCollectionItems($resource, $boundaries, $type, $configuration, $context);
                 }
             } else {
                 $collection = $this->decoder->decode($resource, $context['offset'], $context['length'], $configuration);
@@ -122,7 +117,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
                 return (object) ($this->decoder->decode($resource, $context['offset'], $context['length'], $configuration));
             }
 
-            $boundaries = $this->dictSplitter->split($resource, $type, $context['offset'], $context['length']);
+            $boundaries = $this->splitter->split($resource, $type, $context['offset'], $context['length']);
 
             if (null === $boundaries) {
                 if (!$type->isNullable()) {
@@ -170,7 +165,7 @@ final class LazyUnmarshaller implements UnmarshallerInterface
             $context['offset'] = $boundary[0];
             $context['length'] = $boundary[1];
 
-            yield $key => $this->unmarshal($resource, $type, $configuration, $context);
+            yield $key => $this->unmarshal($resource, $type->collectionValueType(), $configuration, $context);
         }
     }
 }

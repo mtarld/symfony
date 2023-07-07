@@ -19,7 +19,7 @@ use Symfony\Component\Serializer\Type\Type;
  *
  * @experimental in 7.0
  */
-final class JsonDictSplitter implements SplitterInterface
+final class JsonSplitter implements SplitterInterface
 {
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
@@ -47,7 +47,64 @@ final class JsonDictSplitter implements SplitterInterface
             return null;
         }
 
-        return $this->createBoundaries($tokens, $resource);
+        if ($type->isDict() || $type->isObject()) {
+            return $this->createDictBoundaries($tokens, $resource);
+        }
+
+        return $this->createListBoundaries($tokens, $resource);
+    }
+
+    /**
+     * @param \Iterator<array{0: string, 1: int}> $tokens
+     * @param resource                            $resource
+     *
+     * @return \Iterator<array{0: int, 1: int}>
+     */
+    private function createListBoundaries(\Iterator $tokens, mixed $resource): \Iterator
+    {
+        $level = 0;
+
+        foreach ($tokens as $i => $token) {
+            if (0 === $i) {
+                continue;
+            }
+
+            $value = $token[0];
+            $position = $token[1];
+            $offset = $offset ?? $position;
+
+            if (isset(self::NESTING_CHARS[$value])) {
+                ++$level;
+
+                continue;
+            }
+
+            if (isset(self::UNNESTING_CHARS[$value])) {
+                --$level;
+
+                continue;
+            }
+
+            if (0 !== $level) {
+                continue;
+            }
+
+            if (',' === $value) {
+                if (($length = $position - $offset) > 0) {
+                    yield [$offset, $length];
+                }
+
+                $offset = null;
+            }
+        }
+
+        if (-1 !== $level || !isset($value, $offset, $position) || ']' !== $value) {
+            throw new InvalidResourceException($resource);
+        }
+
+        if (($length = $position - $offset) > 0) {
+            yield [$offset, $length];
+        }
     }
 
     /**
@@ -56,7 +113,7 @@ final class JsonDictSplitter implements SplitterInterface
      *
      * @return \Iterator<string, array{0: int, 1: int}>
      */
-    public function createBoundaries(\Iterator $tokens, mixed $resource): \Iterator
+    public function createDictBoundaries(\Iterator $tokens, mixed $resource): \Iterator
     {
         $level = 0;
         $offset = 0;

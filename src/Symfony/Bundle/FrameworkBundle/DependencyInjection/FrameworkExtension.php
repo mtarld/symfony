@@ -15,6 +15,7 @@ use Composer\InstalledVersions;
 use Doctrine\Common\Annotations\Reader;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
+use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use PhpParser\Parser;
@@ -1947,6 +1948,9 @@ class FrameworkExtension extends Extension
         $container->setParameter('serializer.serializable_paths', $config['serializable_paths']);
         $container->setParameter('serializer.template_warm_up.formats', $config['template_warm_up']['formats']);
         $container->setParameter('serializer.template_warm_up.max_variants', $config['template_warm_up']['max_variants']);
+
+        $container->setAlias('serializer.instantiator', $config['lazy_instantiation'] ? 'serializer.instantiator.lazy' : 'serializer.instantiator.eager');
+        $container->setAlias(InstantiatorInterface::class, 'serializer.instantiator');
 
         foreach ($config['serializable_paths'] as $path) {
             if (!is_dir($path)) {
