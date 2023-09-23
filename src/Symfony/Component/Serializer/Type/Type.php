@@ -16,6 +16,9 @@ use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Exception\UnsupportedException;
 
 /**
+ * Represents a PHP type.
+ * Can be either unitary, union, intersection, of generic.
+ *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.0
