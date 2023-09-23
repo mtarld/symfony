@@ -14,10 +14,6 @@ namespace Symfony\Bundle\FrameworkBundle\DependencyInjection;
 use Composer\InstalledVersions;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
-use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
-use Symfony\Component\Serializer\Serialize\SerializerInterface as ExperimentalSerializerInterface;
-use Symfony\Component\Serializer\Type\PhpstanTypeExtractor;
-use Symfony\Component\Serializer\Type\TypeExtractorInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use PhpParser\Parser;
@@ -99,6 +95,7 @@ use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\HttpKernel\Log\DebugLoggerConfigurator;
+use Symfony\Component\Json\JsonEncoder;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Lock\PersistingStoreInterface;
@@ -379,10 +376,6 @@ class FrameworkExtension extends Extension
             }
 
             $this->registerSerializerConfiguration($config['serializer'], $container, $loader);
-
-            if (interface_exists(ExperimentalSerializerInterface::class)) {
-                $this->registerExperimentalSerializerConfiguration($config['serializer'], $container, $loader);
-            }
         } else {
             $container->getDefinition('argument_resolver.request_payload')
                 ->setArguments([])
@@ -393,6 +386,10 @@ class FrameworkExtension extends Extension
                 ->clearTag('kernel.event_subscriber');
 
             $container->removeDefinition('console.command.serializer_debug');
+        }
+
+        if ($this->readConfigEnabled('encoder', $container, $config['encoder'])) {
+            $this->registerEncoderConfiguration($config['encoder'], $container, $loader);
         }
 
         if ($propertyInfoEnabled) {
@@ -1928,21 +1925,13 @@ class FrameworkExtension extends Extension
         }
     }
 
-    private function registerExperimentalSerializerConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    private function registerEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
     {
-        $loader->load('serializer_experimental.php');
+        $loader->load('encoder.php');
 
-        $container->setParameter('serializer.serializable_paths', $config['serializable_paths']);
-        $container->setParameter('serializer.formats', $config['formats']);
-        $container->setParameter('serializer.max_variants', $config['max_variants']);
+        $container->setParameter('encoder.encodable_paths', $config['encodable_paths']);
 
-        $container->setParameter('serializer.lazy_instantiation', $config['lazy_instantiation']);
-        $container->setParameter('serializer.lazy_deserialization', $config['lazy_deserialization']);
-
-        $container->setAlias('serializer.instantiator', $config['lazy_instantiation'] ? 'serializer.instantiator.lazy' : 'serializer.instantiator.eager');
-        $container->setAlias(InstantiatorInterface::class, 'serializer.instantiator');
-
-        foreach ($config['serializable_paths'] as $path) {
+        foreach ($config['encodable_paths'] as $path) {
             if (!is_dir($path)) {
                 continue;
             }
@@ -1950,18 +1939,12 @@ class FrameworkExtension extends Extension
             $container->fileExists($path, '/\.php$/');
         }
 
-        if (
-            ContainerBuilder::willBeAvailable('phpstan/phpdoc-parser', PhpDocParser::class, ['symfony/framework-bundle', 'symfony/serializer'])
-            && ContainerBuilder::willBeAvailable('phpdocumentor/type-resolver', ContextFactory::class, ['symfony/framework-bundle', 'symfony/serializer'])
-        ) {
-            $container->register('serializer.type_extractor.phpstan', PhpstanTypeExtractor::class)
-                ->setDecoratedService('serializer.type_extractor')
-                ->setArguments([
-                    new Reference('serializer.type_extractor.phpstan.inner'),
-                ])
-                ->setLazy(true)
-                ->addTag('proxy', ['interface' => TypeExtractorInterface::class]);
+        if (class_exists(JsonEncoder::class)) {
+            $loader->load('json.php');
         }
+
+        // temporary as TypeInfo component is not created yet
+        $loader->load('type_info.php');
     }
 
     private function registerPropertyInfoConfiguration(ContainerBuilder $container, PhpFileLoader $loader): void

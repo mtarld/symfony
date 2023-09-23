@@ -26,6 +26,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
+use Symfony\Component\Encoder\EncoderInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Symfony\Component\HttpClient\HttpClient;
@@ -178,6 +179,7 @@ class Configuration implements ConfigurationInterface
         $this->addHtmlSanitizerSection($rootNode, $enableIfStandalone);
         $this->addWebhookSection($rootNode, $enableIfStandalone);
         $this->addRemoteEventSection($rootNode, $enableIfStandalone);
+        $this->addEncoderSection($rootNode, $enableIfStandalone);
 
         return $treeBuilder;
     }
@@ -1091,8 +1093,6 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('serializer')
                     ->info('serializer configuration')
                     ->{$enableIfStandalone('symfony/serializer', Serializer::class)}()
-                    ->fixXmlConfig('serializable_path')
-                    ->fixXmlConfig('format')
                     ->children()
                         ->booleanNode('enable_attributes')->{!class_exists(FullStack::class) ? 'defaultTrue' : 'defaultFalse'}()->end()
                         ->scalarNode('name_converter')->end()
@@ -1116,31 +1116,6 @@ class Configuration implements ConfigurationInterface
                             ->end()
                             ->defaultValue([])
                             ->prototype('variable')->end()
-                        ->end()
-                        ->arrayNode('serializable_paths')
-                            ->info('Defines where to find classes to serialized/deserialized.')
-                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
-                            ->prototype('scalar')->end()
-                            ->defaultValue([])
-                        ->end()
-                        ->arrayNode('formats')
-                            ->info('Defines formats to generate template during cache warm up.')
-                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
-                            ->prototype('scalar')->end()
-                            ->defaultValue(['json'])
-                        ->end()
-                        ->integerNode('max_variants')
-                            ->info('Defines the maximum template variants allowed for each class during cache warm up.')
-                            ->defaultValue(32)
-                            ->min(0)
-                        ->end()
-                        ->booleanNode('lazy_deserialization')
-                            ->info('Defines whether to read data lazily or eagerly.')
-                            ->defaultFalse()
-                        ->end()
-                        ->booleanNode('lazy_instantiation')
-                            ->info('Defines whether to instantiate objects lazily or eagerly.')
-                            ->defaultFalse()
                         ->end()
                     ->end()
                 ->end()
@@ -2470,6 +2445,27 @@ class Configuration implements ConfigurationInterface
                                     ->end()
                                 ->end()
                             ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addEncoderSection(ArrayNodeDefinition $rootNode, callable $enableIfStandalone): void
+    {
+        $rootNode
+            ->children()
+                ->arrayNode('encoder')
+                    ->info('encoder configuration')
+                    ->{$enableIfStandalone('symfony/encoder', EncoderInterface::class)}()
+                    ->fixXmlConfig('encodable_path')
+                    ->children()
+                        ->arrayNode('encodable_paths')
+                            ->info('Defines where to find classes to encoded/decoded.')
+                            ->beforeNormalization()->ifString()->then(function ($v) { return [$v]; })->end()
+                            ->prototype('scalar')->end()
+                            ->defaultValue([])
                         ->end()
                     ->end()
                 ->end()

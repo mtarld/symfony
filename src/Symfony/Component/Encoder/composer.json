@@ -1,0 +1,29 @@
+{
+    "name": "symfony/encoder",
+    "type": "library",
+    "description": "Provides a common basis for format-specific encoders.",
+    "keywords": ["encoding", "decoding"],
+    "homepage": "https://symfony.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mathias Arlaud",
+            "email": "mathias.arlaud@gmail.com"
+        },
+        {
+            "name": "Symfony Community",
+            "homepage": "https://symfony.com/contributors"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "psr/container": "^2.0|^3.0",
+        "symfony/type-info": "^7.1",
+        "symfony/var-exporter": "^7.0"
+    },
+    "autoload": {
+        "psr-4": { "Symfony\\Component\\Encoder\\": "" },
+        "exclude-from-classmap": [ "Tests/" ]
+    },
+    "minimum-stability": "dev"
+}
