@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.1
+---
+
+* Register JsonMarshaller services
+
 7.0
 ---
 

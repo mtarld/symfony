@@ -14,10 +14,9 @@ namespace Symfony\Bundle\FrameworkBundle\DependencyInjection;
 use Composer\InstalledVersions;
 use Http\Client\HttpAsyncClient;
 use Http\Client\HttpClient;
-use Symfony\Component\Serializer\Deserialize\Instantiator\InstantiatorInterface;
-use Symfony\Component\Serializer\Serialize\SerializerInterface as ExperimentalSerializerInterface;
-use Symfony\Component\Serializer\Type\PhpstanTypeExtractor;
-use Symfony\Component\Serializer\Type\TypeExtractorInterface;
+use Symfony\Component\JsonMarshaller\JsonMarshaller;
+use Symfony\Component\JsonMarshaller\Type\PhpstanTypeExtractor;
+use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use phpDocumentor\Reflection\Types\ContextFactory;
 use PhpParser\Parser;
@@ -379,10 +378,6 @@ class FrameworkExtension extends Extension
             }
 
             $this->registerSerializerConfiguration($config['serializer'], $container, $loader);
-
-            if (interface_exists(ExperimentalSerializerInterface::class)) {
-                $this->registerExperimentalSerializerConfiguration($config['serializer'], $container, $loader);
-            }
         } else {
             $container->getDefinition('argument_resolver.request_payload')
                 ->setArguments([])
@@ -393,6 +388,10 @@ class FrameworkExtension extends Extension
                 ->clearTag('kernel.event_subscriber');
 
             $container->removeDefinition('console.command.serializer_debug');
+        }
+
+        if ($this->readConfigEnabled('marshaller', $container, $config['marshaller'])) {
+            $this->registerMarshallerConfiguration($config['marshaller'], $container, $loader);
         }
 
         if ($propertyInfoEnabled) {
@@ -1928,21 +1927,15 @@ class FrameworkExtension extends Extension
         }
     }
 
-    private function registerExperimentalSerializerConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    private function registerMarshallerConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
     {
-        $loader->load('serializer_experimental.php');
+        $loader->load('marshaller.php');
 
-        $container->setParameter('serializer.serializable_paths', $config['serializable_paths']);
-        $container->setParameter('serializer.formats', $config['formats']);
-        $container->setParameter('serializer.max_variants', $config['max_variants']);
+        $container->setParameter('marshaller.marshallable_paths', $config['marshallable_paths']);
+        $container->setParameter('marshaller.lazy_read', $config['lazy_read']);
+        $container->setParameter('marshaller.lazy_instantiation', $config['lazy_instantiation']);
 
-        $container->setParameter('serializer.lazy_instantiation', $config['lazy_instantiation']);
-        $container->setParameter('serializer.lazy_deserialization', $config['lazy_deserialization']);
-
-        $container->setAlias('serializer.instantiator', $config['lazy_instantiation'] ? 'serializer.instantiator.lazy' : 'serializer.instantiator.eager');
-        $container->setAlias(InstantiatorInterface::class, 'serializer.instantiator');
-
-        foreach ($config['serializable_paths'] as $path) {
+        foreach ($config['marshallable_paths'] as $path) {
             if (!is_dir($path)) {
                 continue;
             }
@@ -1954,13 +1947,17 @@ class FrameworkExtension extends Extension
             ContainerBuilder::willBeAvailable('phpstan/phpdoc-parser', PhpDocParser::class, ['symfony/framework-bundle', 'symfony/serializer'])
             && ContainerBuilder::willBeAvailable('phpdocumentor/type-resolver', ContextFactory::class, ['symfony/framework-bundle', 'symfony/serializer'])
         ) {
-            $container->register('serializer.type_extractor.phpstan', PhpstanTypeExtractor::class)
-                ->setDecoratedService('serializer.type_extractor')
+            $container->register('marshaller.type_extractor.phpstan', PhpstanTypeExtractor::class)
+                ->setDecoratedService('marshaller.type_extractor')
                 ->setArguments([
-                    new Reference('serializer.type_extractor.phpstan.inner'),
+                    new Reference('marshaller.type_extractor.phpstan.inner'),
                 ])
                 ->setLazy(true)
                 ->addTag('proxy', ['interface' => TypeExtractorInterface::class]);
+        }
+
+        if (class_exists(JsonMarshaller::class)) {
+            $loader->load('marshaller_json.php');
         }
     }
 
