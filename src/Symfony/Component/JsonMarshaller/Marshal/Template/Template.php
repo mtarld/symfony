@@ -12,6 +12,7 @@
 namespace Symfony\Component\JsonMarshaller\Marshal\Template;
 
 use Psr\Container\ContainerInterface;
+use Symfony\Component\JsonMarshaller\JsonMarshaller;
 use Symfony\Component\JsonMarshaller\Marshal\DataModel\DataModelBuilder;
 use Symfony\Component\JsonMarshaller\Php\ClosureNode;
 use Symfony\Component\JsonMarshaller\Php\Compiler;
@@ -28,6 +29,8 @@ use Symfony\Component\JsonMarshaller\Type\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type JsonMarshalConfig from JsonMarshaller
  */
 final readonly class Template
 {
@@ -44,7 +47,9 @@ final readonly class Template
         return sprintf('%s%s%s.marshal.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, $hash);
     }
 
-    // TODO
+    /**
+     * @param JsonMarshalConfig $config
+     */
     public function content(Type $type, array $config = []): string
     {
         $compiler = new Compiler();

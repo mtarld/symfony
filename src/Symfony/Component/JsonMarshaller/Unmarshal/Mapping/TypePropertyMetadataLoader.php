@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonMarshaller\Unmarshal\Mapping;
 use Symfony\Component\JsonMarshaller\Type\Type;
 use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
 use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
+use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 
 /**
  * Enhance properties unmarshalling metadata based on properties' type.
@@ -21,6 +22,8 @@ use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type UnmarshalConfig from UnmarshallerInterface
  */
 final class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
@@ -56,7 +59,9 @@ final class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterfac
         return $result;
     }
 
-    // TODO
+    /**
+     * @param UnmarshalConfig $config
+     */
     public static function castStringToDateTime(string $string, array $config): \DateTimeInterface
     {
         if (false !== $dateTime = \DateTimeImmutable::createFromFormat($config['date_time_format'] ?? \DateTimeInterface::RFC3339, $string)) {

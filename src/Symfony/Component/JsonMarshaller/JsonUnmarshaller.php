@@ -22,6 +22,13 @@ use Symfony\Component\JsonMarshaller\Unmarshal\Template\Template;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1
+ *
+ * @phpstan-import-type UnmarshalConfig from UnmarshallerInterface
+ *
+ * @phpstan-type JsonUnmarshalConfig UnmarshalConfig&array{
+ *   force_generate_template?: bool,
+ *   json_decode_flags?: int,
+ * }
  */
 final class JsonUnmarshaller implements UnmarshallerInterface
 {
@@ -34,6 +41,9 @@ final class JsonUnmarshaller implements UnmarshallerInterface
     ) {
     }
 
+    /**
+     * @param JsonUnmarshalConfig $config
+     */
     public function unmarshal(mixed $input, Type $type, array $config = []): mixed
     {
         if (\is_string($input)) {
@@ -71,6 +81,7 @@ final class JsonUnmarshaller implements UnmarshallerInterface
             @chmod($path, 0666 & ~umask());
         }
 
-        return (require $path)($input, $config, $this->instantiator, $this->runtimeServices);
+        // TODO test custom instantiator
+        return (require $path)($input, $config, $config['instantiator'] ?? $this->instantiator, $this->runtimeServices);
     }
 }

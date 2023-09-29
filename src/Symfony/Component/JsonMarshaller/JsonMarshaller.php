@@ -21,6 +21,14 @@ use Symfony\Component\JsonMarshaller\Type\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1
+
+ *
+ * @phpstan-import-type MarshalConfig from MarshallerInterface
+ *
+ * @phpstan-type JsonMarshalConfig MarshalConfig&array{
+ *   force_generate_template?: bool,
+ *   json_encode_flags?: int,
+ * }
  */
 final class JsonMarshaller implements MarshallerInterface
 {
@@ -31,6 +39,9 @@ final class JsonMarshaller implements MarshallerInterface
     ) {
     }
 
+    /**
+     * @param JsonMarshalConfig $config
+     */
     public function marshal(mixed $data, array $config = [], mixed $output = null): string|null
     {
         $shouldOutputString = false;

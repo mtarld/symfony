@@ -16,6 +16,7 @@ use Symfony\Component\JsonMarshaller\Exception\LogicException;
 use Symfony\Component\JsonMarshaller\Exception\MaxDepthException;
 use Symfony\Component\JsonMarshaller\Marshal\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonMarshaller\Marshal\VariableNameScoperTrait;
+use Symfony\Component\JsonMarshaller\MarshallerInterface;
 use Symfony\Component\JsonMarshaller\Php\ArgumentsNode;
 use Symfony\Component\JsonMarshaller\Php\FunctionCallNode;
 use Symfony\Component\JsonMarshaller\Php\MethodCallNode;
@@ -30,6 +31,8 @@ use Symfony\Component\VarExporter\ProxyHelper;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type MarshalConfig from MarshallerInterface
  */
 final readonly class DataModelBuilder
 {
@@ -41,7 +44,10 @@ final readonly class DataModelBuilder
     ) {
     }
 
-    // TODO
+    /**
+     * @param MarshalConfig        $config
+     * @param array<string, mixed> $context
+     */
     public function build(Type $type, PhpNodeInterface $accessor, array $config, array $context = []): DataModelNodeInterface
     {
         if ($type->isObject() && $type->hasClass()) {
@@ -50,7 +56,7 @@ final readonly class DataModelBuilder
             $context['depth_counters'][$className] ??= 0;
             ++$context['depth_counters'][$className];
 
-            $maxDepth = $config['maxDepth'] ?? 32;
+            $maxDepth = $config['max_depth'] ?? 32;
             if ($context['depth_counters'][$className] > $maxDepth) {
                 throw new MaxDepthException($className, $maxDepth);
             }

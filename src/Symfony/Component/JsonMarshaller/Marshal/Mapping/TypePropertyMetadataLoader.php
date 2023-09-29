@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonMarshaller\Marshal\Mapping;
 
+use Symfony\Component\JsonMarshaller\MarshallerInterface;
 use Symfony\Component\JsonMarshaller\Type\Type;
 use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
 use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
@@ -21,6 +22,8 @@ use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type MarshalConfig from MarshallerInterface
  */
 final class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
@@ -56,7 +59,9 @@ final class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterfac
         return $result;
     }
 
-    // TODO
+    /**
+     * @param MarshalConfig $config
+     */
     public static function castDateTimeToString(\DateTimeInterface $dateTime, array $config): string
     {
         return $dateTime->format($config['date_time_format'] ?? \DateTimeInterface::RFC3339);

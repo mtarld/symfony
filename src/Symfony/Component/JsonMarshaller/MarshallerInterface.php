@@ -17,12 +17,18 @@ namespace Symfony\Component\JsonMarshaller;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1
+ *
+ * @phpstan-type MarshalConfig array{
+ *   type?: Type,
+ *   max_depth?: int,
+ *   date_time_format?: string,
+ * }
  */
 interface MarshallerInterface
 {
-    // TODO
     /**
      * @param resource|null $output
+     * @param MarshalConfig $config
      */
     public function marshal(mixed $data, array $config = [], mixed $output = null): string|null;
 }

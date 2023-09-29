@@ -17,6 +17,7 @@ use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\CollectionNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelNodeInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ObjectNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ScalarNode;
+use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 
 /**
  * A base class to generate a unmarshal template PHP syntax tree.
@@ -24,6 +25,8 @@ use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ScalarNode;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type UnmarshalConfig from UnmarshallerInterface
  */
 abstract readonly class TemplateGenerator
 {
@@ -55,7 +58,12 @@ abstract readonly class TemplateGenerator
      */
     abstract protected function scalarNodes(ScalarNode $node, array &$context): array;
 
-    // TODO
+    /**
+     * @param UnmarshalConfig      $config
+     * @param array<string, mixed> $context
+     *
+     * @return list<PhpNodeInterface>
+     */
     final public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         return [

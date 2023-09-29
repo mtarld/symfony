@@ -21,12 +21,15 @@ use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
 use Symfony\Component\JsonMarshaller\Php\VariableNode;
 use Symfony\Component\JsonMarshaller\Type\Type;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type UnmarshalConfig from UnmarshallerInterface
  */
 final readonly class DataModelBuilder
 {
@@ -36,7 +39,10 @@ final readonly class DataModelBuilder
     ) {
     }
 
-    // TODO
+    /**
+     * @param UnmarshalConfig      $config
+     * @param array<string, mixed> $context
+     */
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
     {
         if ($type->isObject() && $type->hasClass()) {

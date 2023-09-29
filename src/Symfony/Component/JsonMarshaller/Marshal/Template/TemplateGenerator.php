@@ -13,6 +13,7 @@ namespace Symfony\Component\JsonMarshaller\Marshal\Template;
 
 use Symfony\Component\JsonMarshaller\Exception\LogicException;
 use Symfony\Component\JsonMarshaller\Exception\RuntimeException;
+use Symfony\Component\JsonMarshaller\JsonMarshaller;
 use Symfony\Component\JsonMarshaller\Marshal\DataModel\CollectionNode;
 use Symfony\Component\JsonMarshaller\Marshal\DataModel\DataModelNodeInterface;
 use Symfony\Component\JsonMarshaller\Marshal\DataModel\ObjectNode;
@@ -38,12 +39,19 @@ use Symfony\Component\JsonMarshaller\Php\VariableNode;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type JsonMarshalConfig from JsonMarshaller
  */
 final class TemplateGenerator
 {
     use VariableNameScoperTrait;
 
-    // TODO
+    /**
+     * @param JsonMarshalConfig    $config
+     * @param array<string, mixed> $context
+     *
+     * @return list<PhpNodeInterface>
+     */
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         if ($node instanceof CollectionNode) {

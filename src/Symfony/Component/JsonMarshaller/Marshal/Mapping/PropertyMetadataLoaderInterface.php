@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\JsonMarshaller\Marshal\Mapping;
 
+use Symfony\Component\JsonMarshaller\MarshallerInterface;
+
 /**
  * Loads properties marshalling metadata for a given $className.
  *
@@ -20,15 +22,17 @@ namespace Symfony\Component\JsonMarshaller\Marshal\Mapping;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1
+ *
+ * @phpstan-import-type MarshalConfig from MarshallerInterface
  */
 interface PropertyMetadataLoaderInterface
 {
     /**
-     * @param array<string, mixed> $context
      * @param class-string         $className
+     * @param MarshalConfig        $config
+     * @param array<string, mixed> $context
      *
      * @return array<string, PropertyMetadata>
      */
-    // TODO
     public function load(string $className, array $config, array $context): array;
 }

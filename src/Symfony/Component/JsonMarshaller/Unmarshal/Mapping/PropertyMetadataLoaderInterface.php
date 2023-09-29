@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\JsonMarshaller\Unmarshal\Mapping;
 
+use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
+
 /**
  * Loads properties unmarshalling metadata for a given $className.
  *
@@ -20,15 +22,17 @@ namespace Symfony\Component\JsonMarshaller\Unmarshal\Mapping;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1
+ *
+ * @phpstan-import-type UnmarshalConfig from UnmarshallerInterface
  */
 interface PropertyMetadataLoaderInterface
 {
     /**
      * @param class-string         $className
+     * @param UnmarshalConfig      $config
      * @param array<string, mixed> $context
      *
      * @return array<string, PropertyMetadata>
      */
-    // TODO
     public function load(string $className, array $config, array $context): array;
 }

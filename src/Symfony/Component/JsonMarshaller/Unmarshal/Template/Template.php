@@ -12,6 +12,7 @@
 namespace Symfony\Component\JsonMarshaller\Unmarshal\Template;
 
 use Psr\Container\ContainerInterface;
+use Symfony\Component\JsonMarshaller\JsonUnmarshaller;
 use Symfony\Component\JsonMarshaller\Php\ClosureNode;
 use Symfony\Component\JsonMarshaller\Php\Compiler;
 use Symfony\Component\JsonMarshaller\Php\ExpressionNode;
@@ -28,6 +29,8 @@ use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterfac
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
+ *
+ * @phpstan-import-type JsonUnmarshalConfig from JsonUnmarshaller
  */
 final readonly class Template
 {
@@ -37,7 +40,6 @@ final readonly class Template
     ) {
     }
 
-    // TODO
     public function path(Type $type, bool $lazy): string
     {
         $hash = hash('xxh128', (string) $type);
@@ -51,7 +53,9 @@ final readonly class Template
         );
     }
 
-    // TODO
+    /**
+     * @param JsonUnmarshalConfig $config
+     */
     public function content(Type $type, bool $lazy, array $config): string
     {
         $generator = $lazy ? new LazyTemplateGenerator() : new EagerTemplateGenerator();
