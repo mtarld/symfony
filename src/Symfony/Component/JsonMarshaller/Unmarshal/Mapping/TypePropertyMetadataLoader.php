@@ -17,7 +17,7 @@ use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
 use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 
 /**
- * Enhance properties unmarshalling metadata based on properties' type.
+ * Enhances properties unmarshalling metadata based on properties' type.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *

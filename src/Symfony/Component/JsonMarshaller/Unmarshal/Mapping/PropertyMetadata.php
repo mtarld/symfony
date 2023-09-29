@@ -98,10 +98,12 @@ final class PropertyMetadata
                 if (!$reflection->isStatic()) {
                     throw new InvalidArgumentException(sprintf('"%s"\'s property unmarshal formatter must be a static method.', $metadata->name));
                 }
-            } else {
-                if ($reflection->isAnonymous()) {
-                    throw new InvalidArgumentException(sprintf('"%s"\'s property unmarshal formatter must not be anonymous.', $metadata->name));
-                }
+
+                return;
+            }
+
+            if ($reflection->isAnonymous()) {
+                throw new InvalidArgumentException(sprintf('"%s"\'s property unmarshal formatter must not be anonymous.', $metadata->name));
             }
         }
     }

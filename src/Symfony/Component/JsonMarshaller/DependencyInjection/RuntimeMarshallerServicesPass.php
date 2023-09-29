@@ -22,6 +22,7 @@ use Symfony\Component\DependencyInjection\TypedReference;
 use Symfony\Component\JsonMarshaller\Attribute\MarshalFormatter;
 use Symfony\Component\JsonMarshaller\Attribute\MaxDepth;
 use Symfony\Component\JsonMarshaller\Attribute\UnmarshalFormatter;
+use Symfony\Component\JsonMarshaller\Exception\InvalidArgumentException;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -45,7 +46,7 @@ final class RuntimeMarshallerServicesPass implements CompilerPassInterface
                 continue;
             }
 
-            array_push($formatters, ...$this->formatters($definition->getClass()));
+            array_push($formatters, ...$this->formatters($container, $definition->getClass()));
         }
 
         $runtimeServices = [];
@@ -76,10 +77,14 @@ final class RuntimeMarshallerServicesPass implements CompilerPassInterface
      *
      * @return list<\ReflectionFunction>
      */
-    private function formatters(string $className): array
+    private function formatters(ContainerBuilder $container, string $className): array
     {
+        if (null === $reflection = $container->getReflectionClass($className)) {
+            throw new InvalidArgumentException(sprintf('Class "%s" cannot be found.', $className));
+        }
+
         $formatters = [];
-        foreach ((new \ReflectionClass($className))->getProperties() as $property) {
+        foreach ($reflection->getProperties() as $property) {
             foreach ($property->getAttributes() as $attribute) {
                 if (!\in_array($attribute->getName(), [MarshalFormatter::class, UnmarshalFormatter::class, MaxDepth::class])) {
                     continue;
