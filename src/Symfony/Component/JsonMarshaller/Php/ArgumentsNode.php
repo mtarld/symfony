@@ -28,7 +28,12 @@ final readonly class ArgumentsNode implements PhpNodeInterface
 
     public function compile(Compiler $compiler): void
     {
-        $compiler->raw(implode(', ', array_map(fn (PhpNodeInterface $n): string => $compiler->subcompile($n), $this->arguments)));
+        $glue = '';
+        foreach ($this->arguments as $argument) {
+            $compiler->raw($glue);
+            $compiler->raw($compiler->subcompile($argument));
+            $glue = ', ';
+        }
     }
 
     public function optimize(Optimizer $optimizer): static
