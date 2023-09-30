@@ -73,12 +73,6 @@ class JsonMarshallerTest extends TestCase
         );
     }
 
-    public function testOverrideType()
-    {
-        $this->assertSame('{"foo":"bar"}', $this->marshaller()->marshal(['foo' => 'bar']));
-        $this->assertSame('["bar"]', $this->marshaller()->marshal(['foo' => 'bar'], ['type' => Type::list(Type::string())]));
-    }
-
     public function testMarshalObject()
     {
         $dummy = new ClassicDummy();
@@ -144,7 +138,7 @@ class JsonMarshallerTest extends TestCase
             mkdir($this->cacheDir, recursive: true);
         }
 
-        $cacheFilename = $template->path(Type::bool());
+        $cacheFilename = $template->path(Type::bool(), false);
         file_put_contents($cacheFilename, '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED"); };');
 
         $this->assertSame('CACHED', $this->marshaller()->marshal(true));
@@ -160,7 +154,7 @@ class JsonMarshallerTest extends TestCase
             mkdir($this->cacheDir, recursive: true);
         }
 
-        $cacheFilename = $template->path(Type::bool());
+        $cacheFilename = $template->path(Type::bool(), false);
         file_put_contents($cacheFilename, '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED"); };');
 
         $this->assertSame('true', $this->marshaller()->marshal(true, ['force_generate_template' => true]));

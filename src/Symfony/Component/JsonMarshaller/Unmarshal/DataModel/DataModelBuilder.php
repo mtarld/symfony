@@ -20,6 +20,7 @@ use Symfony\Component\JsonMarshaller\Php\PhpNodeInterface;
 use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
 use Symfony\Component\JsonMarshaller\Php\VariableNode;
 use Symfony\Component\JsonMarshaller\Type\Type;
+use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadata;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 use Symfony\Component\VarExporter\ProxyHelper;
@@ -46,6 +47,7 @@ final readonly class DataModelBuilder
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
     {
         if ($type->isObject() && $type->hasClass()) {
+            $transformed = false;
             $typeString = (string) $type;
 
             if ($context['generated_classes'][$typeString] ??= false) {
@@ -55,7 +57,13 @@ final readonly class DataModelBuilder
             $propertiesNodes = [];
             $context['generated_classes'][$typeString] = true;
 
-            foreach ($this->propertyMetadataLoader->load($type->className(), $config, ['original_type' => $type] + $context) as $marshalledName => $propertyMetadata) {
+            $propertiesMetadata = $this->propertyMetadataLoader->load($type->className(), $config, ['original_type' => $type] + $context);
+
+            if (array_values(array_map(fn (PropertyMetadata $m): string => $m->name(), $propertiesMetadata)) !== array_keys($propertiesMetadata)) {
+                $transformed = true;
+            }
+
+            foreach ($propertiesMetadata as $marshalledName => $propertyMetadata) {
                 $propertiesNodes[$marshalledName] = [
                     'name' => $propertyMetadata->name(),
                     'value' => $this->build($propertyMetadata->type(), $config, $context),
@@ -99,9 +107,11 @@ final readonly class DataModelBuilder
                         return $formatter;
                     },
                 ];
+
+                $transformed = $transformed || $propertiesNodes[$marshalledName]['value']->isTransformed() || \count($propertyMetadata->formatters());
             }
 
-            return new ObjectNode($type, $propertiesNodes);
+            return new ObjectNode($type, $propertiesNodes, $transformed);
         }
 
         if ($type->isCollection() && ($type->isList() || $type->isDict())) {

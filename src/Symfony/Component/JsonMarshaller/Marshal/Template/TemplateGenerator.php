@@ -65,6 +65,17 @@ final readonly class TemplateGenerator
                     new PhpScalarNode(0),
                 ))),
             ];
+
+            // TODO lazy instead
+            if (false === ($context['for_stream'] ?? false) && !$node->isTransformed()) {
+                return [
+                    ...$setupNodes,
+                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([
+                        new VariableNode('resource'),
+                        $this->encodeValue(new VariableNode('data')),
+                    ]))),
+                ];
+            }
         }
 
         if ($node instanceof CollectionNode) {

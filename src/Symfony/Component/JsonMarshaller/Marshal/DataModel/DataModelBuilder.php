@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonMarshaller\Marshal\DataModel;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonMarshaller\Exception\LogicException;
 use Symfony\Component\JsonMarshaller\Exception\MaxDepthException;
+use Symfony\Component\JsonMarshaller\Marshal\Mapping\PropertyMetadata;
 use Symfony\Component\JsonMarshaller\Marshal\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonMarshaller\Marshal\VariableNameScoperTrait;
 use Symfony\Component\JsonMarshaller\MarshallerInterface;
@@ -51,6 +52,7 @@ final readonly class DataModelBuilder
     public function build(Type $type, PhpNodeInterface $accessor, array $config, array $context = []): DataModelNodeInterface
     {
         if ($type->isObject() && $type->hasClass()) {
+            $transformed = false;
             $className = $type->className();
 
             $context['depth_counters'][$className] ??= 0;
@@ -61,12 +63,19 @@ final readonly class DataModelBuilder
                 throw new MaxDepthException($className, $maxDepth);
             }
 
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
+
+            if (array_values(array_map(fn (PropertyMetadata $m): string => $m->name(), $propertiesMetadata)) !== array_keys($propertiesMetadata)) {
+                $transformed = true;
+            }
+
             $propertiesNodes = [];
 
-            foreach ($this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context) as $marshalledName => $propertyMetadata) {
+            foreach ($propertiesMetadata as $marshalledName => $propertyMetadata) {
                 $propertyAccessor = new PropertyNode($accessor, $propertyMetadata->name());
 
                 foreach ($propertyMetadata->formatters() as $f) {
+                    $transformed = true;
                     $reflection = new \ReflectionFunction(\Closure::fromCallable($f));
                     $functionName = null === $reflection->getClosureScopeClass()
                         ? $reflection->getName()
@@ -101,9 +110,10 @@ final readonly class DataModelBuilder
                 }
 
                 $propertiesNodes[$marshalledName] = $this->build($propertyMetadata->type(), $propertyAccessor, $config, $context);
+                $transformed = $transformed || $propertiesNodes[$marshalledName]->isTransformed();
             }
 
-            return new ObjectNode($accessor, $type, $propertiesNodes);
+            return new ObjectNode($accessor, $type, $propertiesNodes, $transformed);
         }
 
         if ($type->isCollection() && ($type->isList() || $type->isDict())) {

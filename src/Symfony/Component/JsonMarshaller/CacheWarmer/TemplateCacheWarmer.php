@@ -61,7 +61,8 @@ final class TemplateCacheWarmer extends CacheWarmer
     private function warmTemplates(Type $type): void
     {
         try {
-            $this->writeCacheFile($this->marshalTemplate->path($type), $this->marshalTemplate->content($type));
+            $this->writeCacheFile($this->marshalTemplate->path($type, true), $this->marshalTemplate->content($type, true));
+            $this->writeCacheFile($this->marshalTemplate->path($type, false), $this->marshalTemplate->content($type, false));
         } catch (ExceptionInterface $e) {
             $this->logger->debug('Cannot generate "json" marshal template for "{type}": {exception}', [
                 'type' => (string) $type,

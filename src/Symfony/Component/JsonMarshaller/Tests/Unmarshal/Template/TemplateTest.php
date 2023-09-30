@@ -12,8 +12,8 @@
 namespace Symfony\Component\JsonMarshaller\Tests\Unmarshal\Template;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithOtherDummies;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonMarshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\JsonMarshaller\Type\ReflectionTypeExtractor;
@@ -76,17 +76,17 @@ class TemplateTest extends TestCase
         );
 
         $template = new Template(
-            new DataModelBuilder($propertyMetadataLoader, $this->createStub(ContainerInterface::class)),
+            new DataModelBuilder($propertyMetadataLoader, null),
             $this->cacheDir,
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/unmarshal/eager_%s.php', \dirname(__DIR__, 2), $fixture),
+            sprintf('%s/Fixtures/templates/unmarshal/%s.eager.php', \dirname(__DIR__, 2), $fixture),
             $template->content($type, false, []),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/unmarshal/lazy_%s.php', \dirname(__DIR__, 2), $fixture),
+            sprintf('%s/Fixtures/templates/unmarshal/%s.lazy.php', \dirname(__DIR__, 2), $fixture),
             $template->content($type, true, []),
         );
     }
@@ -102,13 +102,17 @@ class TemplateTest extends TestCase
         yield ['nullable_backed_enum', Type::enum(DummyBackedEnum::class, nullable: true)];
 
         yield ['list', Type::list()];
-        yield ['nullable_list', Type::list(nullable: true)];
+        yield ['object_list', Type::list(Type::class(ClassicDummy::class))];
+        yield ['nullable_object_list', Type::list(Type::class(ClassicDummy::class), nullable: true)];
         yield ['iterable_list', Type::iterableList()];
+
         yield ['dict', Type::dict()];
-        yield ['nullable_dict', Type::dict(nullable: true)];
+        yield ['object_dict', Type::dict(Type::class(ClassicDummy::class))];
+        yield ['nullable_object_dict', Type::dict(Type::class(ClassicDummy::class), nullable: true)];
         yield ['iterable_dict', Type::iterableDict()];
 
         yield ['object', Type::class(ClassicDummy::class)];
         yield ['nullable_object', Type::class(ClassicDummy::class, nullable: true)];
+        yield ['object_in_object', Type::class(DummyWithOtherDummies::class)];
     }
 }

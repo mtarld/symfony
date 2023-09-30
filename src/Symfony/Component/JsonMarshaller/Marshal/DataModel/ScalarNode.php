@@ -35,4 +35,9 @@ final readonly class ScalarNode implements DataModelNodeInterface
     {
         return $this->type;
     }
+
+    public function isTransformed(): bool
+    {
+        return $this->type->isBackedEnum();
+    }
 }

@@ -23,4 +23,9 @@ use Symfony\Component\JsonMarshaller\Type\Type;
 interface DataModelNodeInterface
 {
     public function type(): Type;
+
+    /**
+     * Whether the data will be transformed during the marshal process.
+     */
+    public function isTransformed(): bool;
 }

@@ -19,17 +19,25 @@ use Symfony\Component\JsonMarshaller\Php\FunctionCallNode;
 use Symfony\Component\JsonMarshaller\Php\MethodCallNode;
 use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
 use Symfony\Component\JsonMarshaller\Php\VariableNode;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithMethods;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithOtherDummies;
+use Symfony\Component\JsonMarshaller\Type\PhpstanTypeExtractor;
+use Symfony\Component\JsonMarshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\JsonMarshaller\Type\Type;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\CollectionNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelBuilder;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelNodeInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ObjectNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ScalarNode;
+use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadata;
+use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\TypePropertyMetadataLoader;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
 class DataModelBuilderTest extends TestCase
@@ -62,6 +70,39 @@ class DataModelBuilderTest extends TestCase
         yield [Type::class(self::class), new ObjectNode(Type::class(self::class), [], false)];
     }
 
+    /**
+     * @dataProvider transformedDataModelDataProvider
+     */
+    public function testTransformedDataModel(bool $transformed, Type $type)
+    {
+        $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
+        $dataModelBuilder = new DataModelBuilder(
+            new AttributePropertyMetadataLoader(new TypePropertyMetadataLoader(new PropertyMetadataLoader($typeExtractor), $typeExtractor), $typeExtractor),
+            null,
+        );
+
+        $this->assertEquals(
+            $transformed,
+            $dataModelBuilder->build($type, [])->isTransformed(),
+        );
+    }
+
+    /**
+     * @return iterable<array{0: bool, 1: Type}>
+     */
+    public static function transformedDataModelDataProvider(): iterable
+    {
+        yield [false, Type::int()];
+        yield [false, Type::object()];
+        yield [false, Type::list(Type::int())];
+        yield [false, Type::iterableList(Type::int())];
+        yield [false, Type::class(ClassicDummy::class)];
+        yield [true, Type::class(DummyWithNameAttributes::class)];
+        yield [true, Type::class(DummyWithFormatterAttributes::class)];
+        yield [true, Type::list(Type::class(DummyWithNameAttributes::class))];
+        yield [true, Type::class(DummyWithOtherDummies::class)];
+    }
+
     public function testAddGhostLeafWhenClassAlreadyGenerated()
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
@@ -70,9 +111,9 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(new ObjectNode(Type::class(self::class), [[
             'name' => 'foo',
-            'value' => new ObjectNode(Type::class(self::class), [], true),
+            'value' => new ObjectNode(Type::class(self::class), [], false, true),
             'formatter' => fn () => false,
-        ]], false), $dataModelBuilder->build(Type::class(self::class), []));
+        ]], true), $dataModelBuilder->build(Type::class(self::class), []));
     }
 
     public function testCallPropertyMetadataLoaderWithProperContext()

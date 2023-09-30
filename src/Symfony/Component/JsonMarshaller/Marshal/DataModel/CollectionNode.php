@@ -23,15 +23,23 @@ use Symfony\Component\JsonMarshaller\Type\Type;
  */
 final readonly class CollectionNode implements DataModelNodeInterface
 {
+    public bool $transformed;
+
     public function __construct(
         public PhpNodeInterface $accessor,
         public Type $type,
         public DataModelNodeInterface $item,
     ) {
+        $this->transformed = $item->isTransformed();
     }
 
     public function type(): Type
     {
         return $this->type;
+    }
+
+    public function isTransformed(): bool
+    {
+        return $this->transformed;
     }
 }

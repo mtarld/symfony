@@ -25,4 +25,9 @@ interface DataModelNodeInterface
     public function identifier(): string;
 
     public function type(): Type;
+
+    /**
+     * Whether the data will be transformed during the unmarshal process.
+     */
+    public function isTransformed(): bool;
 }

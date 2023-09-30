@@ -37,4 +37,9 @@ final readonly class CollectionNode implements DataModelNodeInterface
     {
         return $this->type;
     }
+
+    public function isTransformed(): bool
+    {
+        return $this->item->isTransformed();
+    }
 }

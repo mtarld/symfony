@@ -28,13 +28,14 @@ final readonly class ObjectNode implements DataModelNodeInterface
     public function __construct(
         public Type $type,
         public array $properties,
+        public bool $transformed,
         public bool $ghost = false,
     ) {
     }
 
     public static function ghost(Type $type): self
     {
-        return new self($type, [], ghost: true);
+        return new self($type, [], false, ghost: true);
     }
 
     public function identifier(): string
@@ -45,5 +46,10 @@ final readonly class ObjectNode implements DataModelNodeInterface
     public function type(): Type
     {
         return $this->type;
+    }
+
+    public function isTransformed(): bool
+    {
+        return $this->transformed;
     }
 }

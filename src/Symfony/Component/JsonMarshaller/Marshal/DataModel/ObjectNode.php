@@ -30,11 +30,17 @@ final readonly class ObjectNode implements DataModelNodeInterface
         public PhpNodeInterface $accessor,
         public Type $type,
         public array $properties,
+        public bool $transformed,
     ) {
     }
 
     public function type(): Type
     {
         return $this->type;
+    }
+
+    public function isTransformed(): bool
+    {
+        return $this->transformed;
     }
 }

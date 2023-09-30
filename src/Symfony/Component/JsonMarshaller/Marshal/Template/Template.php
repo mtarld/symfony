@@ -40,15 +40,21 @@ final readonly class Template
     ) {
     }
 
-    public function path(Type $type): string
+    public function path(Type $type, bool $forStream): string
     {
-        return sprintf('%s%s%s.marshal.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type));
+        return sprintf(
+            '%s%s%s.marshal.json.%s.php',
+            $this->cacheDir,
+            \DIRECTORY_SEPARATOR,
+            hash('xxh128', (string) $type),
+            $forStream ? 'stream' : 'string',
+        );
     }
 
     /**
      * @param JsonMarshalConfig $config
      */
-    public function content(Type $type, array $config = []): string
+    public function content(Type $type, bool $forStream, array $config = []): string
     {
         $compiler = new Compiler();
 
@@ -68,7 +74,9 @@ final readonly class Template
         ]);
 
         $compiler->indent();
-        $bodyNodes = (new TemplateGenerator())->generate($this->dataModelBuilder->build($type, new VariableNode('data'), $config), $config, []);
+        $bodyNodes = (new TemplateGenerator())->generate($this->dataModelBuilder->build($type, new VariableNode('data'), $config), $config, [
+            'for_stream' => $forStream,
+        ]);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));
