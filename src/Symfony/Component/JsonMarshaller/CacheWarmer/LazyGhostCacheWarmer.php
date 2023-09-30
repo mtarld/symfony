@@ -17,7 +17,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
  * Generates lazy ghost {@see Symfony\Component\VarExporter\LazyGhostTrait}
- * PHP files for $serializable types.
+ * PHP files for $marshallable types.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -26,10 +26,10 @@ use Symfony\Component\VarExporter\ProxyHelper;
 final class LazyGhostCacheWarmer extends CacheWarmer
 {
     /**
-     * @param list<string> $serializable
+     * @param list<string> $marshallable
      */
     public function __construct(
-        private readonly array $serializable,
+        private readonly array $marshallable,
         private readonly string $lazyGhostCacheDir,
     ) {
     }
@@ -40,7 +40,7 @@ final class LazyGhostCacheWarmer extends CacheWarmer
             mkdir($this->lazyGhostCacheDir, recursive: true);
         }
 
-        foreach ($this->serializable as $s) {
+        foreach ($this->marshallable as $s) {
             $type = Type::fromString($s);
 
             if (!$type->isObject() || !$type->hasClass()) {

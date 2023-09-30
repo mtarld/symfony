@@ -26,7 +26,6 @@ use Symfony\Component\JsonMarshaller\Unmarshal\Template\Template as UnmarshalTem
  *
  * @internal
  */
-// TODO composer for cache warmer?
 final class TemplateCacheWarmer extends CacheWarmer
 {
     /**
@@ -37,7 +36,6 @@ final class TemplateCacheWarmer extends CacheWarmer
         private readonly MarshalTemplate $marshalTemplate,
         private readonly UnmarshalTemplate $unmarshalTemplate,
         private readonly string $templateCacheDir,
-        // TODO composer
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }

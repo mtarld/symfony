@@ -27,19 +27,19 @@ final class MarshallerPass implements CompilerPassInterface
             return;
         }
 
-        $serializable = [];
+        $marshallable = [];
         foreach ($container->getDefinitions() as $definition) {
             if (!$definition->hasTag('marshaller.marshallable')) {
                 continue;
             }
 
-            $serializable[] = $definition->getClass();
+            $marshallable[] = $definition->getClass();
         }
 
         $container->getDefinition('.marshaller.json.cache_warmer.template')
-            ->replaceArgument(0, $serializable);
+            ->replaceArgument(0, $marshallable);
 
         $container->getDefinition('.marshaller.cache_warmer.lazy_ghost')
-            ->replaceArgument(0, $serializable);
+            ->replaceArgument(0, $marshallable);
     }
 }
