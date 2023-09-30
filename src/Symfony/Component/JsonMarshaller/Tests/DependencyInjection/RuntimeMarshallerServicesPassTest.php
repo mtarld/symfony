@@ -14,7 +14,6 @@ namespace Symfony\Component\JsonMarshaller\Tests\DependencyInjection;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\TypedReference;
 use Symfony\Component\JsonMarshaller\DependencyInjection\RuntimeMarshallerServicesPass;
@@ -50,38 +49,11 @@ class RuntimeMarshallerServicesPassTest extends TestCase
 
         $runtimeService = $runtimeServices[sprintf('%s::serviceAndConfig[service]', DummyWithAttributesUsingServices::class)];
         $this->assertInstanceOf(ServiceClosureArgument::class, $runtimeService);
-        $this->assertEquals([new TypedReference(
-            TypeExtractorInterface::class,
-            TypeExtractorInterface::class,
-            ContainerInterface::RUNTIME_EXCEPTION_ON_INVALID_REFERENCE,
-            'service',
-        )], $runtimeService->getValues());
+        $this->assertEquals([new TypedReference(TypeExtractorInterface::class, TypeExtractorInterface::class, name: 'service')], $runtimeService->getValues());
 
         $runtimeService = $runtimeServices[sprintf('%s::autowireAttribute[service]', DummyWithAttributesUsingServices::class)];
         $this->assertInstanceOf(ServiceClosureArgument::class, $runtimeService);
-        $this->assertEquals([new Reference(
-            'marshaller.type_extractor',
-            ContainerInterface::NULL_ON_INVALID_REFERENCE,
-            'service',
-        )], $runtimeService->getValues());
-
-        $runtimeService = $runtimeServices[sprintf('%s::invalidNullableService[invalid]', DummyWithAttributesUsingServices::class)];
-        $this->assertInstanceOf(ServiceClosureArgument::class, $runtimeService);
-        $this->assertEquals([new TypedReference(
-            \InvalidInterface::class,
-            \InvalidInterface::class,
-            ContainerInterface::NULL_ON_INVALID_REFERENCE,
-            'invalid',
-        )], $runtimeService->getValues());
-
-        $runtimeService = $runtimeServices[sprintf('%s::invalidOptionalService[invalid]', DummyWithAttributesUsingServices::class)];
-        $this->assertInstanceOf(ServiceClosureArgument::class, $runtimeService);
-        $this->assertEquals([new TypedReference(
-            \InvalidInterface::class,
-            \InvalidInterface::class,
-            ContainerInterface::IGNORE_ON_INVALID_REFERENCE,
-            'invalid',
-        )], $runtimeService->getValues());
+        $this->assertEquals([new Reference('custom_service')], $runtimeService->getValues());
 
         $this->assertArrayNotHasKey(sprintf('%s::skippedUnknownService[skipped]', DummyWithAttributesUsingServices::class), $runtimeServices);
 
@@ -89,8 +61,6 @@ class RuntimeMarshallerServicesPassTest extends TestCase
 
         $this->assertArrayNotHasKey(sprintf('%s::serviceAndConfig[value]', DummyWithAttributesUsingServices::class), $runtimeServices);
         $this->assertArrayNotHasKey(sprintf('%s::autowireAttribute[value]', DummyWithAttributesUsingServices::class), $runtimeServices);
-        $this->assertArrayNotHasKey(sprintf('%s::invalidNullableService[value]', DummyWithAttributesUsingServices::class), $runtimeServices);
-        $this->assertArrayNotHasKey(sprintf('%s::invalidOptionalService[value]', DummyWithAttributesUsingServices::class), $runtimeServices);
         $this->assertArrayNotHasKey(sprintf('%s::skippedUnknownService[value]', DummyWithAttributesUsingServices::class), $runtimeServices);
     }
 }

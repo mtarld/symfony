@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\JsonMarshaller\Unmarshal\Template;
 
-use Symfony\Component\JsonMarshaller\Exception\UnexpectedValueException;
 use Symfony\Component\JsonMarshaller\Php\ArgumentsNode;
 use Symfony\Component\JsonMarshaller\Php\ArrayAccessNode;
 use Symfony\Component\JsonMarshaller\Php\ArrayNode;
@@ -24,13 +23,10 @@ use Symfony\Component\JsonMarshaller\Php\ForEachNode;
 use Symfony\Component\JsonMarshaller\Php\FunctionCallNode;
 use Symfony\Component\JsonMarshaller\Php\IfNode;
 use Symfony\Component\JsonMarshaller\Php\MethodCallNode;
-use Symfony\Component\JsonMarshaller\Php\NewNode;
 use Symfony\Component\JsonMarshaller\Php\ParametersNode;
 use Symfony\Component\JsonMarshaller\Php\PhpNodeInterface;
 use Symfony\Component\JsonMarshaller\Php\ReturnNode;
 use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
-use Symfony\Component\JsonMarshaller\Php\ThrowNode;
-use Symfony\Component\JsonMarshaller\Php\TryCatchNode;
 use Symfony\Component\JsonMarshaller\Php\VariableNode;
 use Symfony\Component\JsonMarshaller\Php\YieldNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\CollectionNode;
@@ -57,25 +53,27 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
                         new VariableNode('resource'),
                         new PhpScalarNode(0),
                         new PhpScalarNode(-1),
-                        new VariableNode('config'),
+                        new VariableNode('jsonDecodeFlags'),
                     ]), static: true),
                 ]),
             ))),
         ];
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return list<PhpNodeInterface>
-     */
     protected function collectionNodes(CollectionNode $node, array &$context): array
     {
-        $returnNullNodes = $node->type->isNullable() ? [
+        $returnNullNodes = $node->type()->isNullable() ? [
             new IfNode(new BinaryNode('===', new PhpScalarNode(null), new VariableNode('data')), [
                 new ExpressionNode(new ReturnNode(new PhpScalarNode(null))),
             ]),
         ] : [];
+
+        $itemValueNode = $node->item instanceof ScalarNode
+            ? $this->prepareScalarNode($node->item, new VariableNode('v'))
+            : new FunctionCallNode(
+                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->item->identifier())),
+                new ArgumentsNode([new VariableNode('v')]),
+            );
 
         $iterableClosureNodes = [
             new ExpressionNode(new AssignNode(
@@ -83,16 +81,14 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
                 new ClosureNode(new ParametersNode(['data' => 'iterable']), 'iterable', true, [
                     new ForEachNode(new VariableNode('data'), new VariableNode('k'), new VariableNode('v'), [
                         new ExpressionNode(new YieldNode(
-                            new FunctionCallNode(
-                                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->item->identifier())),
-                                new ArgumentsNode([new VariableNode('v')]),
-                            ),
+                            $itemValueNode,
                             new VariableNode('k'),
                         )),
                     ]),
                 ], new ArgumentsNode([
                     new VariableNode('config'),
                     new VariableNode('instantiator'),
+                    new VariableNode('services'),
                     new VariableNode('providers', byReference: true),
                 ])),
             )),
@@ -102,49 +98,55 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
 
         $returnNodes = [
             new ExpressionNode(new ReturnNode(
-                'array' === $node->type->name() ? new FunctionCallNode('\iterator_to_array', new ArgumentsNode([$iterableValueNode])) : $iterableValueNode,
+                'array' === $node->type()->name() ? new FunctionCallNode('\iterator_to_array', new ArgumentsNode([$iterableValueNode])) : $iterableValueNode,
             )),
         ];
+
+        $providerNodes = $node->item instanceof ScalarNode ? [] : $this->providerNodes($node->item, $context);
 
         return [
             new ExpressionNode(new AssignNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->identifier())),
                 new ClosureNode(
                     new ParametersNode(['data' => '?iterable']),
-                    ($node->type->isNullable() ? '?' : '').$node->type->name(),
+                    ($node->type()->isNullable() ? '?' : '').$node->type()->name(),
                     true,
                     [...$returnNullNodes, ...$iterableClosureNodes, ...$returnNodes],
                     new ArgumentsNode([
                         new VariableNode('config'),
                         new VariableNode('instantiator'),
+                        new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
                     ]),
                 ),
             )),
-            ...$this->providerNodes($node->item, $context),
+            ...$providerNodes,
         ];
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return list<PhpNodeInterface>
-     */
     protected function objectNodes(ObjectNode $node, array &$context): array
     {
-        $returnNullNodes = $node->type->isNullable() ? [
+        $returnNullNodes = $node->type()->isNullable() ? [
             new IfNode(new BinaryNode('===', new PhpScalarNode(null), new VariableNode('data')), [
                 new ExpressionNode(new ReturnNode(new PhpScalarNode(null))),
             ]),
         ] : [];
 
         $propertyValueProvidersNodes = [];
-        $fillPropertiesArrayNodes = [
-            new ExpressionNode(new AssignNode(new VariableNode('properties'), new ArrayNode([]))),
-        ];
+        $fillPropertiesArrayNodes = [new ExpressionNode(new AssignNode(new VariableNode('properties'), new ArrayNode([])))];
 
         foreach ($node->properties as $marshalledName => $property) {
-            array_push($propertyValueProvidersNodes, ...$this->providerNodes($property['value'], $context));
+            $propertyValueProvidersNodes = [
+                ...$propertyValueProvidersNodes,
+                ...($property['value'] instanceof ScalarNode ? [] : $this->providerNodes($property['value'], $context)),
+            ];
+
+            $propertyValueNode = $property['value'] instanceof ScalarNode
+                ? $this->prepareScalarNode($property['value'], new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName)))
+                : new FunctionCallNode(
+                    new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->identifier())),
+                    new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName))]),
+                );
 
             $fillPropertiesArrayNodes[] = new IfNode(new FunctionCallNode(
                 'isset',
@@ -153,14 +155,12 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
                 new ExpressionNode(new AssignNode(
                     new ArrayAccessNode(new VariableNode('properties'), new PhpScalarNode($property['name'])),
                     new ClosureNode(new ParametersNode([]), 'mixed', true, [
-                        new ExpressionNode(new ReturnNode(($property['formatter'])(new FunctionCallNode(
-                            new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->identifier())),
-                            new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName))]),
-                        )))),
+                        new ExpressionNode(new ReturnNode(($property['formatter'])($propertyValueNode))),
                     ], new ArgumentsNode([
                         new VariableNode('data'),
                         new VariableNode('config'),
                         new VariableNode('instantiator'),
+                        new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
                     ])),
                 )),
@@ -171,7 +171,7 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
             new ExpressionNode(new ReturnNode(new MethodCallNode(
                 new VariableNode('instantiator'),
                 'instantiate',
-                new ArgumentsNode([new PhpScalarNode($node->type->className()), new VariableNode('properties')]),
+                new ArgumentsNode([new PhpScalarNode($node->type()->className()), new VariableNode('properties')]),
             ))),
         ];
 
@@ -180,12 +180,13 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->identifier())),
                 new ClosureNode(
                     new ParametersNode(['data' => '?array']),
-                    ($node->type->isNullable() ? '?' : '').$node->type->className(),
+                    ($node->type()->isNullable() ? '?' : '').$node->type()->className(),
                     true,
                     [...$returnNullNodes, ...$fillPropertiesArrayNodes, ...$instantiateNodes],
                     new ArgumentsNode([
                         new VariableNode('config'),
                         new VariableNode('instantiator'),
+                        new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
                     ]),
                 ),
@@ -194,52 +195,8 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
         ];
     }
 
-    /**
-     * @param array<string, mixed> $context
-     *
-     * @return list<PhpNodeInterface>
-     */
     protected function scalarNodes(ScalarNode $node, array &$context): array
     {
-        $returnNullNodes = $node->type->isNullable() ? [
-            new IfNode(new BinaryNode('===', new PhpScalarNode(null), new VariableNode('data')), [
-                new ExpressionNode(new ReturnNode(new PhpScalarNode(null))),
-            ]),
-        ] : [];
-
-        $formatDataNodes = match (true) {
-            \in_array($node->type->name(), ['int', 'string', 'float', 'bool', 'object', 'array'], true) => [
-                new TryCatchNode([new ExpressionNode(new ReturnNode(new CastNode($node->type->name(), new VariableNode('data'))))], [
-                    new ExpressionNode(new ThrowNode(new NewNode('\\'.UnexpectedValueException::class, new ArgumentsNode([
-                        new FunctionCallNode('sprintf', new ArgumentsNode([
-                            new PhpScalarNode(sprintf('Cannot cast "%%s" to "%s"', $node->type->name())),
-                            new FunctionCallNode('get_debug_type', new ArgumentsNode([new VariableNode('data')])),
-                        ])),
-                    ])))),
-                ], new ParametersNode(['e' => '\\Throwable'])),
-            ],
-            $node->type->isBackedEnum() => [
-                new TryCatchNode([
-                    new ExpressionNode(new ReturnNode(new MethodCallNode(
-                        new PhpScalarNode($node->type->className()),
-                        'from',
-                        new ArgumentsNode([new VariableNode('data')]),
-                        static: true,
-                    ))),
-                ], [
-                    new ExpressionNode(new ThrowNode(new NewNode('\\'.UnexpectedValueException::class, new ArgumentsNode([
-                        new FunctionCallNode('sprintf', new ArgumentsNode([
-                            new PhpScalarNode(sprintf('Unexpected "%%s" value for "%s" backed enumeration.', $node->type)),
-                            new VariableNode('data'),
-                        ])),
-                    ])))),
-                ], new ParametersNode(['e' => '\\ValueError'])),
-            ],
-            default => [
-                new ExpressionNode(new ReturnNode(new VariableNode('data'))),
-            ],
-        };
-
         return [
             new ExpressionNode(new AssignNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->identifier())),
@@ -247,14 +204,27 @@ final readonly class EagerTemplateGenerator extends TemplateGenerator
                     new ParametersNode(['data' => 'mixed']),
                     'mixed',
                     true,
-                    [...$returnNullNodes, ...$formatDataNodes],
-                    new ArgumentsNode([
-                        new VariableNode('config'),
-                        new VariableNode('instantiator'),
-                        new VariableNode('providers', byReference: true),
-                    ]),
+                    [new ExpressionNode(new ReturnNode($this->prepareScalarNode($node, new VariableNode('data'))))],
                 ),
             )),
         ];
+    }
+
+    private function prepareScalarNode(ScalarNode $node, PhpNodeInterface $accessor): PhpNodeInterface
+    {
+        if ($node->type()->isBackedEnum()) {
+            return new MethodCallNode(
+                new PhpScalarNode($node->type()->className()),
+                $node->type()->isNullable() ? 'tryFrom' : 'from',
+                new ArgumentsNode([$accessor]),
+                static: true,
+            );
+        }
+
+        if ('object' === $node->type()->name()) {
+            return new CastNode('object', $accessor);
+        }
+
+        return $accessor;
     }
 }

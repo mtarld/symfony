@@ -30,14 +30,14 @@ use Symfony\Component\JsonMarshaller\Unmarshal\Template\Template;
  *   json_decode_flags?: int,
  * }
  */
-final class JsonUnmarshaller implements UnmarshallerInterface
+final readonly class JsonUnmarshaller implements UnmarshallerInterface
 {
     public function __construct(
-        private readonly Template $template,
-        private readonly InstantiatorInterface $instantiator,
-        private readonly string $templateCacheDir,
-        private readonly bool $defaultLazy,
-        private readonly ?ContainerInterface $runtimeServices = null,
+        private Template $template,
+        private InstantiatorInterface $instantiator,
+        private string $templateCacheDir,
+        private bool $defaultLazy,
+        private ?ContainerInterface $runtimeServices = null,
     ) {
     }
 
@@ -81,7 +81,6 @@ final class JsonUnmarshaller implements UnmarshallerInterface
             @chmod($path, 0666 & ~umask());
         }
 
-        // TODO test custom instantiator
         return (require $path)($input, $config, $config['instantiator'] ?? $this->instantiator, $this->runtimeServices);
     }
 }

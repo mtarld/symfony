@@ -19,24 +19,24 @@ class DecoderTest extends TestCase
 {
     public function testDecode()
     {
-        $this->assertSame('foo', Decoder::decode($this->createResource('"foo"'), 0, -1, []));
+        $this->assertSame('foo', Decoder::decode($this->createResource('"foo"'), 0, -1));
     }
 
     public function testDecodeSubset()
     {
-        $this->assertSame('bar', Decoder::decode($this->createResource('["foo","bar","baz"]'), 7, 5, []));
+        $this->assertSame('bar', Decoder::decode($this->createResource('["foo","bar","baz"]'), 7, 5));
     }
 
     public function testDecodeWithJsonDecodeFlags()
     {
         $this->assertSame(
             1.2345678901234568E+29,
-            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1, []),
+            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1),
         );
 
         $this->assertSame(
             '123456789012345678901234567890',
-            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1, ['json_decode_flags' => \JSON_BIGINT_AS_STRING]),
+            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1, \JSON_BIGINT_AS_STRING),
         );
     }
 
@@ -44,14 +44,14 @@ class DecoderTest extends TestCase
     {
         $this->expectException(InvalidResourceException::class);
 
-        Decoder::decode(fopen(sprintf('%s/%s', sys_get_temp_dir(), uniqid()), 'w'), 0, -1, []);
+        Decoder::decode(fopen(sprintf('%s/%s', sys_get_temp_dir(), uniqid()), 'w'), 0, -1);
     }
 
     public function testDecodeThrowOnInvalidJson()
     {
         $this->expectException(InvalidResourceException::class);
 
-        Decoder::decode($this->createResource('foo"'), 0, -1, []);
+        Decoder::decode($this->createResource('foo"'), 0, -1);
     }
 
     /**

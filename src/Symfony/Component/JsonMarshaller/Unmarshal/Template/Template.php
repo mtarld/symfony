@@ -42,13 +42,11 @@ final readonly class Template
 
     public function path(Type $type, bool $lazy): string
     {
-        $hash = hash('xxh128', (string) $type);
-
         return sprintf(
             '%s%s%s.unmarshal.%s.json.php',
             $this->cacheDir,
             \DIRECTORY_SEPARATOR,
-            $hash,
+            hash('xxh128', (string) $type),
             $lazy ? 'lazy' : 'eager',
         );
     }
@@ -73,7 +71,7 @@ final readonly class Template
             'resource' => 'mixed',
             'config' => 'array',
             'instantiator' => '\\'.InstantiatorInterface::class,
-            'services' => '\\'.ContainerInterface::class,
+            'services' => '?\\'.ContainerInterface::class,
         ]);
 
         $compiler->indent();

@@ -20,6 +20,7 @@ use Symfony\Component\JsonMarshaller\Marshal\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Marshal\Mapping\TypePropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Marshal\Template\Template;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Enum\DummyBackedEnum;
@@ -111,6 +112,20 @@ class JsonMarshallerTest extends TestCase
         );
     }
 
+    public function testMarshalObjectWithRuntimeServices()
+    {
+        $dummy = new DummyWithAttributesUsingServices();
+
+        $services = [
+            sprintf('%s::autowireAttribute[service]', DummyWithAttributesUsingServices::class) => fn () => fn (string $s) => strtoupper($s),
+        ];
+
+        $this->assertEquals(
+            '{"one":"one","two":"USELESS","three":"three"}',
+            $this->marshaller($services)->marshal($dummy),
+        );
+    }
+
     public function testCreateCacheFile()
     {
         $this->marshaller()->marshal(true);
@@ -152,13 +167,13 @@ class JsonMarshallerTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $runtimeServices
+     * @param array<string, mixed>|null $runtimeServices
      */
-    private function marshaller(array $runtimeServices = []): JsonMarshaller
+    private function marshaller(array $runtimeServices = null): JsonMarshaller
     {
-        $runtimeServicesLocator = new class($runtimeServices) implements ContainerInterface {
+        $runtimeServicesLocator = null !== $runtimeServices ? new class($runtimeServices) implements ContainerInterface {
             use ServiceLocatorTrait;
-        };
+        } : null;
 
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
 

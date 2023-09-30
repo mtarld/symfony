@@ -12,28 +12,22 @@
 namespace Symfony\Component\JsonMarshaller\Unmarshal\Template;
 
 use Symfony\Component\JsonMarshaller\Exception\InvalidResourceException;
-use Symfony\Component\JsonMarshaller\JsonUnmarshaller;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type JsonUnmarshalConfig from JsonUnmarshaller
  */
 final readonly class Decoder
 {
-    /**
-     * @param JsonUnmarshalConfig $config
-     */
-    public static function decode(mixed $resource, int $offset, int $length, array $config): mixed
+    public static function decode(mixed $resource, int $offset, int $length, int $flags = 0): mixed
     {
         if ('' === $content = @stream_get_contents($resource, $length, $offset)) {
             throw new InvalidResourceException($resource);
         }
 
         try {
-            return json_decode($content, associative: true, flags: ($config['json_decode_flags'] ?? 0) | \JSON_THROW_ON_ERROR);
+            return json_decode($content, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             throw new InvalidResourceException($resource);
         }

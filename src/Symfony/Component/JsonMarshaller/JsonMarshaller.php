@@ -30,12 +30,12 @@ use Symfony\Component\JsonMarshaller\Type\Type;
  *   json_encode_flags?: int,
  * }
  */
-final class JsonMarshaller implements MarshallerInterface
+final readonly class JsonMarshaller implements MarshallerInterface
 {
     public function __construct(
-        private readonly Template $template,
-        private readonly string $templateCacheDir,
-        private readonly ?ContainerInterface $runtimeServices = null,
+        private Template $template,
+        private string $templateCacheDir,
+        private ?ContainerInterface $runtimeServices = null,
     ) {
     }
 
@@ -55,7 +55,6 @@ final class JsonMarshaller implements MarshallerInterface
         }
 
         $type = $config['type'] ?? Type::fromString(get_debug_type($data));
-        $config['json_encode_flags'] ??= 0;
 
         $path = $this->template->path($type);
 

@@ -12,7 +12,13 @@
 namespace Symfony\Component\JsonMarshaller\Unmarshal\Template;
 
 use Symfony\Component\JsonMarshaller\Exception\LogicException;
+use Symfony\Component\JsonMarshaller\Php\ArrayAccessNode;
+use Symfony\Component\JsonMarshaller\Php\AssignNode;
+use Symfony\Component\JsonMarshaller\Php\BinaryNode;
+use Symfony\Component\JsonMarshaller\Php\ExpressionNode;
 use Symfony\Component\JsonMarshaller\Php\PhpNodeInterface;
+use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
+use Symfony\Component\JsonMarshaller\Php\VariableNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\CollectionNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelNodeInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\ObjectNode;
@@ -67,6 +73,11 @@ abstract readonly class TemplateGenerator
     final public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         return [
+            new ExpressionNode(new AssignNode(new VariableNode('jsonDecodeFlags'), new BinaryNode(
+                '??',
+                new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_decode_flags')),
+                new PhpScalarNode(0),
+            ))),
             ...$this->providerNodes($node, $context),
             ...$this->returnDataNodes($node, $context),
         ];

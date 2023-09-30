@@ -23,7 +23,7 @@ use Symfony\Component\JsonMarshaller\Exception\UnexpectedValueException;
  *
  * @experimental in 7.1
  */
-final class EagerInstantiator implements InstantiatorInterface
+final readonly class EagerInstantiator implements InstantiatorInterface
 {
     public function instantiate(string $className, array $properties): object
     {

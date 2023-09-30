@@ -4,8 +4,9 @@
  * @param resource $resource
  * @return ?Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy
  */
-return static function (mixed $resource, array $config, \Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterface $instantiator, \Psr\Container\ContainerInterface $services): mixed {
-    $providers["?Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, &$providers): ?Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy {
+return static function (mixed $resource, array $config, \Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services): mixed {
+    $jsonDecodeFlags = $config["json_decode_flags"] ?? 0;
+    $providers["?Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, &$providers, $jsonDecodeFlags): ?Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy {
         $boundaries = "\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Splitter"::splitDict($resource, $offset, $length);
         if (null === $boundaries) {
             return null;
@@ -13,35 +14,19 @@ return static function (mixed $resource, array $config, \Symfony\Component\JsonM
         $properties = [];
         foreach ($boundaries as $k => $b) {
             if ("id" === $k) {
-                $properties["id"] = static function () use ($resource, $b, $config, $instantiator, &$providers): mixed {
-                    return ($providers["int"])($resource, $b[0], $b[1]);
+                $properties["id"] = static function () use ($resource, $b, $config, $instantiator, &$providers, $jsonDecodeFlags): mixed {
+                    return "\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
                 };
                 continue;
             }
             if ("name" === $k) {
-                $properties["name"] = static function () use ($resource, $b, $config, $instantiator, &$providers): mixed {
-                    return ($providers["string"])($resource, $b[0], $b[1]);
+                $properties["name"] = static function () use ($resource, $b, $config, $instantiator, &$providers, $jsonDecodeFlags): mixed {
+                    return "\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
                 };
                 continue;
             }
         }
         return $instantiator->instantiate("Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy", $properties);
-    };
-    $providers["int"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, &$providers): mixed {
-        $data = "\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Decoder"::decode($resource, $offset, $length, $config);
-        try {
-            return (int) ($data);
-        } catch (\Throwable $e) {
-            throw new \Symfony\Component\JsonMarshaller\Exception\UnexpectedValueException(sprintf("Cannot cast \"%s\" to \"int\"", get_debug_type($data)));
-        }
-    };
-    $providers["string"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, &$providers): mixed {
-        $data = "\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Decoder"::decode($resource, $offset, $length, $config);
-        try {
-            return (string) ($data);
-        } catch (\Throwable $e) {
-            throw new \Symfony\Component\JsonMarshaller\Exception\UnexpectedValueException(sprintf("Cannot cast \"%s\" to \"string\"", get_debug_type($data)));
-        }
     };
     return ($providers["?Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy"])($resource, 0, -1);
 };

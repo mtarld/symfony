@@ -18,7 +18,7 @@ use Symfony\Component\JsonMarshaller\Exception\InvalidResourceException;
  *
  * @internal
  */
-final class Lexer
+final readonly class Lexer
 {
     private const MAX_CHUNK_LENGTH = 8192;
 

@@ -15,14 +15,17 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonMarshaller\JsonUnmarshaller;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\ClassicDummy;
+use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithFormatterAttributes;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Dto\DummyWithNameAttributes;
 use Symfony\Component\JsonMarshaller\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonMarshaller\Type\PhpstanTypeExtractor;
 use Symfony\Component\JsonMarshaller\Type\ReflectionTypeExtractor;
 use Symfony\Component\JsonMarshaller\Type\Type;
+use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelBuilder;
 use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\EagerInstantiator;
+use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\TypePropertyMetadataLoader;
@@ -128,6 +131,38 @@ class JsonUnmarshallerTest extends TestCase
         );
     }
 
+    public function testUnmarshalObjectWithRuntimeServices()
+    {
+        $dummy = new DummyWithAttributesUsingServices();
+        $dummy->one = 'bool';
+
+        $typeExtractor = $this->createStub(TypeExtractorInterface::class);
+        $typeExtractor->method('extractTypeFromProperty')->willReturn(Type::bool());
+
+        $services = [
+            sprintf('%s::serviceAndConfig[service]', DummyWithAttributesUsingServices::class) => fn () => $typeExtractor,
+        ];
+
+        $this->assertEquals(
+            $dummy,
+            $this->unmarshaller($services)->unmarshal('{"one":"one","two":"two","three":"three"}', Type::class(DummyWithAttributesUsingServices::class)),
+        );
+    }
+
+    public function testUnmarshalObjectWithCustomInstantiator()
+    {
+        $instantiated = new ClassicDummy();
+        $instantiated->id = 69004;
+
+        $instantiator = $this->createStub(InstantiatorInterface::class);
+        $instantiator->method('instantiate')->willReturn($instantiated);
+
+        $this->assertSame(
+            $instantiated,
+            $this->unmarshaller()->unmarshal('{"id": 10, "name": "dummy name"}', Type::class(ClassicDummy::class), ['instantiator' => $instantiator]),
+        );
+    }
+
     public function testCreateCacheFile()
     {
         $this->unmarshaller()->unmarshal('true', Type::bool());
@@ -175,13 +210,13 @@ class JsonUnmarshallerTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $runtimeServices
+     * @param array<string, mixed>|null $runtimeServices
      */
-    private function unmarshaller(array $runtimeServices = []): JsonUnmarshaller
+    private function unmarshaller(array $runtimeServices = null): JsonUnmarshaller
     {
-        $runtimeServicesLocator = new class($runtimeServices) implements ContainerInterface {
+        $runtimeServicesLocator = null !== $runtimeServices ? new class($runtimeServices) implements ContainerInterface {
             use ServiceLocatorTrait;
-        };
+        } : null;
 
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
         $instantiator = new EagerInstantiator();

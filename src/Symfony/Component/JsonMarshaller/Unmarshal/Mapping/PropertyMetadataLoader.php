@@ -20,10 +20,10 @@ use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
  *
  * @internal
  */
-final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final readonly class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
-        private readonly TypeExtractorInterface $typeExtractor,
+        private TypeExtractorInterface $typeExtractor,
     ) {
     }
 

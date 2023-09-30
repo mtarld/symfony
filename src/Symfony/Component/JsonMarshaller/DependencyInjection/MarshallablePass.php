@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  *
  * @experimental in 7.1
  */
-final class MarshallablePass implements CompilerPassInterface
+final readonly class MarshallablePass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {

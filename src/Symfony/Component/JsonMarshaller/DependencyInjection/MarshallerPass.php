@@ -15,11 +15,11 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * TODO.
+ * Injects marshallable classes list into related services.
  *
  * @author Mathias Arlaud<mathias.arlaud@gmail.com>
  */
-final class MarshallerPass implements CompilerPassInterface
+final readonly class MarshallerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {

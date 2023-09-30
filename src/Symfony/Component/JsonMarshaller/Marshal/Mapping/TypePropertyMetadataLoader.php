@@ -25,12 +25,12 @@ use Symfony\Component\JsonMarshaller\Type\TypeGenericsHelper;
  *
  * @phpstan-import-type MarshalConfig from MarshallerInterface
  */
-final class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final readonly class TypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
-    private readonly TypeGenericsHelper $typeGenericsHelper;
+    private TypeGenericsHelper $typeGenericsHelper;
 
     public function __construct(
-        private readonly PropertyMetadataLoaderInterface $decorated,
+        private PropertyMetadataLoaderInterface $decorated,
         TypeExtractorInterface $typeExtractor,
     ) {
         $this->typeGenericsHelper = new TypeGenericsHelper($typeExtractor);

@@ -97,9 +97,9 @@ class TemplateTest extends TestCase
     public static function templateContentDataProvider(): iterable
     {
         yield ['scalar', Type::int()];
-        yield ['nullable_scalar', Type::string(nullable: true)];
         yield ['mixed', Type::mixed()];
         yield ['backed_enum', Type::enum(DummyBackedEnum::class)];
+        yield ['nullable_backed_enum', Type::enum(DummyBackedEnum::class, nullable: true)];
 
         yield ['list', Type::list()];
         yield ['nullable_list', Type::list(nullable: true)];

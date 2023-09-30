@@ -42,9 +42,7 @@ final readonly class Template
 
     public function path(Type $type): string
     {
-        $hash = hash('xxh128', (string) $type);
-
-        return sprintf('%s%s%s.marshal.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, $hash);
+        return sprintf('%s%s%s.marshal.json.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type));
     }
 
     /**
@@ -66,7 +64,7 @@ final readonly class Template
             'data' => 'mixed',
             'resource' => 'mixed',
             'config' => 'array',
-            'services' => '\\'.ContainerInterface::class,
+            'services' => '?\\'.ContainerInterface::class,
         ]);
 
         $compiler->indent();

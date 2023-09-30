@@ -23,11 +23,11 @@ use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
  *
  * @internal
  */
-final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final readonly class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
-        private readonly PropertyMetadataLoaderInterface $decorated,
-        private readonly TypeExtractorInterface $typeExtractor,
+        private PropertyMetadataLoaderInterface $decorated,
+        private TypeExtractorInterface $typeExtractor,
     ) {
     }
 

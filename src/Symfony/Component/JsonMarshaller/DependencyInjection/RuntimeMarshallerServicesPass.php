@@ -16,7 +16,6 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\TypedReference;
 use Symfony\Component\JsonMarshaller\Attribute\MarshalFormatter;
@@ -32,7 +31,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @internal
  */
-final class RuntimeMarshallerServicesPass implements CompilerPassInterface
+final readonly class RuntimeMarshallerServicesPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
@@ -46,7 +45,10 @@ final class RuntimeMarshallerServicesPass implements CompilerPassInterface
                 continue;
             }
 
-            array_push($formatters, ...$this->formatters($container, $definition->getClass()));
+            $formatters = [
+                ...$formatters,
+                ...$this->formatters($container, $definition->getClass()),
+            ];
         }
 
         $runtimeServices = [];
@@ -119,19 +121,13 @@ final class RuntimeMarshallerServicesPass implements CompilerPassInterface
 
             $type = preg_replace('/(^|[(|&])\\\\/', '\1', ltrim(ProxyHelper::exportType($parameter) ?? '', '?'));
 
-            $invalidBehavior = match (true) {
-                $parameter->isOptional() => ContainerInterface::IGNORE_ON_INVALID_REFERENCE,
-                $parameter->allowsNull() => ContainerInterface::NULL_ON_INVALID_REFERENCE,
-                default => ContainerInterface::RUNTIME_EXCEPTION_ON_INVALID_REFERENCE,
-            };
-
             if ($autowireAttribute = ($parameter->getAttributes(Autowire::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null)) {
                 $value = $autowireAttribute->newInstance()->value;
 
                 if ($value instanceof Reference) {
                     $services[$parameter->name] = $type
-                        ? new TypedReference($value, $type, $invalidBehavior, $parameter->name)
-                        : new Reference($value, $invalidBehavior);
+                        ? new TypedReference($value, $type, name: $parameter->name)
+                        : new Reference($value);
 
                     continue;
                 }
@@ -152,7 +148,7 @@ final class RuntimeMarshallerServicesPass implements CompilerPassInterface
                 continue;
             }
 
-            $services[$parameter->name] = new TypedReference($type, $type, $invalidBehavior, Target::parseName($parameter));
+            $services[$parameter->name] = new TypedReference($type, $type, name: Target::parseName($parameter));
         }
 
         return $services;

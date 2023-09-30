@@ -42,7 +42,7 @@ use Symfony\Component\JsonMarshaller\Php\VariableNode;
  *
  * @phpstan-import-type JsonMarshalConfig from JsonMarshaller
  */
-final class TemplateGenerator
+final readonly class TemplateGenerator
 {
     use VariableNameScoperTrait;
 
@@ -54,10 +54,23 @@ final class TemplateGenerator
      */
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
+        $setupNodes = [];
+
+        if (true === ($context['root'] ?? true)) {
+            $context['root'] = false;
+            $setupNodes = [
+                new ExpressionNode(new AssignNode(new VariableNode('jsonEncodeFlags'), new BinaryNode(
+                    '??',
+                    new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_encode_flags')),
+                    new PhpScalarNode(0),
+                ))),
+            ];
+        }
+
         if ($node instanceof CollectionNode) {
             $prefixName = $this->scopeVariableName('prefix', $context);
 
-            if ($node->type->isList()) {
+            if ($node->type()->isList()) {
                 $listNodes = [
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('[')]))),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(''))),
@@ -71,15 +84,16 @@ final class TemplateGenerator
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode(']')]))),
                 ];
 
-                if ($node->type->isNullable()) {
+                if ($node->type()->isNullable()) {
                     return [
+                        ...$setupNodes,
                         new IfNode(new BinaryNode('===', new PhpScalarNode(null), $node->accessor), [
                             new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
                         ], $listNodes),
                     ];
                 }
 
-                return $listNodes;
+                return [...$setupNodes, ...$listNodes];
             }
 
             $keyName = $this->scopeVariableName('key', $context);
@@ -101,15 +115,16 @@ final class TemplateGenerator
                 new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('}')]))),
             ];
 
-            if ($node->type->isNullable()) {
+            if ($node->type()->isNullable()) {
                 return [
+                    ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $node->accessor), [
                         new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
                     ], $dictNodes),
                 ];
             }
 
-            return $dictNodes;
+            return [...$setupNodes, ...$dictNodes];
         }
 
         if ($node instanceof ObjectNode) {
@@ -124,44 +139,46 @@ final class TemplateGenerator
 
                 $encodedName = substr($encodedName, 1, -1);
 
-                array_push(
-                    $objectNodes,
+                $objectNodes = [
+                    ...$objectNodes,
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode($separator)]))),
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('"')]))),
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode($encodedName)]))),
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('":')]))),
                     ...$this->generate($propertyNode, $config, $context),
-                );
+                ];
 
                 $separator = ',';
             }
 
             $objectNodes[] = new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('}')])));
 
-            if ($node->type->isNullable()) {
+            if ($node->type()->isNullable()) {
                 return [
+                    ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $node->accessor), [
                         new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
                     ], $objectNodes),
                 ];
             }
 
-            return $objectNodes;
+            return [...$setupNodes, ...$objectNodes];
         }
 
         if ($node instanceof ScalarNode) {
-            $scalarAccessor = $node->type->isBackedEnum() ? new PropertyNode($node->accessor, 'value') : $node->accessor;
+            $scalarAccessor = $node->type()->isBackedEnum() ? new PropertyNode($node->accessor, 'value') : $node->accessor;
             $scalarNodes = [new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), $this->encodeValue($scalarAccessor)])))];
 
-            if ($node->type->isNullable()) {
+            if ($node->type()->isNullable()) {
                 return [
+                    ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $node->accessor), [
                         new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
                     ], $scalarNodes),
                 ];
             }
 
-            return $scalarNodes;
+            return [...$setupNodes, ...$scalarNodes];
         }
 
         throw new LogicException(sprintf('Unexpected "%s" node', $node::class));
@@ -169,20 +186,13 @@ final class TemplateGenerator
 
     private function encodeValue(PhpNodeInterface $node): PhpNodeInterface
     {
-        return new FunctionCallNode('\json_encode', new ArgumentsNode([
-            $node,
-            // TODO store it in a var?
-            new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_encode_flags')),
-        ]));
+        return new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('jsonEncodeFlags')]));
     }
 
     private function escapeString(PhpNodeInterface $node): PhpNodeInterface
     {
         return new FunctionCallNode('\substr', new ArgumentsNode([
-            new FunctionCallNode('\json_encode', new ArgumentsNode([
-                $node,
-                new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_encode_flags')),
-            ])),
+            new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('jsonEncodeFlags')])),
             new PhpScalarNode(1),
             new PhpScalarNode(-1),
         ]));
