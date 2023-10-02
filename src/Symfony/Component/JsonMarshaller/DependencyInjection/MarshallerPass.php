@@ -13,9 +13,13 @@ namespace Symfony\Component\JsonMarshaller\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\JsonMarshaller\JsonUnmarshaller;
+use Symfony\Component\JsonMarshaller\MarshallerInterface;
+use Symfony\Component\JsonMarshaller\UnmarshallerInterface;
 
 /**
- * Injects marshallable classes list into related services.
+ * Injects marshallable classes list into related services
+ * and defines basic aliases.
  *
  * @author Mathias Arlaud<mathias.arlaud@gmail.com>
  */
@@ -41,5 +45,14 @@ final readonly class MarshallerPass implements CompilerPassInterface
 
         $container->getDefinition('.marshaller.cache_warmer.lazy_ghost')
             ->replaceArgument(0, $marshallable);
+
+        $defaultUnmarshallerId = $container->getParameter('marshaller.lazy_unmarshal')
+            ? 'marshaller.json.unmarshaller.lazy'
+            : 'marshaller.json.unmarshaller.eager';
+
+        $container->setAlias(JsonUnmarshaller::class, $defaultUnmarshallerId);
+
+        $container->registerAliasForArgument('marshaller.json.marshaller', MarshallerInterface::class, 'json.marshaller');
+        $container->registerAliasForArgument($defaultUnmarshallerId, UnmarshallerInterface::class, 'json.unmarshaller');
     }
 }

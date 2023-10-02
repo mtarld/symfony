@@ -36,8 +36,8 @@ final readonly class JsonUnmarshaller implements UnmarshallerInterface
         private Template $template,
         private InstantiatorInterface $instantiator,
         private string $templateCacheDir,
-        private bool $defaultLazy,
         private ?ContainerInterface $runtimeServices = null,
+        private bool $lazy = false,
     ) {
     }
 
@@ -62,11 +62,10 @@ final readonly class JsonUnmarshaller implements UnmarshallerInterface
             }
         }
 
-        $lazy = $config['lazy'] ?? $this->defaultLazy;
-        $path = $this->template->path($type, $lazy);
+        $path = $this->template->path($type, $this->lazy);
 
         if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = $this->template->content($type, $lazy, $config);
+            $content = $this->template->content($type, $this->lazy, $config);
 
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
@@ -81,6 +80,6 @@ final readonly class JsonUnmarshaller implements UnmarshallerInterface
             @chmod($path, 0666 & ~umask());
         }
 
-        return (require $path)($input, $config, $config['instantiator'] ?? $this->instantiator, $this->runtimeServices);
+        return (require $path)($input, $config, $this->instantiator, $this->runtimeServices);
     }
 }

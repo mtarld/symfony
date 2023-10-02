@@ -28,8 +28,8 @@ interface InstantiatorInterface
     /**
      * @template T of object
      *
-     * @param class-string<T>                  $className
-     * @param array<string, callable(): mixed> $properties
+     * @param class-string<T>      $className
+     * @param array<string, mixed> $properties
      *
      * @return T
      *

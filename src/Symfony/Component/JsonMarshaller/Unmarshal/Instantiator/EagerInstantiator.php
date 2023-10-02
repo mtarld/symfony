@@ -31,7 +31,7 @@ final readonly class EagerInstantiator implements InstantiatorInterface
 
         foreach ($properties as $name => $value) {
             try {
-                $object->{$name} = $value();
+                $object->{$name} = $value;
             } catch (\TypeError|UnexpectedValueException $e) {
                 throw new UnexpectedValueException($e->getMessage(), previous: $e);
             }

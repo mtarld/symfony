@@ -64,8 +64,11 @@ final readonly class RuntimeMarshallerServicesPass implements CompilerPassInterf
         $container->getDefinition('marshaller.json.marshaller')
             ->replaceArgument(2, $runtimeServicesLocator);
 
-        $container->getDefinition('marshaller.json.unmarshaller')
-            ->replaceArgument(2, $runtimeServicesLocator);
+        $container->getDefinition('marshaller.json.unmarshaller.eager')
+            ->replaceArgument(3, $runtimeServicesLocator);
+
+        $container->getDefinition('marshaller.json.unmarshaller.lazy')
+            ->replaceArgument(3, $runtimeServicesLocator);
 
         $container->getDefinition('.marshaller.marshal.data_model_builder')
             ->replaceArgument(1, $runtimeServicesLocator);

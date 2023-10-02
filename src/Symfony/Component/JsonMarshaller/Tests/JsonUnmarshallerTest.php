@@ -25,7 +25,6 @@ use Symfony\Component\JsonMarshaller\Type\Type;
 use Symfony\Component\JsonMarshaller\Type\TypeExtractorInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\DataModelBuilder;
 use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\EagerInstantiator;
-use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterface;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonMarshaller\Unmarshal\Mapping\TypePropertyMetadataLoader;
@@ -149,20 +148,6 @@ class JsonUnmarshallerTest extends TestCase
         );
     }
 
-    public function testUnmarshalObjectWithCustomInstantiator()
-    {
-        $instantiated = new ClassicDummy();
-        $instantiated->id = 69004;
-
-        $instantiator = $this->createStub(InstantiatorInterface::class);
-        $instantiator->method('instantiate')->willReturn($instantiated);
-
-        $this->assertSame(
-            $instantiated,
-            $this->unmarshaller()->unmarshal('{"id": 10, "name": "dummy name"}', Type::class(ClassicDummy::class), ['instantiator' => $instantiator]),
-        );
-    }
-
     public function testCreateCacheFile()
     {
         $this->unmarshaller()->unmarshal('true', Type::bool());
@@ -229,6 +214,6 @@ class JsonUnmarshallerTest extends TestCase
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServicesLocator);
         $template = new Template($dataModeBuilder, $this->cacheDir);
 
-        return new JsonUnmarshaller($template, $instantiator, $this->cacheDir, false, $runtimeServicesLocator);
+        return new JsonUnmarshaller($template, $instantiator, $this->cacheDir, $runtimeServicesLocator, false);
     }
 }

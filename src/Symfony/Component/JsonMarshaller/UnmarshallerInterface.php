@@ -12,7 +12,6 @@
 namespace Symfony\Component\JsonMarshaller;
 
 use Symfony\Component\JsonMarshaller\Type\Type;
-use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterface;
 
 /**
  * Unmarshals an $input stream or string into a given $type according to a $config.
@@ -22,8 +21,6 @@ use Symfony\Component\JsonMarshaller\Unmarshal\Instantiator\InstantiatorInterfac
  * @experimental in 7.1
  *
  * @phpstan-type UnmarshalConfig array{
- *   lazy_read?: bool,
- *   instantiator?: InstantiatorInterface,
  *   date_time_format?: string,
  * }
  */

@@ -42,6 +42,9 @@ final class LazyInstantiator implements InstantiatorInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed|callable(): mixed> $properties
+     */
     public function instantiate(string $className, array $properties): object
     {
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);

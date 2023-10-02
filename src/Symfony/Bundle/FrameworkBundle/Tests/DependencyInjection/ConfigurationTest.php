@@ -785,8 +785,7 @@ class ConfigurationTest extends TestCase
             'marshaller' => [
                 'marshallable_paths' => [],
                 'enabled' => false,
-                'lazy_read' => false,
-                'lazy_instantiation' => false,
+                'lazy_unmarshal' => false,
             ],
         ];
     }

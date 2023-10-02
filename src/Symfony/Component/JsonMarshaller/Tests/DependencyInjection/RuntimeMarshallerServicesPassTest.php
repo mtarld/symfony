@@ -29,7 +29,8 @@ class RuntimeMarshallerServicesPassTest extends TestCase
         $container = new ContainerBuilder();
 
         $container->register('marshaller.json.marshaller')->setArguments([null, null, null]);
-        $container->register('marshaller.json.unmarshaller')->setArguments([null, null, null]);
+        $container->register('marshaller.json.unmarshaller.eager')->setArguments([null, null, null, null]);
+        $container->register('marshaller.json.unmarshaller.lazy')->setArguments([null, null, null, null]);
         $container->register('.marshaller.marshal.data_model_builder')->setArguments([null, null]);
         $container->register('.marshaller.unmarshal.data_model_builder')->setArguments([null, null]);
 
@@ -41,7 +42,8 @@ class RuntimeMarshallerServicesPassTest extends TestCase
 
         $runtimeServicesId = $container->getDefinition('marshaller.json.marshaller')->getArgument(2);
 
-        $this->assertSame($runtimeServicesId, $container->getDefinition('marshaller.json.unmarshaller')->getArgument(2));
+        $this->assertSame($runtimeServicesId, $container->getDefinition('marshaller.json.unmarshaller.eager')->getArgument(3));
+        $this->assertSame($runtimeServicesId, $container->getDefinition('marshaller.json.unmarshaller.lazy')->getArgument(3));
         $this->assertSame($runtimeServicesId, $container->getDefinition('.marshaller.marshal.data_model_builder')->getArgument(1));
         $this->assertSame($runtimeServicesId, $container->getDefinition('.marshaller.unmarshal.data_model_builder')->getArgument(1));
 

@@ -1932,8 +1932,7 @@ class FrameworkExtension extends Extension
         $loader->load('marshaller.php');
 
         $container->setParameter('marshaller.marshallable_paths', $config['marshallable_paths']);
-        $container->setParameter('marshaller.lazy_read', $config['lazy_read']);
-        $container->setParameter('marshaller.lazy_instantiation', $config['lazy_instantiation']);
+        $container->setParameter('marshaller.lazy_unmarshal', $config['lazy_unmarshal']);
 
         foreach ($config['marshallable_paths'] as $path) {
             if (!is_dir($path)) {

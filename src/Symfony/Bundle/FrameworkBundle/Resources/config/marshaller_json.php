@@ -27,21 +27,28 @@ return static function (ContainerConfigurator $container) {
         ->set('marshaller.json.marshaller', JsonMarshaller::class)
             ->args([
                 service('.marshaller.json.marshal.template'),
-                abstract_arg('marshal runtime services'),
                 param('.marshaller.json.cache_dir.template'),
+                abstract_arg('marshal runtime services'),
             ])
 
         ->alias(JsonMarshaller::class, 'marshaller.json.marshaller')
 
-        ->set('marshaller.json.unmarshaller', JsonUnmarshaller::class)
+        ->set('marshaller.json.unmarshaller.eager', JsonUnmarshaller::class)
             ->args([
                 service('.marshaller.json.unmarshal.template'),
-                abstract_arg('unmarshal runtime services'),
-                service('marshaller.instantiator'),
+                service('marshaller.instantiator.eager'),
                 param('.marshaller.json.cache_dir.template'),
+                abstract_arg('unmarshal runtime services'),
+                false,
             ])
-
-        ->alias(JsonUnmarshaller::class, 'marshaller.json.unmarshaller')
+        ->set('marshaller.json.unmarshaller.lazy', JsonUnmarshaller::class)
+            ->args([
+                service('.marshaller.json.unmarshal.template'),
+                service('marshaller.instantiator.lazy'),
+                param('.marshaller.json.cache_dir.template'),
+                abstract_arg('unmarshal runtime services'),
+                true,
+            ])
 
         // Template
         ->set('.marshaller.json.marshal.template', MarshalTemplate::class)
@@ -54,7 +61,6 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('.marshaller.unmarshal.data_model_builder'),
                 param('.marshaller.json.cache_dir.template'),
-                param('marshaller.lazy_read'),
             ])
 
         // Cache

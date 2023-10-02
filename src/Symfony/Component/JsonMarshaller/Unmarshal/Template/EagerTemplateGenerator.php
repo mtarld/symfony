@@ -28,6 +28,7 @@ use Symfony\Component\JsonMarshaller\Php\ParametersNode;
 use Symfony\Component\JsonMarshaller\Php\PhpNodeInterface;
 use Symfony\Component\JsonMarshaller\Php\ReturnNode;
 use Symfony\Component\JsonMarshaller\Php\ScalarNode as PhpScalarNode;
+use Symfony\Component\JsonMarshaller\Php\TernaryConditionNode;
 use Symfony\Component\JsonMarshaller\Php\VariableNode;
 use Symfony\Component\JsonMarshaller\Php\YieldNode;
 use Symfony\Component\JsonMarshaller\Unmarshal\DataModel\CollectionNode;
@@ -200,7 +201,7 @@ final readonly class EagerTemplateGenerator
         ] : [];
 
         $propertyValueProvidersNodes = [];
-        $fillPropertiesArrayNodes = [new ExpressionNode(new AssignNode(new VariableNode('properties'), new ArrayNode([])))];
+        $propertiesValues = [];
 
         foreach ($node->properties as $marshalledName => $property) {
             $propertyValueProvidersNodes = [
@@ -209,38 +210,18 @@ final readonly class EagerTemplateGenerator
             ];
 
             $propertyValueNode = $this->twistJson($property['value'])
-                ? new FunctionCallNode(
-                    new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->identifier())),
-                    new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName))]),
+                ? new TernaryConditionNode(
+                    new FunctionCallNode('\array_key_exists', new ArgumentsNode([new PhpScalarNode($marshalledName), new VariableNode('data')])),
+                    new FunctionCallNode(
+                        new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->identifier())),
+                        new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName))]),
+                    ),
+                    new PhpScalarNode('_symfony_missing_value'),
                 )
-                : new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName));
+                : new BinaryNode('??', new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName)), new PhpScalarNode('_symfony_missing_value'));
 
-            $fillPropertiesArrayNodes[] = new IfNode(new FunctionCallNode(
-                'isset',
-                new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($marshalledName))]),
-            ), [
-                new ExpressionNode(new AssignNode(
-                    new ArrayAccessNode(new VariableNode('properties'), new PhpScalarNode($property['name'])),
-                    new ClosureNode(new ParametersNode([]), 'mixed', true, [
-                        new ExpressionNode(new ReturnNode(($property['formatter'])($propertyValueNode))),
-                    ], new ArgumentsNode([
-                        new VariableNode('data'),
-                        new VariableNode('config'),
-                        new VariableNode('instantiator'),
-                        new VariableNode('services'),
-                        new VariableNode('providers', byReference: true),
-                    ])),
-                )),
-            ]);
+            $propertiesValues[$property['name']] = $property['formatter']($propertyValueNode);
         }
-
-        $instantiateNodes = [
-            new ExpressionNode(new ReturnNode(new MethodCallNode(
-                new VariableNode('instantiator'),
-                'instantiate',
-                new ArgumentsNode([new PhpScalarNode($node->type()->className()), new VariableNode('properties')]),
-            ))),
-        ];
 
         return [
             new ExpressionNode(new AssignNode(
@@ -249,7 +230,49 @@ final readonly class EagerTemplateGenerator
                     new ParametersNode(['data' => '?array']),
                     ($node->type()->isNullable() ? '?' : '').$node->type()->className(),
                     true,
-                    [...$returnNullNodes, ...$fillPropertiesArrayNodes, ...$instantiateNodes],
+                    [
+                        ...$returnNullNodes,
+
+                        // new ExpressionNode(new ReturnNode(
+                        //     new FunctionCallNode('\unserialize', new ArgumentsNode([
+                        //         new FunctionCallNode('\sprintf', new ArgumentsNode([
+                        //             new PhpScalarNode(sprintf(
+                        //                 'O:%d:"%s"%%s',
+                        //                 strlen($node->type()->className()),
+                        //                 $node->type()->className(),
+                        //             )),
+                        //             new FunctionCallNode('\strstr', new ArgumentsNode([
+                        //                 new FunctionCallNode('\strstr', new ArgumentsNode([
+                        //                     new FunctionCallNode('\serialize', new ArgumentsNode([
+                        //                         new CastNode('object', new FunctionCallNode('\array_filter', new ArgumentsNode([
+                        //                             new ArrayNode($propertiesValues),
+                        //                             new ClosureNode(new ParametersNode(['v' => 'mixed']), 'bool', true, [
+                        //                                 new ExpressionNode(new ReturnNode(new BinaryNode('!==', new PhpScalarNode('_symfony_missing_value'), new VariableNode('v')))),
+                        //                             ]),
+                        //                         ]))),
+                        //                     ])),
+                        //                     new PhpScalarNode('"'),
+                        //                 ])),
+                        //                 new PhpScalarNode(':'),
+                        //             ])),
+                        //         ])),
+                        //     ])),
+                        // )),
+
+                        new ExpressionNode(new ReturnNode(new MethodCallNode(
+                            new VariableNode('instantiator'),
+                            'instantiate',
+                            new ArgumentsNode([
+                                new PhpScalarNode($node->type()->className()),
+                                new FunctionCallNode('\array_filter', new ArgumentsNode([
+                                    new ArrayNode($propertiesValues),
+                                    new ClosureNode(new ParametersNode(['v' => 'mixed']), 'bool', true, [
+                                        new ExpressionNode(new ReturnNode(new BinaryNode('!==', new PhpScalarNode('_symfony_missing_value'), new VariableNode('v')))),
+                                    ]),
+                                ])),
+                            ]),
+                        ))),
+                    ],
                     new ArgumentsNode([
                         new VariableNode('config'),
                         new VariableNode('instantiator'),

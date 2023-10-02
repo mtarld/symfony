@@ -25,8 +25,8 @@ class EagerInstantiatorTest extends TestCase
         $expected->name = 'dummy';
 
         $properties = [
-            'id' => fn () => 100,
-            'name' => fn () => 'dummy',
+            'id' => 100,
+            'name' => 'dummy',
         ];
 
         $this->assertEquals($expected, (new EagerInstantiator())->instantiate(ClassicDummy::class, $properties));
@@ -37,7 +37,7 @@ class EagerInstantiatorTest extends TestCase
         $this->expectException(UnexpectedValueException::class);
 
         (new EagerInstantiator())->instantiate(ClassicDummy::class, [
-            'id' => fn () => ['an', 'array'],
+            'id' => ['an', 'array'],
         ]);
     }
 }

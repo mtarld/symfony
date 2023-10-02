@@ -10,18 +10,9 @@ return static function (mixed $resource, array $config, \Symfony\Component\JsonM
         if (null === $data) {
             return null;
         }
-        $properties = [];
-        if (isset($data["id"])) {
-            $properties["id"] = static function () use ($data, $config, $instantiator, $services, &$providers): mixed {
-                return $data["id"];
-            };
-        }
-        if (isset($data["name"])) {
-            $properties["name"] = static function () use ($data, $config, $instantiator, $services, &$providers): mixed {
-                return $data["name"];
-            };
-        }
-        return $instantiator->instantiate("Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy", $properties);
+        return $instantiator->instantiate("Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy", \array_filter(["id" => $data["id"] ?? "_symfony_missing_value", "name" => $data["name"] ?? "_symfony_missing_value"], static function (mixed $v): bool {
+            return "_symfony_missing_value" !== $v;
+        }));
     };
     return ($providers["?Symfony\\Component\\JsonMarshaller\\Tests\\Fixtures\\Dto\\ClassicDummy"])("\\Symfony\\Component\\JsonMarshaller\\Unmarshal\\Template\\Decoder"::decode($resource, 0, -1, $jsonDecodeFlags));
 };
