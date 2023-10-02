@@ -66,8 +66,7 @@ final readonly class TemplateGenerator
                 ))),
             ];
 
-            // TODO lazy instead
-            if (false === ($context['for_stream'] ?? false) && !$node->isTransformed()) {
+            if (false === ($context['lazy'] ?? false) && !$node->isTransformed()) {
                 return [
                     ...$setupNodes,
                     new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([

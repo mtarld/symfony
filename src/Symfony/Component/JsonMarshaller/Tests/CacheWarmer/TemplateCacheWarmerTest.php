@@ -44,8 +44,8 @@ class TemplateCacheWarmerTest extends TestCase
         $this->cacheWarmer([ClassicDummy::class])->warmUp('useless');
 
         $this->assertSame([
-            sprintf('%s/c486b01895febbc4130485acd2c56d11.marshal.json.stream.php', $this->cacheDir),
-            sprintf('%s/c486b01895febbc4130485acd2c56d11.marshal.json.string.php', $this->cacheDir),
+            sprintf('%s/c486b01895febbc4130485acd2c56d11.marshal.json.eager.php', $this->cacheDir),
+            sprintf('%s/c486b01895febbc4130485acd2c56d11.marshal.json.lazy.php', $this->cacheDir),
             sprintf('%s/c486b01895febbc4130485acd2c56d11.unmarshal.eager.json.php', $this->cacheDir),
             sprintf('%s/c486b01895febbc4130485acd2c56d11.unmarshal.lazy.json.php', $this->cacheDir),
         ], glob($this->cacheDir.'/*'));

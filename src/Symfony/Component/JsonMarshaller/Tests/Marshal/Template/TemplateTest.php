@@ -58,11 +58,11 @@ class TemplateTest extends TestCase
      */
     public static function templatePathDataProvider(): iterable
     {
-        yield ['7617cc4b435dae7c97211c6082923b47.marshal.json.string.php', Type::int(), false];
-        yield ['6e77b03690271cbee671df141e635536.marshal.json.string.php', Type::int(nullable: true), false];
-        yield ['070660c7e72aa3e14a93c1039279afb6.marshal.json.stream.php', Type::mixed(), true];
-        yield ['c486b01895febbc4130485acd2c56d11.marshal.json.string.php', Type::class(ClassicDummy::class), false];
-        yield ['c486b01895febbc4130485acd2c56d11.marshal.json.stream.php', Type::class(ClassicDummy::class), true];
+        yield ['7617cc4b435dae7c97211c6082923b47.marshal.json.eager.php', Type::int(), false];
+        yield ['6e77b03690271cbee671df141e635536.marshal.json.eager.php', Type::int(nullable: true), false];
+        yield ['070660c7e72aa3e14a93c1039279afb6.marshal.json.lazy.php', Type::mixed(), true];
+        yield ['c486b01895febbc4130485acd2c56d11.marshal.json.eager.php', Type::class(ClassicDummy::class), false];
+        yield ['c486b01895febbc4130485acd2c56d11.marshal.json.lazy.php', Type::class(ClassicDummy::class), true];
     }
 
     /**
@@ -82,13 +82,13 @@ class TemplateTest extends TestCase
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/marshal/%s.stream.php', \dirname(__DIR__, 2), $fixture),
-            $template->content($type, true),
+            sprintf('%s/Fixtures/templates/marshal/%s.eager.php', \dirname(__DIR__, 2), $fixture),
+            $template->content($type, false),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/marshal/%s.string.php', \dirname(__DIR__, 2), $fixture),
-            $template->content($type, false),
+            sprintf('%s/Fixtures/templates/marshal/%s.lazy.php', \dirname(__DIR__, 2), $fixture),
+            $template->content($type, true),
         );
     }
 

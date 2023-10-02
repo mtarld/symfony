@@ -49,7 +49,7 @@ final readonly class Lexer
         $toReadLength = $length;
 
         while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
-            if (!$buffer = @stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
+            if (false === $buffer = @stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
                 throw new InvalidResourceException($resource);
             }
 

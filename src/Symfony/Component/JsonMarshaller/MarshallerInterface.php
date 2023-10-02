@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\JsonMarshaller;
 
+use Symfony\Component\JsonMarshaller\Type\Type;
+
 /**
  * Marshals $data into a specific format according to a $config to a string or into an $output stream.
  *

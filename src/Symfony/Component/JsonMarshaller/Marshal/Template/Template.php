@@ -40,21 +40,21 @@ final readonly class Template
     ) {
     }
 
-    public function path(Type $type, bool $forStream): string
+    public function path(Type $type, bool $lazy): string
     {
         return sprintf(
             '%s%s%s.marshal.json.%s.php',
             $this->cacheDir,
             \DIRECTORY_SEPARATOR,
             hash('xxh128', (string) $type),
-            $forStream ? 'stream' : 'string',
+            $lazy ? 'lazy' : 'eager',
         );
     }
 
     /**
      * @param JsonMarshalConfig $config
      */
-    public function content(Type $type, bool $forStream, array $config = []): string
+    public function content(Type $type, bool $lazy, array $config = []): string
     {
         $compiler = new Compiler();
 
@@ -74,9 +74,7 @@ final readonly class Template
         ]);
 
         $compiler->indent();
-        $bodyNodes = (new TemplateGenerator())->generate($this->dataModelBuilder->build($type, new VariableNode('data'), $config), $config, [
-            'for_stream' => $forStream,
-        ]);
+        $bodyNodes = (new TemplateGenerator())->generate($this->dataModelBuilder->build($type, new VariableNode('data'), $config), $config, ['lazy' => $lazy]);
         $compiler->outdent();
 
         $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode($argumentsNode, 'void', true, $bodyNodes))));

@@ -44,21 +44,21 @@ final readonly class JsonMarshaller implements MarshallerInterface
      */
     public function marshal(mixed $data, array $config = [], mixed $output = null): string|null
     {
-        $forStream = true;
+        $lazy = true;
 
         if (null === $output) {
             if (false === $output = @fopen('php://memory', 'w+')) {
                 throw new RuntimeException('Cannot open "php://memory" resource');
             }
 
-            $forStream = false;
+            $lazy = false;
         }
 
         $type = $config['type'] ?? Type::fromString(get_debug_type($data));
-        $path = $this->template->path($type, $forStream);
+        $path = $this->template->path($type, $lazy);
 
         if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = $this->template->content($type, $forStream, $config);
+            $content = $this->template->content($type, $lazy, $config);
 
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
@@ -75,7 +75,7 @@ final readonly class JsonMarshaller implements MarshallerInterface
 
         (require $path)($data, $output, $config, $this->runtimeServices);
 
-        if ($forStream) {
+        if ($lazy) {
             return null;
         }
 
