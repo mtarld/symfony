@@ -49,7 +49,7 @@ class DataModelBuilderTest extends TestCase
      */
     public function testBuildDataModel(Type $type, DataModelNodeInterface $dataModel)
     {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader(), null);
+        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
 
         $this->assertEquals($dataModel, $dataModelBuilder->build($type, new VariableNode('data'), []));
     }
@@ -82,7 +82,6 @@ class DataModelBuilderTest extends TestCase
         $typeExtractor = new PhpstanTypeExtractor(new ReflectionTypeExtractor());
         $dataModelBuilder = new DataModelBuilder(
             new AttributePropertyMetadataLoader(new TypePropertyMetadataLoader(new PropertyMetadataLoader($typeExtractor), $typeExtractor), $typeExtractor),
-            null,
         );
 
         $this->assertEquals(
@@ -111,7 +110,7 @@ class DataModelBuilderTest extends TestCase
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
             new PropertyMetadata('foo', Type::class(self::class), []),
-        ]), null);
+        ]));
 
         $this->expectException(MaxDepthException::class);
         $dataModelBuilder->build(Type::class(self::class), new VariableNode('data'), []);
@@ -130,7 +129,7 @@ class DataModelBuilderTest extends TestCase
             ])
             ->willReturn([]);
 
-        $dataModelBuilder = new DataModelBuilder($propertyMetadataLoader, null);
+        $dataModelBuilder = new DataModelBuilder($propertyMetadataLoader);
         $dataModelBuilder->build($type, new VariableNode('data'), []);
     }
 
@@ -138,7 +137,7 @@ class DataModelBuilderTest extends TestCase
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
             new PropertyMetadata('foo', Type::int(), []),
-        ]), null);
+        ]));
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::class(self::class), new VariableNode('data'), []);
@@ -150,7 +149,7 @@ class DataModelBuilderTest extends TestCase
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
             new PropertyMetadata('foo', Type::int(), ['strtoupper', DummyWithFormatterAttributes::doubleAndCastToString(...)]),
-        ]), null);
+        ]));
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::class(self::class), new VariableNode('data'), []);
@@ -172,7 +171,7 @@ class DataModelBuilderTest extends TestCase
                 Type::int(),
                 [DummyWithFormatterAttributes::doubleAndCastToStringWithConfig(...)],
             ),
-        ]), null);
+        ]));
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::class(self::class), new VariableNode('data'), []);
@@ -219,7 +218,7 @@ class DataModelBuilderTest extends TestCase
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
             new PropertyMetadata('foo', Type::int(), [DummyWithMethods::const(...)]),
-        ]), null);
+        ]));
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::class(self::class), new VariableNode('data'), []);
@@ -238,7 +237,7 @@ class DataModelBuilderTest extends TestCase
                 Type::class(DummyWithAttributesUsingServices::class),
                 [DummyWithAttributesUsingServices::serviceAndConfig(...)],
             ),
-        ]), null);
+        ]));
 
         $this->expectException(LogicException::class);
 

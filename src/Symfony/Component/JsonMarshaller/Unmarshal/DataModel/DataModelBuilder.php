@@ -36,7 +36,7 @@ final readonly class DataModelBuilder
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $propertyMetadataLoader,
-        private ?ContainerInterface $runtimeServices,
+        private ?ContainerInterface $runtimeServices = null,
     ) {
     }
 

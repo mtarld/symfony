@@ -131,7 +131,7 @@ class JsonMarshallerTest extends TestCase
     public function testCreateCacheFileOnlyIfNotExists()
     {
         $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor()), null),
+            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor())),
             $this->cacheDir,
         );
         if (!file_exists($this->cacheDir)) {
@@ -147,7 +147,7 @@ class JsonMarshallerTest extends TestCase
     public function testRecreateCacheFileIfForceGenerateTemplate()
     {
         $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor()), null),
+            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor())),
             $this->cacheDir,
         );
         if (!file_exists($this->cacheDir)) {

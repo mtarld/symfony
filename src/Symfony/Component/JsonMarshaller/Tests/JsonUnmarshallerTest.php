@@ -174,7 +174,7 @@ class JsonUnmarshallerTest extends TestCase
     public function testCreateCacheFileOnlyIfNotExists()
     {
         $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor()), null),
+            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor())),
             $this->cacheDir,
         );
 
@@ -191,7 +191,7 @@ class JsonUnmarshallerTest extends TestCase
     public function testRecreateCacheFileIfForceGenerateTemplate()
     {
         $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor()), null),
+            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor())),
             $this->cacheDir,
         );
 

@@ -46,7 +46,7 @@ class TemplateTest extends TestCase
     public function testTemplatePath(string $expectedFilename, Type $type, bool $lazy)
     {
         $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor()), null),
+            new DataModelBuilder(new PropertyMetadataLoader(new ReflectionTypeExtractor())),
             $this->cacheDir,
         );
 
@@ -76,7 +76,7 @@ class TemplateTest extends TestCase
         );
 
         $template = new Template(
-            new DataModelBuilder($propertyMetadataLoader, null),
+            new DataModelBuilder($propertyMetadataLoader),
             $this->cacheDir,
         );
 
