@@ -64,6 +64,7 @@ use Symfony\Component\Translation\DependencyInjection\TranslationDumperPass;
 use Symfony\Component\Translation\DependencyInjection\TranslationExtractorPass;
 use Symfony\Component\Translation\DependencyInjection\TranslatorPass;
 use Symfony\Component\Translation\DependencyInjection\TranslatorPathsPass;
+use Symfony\Component\TypeInfo\DependencyInjection\TypeInfoPass;
 use Symfony\Component\Validator\DependencyInjection\AddAutoMappingConfigurationPass;
 use Symfony\Component\Validator\DependencyInjection\AddConstraintValidatorsPass;
 use Symfony\Component\Validator\DependencyInjection\AddValidatorInitializersPass;
@@ -150,6 +151,7 @@ class FrameworkBundle extends Bundle
         $this->addCompilerPassIfExists($container, TranslationDumperPass::class);
         $container->addCompilerPass(new FragmentRendererPass());
         $this->addCompilerPassIfExists($container, SerializerPass::class);
+        $this->addCompilerPassIfExists($container, TypeInfoPass::class);
         $this->addCompilerPassIfExists($container, PropertyInfoPass::class);
         $container->addCompilerPass(new ControllerArgumentValueResolverPass());
         $container->addCompilerPass(new CachePoolPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 32);

@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.1
+---
+
+ * Register TypeInfo services
+
 7.0
 ---
 
