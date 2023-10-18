@@ -33,7 +33,7 @@ final class LazyGhostCacheWarmer extends CacheWarmer
     ) {
     }
 
-    public function warmUp(string $cacheDir): array
+    public function warmUp(string $cacheDir, string $buildDir = null): array
     {
         if (!file_exists($this->lazyGhostCacheDir)) {
             mkdir($this->lazyGhostCacheDir, recursive: true);

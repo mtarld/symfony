@@ -12,59 +12,62 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Exception\UnexpectedValueException;
+use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Json\Template\Decode\Decoder;
 
 class DecoderTest extends TestCase
 {
     public function testDecode()
     {
-        $this->assertSame('foo', Decoder::decode($this->createResource('"foo"'), 0, -1));
+        $this->assertDecoded('foo', '"foo"');
     }
 
     public function testDecodeSubset()
     {
-        $this->assertSame('bar', Decoder::decode($this->createResource('["foo","bar","baz"]'), 7, 5));
+        $this->assertDecoded('bar', '["foo","bar","baz"]', 7, 5);
     }
 
     public function testDecodeWithJsonDecodeFlags()
     {
-        $this->assertSame(
-            1.2345678901234568E+29,
-            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1),
-        );
-
-        $this->assertSame(
-            '123456789012345678901234567890',
-            Decoder::decode($this->createResource('123456789012345678901234567890'), 0, -1, \JSON_BIGINT_AS_STRING),
-        );
+        $this->assertDecoded(1.2345678901234568E+29, '123456789012345678901234567890');
+        $this->assertDecoded('123456789012345678901234567890', '123456789012345678901234567890', flags: \JSON_BIGINT_AS_STRING);
     }
 
-    public function testDecodeThrowOnInvalidResource()
+    public function testDecodeThrowOnInvalidJsonString()
     {
-        $this->expectException(InvalidResourceException::class);
+        $this->expectException(UnexpectedValueException::class);
 
-        Decoder::decode(fopen(sprintf('%s/%s', sys_get_temp_dir(), uniqid()), 'w'), 0, -1);
+        Decoder::decodeString('foo"');
     }
 
-    public function testDecodeThrowOnInvalidJson()
+    public function testDecodeThrowOnInvalidJsonStream()
     {
-        $this->expectException(InvalidResourceException::class);
+        $this->expectException(UnexpectedValueException::class);
 
-        Decoder::decode($this->createResource('foo"'), 0, -1);
+        $stream = new BufferedStream();
+        $stream->write('foo"');
+        $stream->rewind();
+
+        Decoder::decodeStream($stream);
     }
 
-    /**
-     * @return resource
-     */
-    private function createResource(string $content): mixed
+    private function assertDecoded(mixed $decoded, string $encoded, int $offset = 0, int $length = null, int $flags = 0): void
     {
-        /** @var resource $resource */
+        if (0 === $offset && null === $length) {
+            $this->assertEquals($decoded, Decoder::decodeString($encoded, $flags));
+        }
+
+        $stream = new BufferedStream();
+        $stream->write($encoded);
+        $stream->rewind();
+
+        $this->assertEquals($decoded, Decoder::decodeStream($stream, $offset, $length, $flags));
+
         $resource = fopen('php://temp', 'w');
-
-        fwrite($resource, $content);
+        fwrite($resource, $encoded);
         rewind($resource);
 
-        return $resource;
+        $this->assertEquals($decoded, Decoder::decodeStream($resource, $offset, $length, $flags));
     }
 }

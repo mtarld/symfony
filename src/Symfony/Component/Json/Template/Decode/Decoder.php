@@ -11,7 +11,9 @@
 
 namespace Symfony\Component\Json\Template\Decode;
 
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Exception\UnexpectedValueException;
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -20,16 +22,31 @@ use Symfony\Component\Encoder\Exception\InvalidResourceException;
  */
 final readonly class Decoder
 {
-    public static function decode(mixed $resource, int $offset, int $length, int $flags = 0): mixed
+    public static function decodeString(string $json, int $flags = 0): mixed
     {
-        if (false === $content = @stream_get_contents($resource, $length, $offset)) {
-            throw new InvalidResourceException($resource);
+        try {
+            return json_decode($json, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new UnexpectedValueException('JSON is not valid.');
+        }
+    }
+
+    /**
+     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     */
+    public static function decodeStream(mixed $stream, int $offset = 0, int $length = null, int $flags = 0): mixed
+    {
+        if (\is_resource($stream)) {
+            $json = stream_get_contents($stream, $length ?? -1, $offset);
+        } else {
+            $stream->seek($offset);
+            $json = $stream->read($length);
         }
 
         try {
-            return json_decode($content, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
+            return json_decode($json, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw new InvalidResourceException($resource);
+            throw new UnexpectedValueException('JSON is not valid.');
         }
     }
 }

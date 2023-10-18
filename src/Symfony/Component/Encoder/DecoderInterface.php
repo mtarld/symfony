@@ -11,10 +11,12 @@
 
 namespace Symfony\Component\Encoder;
 
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**
- * Decodes an $input string into a given $type according to a $config.
+ * Decodes an $input into a given $type according to a $config.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -27,7 +29,8 @@ use Symfony\Component\TypeInfo\Type;
 interface DecoderInterface
 {
     /**
-     * @param DecodeConfig $config
+     * @param (StreamReaderInterface&SeekableStreamInterface)|\Traversable<string>|\Stringable|string $input
+     * @param DecodeConfig                                                                            $config
      */
-    public function decode(string $input, Type $type, array $config = []): mixed;
+    public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed;
 }

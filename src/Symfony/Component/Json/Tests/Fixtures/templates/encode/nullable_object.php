@@ -1,10 +1,17 @@
 <?php
 
 /**
- * @param ?Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy $data
- * @param resource $resource
+ * @param ?Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes $data
  */
-return static function (mixed $data, mixed $resource, array $config, ?\Psr\Container\ContainerInterface $services): void {
+return static function (mixed $data, array $config, ?\Psr\Container\ContainerInterface $services): \Traversable {
     $jsonEncodeFlags = $config["json_encode_flags"] ?? 0;
-    \fwrite($resource, \json_encode($data, $jsonEncodeFlags));
+    if (null === $data) {
+        yield "null";
+    } else {
+        yield "{\"@id\":";
+        yield \json_encode($data->id, $jsonEncodeFlags);
+        yield ",\"name\":";
+        yield \json_encode($data->name, $jsonEncodeFlags);
+        yield "}";
+    }
 };

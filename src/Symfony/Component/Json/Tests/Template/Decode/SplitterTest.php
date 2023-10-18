@@ -12,57 +12,32 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Exception\UnexpectedValueException;
+use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Json\Template\Decode\Splitter;
 
 class SplitterTest extends TestCase
 {
     public function testSplitNull()
     {
-        $this->assertNull((new Splitter())->splitDict($this->createResource('null'), 0, -1));
-        $this->assertNull((new Splitter())->splitList($this->createResource('null'), 0, -1));
+        $this->assertListBoundaries(null, 'null');
+        $this->assertDictBoundaries(null, 'null');
     }
 
-    /**
-     * @dataProvider splitDictDataProvider
-     *
-     * @param list<array{0: int, 1: int}> $expectedBoundaries
-     */
-    public function testSplitDict(array $expectedBoundaries, string $content)
+    public function testSplitList()
     {
-        $this->assertSame($expectedBoundaries, iterator_to_array((new Splitter())->splitDict(self::createResource($content), 0, -1)));
+        $this->assertListBoundaries([], '[]');
+        $this->assertListBoundaries([[1, 3]], '[100]');
+        $this->assertListBoundaries([[1, 3], [5, 3]], '[100,200]');
+        $this->assertListBoundaries([[1, 1], [3, 5]], '[1,[2,3]]');
+        $this->assertListBoundaries([[1, 1], [3, 5]], '[1,{2:3}]');
     }
 
-    /**
-     * @return iterable<array{0: list<array{0: int, 1: int}>, 1: list<array{0: string, 1: int}>}>
-     */
-    public static function splitDictDataProvider(): iterable
+    public function testSplitDict()
     {
-        yield [[], '{}'];
-        yield [['k' => [5, 2]], '{"k":10}'];
-        yield [['k' => [5, 4]], '{"k":[10]}'];
-    }
-
-    /**
-     * @dataProvider splitListDataProvider
-     *
-     * @param list<array{0: int, 1: int}> $expectedBoundaries
-     */
-    public function testSplitList(array $expectedBoundaries, string $content)
-    {
-        $this->assertSame($expectedBoundaries, iterator_to_array((new Splitter())->splitList(self::createResource($content), 0, -1)));
-    }
-
-    /**
-     * @return iterable<array{0: list<array{0: int, 1: int}>, 1: string}>
-     */
-    public static function splitListDataProvider(): iterable
-    {
-        yield [[], '[]'];
-        yield [[[1, 3]], '[100]'];
-        yield [[[1, 3], [5, 3]], '[100,200]'];
-        yield [[[1, 1], [3, 5]], '[1,[2,3]]'];
-        yield [[[1, 1], [3, 5]], '[1,{2:3}]'];
+        $this->assertDictBoundaries([], '{}');
+        $this->assertDictBoundaries(['k' => [5, 2]], '{"k":10}');
+        $this->assertDictBoundaries(['k' => [5, 4]], '{"k":[10]}');
     }
 
     /**
@@ -70,9 +45,13 @@ class SplitterTest extends TestCase
      */
     public function testSplitDictInvalidThrowException(string $content)
     {
-        $this->expectException(InvalidResourceException::class);
+        $this->expectException(UnexpectedValueException::class);
 
-        iterator_to_array((new Splitter())->splitDict(self::createResource($content), 0, -1));
+        $stream = new BufferedStream();
+        $stream->write($content);
+        $stream->rewind();
+
+        iterator_to_array((new Splitter())->splitDict($stream));
     }
 
     /**
@@ -90,9 +69,13 @@ class SplitterTest extends TestCase
      */
     public function testSplitListInvalidThrowException(string $content)
     {
-        $this->expectException(InvalidResourceException::class);
+        $this->expectException(UnexpectedValueException::class);
 
-        iterator_to_array((new Splitter())->splitList(self::createResource($content), 0, -1));
+        $stream = new BufferedStream();
+        $stream->write($content);
+        $stream->rewind();
+
+        iterator_to_array((new Splitter())->splitList($stream));
     }
 
     /**
@@ -105,17 +88,45 @@ class SplitterTest extends TestCase
         yield ['[[]}'];
     }
 
-    /**
-     * @return resource
-     */
-    private static function createResource(string $content): mixed
+    private function assertListBoundaries(array|null $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
     {
-        /** @var resource $resource */
-        $resource = fopen('php://memory', 'w+');
-
+        $resource = fopen('php://temp', 'w');
         fwrite($resource, $content);
         rewind($resource);
 
-        return $resource;
+        $boundaries = (new Splitter())->splitList($resource, $offset, $length);
+        $boundaries = null !== $boundaries ? iterator_to_array($boundaries) : null;
+
+        $this->assertSame($expectedBoundaries, $boundaries);
+
+        $stream = new BufferedStream();
+        $stream->write($content);
+        $stream->rewind();
+
+        $boundaries = (new Splitter())->splitList($stream, $offset, $length);
+        $boundaries = null !== $boundaries ? iterator_to_array($boundaries) : null;
+
+        $this->assertSame($expectedBoundaries, $boundaries);
+    }
+
+    private function assertDictBoundaries(array|null $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
+    {
+        $resource = fopen('php://temp', 'w');
+        fwrite($resource, $content);
+        rewind($resource);
+
+        $boundaries = (new Splitter())->splitDict($resource, $offset, $length);
+        $boundaries = null !== $boundaries ? iterator_to_array($boundaries) : null;
+
+        $this->assertSame($expectedBoundaries, $boundaries);
+
+        $stream = new BufferedStream();
+        $stream->write($content);
+        $stream->rewind();
+
+        $boundaries = (new Splitter())->splitDict($stream, $offset, $length);
+        $boundaries = null !== $boundaries ? iterator_to_array($boundaries) : null;
+
+        $this->assertSame($expectedBoundaries, $boundaries);
     }
 }

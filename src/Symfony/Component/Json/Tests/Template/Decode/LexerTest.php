@@ -12,61 +12,46 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Json\Template\Decode\Lexer;
 
 class LexerTest extends TestCase
 {
-    /**
-     * @dataProvider tokensDataProvider
-     *
-     * @param list<string> $expectedTokens
-     */
-    public function testTokens(array $expectedTokens, string $content)
+    public function testTokens()
     {
-        $this->assertSame($expectedTokens, iterator_to_array((new Lexer())->tokens($this->createResource($content), 0, -1)));
-    }
-
-    /**
-     * @return iterable<array{0: list<string>, 1: string}>
-     */
-    public static function tokensDataProvider(): iterable
-    {
-        yield [[['1', 0]], '1'];
-        yield [[['false', 0]], 'false'];
-        yield [[['null', 0]], 'null'];
-        yield [[['"string"', 0]], '"string"'];
-
-        yield [[['[', 0], [']', 1]], '[]'];
-        yield [[['[', 0], ['10', 2], [',', 4], ['20', 6], [']', 9]], '[ 10, 20 ]'];
-        yield [[['[', 0], ['1', 1], [',', 2], ['[', 4], ['2', 5], [']', 6], [']', 8]], '[1, [2] ]'];
-
-        yield [[['{', 0], ['}', 1]], '{}'];
-        yield [[['{', 0], ['"foo"', 1], [':', 6], ['{', 8], ['"bar"', 9], [':', 14], ['"baz"', 15], ['}', 20], ['}', 21]], '{"foo": {"bar":"baz"}}'];
+        $this->assertTokens([['1', 0]], '1');
+        $this->assertTokens([['false', 0]], 'false');
+        $this->assertTokens([['null', 0]], 'null');
+        $this->assertTokens([['"string"', 0]], '"string"');
+        $this->assertTokens([['[', 0], [']', 1]], '[]');
+        $this->assertTokens([['[', 0], ['10', 2], [',', 4], ['20', 6], [']', 9]], '[ 10, 20 ]');
+        $this->assertTokens([['[', 0], ['1', 1], [',', 2], ['[', 4], ['2', 5], [']', 6], [']', 8]], '[1, [2] ]');
+        $this->assertTokens([['{', 0], ['}', 1]], '{}');
+        $this->assertTokens([['{', 0], ['"foo"', 1], [':', 6], ['{', 8], ['"bar"', 9], [':', 14], ['"baz"', 15], ['}', 20], ['}', 21]], '{"foo": {"bar":"baz"}}');
     }
 
     public function testTokensSubset()
     {
-        $this->assertSame([['false', 7]], iterator_to_array((new Lexer())->tokens($this->createResource('[1, 2, false]'), 7, 5)));
+        $this->assertTokens([['false', 7]], '[1, 2, false]', 7, 5);
     }
 
     public function testTokenizeOverflowingBuffer()
     {
         $veryLongString = sprintf('"%s"', str_repeat('.', 20000));
 
-        $this->assertSame([[$veryLongString, 0]], iterator_to_array((new Lexer())->tokens($this->createResource($veryLongString), 0, -1)));
+        $this->assertTokens([[$veryLongString, 0]], $veryLongString);
     }
 
-    /**
-     * @return resource
-     */
-    private function createResource(string $content): mixed
+    private function assertTokens(array $tokens, string $content, int $offset = 0, int $length = null): void
     {
-        /** @var resource $resource */
         $resource = fopen('php://temp', 'w');
-
         fwrite($resource, $content);
         rewind($resource);
 
-        return $resource;
+        $stream = new BufferedStream();
+        $stream->write($content);
+        $stream->rewind();
+
+        $this->assertSame($tokens, iterator_to_array((new Lexer())->getTokens($resource, $offset, $length)));
     }
 }

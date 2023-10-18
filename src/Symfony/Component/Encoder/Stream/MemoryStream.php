@@ -18,10 +18,59 @@ namespace Symfony\Component\Encoder\Stream;
  *
  * @experimental in 7.1
  */
-final class MemoryStream extends Stream
+final class MemoryStream implements StreamReaderInterface, StreamWriterInterface, SeekableStreamInterface
 {
-    public function __construct(string $mode = 'w+b')
+    private const CHUNK_LENGTH = 8192;
+
+    /**
+     * @var resource
+     */
+    private mixed $resource;
+
+    public function __construct()
     {
-        parent::__construct('php://memory', $mode);
+        $this->resource = fopen('php://memory', 'w+');
+    }
+
+    public function __destruct()
+    {
+        fclose($this->resource);
+    }
+
+    public function read(int $length = null): string
+    {
+        return fread($this->resource, $length ?? self::CHUNK_LENGTH);
+    }
+
+    public function getIterator(): \Traversable
+    {
+        while (!feof($this->resource)) {
+            yield fread($this->resource, self::CHUNK_LENGTH);
+        }
+    }
+
+    public function __toString(): string
+    {
+        return stream_get_contents($this->resource);
+    }
+
+    public function rewind(): void
+    {
+        rewind($this->resource);
+    }
+
+    public function seek(int $offset): void
+    {
+        fseek($this->resource, $offset);
+    }
+
+    public function write(string $string): void
+    {
+        fwrite($this->resource, $string);
+    }
+
+    public function getResource(): mixed
+    {
+        return $this->resource;
     }
 }

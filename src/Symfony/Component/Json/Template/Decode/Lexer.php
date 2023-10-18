@@ -12,6 +12,8 @@
 namespace Symfony\Component\Json\Template\Decode;
 
 use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -26,38 +28,22 @@ final readonly class Lexer
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
 
     /**
-     * @param resource $resource
+     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
      *
-     * @return \Iterator<array{0: string, 1: int}>
+     * @return \Traversable<array{0: string, 1: int}>
      *
      * @throws InvalidResourceException
      */
-    public function tokens(mixed $resource, int $offset, int $length): \Iterator
+    public function getTokens(mixed $stream, int $offset, ?int $length): \Traversable
     {
         $currentTokenPosition = $offset;
-
         $token = '';
-
         $inString = $escaping = false;
-        $infiniteLength = -1 === $length;
-        $chunkLength = $infiniteLength ? self::MAX_CHUNK_LENGTH : min($length, self::MAX_CHUNK_LENGTH);
 
-        if (false === @rewind($resource)) {
-            throw new InvalidResourceException($resource);
-        }
+        foreach ($this->getChunks($stream, $offset, $length) as $chunk) {
+            $chunkLength = \strlen($chunk);
 
-        $toReadLength = $length;
-
-        while (!feof($resource) && ($infiniteLength || $toReadLength > 0)) {
-            if (false === $buffer = @stream_get_contents($resource, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset)) {
-                throw new InvalidResourceException($resource);
-            }
-
-            $toReadLength -= $bufferLength = \strlen($buffer);
-
-            for ($i = 0; $i < $bufferLength; ++$i) {
-                $byte = $buffer[$i];
-
+            foreach (str_split($chunk) as $byte) {
                 if ($escaping) {
                     $escaping = false;
                     $token .= $byte;
@@ -105,12 +91,56 @@ final readonly class Lexer
 
                 $token .= $byte;
             }
-
-            $offset += $bufferLength;
         }
 
         if ('' !== $token) {
             yield [$token, $currentTokenPosition];
+        }
+    }
+
+    /**
+     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     *
+     * @return \Traversable<string>
+     */
+    private function getChunks(mixed $stream, int $offset, ?int $length): \Traversable
+    {
+        $infiniteLength = null === $length;
+        $chunkLength = $infiniteLength ? self::MAX_CHUNK_LENGTH : min($length, self::MAX_CHUNK_LENGTH);
+        $toReadLength = $length;
+
+        if (\is_resource($stream)) {
+            rewind($stream);
+
+            while (!feof($stream) && ($infiniteLength || $toReadLength > 0)) {
+                $chunk = stream_get_contents($stream, $infiniteLength ? -1 : min($chunkLength, $toReadLength), $offset);
+                $toReadLength -= $l = \strlen($chunk);
+                $offset += $l;
+
+                yield $chunk;
+            }
+
+            return;
+        }
+
+        $stream->seek($offset);
+
+        foreach ($stream as $chunk) {
+            if (!$infiniteLength && $toReadLength <= 0) {
+                break;
+            }
+
+            $chunkLength = \strlen($chunk);
+
+            if ($chunkLength > $toReadLength) {
+                yield substr($chunk, 0, $toReadLength);
+
+                break;
+            }
+
+            $toReadLength -= $chunkLength;
+
+            yield $chunk;
         }
     }
 }

@@ -12,9 +12,10 @@
 namespace Symfony\Component\Json;
 
 use Psr\Container\ContainerInterface;
+use Symfony\Component\Encoder\Encoded;
 use Symfony\Component\Encoder\EncoderInterface;
+use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Encoder\Exception\RuntimeException;
-use Symfony\Component\Encoder\Stream\MemoryStream;
 use Symfony\Component\Json\Template\Encode\Template;
 use Symfony\Component\TypeInfo\Type;
 
@@ -42,16 +43,30 @@ final readonly class JsonEncoder implements EncoderInterface
     /**
      * @param JsonEncodeConfig $config
      */
-    public function encode(mixed $data, array $config = []): string
+    public function encode(mixed $data, array $config = []): \Traversable&\Stringable
     {
         if (null === ($type = $config['type'] ?? null)) {
             $type = \is_object($data) ? Type::object($data::class) : new Type(get_debug_type($data));
         }
 
-        $path = $this->template->getPath($type, false);
+        $stream = $config['stream'] ?? null;
+        $isResourceStream = null !== $stream && method_exists($stream, 'getResource');
+
+        $encodeTo = match (true) {
+            $isResourceStream => Template::ENCODE_TO_RESOURCE,
+            null !== $stream => Template::ENCODE_TO_STREAM,
+            default => Template::ENCODE_TO_STRING,
+        };
+
+        $path = $this->template->getPath($type, $encodeTo);
 
         if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = $this->template->generateContent($type, false, $config);
+            $content = match ($encodeTo) {
+                Template::ENCODE_TO_RESOURCE => $this->template->generateResourceContent($type, $config),
+                Template::ENCODE_TO_STREAM => $this->template->generateStreamContent($type, $config),
+                Template::ENCODE_TO_STRING => $this->template->generateContent($type, $config),
+                default => throw new LogicException(sprintf('Encoding to "%s" is not handled.', $encodeTo)),
+            };
 
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
@@ -66,10 +81,12 @@ final readonly class JsonEncoder implements EncoderInterface
             @chmod($path, 0666 & ~umask());
         }
 
-        $output = new MemoryStream();
+        if (null !== $stream) {
+            (require $path)($data, $isResourceStream ? $stream->getResource() : $stream, $config, $this->runtimeServices);
 
-        (require $path)($data, $output->getResource(), $config, $this->runtimeServices);
+            return new Encoded(new \EmptyIterator());
+        }
 
-        return (string) $output;
+        return new Encoded((require $path)($data, $config, $this->runtimeServices));
     }
 }

@@ -22,7 +22,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @experimental in 7.1
  */
-final class LazyInstantiator implements InstantiatorInterface
+final class LazyInstantiator implements LazyInstantiatorInterface
 {
     /**
      * @var array{reflection: array<class-string, \ReflectionClass<object>>, lazy_class_name: array<class-string, class-string>}
@@ -42,9 +42,6 @@ final class LazyInstantiator implements InstantiatorInterface
     ) {
     }
 
-    /**
-     * @param array<string, mixed|callable(): mixed> $properties
-     */
     public function instantiate(string $className, array $properties): object
     {
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);

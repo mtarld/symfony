@@ -19,7 +19,7 @@ use Symfony\Component\Encoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\Json\Template\Encode\Template;
 use Symfony\Component\Json\Tests\Fixtures\Enum\DummyBackedEnum;
-use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\Json\Tests\TypeResolverAwareTrait;
 use Symfony\Component\TypeInfo\Type;
@@ -45,14 +45,14 @@ class TemplateTest extends TestCase
     /**
      * @dataProvider templatePathDataProvider
      */
-    public function testTemplatePath(string $expectedFilename, Type $type, bool $forStream)
+    public function testTemplatePath(string $expectedFilename, Type $type, string $encodeTo)
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
             $this->cacheDir,
         );
 
-        $this->assertSame(sprintf('%s/%s', $this->cacheDir, $expectedFilename), $template->getPath($type, $forStream));
+        $this->assertSame(sprintf('%s/%s', $this->cacheDir, $expectedFilename), $template->getPath($type, $encodeTo));
     }
 
     /**
@@ -60,11 +60,9 @@ class TemplateTest extends TestCase
      */
     public static function templatePathDataProvider(): iterable
     {
-        yield ['7617cc4b435dae7c97211c6082923b47.encode.json.php', Type::int(), false];
-        yield ['6e77b03690271cbee671df141e635536.encode.json.php', Type::int(nullable: true), false];
-        yield ['070660c7e72aa3e14a93c1039279afb6.encode.json.stream.php', Type::mixed(), true];
-        yield ['e95f88b4552266a00e5f1d8f567548e0.encode.json.php', Type::object(ClassicDummy::class), false];
-        yield ['e95f88b4552266a00e5f1d8f567548e0.encode.json.stream.php', Type::object(ClassicDummy::class), true];
+        yield ['7617cc4b435dae7c97211c6082923b47.encode.json.string.php', Type::int(), Template::ENCODE_TO_STRING];
+        yield ['6e77b03690271cbee671df141e635536.encode.json.stream.php', Type::int(nullable: true), Template::ENCODE_TO_STREAM];
+        yield ['070660c7e72aa3e14a93c1039279afb6.encode.json.resource.php', Type::mixed(), Template::ENCODE_TO_RESOURCE];
     }
 
     /**
@@ -87,13 +85,18 @@ class TemplateTest extends TestCase
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/encode/%s.php', \dirname(__DIR__, 2), $fixture),
-            $template->generateContent($type, false),
+            sprintf('%s/Fixtures/templates/encode/%s.string.php', \dirname(__DIR__, 2), $fixture),
+            $template->generateContent($type),
         );
 
         $this->assertStringEqualsFile(
             sprintf('%s/Fixtures/templates/encode/%s.stream.php', \dirname(__DIR__, 2), $fixture),
-            $template->generateContent($type, true),
+            $template->generateStreamContent($type),
+        );
+
+        $this->assertStringEqualsFile(
+            sprintf('%s/Fixtures/templates/encode/%s.resource.php', \dirname(__DIR__, 2), $fixture),
+            $template->generateResourceContent($type),
         );
     }
 
@@ -108,17 +111,17 @@ class TemplateTest extends TestCase
         yield ['nullable_backed_enum', Type::enum(DummyBackedEnum::class, Type::string(), nullable: true)];
 
         yield ['list', Type::list()];
-        yield ['object_list', Type::list(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_list', Type::list(Type::object(ClassicDummy::class), nullable: true)];
+        yield ['object_list', Type::list(Type::object(DummyWithNameAttributes::class))];
+        yield ['nullable_object_list', Type::list(Type::object(DummyWithNameAttributes::class), nullable: true)];
         yield ['iterable_list', Type::iterableList()];
 
         yield ['dict', Type::dict()];
-        yield ['object_dict', Type::dict(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_dict', Type::dict(Type::object(ClassicDummy::class), nullable: true)];
+        yield ['object_dict', Type::dict(Type::object(DummyWithNameAttributes::class))];
+        yield ['nullable_object_dict', Type::dict(Type::object(DummyWithNameAttributes::class), nullable: true)];
         yield ['iterable_dict', Type::iterableDict()];
 
-        yield ['object', Type::object(ClassicDummy::class)];
-        yield ['nullable_object', Type::object(ClassicDummy::class, nullable: true)];
+        yield ['object', Type::object(DummyWithNameAttributes::class)];
+        yield ['nullable_object', Type::object(DummyWithNameAttributes::class, nullable: true)];
         yield ['object_in_object', Type::object(DummyWithOtherDummies::class)];
     }
 }

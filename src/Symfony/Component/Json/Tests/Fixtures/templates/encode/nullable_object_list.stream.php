@@ -1,25 +1,24 @@
 <?php
 
 /**
- * @param ?array<int,Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy> $data
- * @param resource $resource
+ * @param ?array<int,Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes> $data
  */
-return static function (mixed $data, mixed $resource, array $config, ?\Psr\Container\ContainerInterface $services): void {
-    $jsonEncodeFlags = $config["json_encode_flags"] ?? 0;
+return static function (mixed $data, \Symfony\Component\Encoder\Stream\StreamWriterInterface $stream, array $config, ?\Psr\Container\ContainerInterface $services): void {
+    $flags = $config["json_encode_flags"] ?? 0;
     if (null === $data) {
-        \fwrite($resource, "null");
+        $stream->write("null");
     } else {
-        \fwrite($resource, "[");
+        $stream->write("[");
         $prefix_0 = "";
         foreach ($data as $value_0) {
-            \fwrite($resource, $prefix_0);
-            \fwrite($resource, "{\"id\":");
-            \fwrite($resource, \json_encode($value_0->id, $jsonEncodeFlags));
-            \fwrite($resource, ",\"name\":");
-            \fwrite($resource, \json_encode($value_0->name, $jsonEncodeFlags));
-            \fwrite($resource, "}");
+            $stream->write($prefix_0);
+            $stream->write("{\"@id\":");
+            $stream->write(\json_encode($value_0->id, $flags));
+            $stream->write(",\"name\":");
+            $stream->write(\json_encode($value_0->name, $flags));
+            $stream->write("}");
             $prefix_0 = ",";
         }
-        \fwrite($resource, "]");
+        $stream->write("]");
     }
 };

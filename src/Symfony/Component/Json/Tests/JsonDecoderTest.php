@@ -14,7 +14,7 @@ namespace Symfony\Component\Json\Tests;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder;
-use Symfony\Component\Encoder\Instantiator\EagerInstantiator;
+use Symfony\Component\Encoder\Instantiator\Instantiator;
 use Symfony\Component\Encoder\Instantiator\LazyInstantiator;
 use Symfony\Component\Encoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
@@ -22,7 +22,6 @@ use Symfony\Component\Encoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\Encoder\Stream\MemoryStream;
 use Symfony\Component\Json\JsonDecoder;
-use Symfony\Component\Json\JsonStreamingDecoder;
 use Symfony\Component\Json\Template\Decode\Template;
 use Symfony\Component\Json\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
@@ -38,6 +37,7 @@ class JsonDecoderTest extends TestCase
 
     private string $templateCacheDir;
     private string $lazyObjectCacheDir;
+    private JsonDecoder $decoder;
 
     protected function setUp(): void
     {
@@ -55,139 +55,123 @@ class JsonDecoderTest extends TestCase
             array_map('unlink', glob($this->lazyObjectCacheDir.'/*'));
             rmdir($this->lazyObjectCacheDir);
         }
-    }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeScalar(JsonDecoder|JsonStreamingDecoder $decoder)
-    {
-        $this->assertNull($this->decode('null', Type::int(nullable: true), $decoder));
-        $this->assertTrue($this->decode('true', Type::bool(), $decoder));
-
-        $this->assertSame(
-            [['foo' => 1, 'bar' => 2], ['foo' => 3]],
-            $this->decode('[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::array(), $decoder),
-        );
-        $this->assertSame(
-            [['foo' => 1, 'bar' => 2], ['foo' => 3]],
-            $this->decode('[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterable(), $decoder),
-        );
-        $this->assertEquals(
-            (object) ['foo' => 'bar'],
-            $this->decode('{"foo": "bar"}', Type::object(), $decoder),
-        );
-        $this->assertEquals(
-            DummyBackedEnum::ONE,
-            $this->decode('1', Type::enum(DummyBackedEnum::class, Type::string()), $decoder),
-        );
-    }
-
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeCollection(JsonDecoder|JsonStreamingDecoder $decoder)
-    {
-        $this->assertSame(
-            [['foo' => 1, 'bar' => 2], ['foo' => 3]],
-            $this->decode('[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::list(Type::dict(Type::int())), $decoder),
+        $typeResolver = self::getTypeResolver();
+        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
+            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
+                new PropertyMetadataLoader($typeResolver),
+                $typeResolver,
+            )),
+            $typeResolver,
         );
 
-        $iterable = $this->decode('[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterableList(Type::iterableDict(Type::int())), $decoder);
-        $this->assertIsIterable($iterable);
-        $array = [];
-        foreach ($iterable as $item) {
-            $array[] = iterator_to_array($item);
-        }
+        $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
+        $template = new Template($dataModeBuilder, $this->templateCacheDir);
 
-        $this->assertSame([['foo' => 1, 'bar' => 2], ['foo' => 3]], $array);
+        $this->decoder = new JsonDecoder($template, new Instantiator(), new LazyInstantiator($this->lazyObjectCacheDir), $this->templateCacheDir);
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeObject(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testDecodeScalar()
     {
-        $decoded = $this->decode('{"id": 10, "name": "dummy name"}', Type::object(ClassicDummy::class), $decoder);
-
-        $this->assertInstanceOf(ClassicDummy::class, $decoded);
-        $this->assertSame(10, $decoded->id);
-        $this->assertSame('dummy name', $decoded->name);
+        $this->assertDecoded(null, 'null', Type::int(nullable: true));
+        $this->assertDecoded(true, 'true', Type::bool());
+        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::array());
+        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterable());
+        $this->assertDecoded((object) ['foo' => 'bar'], '{"foo": "bar"}', Type::object());
+        $this->assertDecoded(DummyBackedEnum::ONE, '1', Type::enum(DummyBackedEnum::class, Type::string()));
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeObjectWithEncodedName(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testDecodeCollection()
     {
-        $decoded = $this->decode('{"@id": 10}', Type::object(DummyWithNameAttributes::class), $decoder);
+        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::list(Type::dict(Type::int())));
+        $this->assertDecoded(function (mixed $decoded) {
+            $this->assertIsIterable($decoded);
+            $array = [];
+            foreach ($decoded as $item) {
+                $array[] = iterator_to_array($item);
+            }
 
-        $this->assertInstanceOf(DummyWithNameAttributes::class, $decoded);
-        $this->assertSame(10, $decoded->id);
+            $this->assertSame([['foo' => 1, 'bar' => 2], ['foo' => 3]], $array);
+        }, '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterableList(Type::iterableDict(Type::int())));
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeObjectWithDecodeFormatter(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testDecodeObject()
     {
-        $decoded = $this->decode('{"id": "20"}', Type::object(DummyWithFormatterAttributes::class), $decoder);
-
-        $this->assertInstanceOf(DummyWithFormatterAttributes::class, $decoded);
-        $this->assertSame(10, $decoded->id);
+        $this->assertDecoded(function (mixed $decoded) {
+            $this->assertInstanceOf(ClassicDummy::class, $decoded);
+            $this->assertSame(10, $decoded->id);
+            $this->assertSame('dummy name', $decoded->name);
+        }, '{"id": 10, "name": "dummy name"}', Type::object(ClassicDummy::class));
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testDecodeObjectWithRuntimeServices(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testDecodeObjectWithEncodedName()
+    {
+        $this->assertDecoded(function (mixed $decoded) {
+            $this->assertInstanceOf(DummyWithNameAttributes::class, $decoded);
+            $this->assertSame(10, $decoded->id);
+        }, '{"@id": 10}', Type::object(DummyWithNameAttributes::class));
+    }
+
+    public function testDecodeObjectWithDecodeFormatter()
+    {
+        $this->assertDecoded(function (mixed $decoded) {
+            $this->assertInstanceOf(DummyWithFormatterAttributes::class, $decoded);
+            $this->assertSame(10, $decoded->id);
+        }, '{"id": "20"}', Type::object(DummyWithFormatterAttributes::class));
+    }
+
+    public function testDecodeObjectWithRuntimeServices()
     {
         $typeResolver = self::getTypeResolver();
+        $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+
         $service = new JsonDecoder(
-            new Template(new DataModelBuilder(new PropertyMetadataLoader($typeResolver)), 'cache'),
-            new EagerInstantiator(),
-            'cache',
+            new Template(new DataModelBuilder($propertyMetadataLoader), $this->templateCacheDir),
+            new Instantiator(),
+            new LazyInstantiator($this->lazyObjectCacheDir),
+            $this->templateCacheDir,
         );
 
         $runtimeServices = new class([sprintf('%s::serviceAndConfig[service]', DummyWithAttributesUsingServices::class) => fn () => $service]) implements ContainerInterface {
             use ServiceLocatorTrait;
         };
 
-        $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $dataModelBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);
 
-        $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);
-        $template = new Template($dataModeBuilder, $this->templateCacheDir);
+        $decoder = new JsonDecoder(
+            new Template($dataModelBuilder, $this->templateCacheDir),
+            new Instantiator(),
+            new LazyInstantiator($this->lazyObjectCacheDir),
+            $this->templateCacheDir,
+            $runtimeServices,
+        );
 
-        $dummy = new DummyWithAttributesUsingServices();
+        $encoded = '{"one":"\"one\"","two":"two","three":"three"}';
 
-        $decoder = new JsonDecoder($template, new EagerInstantiator(), $this->templateCacheDir, $runtimeServices);
-        $decoded = $this->decode('{"one":"\"one\"","two":"two","three":"three"}', Type::object(DummyWithAttributesUsingServices::class), $decoder);
-
+        $decoded = $decoder->decode($encoded, Type::object(DummyWithAttributesUsingServices::class));
         $this->assertInstanceOf(DummyWithAttributesUsingServices::class, $decoded);
         $this->assertSame('one', $decoded->one);
 
-        $decoder = new JsonStreamingDecoder($template, new LazyInstantiator($this->lazyObjectCacheDir), $this->templateCacheDir, $runtimeServices);
-        $decoded = $this->decode('{"one":"\"one\"","two":"two","three":"three"}', Type::object(DummyWithAttributesUsingServices::class), $decoder);
+        $traversable = new \ArrayIterator(str_split($encoded, 2));
+        $this->assertInstanceOf(DummyWithAttributesUsingServices::class, $decoded);
+        $this->assertSame('one', $decoded->one);
 
+        $stream = new MemoryStream();
+        $stream->write($encoded);
+        $stream->rewind();
         $this->assertInstanceOf(DummyWithAttributesUsingServices::class, $decoded);
         $this->assertSame('one', $decoded->one);
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testCreateCacheFile(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testCreateCacheFile()
     {
-        $this->decode('true', Type::bool(), $decoder);
+        $this->decoder->decode('true', Type::bool());
 
         $this->assertFileExists($this->templateCacheDir);
         $this->assertCount(1, glob($this->templateCacheDir.'/*'));
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testCreateCacheFileOnlyIfNotExists(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testCreateCacheFileOnlyIfNotExists()
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
@@ -198,18 +182,12 @@ class JsonDecoderTest extends TestCase
             mkdir($this->templateCacheDir, recursive: true);
         }
 
-        file_put_contents(
-            $template->getPath(Type::bool(), forStream: $decoder instanceof JsonStreamingDecoder),
-            '<?php return static function () { return "CACHED"; };',
-        );
+        file_put_contents($template->getPath(Type::bool(), Template::DECODE_FROM_STRING), '<?php return static function () { return "CACHED"; };');
 
-        $this->assertSame('CACHED', $this->decode('true', Type::bool(), $decoder));
+        $this->assertSame('CACHED', $this->decoder->decode('true', Type::bool()));
     }
 
-    /**
-     * @dataProvider decoders
-     */
-    public function testRecreateCacheFileIfForceGenerateTemplate(JsonDecoder|JsonStreamingDecoder $decoder)
+    public function testRecreateCacheFileIfForceGenerateTemplate()
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
@@ -220,20 +198,12 @@ class JsonDecoderTest extends TestCase
             mkdir($this->templateCacheDir, recursive: true);
         }
 
-        file_put_contents(
-            $template->getPath(Type::bool(), forStream: $decoder instanceof JsonStreamingDecoder),
-            '<?php return static function () { return "CACHED"; };',
-        );
+        file_put_contents($template->getPath(Type::bool(), Template::DECODE_FROM_STRING), '<?php return static function () { return "CACHED"; };');
 
-        $this->assertTrue($this->decode(
-            'true',
-            Type::bool(),
-            $decoder,
-            ['force_generate_template' => true],
-        ));
+        $this->assertTrue($this->decoder->decode('true', Type::bool(), ['force_generate_template' => true]));
     }
 
-    private function decode(string $input, Type $type, JsonDecoder|JsonStreamingDecoder $decoder, array $config = []): mixed
+    private function decode(string $input, Type $type, JsonDecoder $decoder, array $config = []): mixed
     {
         if ($decoder instanceof JsonDecoder) {
             return $decoder->decode($input, $type, $config);
@@ -246,27 +216,30 @@ class JsonDecoderTest extends TestCase
         return $decoder->decode($inputStream, $type, $config);
     }
 
-    /**
-     * @return iterable<array{0: JsonDecode|JsonStreamingDecoder}>
-     */
-    public function decoders(): iterable
+    private function assertDecoded(mixed $decodedOrAssert, string $encoded, Type $type): void
     {
-        $templateCacheDir = sprintf('%s/symfony_json_template', sys_get_temp_dir());
-        $lazyObjectCacheDir = sprintf('%s/symfony_encoder_lazy_ghost', sys_get_temp_dir());
-        $typeResolver = self::getTypeResolver();
+        $assert = \is_callable($decodedOrAssert, syntax_only: true) ? $decodedOrAssert : fn (mixed $decoded) => $this->assertEquals($decodedOrAssert, $decoded);
 
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
-                new PropertyMetadataLoader($typeResolver),
-                $typeResolver,
-            )),
-            $typeResolver,
-        );
+        $assert($this->decoder->decode($encoded, $type));
 
-        $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
-        $template = new Template($dataModeBuilder, $templateCacheDir);
+        $stringable = new class($encoded) implements \Stringable {
+            public function __construct(private string $string)
+            {
+            }
 
-        yield [new JsonDecoder($template, new EagerInstantiator(), $templateCacheDir)];
-        yield [new JsonStreamingDecoder($template, new LazyInstantiator($lazyObjectCacheDir), $templateCacheDir)];
+            public function __toString(): string
+            {
+                return $this->string;
+            }
+        };
+        $assert($this->decoder->decode($stringable, $type));
+
+        $traversable = new \ArrayIterator(str_split($encoded, 2));
+        $assert($this->decoder->decode($traversable, $type));
+
+        $stream = new MemoryStream();
+        $stream->write($encoded);
+        $stream->rewind();
+        $assert($this->decoder->decode($stream, $type));
     }
 }

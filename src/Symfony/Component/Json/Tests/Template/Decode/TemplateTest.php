@@ -45,14 +45,14 @@ class TemplateTest extends TestCase
     /**
      * @dataProvider templatePathDataProvider
      */
-    public function testTemplatePath(string $expectedFilename, Type $type, bool $lazy)
+    public function testTemplatePath(string $expectedFilename, Type $type, string $decodeFrom)
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
             $this->cacheDir,
         );
 
-        $this->assertSame(sprintf('%s/%s', $this->cacheDir, $expectedFilename), $template->getPath($type, $lazy));
+        $this->assertSame(sprintf('%s/%s', $this->cacheDir, $expectedFilename), $template->getPath($type, $decodeFrom));
     }
 
     /**
@@ -60,10 +60,9 @@ class TemplateTest extends TestCase
      */
     public static function templatePathDataProvider(): iterable
     {
-        yield ['7617cc4b435dae7c97211c6082923b47.decode.json.php', Type::int(), false];
-        yield ['6e77b03690271cbee671df141e635536.decode.json.php', Type::int(nullable: true), false];
-        yield ['070660c7e72aa3e14a93c1039279afb6.decode.json.stream.php', Type::mixed(), true];
-        yield ['e95f88b4552266a00e5f1d8f567548e0.decode.json.php', Type::object(ClassicDummy::class), false];
+        yield ['7617cc4b435dae7c97211c6082923b47.decode.json.string.php', Type::int(), Template::DECODE_FROM_STRING];
+        yield ['6e77b03690271cbee671df141e635536.decode.json.stream.php', Type::int(nullable: true), Template::DECODE_FROM_STREAM];
+        yield ['070660c7e72aa3e14a93c1039279afb6.decode.json.resource.php', Type::mixed(), Template::DECODE_FROM_RESOURCE];
     }
 
     /**
@@ -80,19 +79,21 @@ class TemplateTest extends TestCase
             $typeResolver,
         );
 
-        $template = new Template(
-            new DataModelBuilder($propertyMetadataLoader),
-            $this->cacheDir,
-        );
+        $template = new Template(new DataModelBuilder($propertyMetadataLoader), $this->cacheDir);
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/templates/decode/%s.php', \dirname(__DIR__, 2), $fixture),
-            $template->generateContent($type, false, []),
+            sprintf('%s/Fixtures/templates/decode/%s.string.php', \dirname(__DIR__, 2), $fixture),
+            $template->generateContent($type, []),
         );
 
         $this->assertStringEqualsFile(
             sprintf('%s/Fixtures/templates/decode/%s.stream.php', \dirname(__DIR__, 2), $fixture),
-            $template->generateContent($type, true, []),
+            $template->generateStreamContent($type, []),
+        );
+
+        $this->assertStringEqualsFile(
+            sprintf('%s/Fixtures/templates/decode/%s.resource.php', \dirname(__DIR__, 2), $fixture),
+            $template->generateResourceContent($type, []),
         );
     }
 

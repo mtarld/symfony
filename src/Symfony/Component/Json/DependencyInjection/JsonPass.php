@@ -15,8 +15,6 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Encoder\DecoderInterface;
 use Symfony\Component\Encoder\EncoderInterface;
-use Symfony\Component\Encoder\StreamingDecoderInterface;
-use Symfony\Component\Encoder\StreamingEncoderInterface;
 
 /**
  * Injects encodable classes into services and registers aliases.
@@ -40,9 +38,6 @@ final readonly class JsonPass implements CompilerPassInterface
             ->replaceArgument(0, $encodableClassNames);
 
         $container->registerAliasForArgument('json.encoder', EncoderInterface::class, 'json.encoder');
-        $container->registerAliasForArgument('json.encoder.stream', StreamingEncoderInterface::class, 'json.encoder');
-
         $container->registerAliasForArgument('json.decoder', DecoderInterface::class, 'json.decoder');
-        $container->registerAliasForArgument('json.decoder.stream', StreamingDecoderInterface::class, 'json.decoder');
     }
 }

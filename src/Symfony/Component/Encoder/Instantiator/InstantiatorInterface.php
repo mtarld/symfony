@@ -16,9 +16,6 @@ use Symfony\Component\Encoder\Exception\UnexpectedValueException;
 /**
  * Instantiates a new $className object with the given $properties values.
  *
- * A property must be a callable that return the property value when being
- * called to permit laziness when needed.
- *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental in 7.1

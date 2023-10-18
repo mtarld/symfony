@@ -43,7 +43,7 @@ final readonly class YieldNode implements PhpNodeInterface
     {
         return new self(
             $optimizer->optimize($this->value),
-            $optimizer->optimize($this->key),
+            null !== $this->key ? $optimizer->optimize($this->key) : null,
         );
     }
 }

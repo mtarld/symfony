@@ -12,36 +12,81 @@
 namespace Symfony\Component\Encoder\Tests\Stream;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\Stream\Stream;
+use Symfony\Component\Encoder\Stream\BufferedStream;
+use Symfony\Component\Encoder\Stream\MemoryStream;
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
+use Symfony\Component\Encoder\Stream\StreamWriterInterface;
 
 class StreamTest extends TestCase
 {
-    public function testCreateStream()
+    /**
+     * @dataProvider streams
+     */
+    public function testRead(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
     {
-        $stream = new class() extends Stream {
-            public function __construct()
-            {
-                parent::__construct('php://memory', 'w+b');
-            }
-        };
+        $stream->write('123456789');
+        $stream->rewind();
 
-        $streamMetadata = stream_get_meta_data($stream->getResource());
-
-        $this->assertSame('php://memory', $streamMetadata['uri']);
-        $this->assertSame('w+b', $streamMetadata['mode']);
+        $this->assertSame('1', $stream->read(1));
+        $this->assertSame('23', $stream->read(2));
+        $this->assertSame('456789', $stream->read());
     }
 
-    public function testToString()
+    /**
+     * @dataProvider streams
+     */
+    public function testSeek(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
     {
-        $stream = new class() extends Stream {
-            public function __construct()
-            {
-                parent::__construct('php://memory', 'w+b');
-            }
-        };
+        $stream->write('123456789');
 
-        fwrite($stream->getResource(), 'content');
+        $stream->seek(1);
+        $this->assertSame('2', $stream->read(1));
 
-        $this->assertSame('content', (string) $stream);
+        $stream->seek(1);
+        $this->assertSame('234', $stream->read(3));
+    }
+
+    /**
+     * @dataProvider streams
+     */
+    public function testIterateOverStream(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    {
+        $stream->write(str_repeat('.', 20000));
+        $stream->seek(10);
+
+        $this->assertSame([str_repeat('.', 8192), str_repeat('.', 8192), str_repeat('.', 3606)], iterator_to_array($stream));
+    }
+
+    /**
+     * @dataProvider streams
+     */
+    public function testCastToString(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    {
+        $stream->write(str_repeat('.', 10000));
+        $stream->seek(10);
+
+        $this->assertSame(str_repeat('.', 9990), (string) $stream);
+    }
+
+    /**
+     * @dataProvider streams
+     */
+    public function testWrite(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    {
+        $stream->write('123456789');
+        $this->assertSame('', $stream->read());
+
+        $stream->rewind();
+        $this->assertSame('123456789', $stream->read());
+    }
+
+    /**
+     * @return iterable<array{0: StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface}>
+     */
+    public function streams(): iterable
+    {
+        yield [new BufferedStream()];
+        yield [new MemoryStream()];
     }
 }

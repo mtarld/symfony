@@ -11,10 +11,11 @@
 
 namespace Symfony\Component\Encoder;
 
+use Symfony\Component\Encoder\Stream\StreamWriterInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**
- * Encodes $data into a specific format according to a $config to a string.
+ * Encodes $data into a specific format according to a $config.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -22,6 +23,7 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @phpstan-type EncodeConfig array{
  *   type?: Type,
+ *   stream?: StreamWriterInterface,
  *   max_depth?: int,
  *   date_time_format?: string,
  * }
@@ -30,6 +32,8 @@ interface EncoderInterface
 {
     /**
      * @param EncodeConfig $config
+     *
+     * @return \Traversable<string>&\Stringable
      */
-    public function encode(mixed $data, array $config = []): string;
+    public function encode(mixed $data, array $config = []): \Traversable&\Stringable;
 }

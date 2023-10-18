@@ -61,7 +61,7 @@ final readonly class StreamTemplateGenerator
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         return [
-            new ExpressionNode(new AssignNode(new VariableNode('jsonDecodeFlags'), new BinaryNode(
+            new ExpressionNode(new AssignNode(new VariableNode('flags'), new BinaryNode(
                 '??',
                 new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_decode_flags')),
                 new PhpScalarNode(0),
@@ -69,7 +69,7 @@ final readonly class StreamTemplateGenerator
             ...$this->getProviderNodes($node, $context),
             new ExpressionNode(new ReturnNode(new FunctionCallNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode(0), new PhpScalarNode(-1)]),
+                new ArgumentsNode([new VariableNode('stream'), new PhpScalarNode(0), new PhpScalarNode(null)]),
             ))),
         ];
     }
@@ -106,7 +106,7 @@ final readonly class StreamTemplateGenerator
             new ExpressionNode(new AssignNode(new VariableNode('boundaries'), new MethodCallNode(
                 new PhpScalarNode('\\'.Splitter::class),
                 $node->getType()->isList() ? 'splitList' : 'splitDict',
-                new ArgumentsNode([new VariableNode('resource'), new VariableNode('offset'), new VariableNode('length')]),
+                new ArgumentsNode([new VariableNode('stream'), new VariableNode('offset'), new VariableNode('length')]),
                 static: true,
             ))),
         ];
@@ -120,22 +120,23 @@ final readonly class StreamTemplateGenerator
         $itemValueNode = $node->item instanceof ScalarNode
             ? $this->prepareScalarNode(
                 $node->item,
-                new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(0)),
-                new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(1)),
+                new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(0)),
+                new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(1)),
+                $context,
             ) : new FunctionCallNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->item->getIdentifier())),
                 new ArgumentsNode([
-                    new VariableNode('resource'),
-                    new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(0)),
-                    new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(1)),
+                    new VariableNode('stream'),
+                    new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(0)),
+                    new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(1)),
                 ]),
             );
 
         $iterableClosureNodes = [
             new ExpressionNode(new AssignNode(
                 new VariableNode('iterable'),
-                new ClosureNode(new ParametersNode(['resource' => 'mixed', 'boundaries' => 'iterable']), 'iterable', true, [
-                    new ForEachNode(new VariableNode('boundaries'), new VariableNode('k'), new VariableNode('b'), [
+                new ClosureNode(new ParametersNode(['stream' => 'mixed', 'boundaries' => 'iterable']), 'iterable', true, [
+                    new ForEachNode(new VariableNode('boundaries'), new VariableNode('k'), new VariableNode('boundary'), [
                         new ExpressionNode(new YieldNode(
                             $itemValueNode,
                             new VariableNode('k'),
@@ -146,14 +147,14 @@ final readonly class StreamTemplateGenerator
                     new VariableNode('instantiator'),
                     new VariableNode('services'),
                     new VariableNode('providers', byReference: true),
-                    new VariableNode('jsonDecodeFlags'),
+                    new VariableNode('flags'),
                 ])),
             )),
         ];
 
         $iterableValueNode = new FunctionCallNode(
             new VariableNode('iterable'),
-            new ArgumentsNode([new VariableNode('resource'), new VariableNode('boundaries')]),
+            new ArgumentsNode([new VariableNode('stream'), new VariableNode('boundaries')]),
         );
 
         $returnNodes = [
@@ -168,7 +169,7 @@ final readonly class StreamTemplateGenerator
             new ExpressionNode(new AssignNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
                 new ClosureNode(
-                    new ParametersNode(['resource' => 'mixed', 'offset' => 'int', 'length' => 'int']),
+                    new ParametersNode(['stream' => 'mixed', 'offset' => 'int', 'length' => '?int']),
                     ($node->getType()->isNullable() ? '?' : '').$node->getType()->getBuiltinType(),
                     true,
                     [...$getBoundariesNodes, ...$iterableClosureNodes, ...$returnNodes],
@@ -177,7 +178,7 @@ final readonly class StreamTemplateGenerator
                         new VariableNode('instantiator'),
                         new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
-                        new VariableNode('jsonDecodeFlags'),
+                        new VariableNode('flags'),
                     ]),
                 ),
             )),
@@ -200,7 +201,7 @@ final readonly class StreamTemplateGenerator
             new ExpressionNode(new AssignNode(new VariableNode('boundaries'), new MethodCallNode(
                 new PhpScalarNode('\\'.Splitter::class),
                 'splitDict',
-                new ArgumentsNode([new VariableNode('resource'), new VariableNode('offset'), new VariableNode('length')]),
+                new ArgumentsNode([new VariableNode('stream'), new VariableNode('offset'), new VariableNode('length')]),
                 static: true,
             ))),
         ];
@@ -223,14 +224,15 @@ final readonly class StreamTemplateGenerator
             $propertyValueNode = $property['value'] instanceof ScalarNode
                 ? $this->prepareScalarNode(
                     $property['value'],
-                    new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(0)),
-                    new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(1)),
+                    new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(0)),
+                    new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(1)),
+                    $context,
                 ) : new FunctionCallNode(
                     new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->getIdentifier())),
                     new ArgumentsNode([
-                        new VariableNode('resource'),
-                        new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(0)),
-                        new ArrayAccessNode(new VariableNode('b'), new PhpScalarNode(1)),
+                        new VariableNode('stream'),
+                        new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(0)),
+                        new ArrayAccessNode(new VariableNode('boundary'), new PhpScalarNode(1)),
                     ]),
                 );
 
@@ -242,13 +244,13 @@ final readonly class StreamTemplateGenerator
                             $this->convertDataAccessorToPhpNode($property['accessor'](new PhpNodeDataAccessor($propertyValueNode)))
                         )),
                     ], new ArgumentsNode([
-                        new VariableNode('resource'),
-                        new VariableNode('b'),
+                        new VariableNode('stream'),
+                        new VariableNode('boundary'),
                         new VariableNode('config'),
                         new VariableNode('instantiator'),
                         new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
-                        new VariableNode('jsonDecodeFlags'),
+                        new VariableNode('flags'),
                     ])),
                 )),
                 new ExpressionNode(new ContinueNode()),
@@ -257,7 +259,7 @@ final readonly class StreamTemplateGenerator
 
         $fillPropertiesArrayNodes = [
             new ExpressionNode(new AssignNode(new VariableNode('properties'), new ArrayNode([]))),
-            new ForEachNode(new VariableNode('boundaries'), new VariableNode('k'), new VariableNode('b'), $propertiesClosuresNodes),
+            new ForEachNode(new VariableNode('boundaries'), new VariableNode('k'), new VariableNode('boundary'), $propertiesClosuresNodes),
         ];
 
         $instantiateNodes = [
@@ -272,7 +274,7 @@ final readonly class StreamTemplateGenerator
             new ExpressionNode(new AssignNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
                 new ClosureNode(
-                    new ParametersNode(['resource' => 'mixed', 'offset' => 'int', 'length' => 'int']),
+                    new ParametersNode(['stream' => 'mixed', 'offset' => 'int', 'length' => '?int']),
                     ($node->getType()->isNullable() ? '?' : '').$node->getType()->getClassName(),
                     true,
                     [...$getBoundariesNodes, ...$fillPropertiesArrayNodes, ...$instantiateNodes],
@@ -281,7 +283,7 @@ final readonly class StreamTemplateGenerator
                         new VariableNode('instantiator'),
                         new VariableNode('services'),
                         new VariableNode('providers', byReference: true),
-                        new VariableNode('jsonDecodeFlags'),
+                        new VariableNode('flags'),
                     ]),
                 ),
             )),
@@ -290,34 +292,39 @@ final readonly class StreamTemplateGenerator
     }
 
     /**
+     * @param array<string, mixed> $context
+     *
      * @return list<PhpNodeInterface>
      */
-    private function getScalarNodes(ScalarNode $node): array
+    private function getScalarNodes(ScalarNode $node, array &$context): array
     {
         return [
             new ExpressionNode(new AssignNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
                 new ClosureNode(
-                    new ParametersNode(['resource' => 'mixed', 'offset' => 'int', 'length' => 'int']),
+                    new ParametersNode(['stream' => 'mixed', 'offset' => 'int', 'length' => '?int']),
                     'mixed',
                     true,
-                    [new ExpressionNode(new ReturnNode($this->prepareScalarNode($node, new VariableNode('offset'), new VariableNode('length'))))],
+                    [new ExpressionNode(new ReturnNode($this->prepareScalarNode($node, new VariableNode('offset'), new VariableNode('length'), $context)))],
                     new ArgumentsNode([
-                        new VariableNode('jsonDecodeFlags'),
+                        new VariableNode('flags'),
                     ]),
                 ),
             )),
         ];
     }
 
-    private function prepareScalarNode(ScalarNode $node, PhpNodeInterface $offsetNode, PhpNodeInterface $lengthNode): PhpNodeInterface
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function prepareScalarNode(ScalarNode $node, PhpNodeInterface $offsetNode, PhpNodeInterface $lengthNode, array $context): PhpNodeInterface
     {
-        $accessor = new MethodCallNode(new PhpScalarNode('\\'.Decoder::class), 'decode', new ArgumentsNode([
-            new VariableNode('resource'),
-            $offsetNode,
-            $lengthNode,
-            new VariableNode('jsonDecodeFlags'),
-        ]), static: true);
+        $accessor = new MethodCallNode(
+            new PhpScalarNode('\\'.Decoder::class),
+            'decodeStream',
+            new ArgumentsNode([new VariableNode('stream'), $offsetNode, $lengthNode, new VariableNode('flags')]),
+            static: true,
+        );
 
         if ($node->getType()->isBackedEnum()) {
             return new MethodCallNode(

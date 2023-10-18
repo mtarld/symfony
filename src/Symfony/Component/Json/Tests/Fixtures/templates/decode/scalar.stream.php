@@ -1,13 +1,12 @@
 <?php
 
 /**
- * @param resource $resource
  * @return int
  */
-return static function (mixed $resource, array $config, \Symfony\Component\Encoder\Instantiator\InstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services): mixed {
-    $jsonDecodeFlags = $config["json_decode_flags"] ?? 0;
-    $providers["int"] = static function (mixed $resource, int $offset, int $length) use ($jsonDecodeFlags): mixed {
-        return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $offset, $length, $jsonDecodeFlags);
+return static function (\Symfony\Component\Encoder\Stream\StreamReaderInterface&\Symfony\Component\Encoder\Stream\SeekableStreamInterface $stream, array $config, \Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services): mixed {
+    $flags = $config["json_decode_flags"] ?? 0;
+    $providers["int"] = static function (mixed $stream, int $offset, ?int $length) use ($flags): mixed {
+        return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $offset, $length, $flags);
     };
-    return ($providers["int"])($resource, 0, -1);
+    return ($providers["int"])($stream, 0, null);
 };

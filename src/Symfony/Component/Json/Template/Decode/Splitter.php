@@ -11,7 +11,9 @@
 
 namespace Symfony\Component\Json\Template\Decode;
 
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Exception\UnexpectedValueException;
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -32,37 +34,42 @@ final class Splitter
         'key' => [],
     ];
 
-    public static function splitList(mixed $resource, int $offset = 0, int $length = -1): ?\Iterator
+    /**
+     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     */
+    public static function splitList(mixed $stream, int $offset = 0, int $length = null): ?\Iterator
     {
         $lexer = self::$lexer ??= new Lexer();
-        $tokens = $lexer->tokens($resource, $offset, $length);
+        $tokens = $lexer->getTokens($stream, $offset, $length);
 
         if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return self::createListBoundaries($tokens, $resource);
+        return self::createListBoundaries($tokens, $stream);
     }
 
-    public static function splitDict(mixed $resource, int $offset = 0, int $length = -1): ?\Iterator
+    /**
+     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     */
+    public static function splitDict(mixed $stream, int $offset = 0, int $length = null): ?\Iterator
     {
         $lexer = self::$lexer ??= new Lexer();
-        $tokens = $lexer->tokens($resource, $offset, $length);
+        $tokens = $lexer->getTokens($stream, $offset, $length);
 
         if ('null' === $tokens->current()[0] && 1 === iterator_count($tokens)) {
             return null;
         }
 
-        return self::createDictBoundaries($tokens, $resource);
+        return self::createDictBoundaries($tokens, $stream);
     }
 
     /**
      * @param \Iterator<array{0: string, 1: int}> $tokens
-     * @param resource                            $resource
      *
      * @return \Iterator<array{0: int, 1: int}>
      */
-    private static function createListBoundaries(\Iterator $tokens, mixed $resource): \Iterator
+    private static function createListBoundaries(\Iterator $tokens): \Iterator
     {
         $level = 0;
 
@@ -101,7 +108,7 @@ final class Splitter
         }
 
         if (-1 !== $level || !isset($value, $offset, $position) || ']' !== $value) {
-            throw new InvalidResourceException($resource);
+            throw new UnexpectedValueException('JSON is not valid.');
         }
 
         if (($length = $position - $offset) > 0) {
@@ -173,7 +180,7 @@ final class Splitter
         }
 
         if (-1 !== $level || !isset($value, $position) || '}' !== $value) {
-            throw new InvalidResourceException($resource);
+            throw new UnexpectedValueException('JSON is not valid.');
         }
 
         if (null !== $key && ($length = $position - $offset) > 0) {

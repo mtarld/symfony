@@ -13,10 +13,13 @@ namespace Symfony\Component\Json;
 
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Encoder\DecoderInterface;
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
+use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Encoder\Exception\RuntimeException;
 use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
-use Symfony\Component\Encoder\Stream\MemoryStream;
+use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
+use Symfony\Component\Encoder\Stream\BufferedStream;
+use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
+use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\Json\Template\Decode\Template;
 use Symfony\Component\TypeInfo\Type;
 
@@ -37,6 +40,7 @@ final readonly class JsonDecoder implements DecoderInterface
     public function __construct(
         private Template $template,
         private InstantiatorInterface $instantiator,
+        private LazyInstantiatorInterface $lazyInstantiator,
         private string $templateCacheDir,
         private ?ContainerInterface $runtimeServices = null,
     ) {
@@ -45,22 +49,34 @@ final readonly class JsonDecoder implements DecoderInterface
     /**
      * @param JsonDecodeConfig $config
      */
-    public function decode(string $input, Type $type, array $config = []): mixed
+    public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed
     {
-        $inputResource = (new MemoryStream())->getResource();
-
-        if (false === @fwrite($inputResource, $input)) {
-            throw new InvalidResourceException($inputResource);
+        if ($input instanceof \Traversable && !$input instanceof StreamReaderInterface) {
+            $chunks = $input;
+            $input = new BufferedStream();
+            foreach ($chunks as $chunk) {
+                $input->write($chunk);
+            }
         }
 
-        if (false === @rewind($inputResource)) {
-            throw new InvalidResourceException($inputResource);
-        }
+        $isStream = $input instanceof StreamReaderInterface;
+        $isResourceStream = $isStream && method_exists($input, 'getResource');
 
-        $path = $this->template->getPath($type, false);
+        $decodeFrom = match (true) {
+            $isResourceStream => Template::DECODE_FROM_RESOURCE,
+            $isStream => Template::DECODE_FROM_STREAM,
+            default => Template::DECODE_FROM_STRING,
+        };
+
+        $path = $this->template->getPath($type, $decodeFrom);
 
         if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = $this->template->generateContent($type, false, $config);
+            $content = match ($decodeFrom) {
+                Template::DECODE_FROM_RESOURCE => $this->template->generateResourceContent($type, $config),
+                Template::DECODE_FROM_STREAM => $this->template->generateStreamContent($type, $config),
+                Template::DECODE_FROM_STRING => $this->template->generateContent($type, $config),
+                default => throw new LogicException(sprintf('Decoding from "%s" is not handled.', $decodeFrom)),
+            };
 
             if (!file_exists($this->templateCacheDir)) {
                 mkdir($this->templateCacheDir, recursive: true);
@@ -75,6 +91,6 @@ final readonly class JsonDecoder implements DecoderInterface
             @chmod($path, 0666 & ~umask());
         }
 
-        return (require $path)($inputResource, $config, $this->instantiator, $this->runtimeServices);
+        return (require $path)($isResourceStream ? $input->getResource() : $input, $config, $isStream ? $this->lazyInstantiator : $this->instantiator, $this->runtimeServices);
     }
 }

@@ -15,8 +15,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Encoder\DecoderInterface;
 use Symfony\Component\Encoder\EncoderInterface;
-use Symfony\Component\Encoder\StreamingDecoderInterface;
-use Symfony\Component\Encoder\StreamingEncoderInterface;
 use Symfony\Component\Json\DependencyInjection\JsonPass;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
@@ -56,8 +54,6 @@ class JsonPassTest extends TestCase
         (new JsonPass())->process($container);
 
         $this->assertEquals('json.encoder', (string) $container->getAlias(sprintf('%s $jsonEncoder', EncoderInterface::class)));
-        $this->assertEquals('json.encoder.stream', (string) $container->getAlias(sprintf('%s $jsonEncoder', StreamingEncoderInterface::class)));
         $this->assertEquals('json.decoder', (string) $container->getAlias(sprintf('%s $jsonDecoder', DecoderInterface::class)));
-        $this->assertEquals('json.decoder.stream', (string) $container->getAlias(sprintf('%s $jsonDecoder', StreamingDecoderInterface::class)));
     }
 }

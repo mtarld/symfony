@@ -14,7 +14,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use Symfony\Component\Encoder\CacheWarmer\LazyGhostCacheWarmer;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder as DecodeDataModelBuilder;
 use Symfony\Component\Encoder\DataModel\Encode\DataModelBuilder as EncodeDataModelBuilder;
-use Symfony\Component\Encoder\Instantiator\EagerInstantiator;
+use Symfony\Component\Encoder\Instantiator\Instantiator;
 use Symfony\Component\Encoder\Instantiator\LazyInstantiator;
 use Symfony\Component\Encoder\Mapping\Decode\AttributePropertyMetadataLoader as DecodeAttributePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader as DecodeDateTimeTypePropertyMetadataLoader;
@@ -101,7 +101,7 @@ return static function (ContainerConfigurator $container) {
             ->tag('kernel.cache_warmer')
 
         // Instantiators
-        ->set('encoder.instantiator.eager', EagerInstantiator::class)
+        ->set('encoder.instantiator', Instantiator::class)
 
         ->set('encoder.instantiator.lazy', LazyInstantiator::class)
             ->args([

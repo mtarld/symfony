@@ -2,9 +2,8 @@
 
 /**
  * @param mixed $data
- * @param resource $resource
  */
-return static function (mixed $data, mixed $resource, array $config, ?\Psr\Container\ContainerInterface $services): void {
-    $jsonEncodeFlags = $config["json_encode_flags"] ?? 0;
-    \fwrite($resource, \json_encode($data, $jsonEncodeFlags));
+return static function (mixed $data, \Symfony\Component\Encoder\Stream\StreamWriterInterface $stream, array $config, ?\Psr\Container\ContainerInterface $services): void {
+    $flags = $config["json_encode_flags"] ?? 0;
+    $stream->write(\json_encode($data, $flags));
 };

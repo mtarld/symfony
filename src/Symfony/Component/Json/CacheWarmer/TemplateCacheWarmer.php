@@ -40,7 +40,7 @@ final class TemplateCacheWarmer extends CacheWarmer
     ) {
     }
 
-    public function warmUp(string $cacheDir): array
+    public function warmUp(string $cacheDir, string $buildDir = null): array
     {
         if (!file_exists($this->templateCacheDir)) {
             mkdir($this->templateCacheDir, recursive: true);
@@ -61,39 +61,39 @@ final class TemplateCacheWarmer extends CacheWarmer
     private function warmTemplates(Type $type): void
     {
         try {
-            $this->writeCacheFile($this->encodeTemplate->getPath($type, false), $this->encodeTemplate->generateContent($type, false));
+            $this->writeCacheFile($this->encodeTemplate->getPath($type, EncodeTemplate::ENCODE_TO_STRING), $this->encodeTemplate->generateContent($type));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate "json" encode eager template for "{type}": {exception}', [
-                'type' => (string) $type,
-                'exception' => $e,
-            ]);
+            $this->logger->debug('Cannot generate "json" encode template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
         }
 
         try {
-            $this->writeCacheFile($this->encodeTemplate->getPath($type, true), $this->encodeTemplate->generateContent($type, true));
+            $this->writeCacheFile($this->encodeTemplate->getPath($type, EncodeTemplate::ENCODE_TO_STREAM), $this->encodeTemplate->generateStreamContent($type));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate "json" encode lazy template for "{type}": {exception}', [
-                'type' => (string) $type,
-                'exception' => $e,
-            ]);
+            $this->logger->debug('Cannot generate "json" encode stream template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
         }
 
         try {
-            $this->writeCacheFile($this->decodeTemplate->getPath($type, false), $this->decodeTemplate->generateContent($type, false, []));
+            $this->writeCacheFile($this->encodeTemplate->getPath($type, EncodeTemplate::ENCODE_TO_RESOURCE), $this->encodeTemplate->generateResourceContent($type));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate "json" decode eager template for "{type}": {exception}', [
-                'type' => (string) $type,
-                'exception' => $e,
-            ]);
+            $this->logger->debug('Cannot generate "json" encode resource template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
         }
 
         try {
-            $this->writeCacheFile($this->decodeTemplate->getPath($type, true), $this->decodeTemplate->generateContent($type, true, []));
+            $this->writeCacheFile($this->decodeTemplate->getPath($type, DecodeTemplate::DECODE_FROM_STRING), $this->decodeTemplate->generateContent($type));
         } catch (ExceptionInterface $e) {
-            $this->logger->debug('Cannot generate "json" decode lazy template for "{type}": {exception}', [
-                'type' => (string) $type,
-                'exception' => $e,
-            ]);
+            $this->logger->debug('Cannot generate "json" decode template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
+        }
+
+        try {
+            $this->writeCacheFile($this->decodeTemplate->getPath($type, DecodeTemplate::DECODE_FROM_STREAM), $this->decodeTemplate->generateStreamContent($type));
+        } catch (ExceptionInterface $e) {
+            $this->logger->debug('Cannot generate "json" decode stream template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
+        }
+
+        try {
+            $this->writeCacheFile($this->decodeTemplate->getPath($type, DecodeTemplate::DECODE_FROM_RESOURCE), $this->decodeTemplate->generateStreamContent($type));
+        } catch (ExceptionInterface $e) {
+            $this->logger->debug('Cannot generate "json" decode resource template for "{type}": {exception}', ['type' => (string) $type, 'exception' => $e]);
         }
     }
 }

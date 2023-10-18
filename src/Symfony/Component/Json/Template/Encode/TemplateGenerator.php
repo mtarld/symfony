@@ -27,11 +27,13 @@ use Symfony\Component\Json\Php\ExpressionNode;
 use Symfony\Component\Json\Php\ForEachNode;
 use Symfony\Component\Json\Php\FunctionCallNode;
 use Symfony\Component\Json\Php\IfNode;
+use Symfony\Component\Json\Php\MethodCallNode;
 use Symfony\Component\Json\Php\PhpNodeInterface;
 use Symfony\Component\Json\Php\PropertyNode;
 use Symfony\Component\Json\Php\ScalarNode as PhpScalarNode;
 use Symfony\Component\Json\Php\TemplateStringNode;
 use Symfony\Component\Json\Php\VariableNode;
+use Symfony\Component\Json\Php\YieldNode;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
 use Symfony\Component\TypeInfo\Type;
 
@@ -63,7 +65,7 @@ final readonly class TemplateGenerator
         if (true === ($context['root'] ?? true)) {
             $context['root'] = false;
             $setupNodes = [
-                new ExpressionNode(new AssignNode(new VariableNode('jsonEncodeFlags'), new BinaryNode(
+                new ExpressionNode(new AssignNode(new VariableNode('flags'), new BinaryNode(
                     '??',
                     new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_encode_flags')),
                     new PhpScalarNode(0),
@@ -71,13 +73,10 @@ final readonly class TemplateGenerator
             ];
         }
 
-        if (false === ($context['for_stream'] ?? false) && !$this->isNodeAlteringJson($node)) {
+        if (!$this->isNodeAlteringJson($node)) {
             return [
                 ...$setupNodes,
-                new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([
-                    new VariableNode('resource'),
-                    $this->encodeValue($accessor),
-                ]))),
+                $this->yieldJson($this->encodeValue($accessor), $context),
             ];
         }
 
@@ -86,23 +85,23 @@ final readonly class TemplateGenerator
 
             if ($node->getType()->isList()) {
                 $listNodes = [
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('[')]))),
+                    $this->yieldJson(new PhpScalarNode('['), $context),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(''))),
 
                     new ForEachNode($accessor, null, $this->convertDataAccessorToPhpNode($node->item->accessor), [
-                        new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new VariableNode($prefixName)]))),
+                        $this->yieldJson(new VariableNode($prefixName), $context),
                         ...$this->generate($node->item, $config, $context),
                         new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(','))),
                     ]),
 
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode(']')]))),
+                    $this->yieldJson(new PhpScalarNode(']'), $context),
                 ];
 
                 if ($node->getType()->isNullable()) {
                     return [
                         ...$setupNodes,
                         new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                            new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
+                            $this->yieldJson(new PhpScalarNode('null'), $context),
                         ], $listNodes),
                     ];
                 }
@@ -113,27 +112,22 @@ final readonly class TemplateGenerator
             $keyName = $this->scopeVariableName('key', $context);
 
             $dictNodes = [
-                new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('{')]))),
+                $this->yieldJson(new PhpScalarNode('{'), $context),
                 new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(''))),
-
                 new ForEachNode($accessor, new VariableNode($keyName), $this->convertDataAccessorToPhpNode($node->item->accessor), [
                     new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->escapeString(new VariableNode($keyName)))),
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([
-                        new VariableNode('resource'),
-                        new TemplateStringNode(new VariableNode($prefixName), '"', new VariableNode($keyName), '":'),
-                    ]))),
+                    $this->yieldJson(new TemplateStringNode(new VariableNode($prefixName), '"', new VariableNode($keyName), '":'), $context),
                     ...$this->generate($node->item, $config, $context),
                     new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(','))),
                 ]),
-
-                new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('}')]))),
+                $this->yieldJson(new PhpScalarNode('}'), $context),
             ];
 
             if ($node->getType()->isNullable()) {
                 return [
                     ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
+                        $this->yieldJson(new PhpScalarNode('null'), $context),
                     ], $dictNodes),
                 ];
             }
@@ -142,7 +136,7 @@ final readonly class TemplateGenerator
         }
 
         if ($node instanceof ObjectNode) {
-            $objectNodes = [new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('{')])))];
+            $objectNodes = [$this->yieldJson(new PhpScalarNode('{'), $context)];
             $separator = '';
 
             foreach ($node->properties as $name => $propertyNode) {
@@ -155,23 +149,23 @@ final readonly class TemplateGenerator
 
                 $objectNodes = [
                     ...$objectNodes,
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode($separator)]))),
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('"')]))),
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode($encodedName)]))),
-                    new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('":')]))),
+                    $this->yieldJson(new PhpScalarNode($separator), $context),
+                    $this->yieldJson(new PhpScalarNode('"'), $context),
+                    $this->yieldJson(new PhpScalarNode($encodedName), $context),
+                    $this->yieldJson(new PhpScalarNode('":'), $context),
                     ...$this->generate($propertyNode, $config, $context),
                 ];
 
                 $separator = ',';
             }
 
-            $objectNodes[] = new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('}')])));
+            $objectNodes[] = $this->yieldJson(new PhpScalarNode('}'), $context);
 
             if ($node->getType()->isNullable()) {
                 return [
                     ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
+                        $this->yieldJson(new PhpScalarNode('null'), $context),
                     ], $objectNodes),
                 ];
             }
@@ -182,13 +176,13 @@ final readonly class TemplateGenerator
         if ($node instanceof ScalarNode) {
             $type = $node->getType();
             $scalarAccessor = $type->isBackedEnum() ? new PropertyNode($accessor, 'value', nullSafe: $type->isNullable()) : $accessor;
-            $scalarNodes = [new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), $this->encodeValue($scalarAccessor)])))];
+            $scalarNodes = [$this->yieldJson($this->encodeValue($scalarAccessor), $context)];
 
             if ($type->isNullable() && !$type->isBackedEnum() && !\in_array($type->getBuiltinType(), [Type::BUILTIN_TYPE_MIXED, Type::BUILTIN_TYPE_NULL], true)) {
                 return [
                     ...$setupNodes,
                     new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('resource'), new PhpScalarNode('null')]))),
+                        $this->yieldJson(new PhpScalarNode('null'), $context),
                     ], $scalarNodes),
                 ];
             }
@@ -201,15 +195,27 @@ final readonly class TemplateGenerator
 
     private function encodeValue(PhpNodeInterface $node): PhpNodeInterface
     {
-        return new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('jsonEncodeFlags')]));
+        return new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('flags')]));
     }
 
     private function escapeString(PhpNodeInterface $node): PhpNodeInterface
     {
         return new FunctionCallNode('\substr', new ArgumentsNode([
-            new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('jsonEncodeFlags')])),
+            new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('flags')])),
             new PhpScalarNode(1),
             new PhpScalarNode(-1),
         ]));
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function yieldJson(PhpNodeInterface $json, array $context): PhpNodeInterface
+    {
+        return match ($context['stream_type']) {
+            'resource' => new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('stream'), $json]))),
+            'stream' => new ExpressionNode(new MethodCallNode(new VariableNode('stream'), 'write', new ArgumentsNode([$json]))),
+            default => new ExpressionNode(new YieldNode($json)),
+        };
     }
 }

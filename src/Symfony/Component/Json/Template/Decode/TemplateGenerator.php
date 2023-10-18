@@ -61,7 +61,7 @@ final readonly class TemplateGenerator
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         return [
-            new ExpressionNode(new AssignNode(new VariableNode('jsonDecodeFlags'), new BinaryNode(
+            new ExpressionNode(new AssignNode(new VariableNode('flags'), new BinaryNode(
                 '??',
                 new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_decode_flags')),
                 new PhpScalarNode(0),
@@ -70,11 +70,9 @@ final readonly class TemplateGenerator
             new ExpressionNode(new ReturnNode(new FunctionCallNode(
                 new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
                 new ArgumentsNode([
-                    new MethodCallNode(new PhpScalarNode('\\'.Decoder::class), 'decode', new ArgumentsNode([
-                        new VariableNode('resource'),
-                        new PhpScalarNode(0),
-                        new PhpScalarNode(-1),
-                        new VariableNode('jsonDecodeFlags'),
+                    new MethodCallNode(new PhpScalarNode('\\'.Decoder::class), 'decodeString', new ArgumentsNode([
+                        new VariableNode('string'),
+                        new VariableNode('flags'),
                     ]), static: true),
                 ]),
             ))),

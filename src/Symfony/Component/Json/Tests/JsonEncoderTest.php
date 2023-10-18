@@ -18,8 +18,9 @@ use Symfony\Component\Encoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
+use Symfony\Component\Encoder\Stream\BufferedStream;
+use Symfony\Component\Encoder\Stream\MemoryStream;
 use Symfony\Component\Json\JsonEncoder;
-use Symfony\Component\Json\JsonStreamingEncoder;
 use Symfony\Component\Json\Template\Encode\Template;
 use Symfony\Component\Json\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
@@ -34,6 +35,7 @@ class JsonEncoderTest extends TestCase
     use TypeResolverAwareTrait;
 
     private string $cacheDir;
+    private JsonEncoder $encoder;
 
     protected function setUp(): void
     {
@@ -45,54 +47,68 @@ class JsonEncoderTest extends TestCase
             array_map('unlink', glob($this->cacheDir.'/*'));
             rmdir($this->cacheDir);
         }
+
+        $typeResolver = self::getTypeResolver();
+        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
+            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
+                new PropertyMetadataLoader($typeResolver),
+                $typeResolver,
+            )),
+            $typeResolver,
+        );
+
+        $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
+        $template = new Template($dataModeBuilder, $this->cacheDir);
+
+        $this->encoder = new JsonEncoder($template, $this->cacheDir);
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testEncodeScalar(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testReturnTraversableStringableEncoded()
     {
-        $this->assertSame('null', (string) $encoder->encode(null));
-        $this->assertSame('true', (string) $encoder->encode(true));
-        $this->assertSame('[{"foo":1,"bar":2},{"foo":3}]', (string) $encoder->encode([['foo' => 1, 'bar' => 2], ['foo' => 3]]));
-        $this->assertSame('{"foo":"bar"}', (string) $encoder->encode((object) ['foo' => 'bar']));
-        $this->assertSame('1', (string) $encoder->encode(DummyBackedEnum::ONE));
+        $this->assertSame(['true'], iterator_to_array($this->encoder->encode(true)));
+        $this->assertSame('true', (string) $this->encoder->encode(true));
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testEncodeObject(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testReturnEmptyWhenUsingStream()
+    {
+        $encoded = $this->encoder->encode(true, ['stream' => $stream = new MemoryStream()]);
+        $this->assertEmpty(iterator_to_array($encoded));
+    }
+
+    public function testEncodeScalar()
+    {
+        $this->assertEncoded('null', null);
+        $this->assertEncoded('true', true);
+        $this->assertEncoded('[{"foo":1,"bar":2},{"foo":3}]', [['foo' => 1, 'bar' => 2], ['foo' => 3]]);
+        $this->assertEncoded('{"foo":"bar"}', (object) ['foo' => 'bar']);
+        $this->assertEncoded('1', DummyBackedEnum::ONE);
+    }
+
+    public function testEncodeObject()
     {
         $dummy = new ClassicDummy();
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertSame('{"id":10,"name":"dummy name"}', (string) $encoder->encode($dummy));
+        $this->assertEncoded('{"id":10,"name":"dummy name"}', $dummy);
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testEncodeObjectWithEncodedName(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testEncodeObjectWithEncodedName()
     {
         $dummy = new DummyWithNameAttributes();
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertSame('{"@id":10,"name":"dummy name"}', (string) $encoder->encode($dummy));
+        $this->assertEncoded('{"@id":10,"name":"dummy name"}', $dummy);
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testEncodeObjectWithEncodeFormatter(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testEncodeObjectWithEncodeFormatter()
     {
         $dummy = new DummyWithFormatterAttributes();
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertSame('{"id":"20","name":"dummy name"}', (string) $encoder->encode($dummy));
+        $this->assertEncoded('{"id":"20","name":"dummy name"}', $dummy);
     }
 
     public function testEncodeObjectWithRuntimeServices()
@@ -107,30 +123,26 @@ class JsonEncoderTest extends TestCase
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);
         $template = new Template($dataModeBuilder, $this->cacheDir);
 
+        $encoder = new JsonEncoder($template, $this->cacheDir, $runtimeServices);
+
         $dummy = new DummyWithAttributesUsingServices();
 
-        $encoder = new JsonEncoder($template, $this->cacheDir, $runtimeServices);
         $this->assertSame('{"one":"one","two":"USELESS","three":"three"}', (string) $encoder->encode($dummy));
 
-        $encoder = new JsonStreamingEncoder($template, $this->cacheDir, $runtimeServices);
-        $this->assertSame('{"one":"one","two":"USELESS","three":"three"}', (string) $encoder->encode($dummy));
+        $encoder->encode($dummy, ['stream' => $stream = new MemoryStream()]);
+        $stream->rewind();
+        $this->assertSame('{"one":"one","two":"USELESS","three":"three"}', $stream->read());
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testCreateCacheFile(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testCreateCacheFile()
     {
-        $encoder->encode(true);
+        $this->encoder->encode(true);
 
         $this->assertFileExists($this->cacheDir);
         $this->assertCount(1, glob($this->cacheDir.'/*'));
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testCreateCacheFileOnlyIfNotExists(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testCreateCacheFileOnlyIfNotExists()
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
@@ -140,18 +152,12 @@ class JsonEncoderTest extends TestCase
             mkdir($this->cacheDir, recursive: true);
         }
 
-        file_put_contents(
-            $template->getPath(Type::bool(), forStream: $encoder instanceof JsonStreamingEncoder),
-            '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED"); };',
-        );
+        file_put_contents($template->getPath(Type::bool(), Template::ENCODE_TO_STRING), '<?php return static function ($data): \Traversable { yield "CACHED"; };');
 
-        $this->assertSame('CACHED', (string) $encoder->encode(true));
+        $this->assertSame('CACHED', (string) $this->encoder->encode(true));
     }
 
-    /**
-     * @dataProvider encoders
-     */
-    public function testRecreateCacheFileIfForceGenerateTemplate(JsonEncoder|JsonStreamingEncoder $encoder)
+    public function testRecreateCacheFileIfForceGenerateTemplate()
     {
         $template = new Template(
             new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
@@ -161,34 +167,21 @@ class JsonEncoderTest extends TestCase
             mkdir($this->cacheDir, recursive: true);
         }
 
-        file_put_contents(
-            $template->getPath(Type::bool(), forStream: $encoder instanceof JsonStreamingEncoder),
-            '<?php return static function ($data, $resource) { \fwrite($resource, "CACHED"); };',
-        );
+        file_put_contents($template->getPath(Type::bool(), Template::ENCODE_TO_STRING), '<?php return static function ($data): \Traversable { yield "CACHED"; };');
 
-        $this->assertSame('true', (string) $encoder->encode(true, ['force_generate_template' => true]));
+        $this->assertSame('true', (string) $this->encoder->encode(true, ['force_generate_template' => true]));
     }
 
-    /**
-     * @return iterable<array{0: JsonEncoder|JsonStreamingEncoder}>
-     */
-    public function encoders(): iterable
+    private function assertEncoded(string $encoded, mixed $decoded): void
     {
-        $cacheDir = sprintf('%s/symfony_json_template', sys_get_temp_dir());
-        $typeResolver = self::getTypeResolver();
+        $this->assertSame($encoded, (string) $this->encoder->encode($decoded));
 
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
-                new PropertyMetadataLoader($typeResolver),
-                $typeResolver,
-            )),
-            $typeResolver,
-        );
+        $this->encoder->encode($decoded, ['stream' => $stream = new MemoryStream()]);
+        $stream->rewind();
+        $this->assertSame($encoded, (string) $stream);
 
-        $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
-        $template = new Template($dataModeBuilder, $cacheDir);
-
-        yield [new JsonEncoder($template, $cacheDir)];
-        yield [new JsonStreamingEncoder($template, $cacheDir)];
+        $this->encoder->encode($decoded, ['stream' => $stream = new BufferedStream()]);
+        $stream->rewind();
+        $this->assertSame($encoded, (string) $stream);
     }
 }

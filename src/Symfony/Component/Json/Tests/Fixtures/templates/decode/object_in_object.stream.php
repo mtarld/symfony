@@ -1,73 +1,72 @@
 <?php
 
 /**
- * @param resource $resource
  * @return Symfony\Component\Json\Tests\Fixtures\Model\DummyWithOtherDummies
  */
-return static function (mixed $resource, array $config, \Symfony\Component\Encoder\Instantiator\InstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services): mixed {
-    $jsonDecodeFlags = $config["json_decode_flags"] ?? 0;
-    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithOtherDummies"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, $services, &$providers, $jsonDecodeFlags): Symfony\Component\Json\Tests\Fixtures\Model\DummyWithOtherDummies {
-        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($resource, $offset, $length);
+return static function (\Symfony\Component\Encoder\Stream\StreamReaderInterface&\Symfony\Component\Encoder\Stream\SeekableStreamInterface $stream, array $config, \Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services): mixed {
+    $flags = $config["json_decode_flags"] ?? 0;
+    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithOtherDummies"] = static function (mixed $stream, int $offset, ?int $length) use ($config, $instantiator, $services, &$providers, $flags): Symfony\Component\Json\Tests\Fixtures\Model\DummyWithOtherDummies {
+        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($stream, $offset, $length);
         $properties = [];
-        foreach ($boundaries as $k => $b) {
+        foreach ($boundaries as $k => $boundary) {
             if ("name" === $k) {
-                $properties["name"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
+                $properties["name"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $boundary[0], $boundary[1], $flags);
                 };
                 continue;
             }
             if ("otherDummyOne" === $k) {
-                $properties["otherDummyOne"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithNameAttributes"])($resource, $b[0], $b[1]);
+                $properties["otherDummyOne"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithNameAttributes"])($stream, $boundary[0], $boundary[1]);
                 };
                 continue;
             }
             if ("otherDummyTwo" === $k) {
-                $properties["otherDummyTwo"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy"])($resource, $b[0], $b[1]);
+                $properties["otherDummyTwo"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy"])($stream, $boundary[0], $boundary[1]);
                 };
                 continue;
             }
         }
         return $instantiator->instantiate("Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithOtherDummies", $properties);
     };
-    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithNameAttributes"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, $services, &$providers, $jsonDecodeFlags): Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes {
-        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($resource, $offset, $length);
+    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithNameAttributes"] = static function (mixed $stream, int $offset, ?int $length) use ($config, $instantiator, $services, &$providers, $flags): Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes {
+        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($stream, $offset, $length);
         $properties = [];
-        foreach ($boundaries as $k => $b) {
+        foreach ($boundaries as $k => $boundary) {
             if ("@id" === $k) {
-                $properties["id"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
+                $properties["id"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $boundary[0], $boundary[1], $flags);
                 };
                 continue;
             }
             if ("name" === $k) {
-                $properties["name"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
+                $properties["name"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $boundary[0], $boundary[1], $flags);
                 };
                 continue;
             }
         }
         return $instantiator->instantiate("Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithNameAttributes", $properties);
     };
-    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy"] = static function (mixed $resource, int $offset, int $length) use ($config, $instantiator, $services, &$providers, $jsonDecodeFlags): Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy {
-        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($resource, $offset, $length);
+    $providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy"] = static function (mixed $stream, int $offset, ?int $length) use ($config, $instantiator, $services, &$providers, $flags): Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy {
+        $boundaries = "\\Symfony\\Component\\Json\\Template\\Decode\\Splitter"::splitDict($stream, $offset, $length);
         $properties = [];
-        foreach ($boundaries as $k => $b) {
+        foreach ($boundaries as $k => $boundary) {
             if ("id" === $k) {
-                $properties["id"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
+                $properties["id"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $boundary[0], $boundary[1], $flags);
                 };
                 continue;
             }
             if ("name" === $k) {
-                $properties["name"] = static function () use ($resource, $b, $config, $instantiator, $services, &$providers, $jsonDecodeFlags): mixed {
-                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decode($resource, $b[0], $b[1], $jsonDecodeFlags);
+                $properties["name"] = static function () use ($stream, $boundary, $config, $instantiator, $services, &$providers, $flags): mixed {
+                    return "\\Symfony\\Component\\Json\\Template\\Decode\\Decoder"::decodeStream($stream, $boundary[0], $boundary[1], $flags);
                 };
                 continue;
             }
         }
         return $instantiator->instantiate("Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy", $properties);
     };
-    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithOtherDummies"])($resource, 0, -1);
+    return ($providers["Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\DummyWithOtherDummies"])($stream, 0, null);
 };
