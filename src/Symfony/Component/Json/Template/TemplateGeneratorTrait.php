@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Json\Template;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
 use Symfony\Component\Encoder\DataModel\DataAccessorInterface;
 use Symfony\Component\Encoder\DataModel\Decode\CollectionNode as DecodeCollectionNode;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelNodeInterface as DecodeDataModelNodeInterface;
@@ -23,13 +25,6 @@ use Symfony\Component\Encoder\DataModel\PropertyDataAccessor;
 use Symfony\Component\Encoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
 use Symfony\Component\Encoder\Exception\InvalidArgumentException;
-use Symfony\Component\Json\Php\ArgumentsNode;
-use Symfony\Component\Json\Php\FunctionCallNode;
-use Symfony\Component\Json\Php\MethodCallNode;
-use Symfony\Component\Json\Php\PhpNodeInterface;
-use Symfony\Component\Json\Php\PropertyNode;
-use Symfony\Component\Json\Php\ScalarNode;
-use Symfony\Component\Json\Php\VariableNode;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -40,34 +35,40 @@ use Symfony\Component\Json\Php\VariableNode;
  */
 trait TemplateGeneratorTrait
 {
-    private function convertDataAccessorToPhpNode(DataAccessorInterface $accessor): PhpNodeInterface
+    private readonly BuilderFactory $builder;
+
+    private function convertDataAccessorToPhpExpr(DataAccessorInterface $accessor): Expr
     {
         if ($accessor instanceof ScalarDataAccessor) {
-            return new ScalarNode($accessor->value);
+            return $this->builder->val($accessor->value);
         }
 
         if ($accessor instanceof VariableDataAccessor) {
-            return new VariableNode($accessor->name);
+            return $this->builder->var($accessor->name);
         }
 
         if ($accessor instanceof PropertyDataAccessor) {
-            return new PropertyNode(
-                $this->convertDataAccessorToPhpNode($accessor->objectAccessor),
+            return $this->builder->propertyFetch(
+                $this->convertDataAccessorToPhpExpr($accessor->objectAccessor),
                 $accessor->propertyName,
             );
         }
 
         if ($accessor instanceof FunctionDataAccessor) {
-            $arguments = new ArgumentsNode(array_map($this->convertDataAccessorToPhpNode(...), $accessor->arguments));
+            $arguments = array_map($this->convertDataAccessorToPhpExpr(...), $accessor->arguments);
 
             if (null === $accessor->objectAccessor) {
-                return new FunctionCallNode($accessor->functionName, $arguments);
+                return $this->builder->funcCall($accessor->functionName, $arguments);
             }
 
-            return new MethodCallNode($this->convertDataAccessorToPhpNode($accessor->objectAccessor), $accessor->functionName, $arguments);
+            return $this->builder->methodCall(
+                $this->convertDataAccessorToPhpExpr($accessor->objectAccessor),
+                $accessor->functionName,
+                $arguments,
+            );
         }
 
-        if ($accessor instanceof PhpNodeDataAccessor) {
+        if ($accessor instanceof PhpExprDataAccessor) {
             return $accessor->php;
         }
 

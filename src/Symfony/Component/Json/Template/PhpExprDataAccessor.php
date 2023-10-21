@@ -11,18 +11,18 @@
 
 namespace Symfony\Component\Json\Template;
 
+use PhpParser\Node\Expr;
 use Symfony\Component\Encoder\DataModel\DataAccessorInterface;
-use Symfony\Component\Json\Php\PhpNodeInterface;
 
 /**
  * Defines the way to access data using PHP AST.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class PhpNodeDataAccessor implements DataAccessorInterface
+final readonly class PhpExprDataAccessor implements DataAccessorInterface
 {
     public function __construct(
-        public PhpNodeInterface $php,
+        public Expr $php,
     ) {
     }
 }

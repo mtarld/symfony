@@ -11,6 +11,22 @@
 
 namespace Symfony\Component\Json\Template\Encode;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ArrayDimFetch;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\Coalesce;
+use PhpParser\Node\Expr\BinaryOp\Identical;
+use PhpParser\Node\Expr\NullsafePropertyFetch;
+use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Yield_;
+use PhpParser\Node\Scalar\Encapsed;
+use PhpParser\Node\Scalar\EncapsedStringPart;
+use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Else_;
+use PhpParser\Node\Stmt\Expression;
+use PhpParser\Node\Stmt\Foreach_;
+use PhpParser\Node\Stmt\If_;
 use Symfony\Component\Encoder\DataModel\Encode\CollectionNode;
 use Symfony\Component\Encoder\DataModel\Encode\DataModelNodeInterface;
 use Symfony\Component\Encoder\DataModel\Encode\ObjectNode;
@@ -18,22 +34,6 @@ use Symfony\Component\Encoder\DataModel\Encode\ScalarNode;
 use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Encoder\Exception\RuntimeException;
 use Symfony\Component\Encoder\VariableNameScoperTrait;
-use Symfony\Component\Json\JsonEncoder;
-use Symfony\Component\Json\Php\ArgumentsNode;
-use Symfony\Component\Json\Php\ArrayAccessNode;
-use Symfony\Component\Json\Php\AssignNode;
-use Symfony\Component\Json\Php\BinaryNode;
-use Symfony\Component\Json\Php\ExpressionNode;
-use Symfony\Component\Json\Php\ForEachNode;
-use Symfony\Component\Json\Php\FunctionCallNode;
-use Symfony\Component\Json\Php\IfNode;
-use Symfony\Component\Json\Php\MethodCallNode;
-use Symfony\Component\Json\Php\PhpNodeInterface;
-use Symfony\Component\Json\Php\PropertyNode;
-use Symfony\Component\Json\Php\ScalarNode as PhpScalarNode;
-use Symfony\Component\Json\Php\TemplateStringNode;
-use Symfony\Component\Json\Php\VariableNode;
-use Symfony\Component\Json\Php\YieldNode;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
 use Symfony\Component\TypeInfo\Type;
 
@@ -51,31 +51,35 @@ final readonly class TemplateGenerator
     use TemplateGeneratorTrait;
     use VariableNameScoperTrait;
 
+    public function __construct()
+    {
+        $this->builder = new BuilderFactory();
+    }
+
     /**
      * @param JsonEncodeConfig     $config
      * @param array<string, mixed> $context
      *
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
-        $setupNodes = [];
-        $accessor = $this->convertDataAccessorToPhpNode($node->getAccessor());
+        $setupStmts = [];
+        $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
 
         if (true === ($context['root'] ?? true)) {
             $context['root'] = false;
-            $setupNodes = [
-                new ExpressionNode(new AssignNode(new VariableNode('flags'), new BinaryNode(
-                    '??',
-                    new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_encode_flags')),
-                    new PhpScalarNode(0),
-                ))),
+            $setupStmts = [
+                new Expression(new Assign(
+                    $this->builder->var('flags'),
+                    new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_encode_flags')), $this->builder->val(0)),
+                )),
             ];
         }
 
         if (!$this->isNodeAlteringJson($node)) {
             return [
-                ...$setupNodes,
+                ...$setupStmts,
                 $this->yieldJson($this->encodeValue($accessor), $context),
             ];
         }
@@ -84,59 +88,69 @@ final readonly class TemplateGenerator
             $prefixName = $this->scopeVariableName('prefix', $context);
 
             if ($node->getType()->isList()) {
-                $listNodes = [
-                    $this->yieldJson(new PhpScalarNode('['), $context),
-                    new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(''))),
-
-                    new ForEachNode($accessor, null, $this->convertDataAccessorToPhpNode($node->item->accessor), [
-                        $this->yieldJson(new VariableNode($prefixName), $context),
-                        ...$this->generate($node->item, $config, $context),
-                        new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(','))),
+                $listStmts = [
+                    $this->yieldJson($this->builder->val('['), $context),
+                    new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
+                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($node->item->accessor), [
+                        'stmts' => [
+                            $this->yieldJson($this->builder->var($prefixName), $context),
+                            ...$this->generate($node->item, $config, $context),
+                            new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(','))),
+                        ],
                     ]),
-
-                    $this->yieldJson(new PhpScalarNode(']'), $context),
+                    $this->yieldJson($this->builder->val(']'), $context),
                 ];
 
                 if ($node->getType()->isNullable()) {
                     return [
-                        ...$setupNodes,
-                        new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                            $this->yieldJson(new PhpScalarNode('null'), $context),
-                        ], $listNodes),
+                        ...$setupStmts,
+                        new If_(new Identical($this->builder->val(null), $accessor), [
+                            'stmts' => [$this->yieldJson($this->builder->val('null'), $context)],
+                            'else' => new Else_($listStmts),
+                        ]),
                     ];
                 }
 
-                return [...$setupNodes, ...$listNodes];
+                return [...$setupStmts, ...$listStmts];
             }
 
             $keyName = $this->scopeVariableName('key', $context);
 
-            $dictNodes = [
-                $this->yieldJson(new PhpScalarNode('{'), $context),
-                new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(''))),
-                new ForEachNode($accessor, new VariableNode($keyName), $this->convertDataAccessorToPhpNode($node->item->accessor), [
-                    new ExpressionNode(new AssignNode(new VariableNode($keyName), $this->escapeString(new VariableNode($keyName)))),
-                    $this->yieldJson(new TemplateStringNode(new VariableNode($prefixName), '"', new VariableNode($keyName), '":'), $context),
-                    ...$this->generate($node->item, $config, $context),
-                    new ExpressionNode(new AssignNode(new VariableNode($prefixName), new PhpScalarNode(','))),
+            $dictStmts = [
+                $this->yieldJson($this->builder->val('{'), $context),
+                new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
+                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($node->item->accessor), [
+                    'keyVar' => $this->builder->var($keyName),
+                    'stmts' => [
+                        new Expression(new Assign($this->builder->var($keyName), $this->escapeString($this->builder->var($keyName)))),
+                        $this->yieldJson(new Encapsed([
+                            $this->builder->var($prefixName),
+                            new EncapsedStringPart('"'),
+                            $this->builder->var($keyName),
+                            new EncapsedStringPart('":'),
+                        ]), $context),
+                        ...$this->generate($node->item, $config, $context),
+                        new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(','))),
+                    ],
                 ]),
-                $this->yieldJson(new PhpScalarNode('}'), $context),
+                $this->yieldJson($this->builder->val('}'), $context),
             ];
 
             if ($node->getType()->isNullable()) {
                 return [
-                    ...$setupNodes,
-                    new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        $this->yieldJson(new PhpScalarNode('null'), $context),
-                    ], $dictNodes),
+                    ...$setupStmts,
+                    new If_(new Identical($this->builder->val(null), $accessor), [
+                        'stmts' => [$this->yieldJson($this->builder->val('null'), $context)],
+                        'else' => new Else_($dictStmts),
+                    ]),
                 ];
             }
 
-            return [...$setupNodes, ...$dictNodes];
+            return [...$setupStmts, ...$dictStmts];
         }
 
         if ($node instanceof ObjectNode) {
-            $objectNodes = [$this->yieldJson(new PhpScalarNode('{'), $context)];
+            $objectStmts = [$this->yieldJson($this->builder->val('{'), $context)];
             $separator = '';
 
             foreach ($node->properties as $name => $propertyNode) {
@@ -147,75 +161,80 @@ final readonly class TemplateGenerator
 
                 $encodedName = substr($encodedName, 1, -1);
 
-                $objectNodes = [
-                    ...$objectNodes,
-                    $this->yieldJson(new PhpScalarNode($separator), $context),
-                    $this->yieldJson(new PhpScalarNode('"'), $context),
-                    $this->yieldJson(new PhpScalarNode($encodedName), $context),
-                    $this->yieldJson(new PhpScalarNode('":'), $context),
+                $objectStmts = [
+                    ...$objectStmts,
+                    $this->yieldJson($this->builder->val($separator), $context),
+                    $this->yieldJson($this->builder->val('"'), $context),
+                    $this->yieldJson($this->builder->val($encodedName), $context),
+                    $this->yieldJson($this->builder->val('":'), $context),
                     ...$this->generate($propertyNode, $config, $context),
                 ];
 
                 $separator = ',';
             }
 
-            $objectNodes[] = $this->yieldJson(new PhpScalarNode('}'), $context);
+            $objectStmts[] = $this->yieldJson($this->builder->val('}'), $context);
 
             if ($node->getType()->isNullable()) {
                 return [
-                    ...$setupNodes,
-                    new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        $this->yieldJson(new PhpScalarNode('null'), $context),
-                    ], $objectNodes),
+                    ...$setupStmts,
+                    new If_(new Identical($this->builder->val(null), $accessor), [
+                        'stmts' => [$this->yieldJson($this->builder->val('null'), $context)],
+                        'else' => new Else_($objectStmts),
+                    ]),
                 ];
             }
 
-            return [...$setupNodes, ...$objectNodes];
+            return [...$setupStmts, ...$objectStmts];
         }
 
         if ($node instanceof ScalarNode) {
+            $scalarAccessor = $accessor;
+
             $type = $node->getType();
-            $scalarAccessor = $type->isBackedEnum() ? new PropertyNode($accessor, 'value', nullSafe: $type->isNullable()) : $accessor;
-            $scalarNodes = [$this->yieldJson($this->encodeValue($scalarAccessor), $context)];
+            if ($type->isBackedEnum()) {
+                $scalarAccessor = $type->isNullable() ? new NullsafePropertyFetch($accessor, 'value') : new PropertyFetch($accessor, 'value');
+            }
+
+            $scalarStmts = [$this->yieldJson($this->encodeValue($scalarAccessor), $context)];
 
             if ($type->isNullable() && !$type->isBackedEnum() && !\in_array($type->getBuiltinType(), [Type::BUILTIN_TYPE_MIXED, Type::BUILTIN_TYPE_NULL], true)) {
                 return [
-                    ...$setupNodes,
-                    new IfNode(new BinaryNode('===', new PhpScalarNode(null), $accessor), [
-                        $this->yieldJson(new PhpScalarNode('null'), $context),
-                    ], $scalarNodes),
+                    ...$setupStmts,
+                    new If_(new Identical($this->builder->val(null), $accessor), [
+                        'stmts' => [$this->yieldJson($this->builder->val('null'), $context)],
+                        'else' => new Else_($scalarStmts),
+                    ]),
                 ];
             }
 
-            return [...$setupNodes, ...$scalarNodes];
+            return [...$setupStmts, ...$scalarStmts];
         }
 
         throw new LogicException(sprintf('Unexpected "%s" node', $node::class));
     }
 
-    private function encodeValue(PhpNodeInterface $node): PhpNodeInterface
+    private function encodeValue(Expr $value): Expr
     {
-        return new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('flags')]));
+        return $this->builder->funcCall('\json_encode', [$value, $this->builder->var('flags')]);
     }
 
-    private function escapeString(PhpNodeInterface $node): PhpNodeInterface
+    private function escapeString(Expr $string): Expr
     {
-        return new FunctionCallNode('\substr', new ArgumentsNode([
-            new FunctionCallNode('\json_encode', new ArgumentsNode([$node, new VariableNode('flags')])),
-            new PhpScalarNode(1),
-            new PhpScalarNode(-1),
-        ]));
+        return $this->builder->funcCall('\substr', [$this->encodeValue($string), $this->builder->val(1), $this->builder->val(-1)]);
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    private function yieldJson(PhpNodeInterface $json, array $context): PhpNodeInterface
+    private function yieldJson(Expr $json, array $context): Stmt
     {
-        return match ($context['stream_type']) {
-            'resource' => new ExpressionNode(new FunctionCallNode('\fwrite', new ArgumentsNode([new VariableNode('stream'), $json]))),
-            'stream' => new ExpressionNode(new MethodCallNode(new VariableNode('stream'), 'write', new ArgumentsNode([$json]))),
-            default => new ExpressionNode(new YieldNode($json)),
+        $expr = match ($context['stream_type']) {
+            'resource' => $this->builder->funcCall('\fwrite', [$this->builder->var('stream'), $json]),
+            'stream' => $this->builder->methodCall($this->builder->var('stream'), 'write', [$json]),
+            default => new Yield_($json),
         };
+
+        return new Expression($expr);
     }
 }

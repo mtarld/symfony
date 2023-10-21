@@ -113,6 +113,7 @@ class TemplateTest extends TestCase
         yield ['list', Type::list()];
         yield ['object_list', Type::list(Type::object(DummyWithNameAttributes::class))];
         yield ['nullable_object_list', Type::list(Type::object(DummyWithNameAttributes::class), nullable: true)];
+
         yield ['iterable_list', Type::iterableList()];
 
         yield ['dict', Type::dict()];

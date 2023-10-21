@@ -11,18 +11,21 @@
 
 namespace Symfony\Component\Json\Template\Decode;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\IntersectionType;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\NullableType;
+use PhpParser\Node\Param;
+use PhpParser\Node\Stmt\Return_;
+use PhpParser\PrettyPrinter\Standard;
+use PhpParser\PrettyPrinterAbstract;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder;
 use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
 use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
-use Symfony\Component\Json\Php\ClosureNode;
-use Symfony\Component\Json\Php\Compiler;
-use Symfony\Component\Json\Php\ExpressionNode;
-use Symfony\Component\Json\Php\ParametersNode;
-use Symfony\Component\Json\Php\PhpDocNode;
-use Symfony\Component\Json\Php\ReturnNode;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -42,6 +45,8 @@ final readonly class Template
 
     private TemplateGenerator $templateGenerator;
     private StreamTemplateGenerator $streamTemplateGenerator;
+    private BuilderFactory $builder;
+    private PrettyPrinterAbstract $phpPrinter;
 
     public function __construct(
         private DataModelBuilder $dataModelBuilder,
@@ -49,6 +54,8 @@ final readonly class Template
     ) {
         $this->templateGenerator = new TemplateGenerator();
         $this->streamTemplateGenerator = new StreamTemplateGenerator();
+        $this->phpPrinter = new Standard();
+        $this->builder = new BuilderFactory();
     }
 
     public function getPath(Type $type, string $decodeFrom): string
@@ -61,26 +68,21 @@ final readonly class Template
      */
     public function generateContent(Type $type, array $config = []): string
     {
-        $compiler = new Compiler();
         $dataModel = $this->dataModelBuilder->build($type, $config);
 
-        $compiler->compile(new PhpDocNode([sprintf('@return %s', $type)]));
-        $phpDoc = $compiler->source();
-        $compiler->reset();
+        $node = new Return_(new Closure([
+            'static' => true,
+            'params' => [
+                new Param($this->builder->var('string'), type: 'string'),
+                new Param($this->builder->var('config'), type: 'array'),
+                new Param($this->builder->var('instantiator'), type: new FullyQualified(InstantiatorInterface::class)),
+                new Param($this->builder->var('services'), type: new NullableType(new FullyQualified(ContainerInterface::class))),
+            ],
+            'returnType' => 'mixed',
+            'stmts' => $this->templateGenerator->generate($dataModel, $config, []),
+        ]));
 
-        $compiler->indent();
-        $bodyNodes = $this->templateGenerator->generate($dataModel, $config, []);
-        $compiler->outdent();
-
-        $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode(new ParametersNode([
-            'string' => 'string',
-            'config' => 'array',
-            'instantiator' => '\\'.InstantiatorInterface::class,
-            'services' => '?\\'.ContainerInterface::class,
-        ]), 'mixed', true, $bodyNodes))));
-        $php = $compiler->source();
-
-        return "<?php\n\n".$phpDoc.$php;
+        return $this->phpPrinter->prettyPrintFile([$node])."\n";
     }
 
     /**
@@ -88,26 +90,24 @@ final readonly class Template
      */
     public function generateStreamContent(Type $type, array $config = []): string
     {
-        $compiler = new Compiler();
         $dataModel = $this->dataModelBuilder->build($type, $config);
 
-        $compiler->compile(new PhpDocNode([sprintf('@return %s', $type)]));
-        $phpDoc = $compiler->source();
-        $compiler->reset();
+        $node = new Return_(new Closure([
+            'static' => true,
+            'params' => [
+                new Param($this->builder->var('stream'), type: new IntersectionType([
+                    new FullyQualified(StreamReaderInterface::class),
+                    new FullyQualified(SeekableStreamInterface::class),
+                ])),
+                new Param($this->builder->var('config'), type: 'array'),
+                new Param($this->builder->var('instantiator'), type: new FullyQualified(LazyInstantiatorInterface::class)),
+                new Param($this->builder->var('services'), type: new NullableType(new FullyQualified(ContainerInterface::class))),
+            ],
+            'returnType' => 'mixed',
+            'stmts' => $this->streamTemplateGenerator->generate($dataModel, $config, ['stream_type' => 'stream']),
+        ]));
 
-        $compiler->indent();
-        $bodyNodes = $this->streamTemplateGenerator->generate($dataModel, $config, ['stream_type' => 'stream']);
-        $compiler->outdent();
-
-        $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode(new ParametersNode([
-            'stream' => '\\'.StreamReaderInterface::class.'&\\'.SeekableStreamInterface::class,
-            'config' => 'array',
-            'instantiator' => '\\'.LazyInstantiatorInterface::class,
-            'services' => '?\\'.ContainerInterface::class,
-        ]), 'mixed', true, $bodyNodes))));
-        $php = $compiler->source();
-
-        return "<?php\n\n".$phpDoc.$php;
+        return $this->phpPrinter->prettyPrintFile([$node])."\n";
     }
 
     /**
@@ -115,25 +115,20 @@ final readonly class Template
      */
     public function generateResourceContent(Type $type, array $config = []): string
     {
-        $compiler = new Compiler();
         $dataModel = $this->dataModelBuilder->build($type, $config);
 
-        $compiler->compile(new PhpDocNode(['@param resource $stream', sprintf('@return %s', $type)]));
-        $phpDoc = $compiler->source();
-        $compiler->reset();
+        $node = new Return_(new Closure([
+            'static' => true,
+            'params' => [
+                new Param($this->builder->var('stream'), type: 'mixed'),
+                new Param($this->builder->var('config'), type: 'array'),
+                new Param($this->builder->var('instantiator'), type: new FullyQualified(LazyInstantiatorInterface::class)),
+                new Param($this->builder->var('services'), type: new NullableType(new FullyQualified(ContainerInterface::class))),
+            ],
+            'returnType' => 'mixed',
+            'stmts' => $this->streamTemplateGenerator->generate($dataModel, $config, ['stream_type' => 'resource']),
+        ]));
 
-        $compiler->indent();
-        $bodyNodes = $this->streamTemplateGenerator->generate($dataModel, $config, ['stream_type' => 'resource']);
-        $compiler->outdent();
-
-        $compiler->compile(new ExpressionNode(new ReturnNode(new ClosureNode(new ParametersNode([
-            'stream' => 'mixed',
-            'config' => 'array',
-            'instantiator' => '\\'.LazyInstantiatorInterface::class,
-            'services' => '?\\'.ContainerInterface::class,
-        ]), 'mixed', true, $bodyNodes))));
-        $php = $compiler->source();
-
-        return "<?php\n\n".$phpDoc.$php;
+        return $this->phpPrinter->prettyPrintFile([$node])."\n";
     }
 }

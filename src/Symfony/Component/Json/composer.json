@@ -16,6 +16,7 @@
         }
     ],
     "require": {
+        "nikic/php-parser": "^4.17",
         "php": ">=8.2",
         "psr/container": "^2.0|^3.0",
         "psr/log": "^1|^2|^3",
