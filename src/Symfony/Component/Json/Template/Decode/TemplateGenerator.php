@@ -11,32 +11,34 @@
 
 namespace Symfony\Component\Json\Template\Decode;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ArrayDimFetch;
+use PhpParser\Node\Expr\ArrayItem;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\Coalesce;
+use PhpParser\Node\Expr\BinaryOp\Identical;
+use PhpParser\Node\Expr\BinaryOp\NotIdentical;
+use PhpParser\Node\Expr\Cast\Object_ as ObjectCast;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\Expr\ClosureUse;
+use PhpParser\Node\Expr\Ternary;
+use PhpParser\Node\Expr\Yield_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\NullableType;
+use PhpParser\Node\Param;
+use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Expression;
+use PhpParser\Node\Stmt\Foreach_;
+use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Return_;
 use Symfony\Component\Encoder\DataModel\Decode\CollectionNode;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelNodeInterface;
 use Symfony\Component\Encoder\DataModel\Decode\ObjectNode;
 use Symfony\Component\Encoder\DataModel\Decode\ScalarNode;
 use Symfony\Component\Encoder\Exception\LogicException;
-use Symfony\Component\Json\JsonDecoder;
-use Symfony\Component\Json\Php\ArgumentsNode;
-use Symfony\Component\Json\Php\ArrayAccessNode;
-use Symfony\Component\Json\Php\ArrayNode;
-use Symfony\Component\Json\Php\AssignNode;
-use Symfony\Component\Json\Php\BinaryNode;
-use Symfony\Component\Json\Php\CastNode;
-use Symfony\Component\Json\Php\ClosureNode;
-use Symfony\Component\Json\Php\ExpressionNode;
-use Symfony\Component\Json\Php\ForEachNode;
-use Symfony\Component\Json\Php\FunctionCallNode;
-use Symfony\Component\Json\Php\IfNode;
-use Symfony\Component\Json\Php\MethodCallNode;
-use Symfony\Component\Json\Php\ParametersNode;
-use Symfony\Component\Json\Php\PhpNodeInterface;
-use Symfony\Component\Json\Php\ReturnNode;
-use Symfony\Component\Json\Php\ScalarNode as PhpScalarNode;
-use Symfony\Component\Json\Php\TernaryConditionNode;
-use Symfony\Component\Json\Php\VariableNode;
-use Symfony\Component\Json\Php\YieldNode;
-use Symfony\Component\Json\Template\PhpNodeDataAccessor;
+use Symfony\Component\Json\Template\PhpExprDataAccessor;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
 
 /**
@@ -52,39 +54,37 @@ final readonly class TemplateGenerator
 {
     use TemplateGeneratorTrait;
 
+    public function __construct()
+    {
+        $this->builder = new BuilderFactory();
+    }
+
     /**
      * @param JsonDecodeConfig     $config
      * @param array<string, mixed> $context
      *
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
     public function generate(DataModelNodeInterface $node, array $config, array $context): array
     {
         return [
-            new ExpressionNode(new AssignNode(new VariableNode('flags'), new BinaryNode(
-                '??',
-                new ArrayAccessNode(new VariableNode('config'), new PhpScalarNode('json_decode_flags')),
-                new PhpScalarNode(0),
-            ))),
-            ...$this->getProviderNodes($node, $context),
-            new ExpressionNode(new ReturnNode(new FunctionCallNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ArgumentsNode([
-                    new MethodCallNode(new PhpScalarNode('\\'.Decoder::class), 'decodeString', new ArgumentsNode([
-                        new VariableNode('string'),
-                        new VariableNode('flags'),
-                    ]), static: true),
-                ]),
-            ))),
+            new Expression(new Assign(
+                $this->builder->var('flags'),
+                new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_decode_flags')), $this->builder->val(0)),
+            )),
+            ...$this->getProviderStmts($node, $context),
+            new Return_($this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())), [
+                $this->builder->staticCall(new FullyQualified(Decoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')]),
+            ])),
         ];
     }
 
     /**
      * @param array<string, mixed> $context
      *
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
-    private function getProviderNodes(DataModelNodeInterface $node, array &$context): array
+    private function getProviderStmts(DataModelNodeInterface $node, array &$context): array
     {
         if ($context['providers'][$node->getIdentifier()] ?? false) {
             return [];
@@ -93,28 +93,28 @@ final readonly class TemplateGenerator
         $context['providers'][$node->getIdentifier()] = true;
 
         return match (true) {
-            !$this->isNodeAlteringJson($node) => $this->getRawJsonNodes($node),
-            $node instanceof CollectionNode => $this->getCollectionNodes($node, $context),
-            $node instanceof ObjectNode => $this->getObjectNodes($node, $context),
-            $node instanceof ScalarNode => $this->getScalarNodes($node),
+            !$this->isNodeAlteringJson($node) => $this->getRawJsonStmts($node),
+            $node instanceof CollectionNode => $this->getCollectionStmts($node, $context),
+            $node instanceof ObjectNode => $this->getObjectStmts($node, $context),
+            $node instanceof ScalarNode => $this->getScalarStmts($node),
             default => throw new LogicException(sprintf('Unexpected "%s" node', $node::class)),
         };
     }
 
     /**
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
-    private function getRawJsonNodes(DataModelNodeInterface $node): array
+    private function getRawJsonStmts(DataModelNodeInterface $node): array
     {
         return [
-            new ExpressionNode(new AssignNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ClosureNode(
-                    new ParametersNode(['data' => 'mixed']),
-                    'mixed',
-                    true,
-                    [new ExpressionNode(new ReturnNode(new VariableNode('data')))],
-                ),
+            new Expression(new Assign(
+                new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())),
+                new Closure([
+                    'static' => true,
+                    'params' => [new Param($this->builder->var('data'), type: 'mixed')],
+                    'returnType' => 'mixed',
+                    'stmts' => [new Return_($this->builder->var('data'))],
+                ]),
             )),
         ];
     }
@@ -122,172 +122,175 @@ final readonly class TemplateGenerator
     /**
      * @param array<string, mixed> $context
      *
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
-    private function getCollectionNodes(CollectionNode $node, array &$context): array
+    private function getCollectionStmts(CollectionNode $node, array &$context): array
     {
-        $returnNullNodes = $node->getType()->isNullable() ? [
-            new IfNode(new BinaryNode('===', new PhpScalarNode(null), new VariableNode('data')), [
-                new ExpressionNode(new ReturnNode(new PhpScalarNode(null))),
+        $returnNullStmts = $node->getType()->isNullable() ? [
+            new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
+                'stmts' => [new Return_($this->builder->val(null))],
             ]),
         ] : [];
 
-        $itemValueNode = $this->isNodeAlteringJson($node->item)
-            ? new FunctionCallNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->item->getIdentifier())),
-                new ArgumentsNode([new VariableNode('v')]),
+        $itemValueStmt = $this->isNodeAlteringJson($node->item)
+            ? $this->builder->funcCall(
+                new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())),
+                [$this->builder->var('v')],
             )
-            : new VariableNode('v');
+            : $this->builder->var('v');
 
-        $iterableClosureNodes = [
-            new ExpressionNode(new AssignNode(
-                new VariableNode('iterable'),
-                new ClosureNode(new ParametersNode(['data' => 'iterable']), 'iterable', true, [
-                    new ForEachNode(new VariableNode('data'), new VariableNode('k'), new VariableNode('v'), [
-                        new ExpressionNode(new YieldNode(
-                            $itemValueNode,
-                            new VariableNode('k'),
-                        )),
-                    ]),
-                ], new ArgumentsNode([
-                    new VariableNode('config'),
-                    new VariableNode('instantiator'),
-                    new VariableNode('services'),
-                    new VariableNode('providers', byReference: true),
-                ])),
+        $iterableClosureStmts = [
+            new Expression(new Assign(
+                $this->builder->var('iterable'),
+                new Closure([
+                    'static' => true,
+                    'params' => [new Param($this->builder->var('data'), type: 'iterable')],
+                    'returnType' => 'iterable',
+                    'uses' => [
+                        new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('instantiator')),
+                        new ClosureUse($this->builder->var('services')),
+                        new ClosureUse($this->builder->var('providers'), byRef: true),
+                    ],
+                    'stmts' => [
+                        new Foreach_($this->builder->var('data'), $this->builder->var('v'), [
+                            'keyVar' => $this->builder->var('k'),
+                            'stmts' => [new Expression(new Yield_($itemValueStmt, $this->builder->var('k')))],
+                        ]),
+                    ],
+                ]),
             )),
         ];
 
-        $iterableValueNode = new FunctionCallNode(new VariableNode('iterable'), new ArgumentsNode([new VariableNode('data')]));
+        $iterableValueStmt = $this->builder->funcCall($this->builder->var('iterable'), [$this->builder->var('data')]);
 
-        $returnNodes = [
-            new ExpressionNode(new ReturnNode(
-                'array' === $node->getType()->getBuiltinType() ? new FunctionCallNode('\iterator_to_array', new ArgumentsNode([$iterableValueNode])) : $iterableValueNode,
-            )),
-        ];
+        $returnStmts = [new Return_('array' === $node->getType()->getBuiltinType() ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
 
-        $providerNodes = $this->isNodeAlteringJson($node->item) ? $this->getProviderNodes($node->item, $context) : [];
+        $providerStmts = $this->isNodeAlteringJson($node->item) ? $this->getProviderStmts($node->item, $context) : [];
 
         return [
-            new ExpressionNode(new AssignNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ClosureNode(
-                    new ParametersNode(['data' => '?iterable']),
-                    ($node->getType()->isNullable() ? '?' : '').$node->getType()->getBuiltinType(),
-                    true,
-                    [...$returnNullNodes, ...$iterableClosureNodes, ...$returnNodes],
-                    new ArgumentsNode([
-                        new VariableNode('config'),
-                        new VariableNode('instantiator'),
-                        new VariableNode('services'),
-                        new VariableNode('providers', byReference: true),
-                    ]),
-                ),
+            new Expression(new Assign(
+                new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())),
+                new Closure([
+                    'static' => true,
+                    'params' => [new Param($this->builder->var('data'), type: '?iterable')],
+                    'returnType' => ($node->getType()->isNullable() ? '?' : '').$node->getType()->getBuiltinType(),
+                    'uses' => [
+                        new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('instantiator')),
+                        new ClosureUse($this->builder->var('services')),
+                        new ClosureUse($this->builder->var('providers'), byRef: true),
+                    ],
+                    'stmts' => [...$returnNullStmts, ...$iterableClosureStmts, ...$returnStmts],
+                ]),
             )),
-            ...$providerNodes,
+            ...$providerStmts,
         ];
     }
 
     /**
      * @param array<string, mixed> $context
      *
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
-    private function getObjectNodes(ObjectNode $node, array &$context): array
+    private function getObjectStmts(ObjectNode $node, array &$context): array
     {
         if ($node->ghost) {
             return [];
         }
 
-        $returnNullNodes = $node->getType()->isNullable() ? [
-            new IfNode(new BinaryNode('===', new PhpScalarNode(null), new VariableNode('data')), [
-                new ExpressionNode(new ReturnNode(new PhpScalarNode(null))),
+        $returnNullStmts = $node->getType()->isNullable() ? [
+            new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
+                'stmts' => [new Return_($this->builder->val(null))],
             ]),
         ] : [];
 
-        $propertyValueProvidersNodes = [];
+        $propertyValueProvidersStmts = [];
         $propertiesValues = [];
 
         foreach ($node->properties as $encodedName => $property) {
-            $propertyValueProvidersNodes = [
-                ...$propertyValueProvidersNodes,
-                ...($this->isNodeAlteringJson($property['value']) ? $this->getProviderNodes($property['value'], $context) : []),
+            $propertyValueProvidersStmts = [
+                ...$propertyValueProvidersStmts,
+                ...($this->isNodeAlteringJson($property['value']) ? $this->getProviderStmts($property['value'], $context) : []),
             ];
 
-            $propertyValueNode = $this->isNodeAlteringJson($property['value'])
-                ? new TernaryConditionNode(
-                    new FunctionCallNode('\array_key_exists', new ArgumentsNode([new PhpScalarNode($encodedName), new VariableNode('data')])),
-                    new FunctionCallNode(
-                        new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($property['value']->getIdentifier())),
-                        new ArgumentsNode([new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($encodedName))]),
+            $propertyValueStmt = $this->isNodeAlteringJson($property['value'])
+                ? new Ternary(
+                    $this->builder->funcCall('\array_key_exists', [$this->builder->val($encodedName), $this->builder->var('data')]),
+                    $this->builder->funcCall(
+                        new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($property['value']->getIdentifier())),
+                        [new ArrayDimFetch($this->builder->var('data'), $this->builder->val($encodedName))],
                     ),
-                    new PhpScalarNode('_symfony_missing_value'),
+                    $this->builder->val('_symfony_missing_value'),
                 )
-                : new BinaryNode('??', new ArrayAccessNode(new VariableNode('data'), new PhpScalarNode($encodedName)), new PhpScalarNode('_symfony_missing_value'));
+                : new Coalesce(new ArrayDimFetch($this->builder->var('data'), $this->builder->val($encodedName)), $this->builder->val('_symfony_missing_value'));
 
-            $propertiesValues[$property['name']] = $this->convertDataAccessorToPhpNode($property['accessor'](new PhpNodeDataAccessor($propertyValueNode)));
+            $propertiesValues[] = new ArrayItem(
+                $this->convertDataAccessorToPhpExpr($property['accessor'](new PhpExprDataAccessor($propertyValueStmt))),
+                $this->builder->val($property['name']),
+            );
         }
 
         return [
-            new ExpressionNode(new AssignNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ClosureNode(
-                    new ParametersNode(['data' => '?array']),
-                    ($node->getType()->isNullable() ? '?' : '').$node->getType()->getClassName(),
-                    true,
-                    [
-                        ...$returnNullNodes,
-                        new ExpressionNode(new ReturnNode(new MethodCallNode(
-                            new VariableNode('instantiator'),
-                            'instantiate',
-                            new ArgumentsNode([
-                                new PhpScalarNode($node->getType()->getClassName()),
-                                new FunctionCallNode('\array_filter', new ArgumentsNode([
-                                    new ArrayNode($propertiesValues),
-                                    new ClosureNode(new ParametersNode(['v' => 'mixed']), 'bool', true, [
-                                        new ExpressionNode(new ReturnNode(new BinaryNode('!==', new PhpScalarNode('_symfony_missing_value'), new VariableNode('v')))),
-                                    ]),
-                                ])),
-                            ]),
-                        ))),
+            new Expression(new Assign(
+                new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())),
+                new Closure([
+                    'static' => true,
+                    'params' => [new Param($this->builder->var('data'), type: '?array')],
+                    'returnType' => $node->getType()->isNullable()
+                        ? new NullableType(new FullyQualified($node->getType()->getClassName()))
+                        : new FullyQualified($node->getType()->getClassName()),
+                    'uses' => [
+                        new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('instantiator')),
+                        new ClosureUse($this->builder->var('services')),
+                        new ClosureUse($this->builder->var('providers'), byRef: true),
                     ],
-                    new ArgumentsNode([
-                        new VariableNode('config'),
-                        new VariableNode('instantiator'),
-                        new VariableNode('services'),
-                        new VariableNode('providers', byReference: true),
-                    ]),
-                ),
+                    'stmts' => [
+                        ...$returnNullStmts,
+                        new Return_($this->builder->methodCall($this->builder->var('instantiator'), 'instantiate', [
+                            new ClassConstFetch(new FullyQualified($node->getType()->getClassName()), 'class'),
+                            $this->builder->funcCall('\array_filter', [
+                                new Array_($propertiesValues, ['kind' => Array_::KIND_SHORT]),
+                                new Closure([
+                                    'static' => true,
+                                    'params' => [new Param($this->builder->var('v'), type: 'mixed')],
+                                    'returnType' => 'bool',
+                                    'stmts' => [new Return_(new NotIdentical($this->builder->val('_symfony_missing_value'), $this->builder->var('v')))],
+                                ]),
+                            ]),
+                        ])),
+                    ],
+                ]),
             )),
-            ...$propertyValueProvidersNodes,
+            ...$propertyValueProvidersStmts,
         ];
     }
 
     /**
-     * @return list<PhpNodeInterface>
+     * @return list<Stmt>
      */
-    private function getScalarNodes(ScalarNode $node): array
+    private function getScalarStmts(ScalarNode $node): array
     {
         $accessor = match (true) {
-            $node->getType()->isBackedEnum() => new MethodCallNode(
-                new PhpScalarNode($node->getType()->getClassName()),
+            $node->getType()->isBackedEnum() => $this->builder->staticCall(
+                new FullyQualified($node->getType()->getClassName()),
                 $node->getType()->isNullable() ? 'tryFrom' : 'from',
-                new ArgumentsNode([new VariableNode('data')]),
-                static: true,
+                [$this->builder->var('data')],
             ),
-            $node->getType()->isObject() => new CastNode('object', new VariableNode('data')),
-            default => new VariableNode('data'),
+            $node->getType()->isObject() => new ObjectCast($this->builder->var('data')),
+            default => $this->builder->var('data'),
         };
 
         return [
-            new ExpressionNode(new AssignNode(
-                new ArrayAccessNode(new VariableNode('providers'), new PhpScalarNode($node->getIdentifier())),
-                new ClosureNode(
-                    new ParametersNode(['data' => 'mixed']),
-                    'mixed',
-                    true,
-                    [new ExpressionNode(new ReturnNode($accessor))],
-                ),
+            new Expression(new Assign(
+                new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())),
+                new Closure([
+                    'static' => true,
+                    'params' => [new Param($this->builder->var('data'), type: 'mixed')],
+                    'returnType' => 'mixed',
+                    'stmts' => [new Return_($accessor)],
+                ]),
             )),
         ];
     }
