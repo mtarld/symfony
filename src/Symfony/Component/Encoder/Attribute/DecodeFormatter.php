@@ -27,7 +27,7 @@ namespace Symfony\Component\Encoder\Attribute;
 final readonly class DecodeFormatter
 {
     /**
-     * @param callable $formatter
+     * @param callable(mixed $value, mixed ...$services): mixed $formatter
      */
     public function __construct(
         public mixed $formatter,

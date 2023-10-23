@@ -29,8 +29,8 @@ namespace Symfony\Component\Encoder\Attribute;
 final readonly class MaxDepth
 {
     /**
-     * @param positive-int $maxDepth
-     * @param ?callable    $maxDepthReachedFormatter
+     * @param positive-int                                       $maxDepth
+     * @param ?callable(mixed $value, mixed ...$services): mixed $maxDepthReachedFormatter
      */
     public function __construct(
         public int $maxDepth,
