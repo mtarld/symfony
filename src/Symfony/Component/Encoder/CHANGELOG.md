@@ -4,4 +4,4 @@ CHANGELOG
 7.1
 ---
 
- * introduced the component as experimental
+ * Introduce the component as experimental
