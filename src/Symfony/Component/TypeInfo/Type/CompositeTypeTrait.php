@@ -83,4 +83,32 @@ trait CompositeTypeTrait
 
         return true;
     }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setCollection(bool $collection): void
+    {
+        parent::setCollection($collection);
+
+        foreach ($this->types as $t) {
+            $t->setCollection($collection);
+        }
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setNullable(bool $nullable): void
+    {
+        parent::setNullable($nullable);
+
+        foreach ($this->types as $t) {
+            $t->setNullable($nullable);
+        }
+    }
 }

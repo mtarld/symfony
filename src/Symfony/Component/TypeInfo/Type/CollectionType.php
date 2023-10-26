@@ -34,6 +34,11 @@ final class CollectionType extends Type
         private readonly BuiltinType|ObjectType|GenericType $type,
         private readonly bool $isList = false,
     ) {
+        // BC layer to allow invalid list keys
+        if (\func_get_args()[2] ?? false) {
+            return;
+        }
+
         if ($this->isList()) {
             $keyType = $this->getCollectionKeyType();
 
@@ -104,5 +109,27 @@ final class CollectionType extends Type
     public function __call(string $method, array $arguments): mixed
     {
         return $this->type->{$method}(...$arguments);
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setCollection(bool $collection): void
+    {
+        parent::setCollection($collection);
+        $this->type->setCollection($collection);
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setNullable(bool $nullable): void
+    {
+        parent::setNullable($nullable);
+        $this->type->setNullable($nullable);
     }
 }

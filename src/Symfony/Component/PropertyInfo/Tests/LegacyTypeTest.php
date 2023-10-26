@@ -17,7 +17,7 @@ use Symfony\Component\PropertyInfo\Type;
 /**
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-class TypeTest extends TestCase
+class LegacyTypeTest extends TestCase
 {
     public function testConstruct()
     {

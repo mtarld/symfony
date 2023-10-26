@@ -16,6 +16,11 @@ Messenger
 
  * Make `#[AsMessageHandler]` final
 
+PropertyInfo
+------------
+
+ * The `PropertyTypeExtractorInterface::getTypes` method is deprecated, use `PropertyTypeExtractorInterface::getType` instead
+
 SecurityBundle
 --------------
 
