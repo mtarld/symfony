@@ -17,7 +17,6 @@ use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\ORM\Mapping\MappingException as OrmMappingException;
 use Doctrine\Persistence\Mapping\MappingException;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\Valid;
 use Symfony\Component\Validator\Mapping\AutoMappingStrategy;
@@ -66,7 +65,7 @@ final class DoctrineLoader implements LoaderInterface
          */
         $existingUniqueFields = $this->getExistingUniqueFields($metadata);
 
-        // Type and nullable aren't handled here, use the PropertyInfo Loader instead.
+        // type and nullable aren't handled here, use the PropertyInfo Loader instead.
         foreach ($doctrineMetadata->fieldMappings as $mapping) {
             $enabledForProperty = $enabledForClass;
             $lengthConstraint = null;

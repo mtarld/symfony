@@ -29,6 +29,10 @@ final class BuiltinType extends Type
     public function __construct(
         private readonly TypeIdentifier $typeIdentifier,
     ) {
+        // BC Layer for Symfony\Component\PropertyInfo\Type.
+        if (\in_array($typeIdentifier, [TypeIdentifier::MIXED, TypeIdentifier::NULL], true)) {
+            $this->setNullable(true);
+        }
     }
 
     /**

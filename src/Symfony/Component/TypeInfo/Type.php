@@ -47,6 +47,20 @@ abstract class Type implements \Stringable
     }
 
     /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public ?bool $isNullable = null;
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public bool $isCollection = false;
+
+    /**
      * @param callable(Type): bool $callable
      */
     public function is(callable $callable): bool
@@ -65,6 +79,11 @@ abstract class Type implements \Stringable
 
     public function isNullable(): bool
     {
+        // BC Layer for Symfony\Component\PropertyInfo\Type.
+        if (null !== $this->isNullable) {
+            return $this->isNullable;
+        }
+
         return $this->testIdentifier(fn (TypeIdentifier $i): bool => TypeIdentifier::NULL === $i || TypeIdentifier::MIXED === $i);
     }
 
@@ -85,5 +104,25 @@ abstract class Type implements \Stringable
         };
 
         return $this->is($callable);
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setCollection(bool $collection): void
+    {
+        $this->isCollection = $collection;
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\Type.
+     *
+     * @internal
+     */
+    public function setNullable(bool $nullable): void
+    {
+        $this->isNullable = $nullable;
     }
 }
