@@ -34,6 +34,7 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('.json.decode.template'),
                 service('encoder.instantiator'),
+                service('encoder.instantiator.lazy'),
                 param('.json.cache_dir.template'),
                 service('.encoder.runtime_services'),
             ])
