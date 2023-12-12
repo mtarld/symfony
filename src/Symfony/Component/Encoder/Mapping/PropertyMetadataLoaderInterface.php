@@ -22,7 +22,7 @@ use Symfony\Component\Encoder\EncoderInterface;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  *
  * @phpstan-import-type EncodeConfig from EncoderInterface
  * @phpstan-import-type DecodeConfig from DecoderInterface

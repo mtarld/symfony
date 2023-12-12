@@ -20,7 +20,7 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  *
  * @phpstan-type DecodeConfig array{
  *   date_time_format?: string,

@@ -21,7 +21,7 @@ use Symfony\Component\Encoder\Exception\UnexpectedValueException;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 final readonly class Instantiator implements InstantiatorInterface
 {

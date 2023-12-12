@@ -18,7 +18,7 @@ namespace Symfony\Component\Encoder\Instantiator;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 interface LazyInstantiatorInterface extends InstantiatorInterface
 {

@@ -14,7 +14,7 @@ namespace Symfony\Component\Encoder\Exception;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 class UnsupportedException extends InvalidArgumentException
 {

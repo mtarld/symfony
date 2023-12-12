@@ -17,7 +17,7 @@ namespace Symfony\Component\Encoder;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  *
  * @implements \IteratorAggregate<string>
  */

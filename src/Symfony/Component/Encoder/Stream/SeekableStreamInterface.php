@@ -16,7 +16,7 @@ namespace Symfony\Component\Encoder\Stream;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 interface SeekableStreamInterface
 {

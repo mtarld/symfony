@@ -20,7 +20,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 final class LazyInstantiator implements LazyInstantiatorInterface
 {

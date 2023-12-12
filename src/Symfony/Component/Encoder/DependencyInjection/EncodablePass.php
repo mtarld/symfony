@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 final readonly class EncodablePass implements CompilerPassInterface
 {

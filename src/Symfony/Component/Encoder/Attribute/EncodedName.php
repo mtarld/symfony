@@ -16,7 +16,7 @@ namespace Symfony\Component\Encoder\Attribute;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental in 7.1
+ * @experimental
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final readonly class EncodedName
