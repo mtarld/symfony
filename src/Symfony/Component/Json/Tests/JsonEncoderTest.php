@@ -108,7 +108,7 @@ class JsonEncoderTest extends TestCase
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertEncoded('{"id":"20","name":"dummy name"}', $dummy);
+        $this->assertEncoded('{"id":"20","name":"DUMMY NAME"}', $dummy);
     }
 
     public function testEncodeObjectWithRuntimeServices()

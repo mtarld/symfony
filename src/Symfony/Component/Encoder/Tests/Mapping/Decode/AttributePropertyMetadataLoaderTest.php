@@ -39,7 +39,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 
         $this->assertEquals([
             'id' => new PropertyMetadata('id', Type::string(), [DummyWithFormatterAttributes::divideAndCastToInt(...)]),
-            'name' => new PropertyMetadata('name', Type::string(), []),
+            'name' => new PropertyMetadata('name', Type::string(), [strtolower(...)]),
         ], $loader->load(DummyWithFormatterAttributes::class, [], []));
     }
 }

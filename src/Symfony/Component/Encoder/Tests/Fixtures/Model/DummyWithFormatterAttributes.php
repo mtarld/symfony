@@ -11,6 +11,8 @@ class DummyWithFormatterAttributes
     #[DecodeFormatter([self::class, 'divideAndCastToInt'])]
     public int $id = 1;
 
+    #[EncodeFormatter('strtoupper')]
+    #[DecodeFormatter('strtolower')]
     public string $name = 'dummy';
 
     public static function doubleAndCastToString(int $value): string

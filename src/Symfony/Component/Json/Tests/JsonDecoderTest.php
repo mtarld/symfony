@@ -117,7 +117,8 @@ class JsonDecoderTest extends TestCase
         $this->assertDecoded(function (mixed $decoded) {
             $this->assertInstanceOf(DummyWithFormatterAttributes::class, $decoded);
             $this->assertSame(10, $decoded->id);
-        }, '{"id": "20"}', Type::object(DummyWithFormatterAttributes::class));
+            $this->assertSame('dummy name', $decoded->name);
+        }, '{"id": "20", "name": "DUMMY NAME"}', Type::object(DummyWithFormatterAttributes::class));
     }
 
     public function testDecodeObjectWithRuntimeServices()

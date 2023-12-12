@@ -50,6 +50,10 @@ final readonly class RuntimeServicesPass implements CompilerPassInterface
 
         $runtimeServices = [];
         foreach ($formatters as $formatter) {
+            if (null === $formatter->getClosureScopeClass()) {
+                continue;
+            }
+
             $formatterName = sprintf('%s::%s', $formatter->getClosureScopeClass()->getName(), $formatter->getName());
             foreach ($this->retrieveServices($container, $formatter) as $serviceName => $reference) {
                 $runtimeServices[sprintf('%s[%s]', $formatterName, $serviceName)] = new ServiceClosureArgument($reference);
