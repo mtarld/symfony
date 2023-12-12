@@ -14,7 +14,6 @@ namespace Symfony\Component\Encoder\Tests\Stream;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Encoder\Stream\MemoryStream;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\Encoder\Stream\StreamWriterInterface;
 
@@ -23,7 +22,7 @@ class StreamTest extends TestCase
     /**
      * @dataProvider streams
      */
-    public function testRead(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    public function testRead(StreamReaderInterface&StreamWriterInterface $stream)
     {
         $stream->write('123456789');
         $stream->rewind();
@@ -36,7 +35,7 @@ class StreamTest extends TestCase
     /**
      * @dataProvider streams
      */
-    public function testSeek(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    public function testSeek(StreamReaderInterface&StreamWriterInterface $stream)
     {
         $stream->write('123456789');
 
@@ -50,7 +49,7 @@ class StreamTest extends TestCase
     /**
      * @dataProvider streams
      */
-    public function testIterateOverStream(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    public function testIterateOverStream(StreamReaderInterface&StreamWriterInterface $stream)
     {
         $stream->write(str_repeat('.', 20000));
         $stream->seek(10);
@@ -61,7 +60,7 @@ class StreamTest extends TestCase
     /**
      * @dataProvider streams
      */
-    public function testCastToString(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    public function testCastToString(StreamReaderInterface&StreamWriterInterface $stream)
     {
         $stream->write(str_repeat('.', 10000));
         $stream->seek(10);
@@ -72,7 +71,7 @@ class StreamTest extends TestCase
     /**
      * @dataProvider streams
      */
-    public function testWrite(StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface $stream)
+    public function testWrite(StreamReaderInterface&StreamWriterInterface $stream)
     {
         $stream->write('123456789');
         $this->assertSame('', $stream->read());
@@ -82,7 +81,7 @@ class StreamTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: StreamReaderInterface&SeekableStreamInterface&StreamWriterInterface}>
+     * @return iterable<array{0: StreamReaderInterface&StreamWriterInterface}>
      */
     public function streams(): iterable
     {

@@ -23,4 +23,8 @@ namespace Symfony\Component\Encoder\Stream;
 interface StreamReaderInterface extends \IteratorAggregate, \Stringable
 {
     public function read(int $length = null): string;
+
+    public function seek(int $offset): void;
+
+    public function rewind(): void;
 }

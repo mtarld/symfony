@@ -18,7 +18,6 @@ use Symfony\Component\Encoder\Exception\RuntimeException;
 use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
 use Symfony\Component\Encoder\Stream\BufferedStream;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\Json\Template\Decode\Template;
 use Symfony\Component\TypeInfo\Type;
@@ -46,7 +45,7 @@ final readonly class JsonDecoder implements DecoderInterface
      *   json_decode_flags?: int,
      * } $config
      */
-    public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed
+    public function decode(StreamReaderInterface|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed
     {
         if ($input instanceof \Traversable && !$input instanceof StreamReaderInterface) {
             $chunks = $input;

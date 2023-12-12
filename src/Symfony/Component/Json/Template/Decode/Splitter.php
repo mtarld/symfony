@@ -12,7 +12,6 @@
 namespace Symfony\Component\Json\Template\Decode;
 
 use Symfony\Component\Encoder\Exception\UnexpectedValueException;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
@@ -35,7 +34,7 @@ final class Splitter
     ];
 
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     * @param StreamReaderInterface|resource $stream
      */
     public static function splitList(mixed $stream, int $offset = 0, int $length = null): ?\Iterator
     {
@@ -50,7 +49,7 @@ final class Splitter
     }
 
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     * @param StreamReaderInterface|resource $stream
      */
     public static function splitDict(mixed $stream, int $offset = 0, int $length = null): ?\Iterator
     {

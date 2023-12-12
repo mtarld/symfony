@@ -18,7 +18,7 @@ namespace Symfony\Component\Encoder\Stream;
  *
  * @experimental
  */
-final class MemoryStream implements StreamReaderInterface, StreamWriterInterface, SeekableStreamInterface
+final class MemoryStream implements StreamReaderInterface, StreamWriterInterface
 {
     private const CHUNK_LENGTH = 8192;
 
@@ -42,6 +42,16 @@ final class MemoryStream implements StreamReaderInterface, StreamWriterInterface
         return fread($this->resource, $length ?? self::CHUNK_LENGTH);
     }
 
+    public function seek(int $offset): void
+    {
+        fseek($this->resource, $offset);
+    }
+
+    public function rewind(): void
+    {
+        rewind($this->resource);
+    }
+
     public function getIterator(): \Traversable
     {
         while (!feof($this->resource)) {
@@ -52,16 +62,6 @@ final class MemoryStream implements StreamReaderInterface, StreamWriterInterface
     public function __toString(): string
     {
         return stream_get_contents($this->resource);
-    }
-
-    public function rewind(): void
-    {
-        rewind($this->resource);
-    }
-
-    public function seek(int $offset): void
-    {
-        fseek($this->resource, $offset);
     }
 
     public function write(string $string): void

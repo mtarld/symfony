@@ -12,7 +12,6 @@
 namespace Symfony\Component\Json\Template\Decode;
 
 use Symfony\Component\Encoder\Exception\InvalidResourceException;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
@@ -28,7 +27,7 @@ final readonly class Lexer
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
 
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     * @param StreamReaderInterface|resource $stream
      *
      * @return \Traversable<array{0: string, 1: int}>
      *
@@ -99,7 +98,7 @@ final readonly class Lexer
     }
 
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     * @param StreamReaderInterface|resource $stream
      *
      * @return \Traversable<string>
      */

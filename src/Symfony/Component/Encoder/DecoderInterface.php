@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Encoder;
 
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
@@ -25,10 +24,10 @@ use Symfony\Component\TypeInfo\Type;
 interface DecoderInterface
 {
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|\Traversable<string>|\Stringable|string $input
+     * @param StreamReaderInterface|\Traversable<string>|\Stringable|string $input
      * @param array{
      *   date_time_format?: string,
      * } $config
      */
-    public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed;
+    public function decode(StreamReaderInterface|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed;
 }

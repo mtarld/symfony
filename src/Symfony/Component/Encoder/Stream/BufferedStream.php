@@ -18,7 +18,7 @@ namespace Symfony\Component\Encoder\Stream;
  *
  * @experimental
  */
-final class BufferedStream implements StreamReaderInterface, StreamWriterInterface, SeekableStreamInterface
+final class BufferedStream implements StreamReaderInterface, StreamWriterInterface
 {
     private const CHUNK_LENGTH = 8192;
 
@@ -37,6 +37,16 @@ final class BufferedStream implements StreamReaderInterface, StreamWriterInterfa
         return $data;
     }
 
+    public function seek(int $offset): void
+    {
+        $this->offset = $offset;
+    }
+
+    public function rewind(): void
+    {
+        $this->offset = 0;
+    }
+
     public function getIterator(): \Traversable
     {
         foreach (str_split(substr($this->buffer, $this->offset), self::CHUNK_LENGTH) as $chunk) {
@@ -47,16 +57,6 @@ final class BufferedStream implements StreamReaderInterface, StreamWriterInterfa
     public function __toString(): string
     {
         return substr($this->buffer, $this->offset);
-    }
-
-    public function rewind(): void
-    {
-        $this->offset = 0;
-    }
-
-    public function seek(int $offset): void
-    {
-        $this->offset = $offset;
     }
 
     public function write(string $string): void

@@ -13,7 +13,6 @@ namespace Symfony\Component\Json\Template\Decode;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Expr\Closure;
-use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
@@ -24,7 +23,6 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder;
 use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
@@ -93,10 +91,7 @@ final readonly class Template
         $node = new Return_(new Closure([
             'static' => true,
             'params' => [
-                new Param($this->builder->var('stream'), type: new IntersectionType([
-                    new FullyQualified(StreamReaderInterface::class),
-                    new FullyQualified(SeekableStreamInterface::class),
-                ])),
+                new Param($this->builder->var('stream'), type: new FullyQualified(StreamReaderInterface::class)),
                 new Param($this->builder->var('config'), type: 'array'),
                 new Param($this->builder->var('instantiator'), type: new FullyQualified(LazyInstantiatorInterface::class)),
                 new Param($this->builder->var('services'), type: new NullableType(new FullyQualified(ContainerInterface::class))),

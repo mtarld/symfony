@@ -12,7 +12,6 @@
 namespace Symfony\Component\Json\Template\Decode;
 
 use Symfony\Component\Encoder\Exception\UnexpectedValueException;
-use Symfony\Component\Encoder\Stream\SeekableStreamInterface;
 use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 
 /**
@@ -32,7 +31,7 @@ final readonly class Decoder
     }
 
     /**
-     * @param (StreamReaderInterface&SeekableStreamInterface)|resource $stream
+     * @param StreamReaderInterface|resource $stream
      */
     public static function decodeStream(mixed $stream, int $offset = 0, int $length = null, int $flags = 0): mixed
     {
