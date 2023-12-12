@@ -23,13 +23,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
- *
- * @phpstan-import-type EncodeConfig from EncoderInterface
- *
- * @phpstan-type JsonEncodeConfig EncodeConfig&array{
- *   force_generate_template?: bool,
- *   json_encode_flags?: int,
- * }
  */
 final readonly class JsonEncoder implements EncoderInterface
 {
@@ -41,7 +34,14 @@ final readonly class JsonEncoder implements EncoderInterface
     }
 
     /**
-     * @param JsonEncodeConfig $config
+     * @param array{
+     *   type?: Type,
+     *   stream?: StreamWriterInterface,
+     *   max_depth?: int,
+     *   date_time_format?: string,
+     *   force_generate_template?: bool,
+     *   json_encode_flags?: int,
+     * } $config
      */
     public function encode(mixed $data, array $config = []): \Traversable&\Stringable
     {

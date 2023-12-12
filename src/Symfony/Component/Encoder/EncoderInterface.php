@@ -20,18 +20,16 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
- *
- * @phpstan-type EncodeConfig array{
- *   type?: Type,
- *   stream?: StreamWriterInterface,
- *   max_depth?: int,
- *   date_time_format?: string,
- * }
  */
 interface EncoderInterface
 {
     /**
-     * @param EncodeConfig $config
+     * @param array{
+     *   type?: Type,
+     *   stream?: StreamWriterInterface,
+     *   max_depth?: int,
+     *   date_time_format?: string,
+     * } $config
      *
      * @return \Traversable<string>&\Stringable
      */

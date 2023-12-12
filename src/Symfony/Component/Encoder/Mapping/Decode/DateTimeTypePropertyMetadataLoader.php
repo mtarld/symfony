@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Encoder\Mapping\Decode;
 
-use Symfony\Component\Encoder\DecoderInterface;
 use Symfony\Component\Encoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
@@ -21,8 +20,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type DecodeConfig from DecoderInterface
  */
 final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
@@ -31,9 +28,6 @@ final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetad
     ) {
     }
 
-    /**
-     * @param DecodeConfig $config
-     */
     public function load(string $className, array $config, array $context): array
     {
         $result = $this->decorated->load($className, $config, $context);
@@ -52,7 +46,7 @@ final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetad
     }
 
     /**
-     * @param DecodeConfig $config
+     * @param array<string, mixed> $config
      */
     public static function castStringToDateTime(string $string, array $config): \DateTimeInterface
     {

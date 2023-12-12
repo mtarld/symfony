@@ -25,7 +25,7 @@ final class Splitter
     private const NESTING_CHARS = ['{' => true, '[' => true];
     private const UNNESTING_CHARS = ['}' => true, ']' => true];
 
-    private static Lexer|null $lexer = null;
+    private static ?Lexer $lexer = null;
 
     /**
      * @var array{key: array<string, string>}

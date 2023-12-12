@@ -38,7 +38,6 @@ use Symfony\Component\Encoder\DataModel\Decode\DataModelNodeInterface;
 use Symfony\Component\Encoder\DataModel\Decode\ObjectNode;
 use Symfony\Component\Encoder\DataModel\Decode\ScalarNode;
 use Symfony\Component\Encoder\Exception\LogicException;
-use Symfony\Component\Json\JsonDecoder;
 use Symfony\Component\Json\Template\PhpExprDataAccessor;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
 
@@ -48,8 +47,6 @@ use Symfony\Component\Json\Template\TemplateGeneratorTrait;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type JsonDecodeConfig from JsonDecoder
  */
 final readonly class StreamTemplateGenerator
 {
@@ -61,7 +58,7 @@ final readonly class StreamTemplateGenerator
     }
 
     /**
-     * @param JsonDecodeConfig     $config
+     * @param array<string, mixed> $config
      * @param array<string, mixed> $context
      *
      * @return list<Stmt>

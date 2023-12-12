@@ -88,7 +88,7 @@ class SplitterTest extends TestCase
         yield ['[[]}'];
     }
 
-    private function assertListBoundaries(array|null $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
+    private function assertListBoundaries(?array $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, $content);
@@ -109,7 +109,7 @@ class SplitterTest extends TestCase
         $this->assertSame($expectedBoundaries, $boundaries);
     }
 
-    private function assertDictBoundaries(array|null $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
+    private function assertDictBoundaries(?array $expectedBoundaries, string $content, int $offset = 0, int $length = null): void
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, $content);

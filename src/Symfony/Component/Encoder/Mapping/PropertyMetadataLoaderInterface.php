@@ -11,9 +11,6 @@
 
 namespace Symfony\Component\Encoder\Mapping;
 
-use Symfony\Component\Encoder\DecoderInterface;
-use Symfony\Component\Encoder\EncoderInterface;
-
 /**
  * Loads properties encoding/decoding metadata for a given $className.
  *
@@ -23,16 +20,13 @@ use Symfony\Component\Encoder\EncoderInterface;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
- *
- * @phpstan-import-type EncodeConfig from EncoderInterface
- * @phpstan-import-type DecodeConfig from DecoderInterface
  */
 interface PropertyMetadataLoaderInterface
 {
     /**
-     * @param class-string              $className
-     * @param EncodeConfig|DecodeConfig $config
-     * @param array<string, mixed>      $context
+     * @param class-string         $className
+     * @param array<string, mixed> $config
+     * @param array<string, mixed> $context
      *
      * @return array<string, PropertyMetadata>
      */

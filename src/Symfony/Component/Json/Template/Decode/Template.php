@@ -34,8 +34,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type JsonDecodeConfig from JsonDecoder
  */
 final readonly class Template
 {
@@ -64,7 +62,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonDecodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateContent(Type $type, array $config = []): string
     {
@@ -86,7 +84,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonDecodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateStreamContent(Type $type, array $config = []): string
     {
@@ -111,7 +109,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonDecodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateResourceContent(Type $type, array $config = []): string
     {

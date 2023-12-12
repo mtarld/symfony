@@ -17,7 +17,6 @@ use Symfony\Component\Encoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\Encoder\DataModel\PropertyDataAccessor;
 use Symfony\Component\Encoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
-use Symfony\Component\Encoder\EncoderInterface;
 use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Encoder\Exception\MaxDepthException;
 use Symfony\Component\Encoder\Mapping\PropertyMetadata;
@@ -30,8 +29,6 @@ use Symfony\Component\VarExporter\ProxyHelper;
  * Builds a encoding graph representation of a given type.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- *
- * @phpstan-import-type EncodeConfig from EncoderInterface
  */
 final readonly class DataModelBuilder
 {
@@ -44,7 +41,7 @@ final readonly class DataModelBuilder
     }
 
     /**
-     * @param EncodeConfig         $config
+     * @param array<string, mixed> $config
      * @param array<string, mixed> $context
      */
     public function build(Type $type, DataAccessorInterface $accessor, array $config, array $context = []): DataModelNodeInterface

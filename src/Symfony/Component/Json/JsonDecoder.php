@@ -27,13 +27,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
- *
- * @phpstan-import-type DecodeConfig from DecoderInterface
- *
- * @phpstan-type JsonDecodeConfig DecodeConfig&array{
- *   force_generate_template?: bool,
- *   json_decode_flags?: int,
- * }
  */
 final readonly class JsonDecoder implements DecoderInterface
 {
@@ -47,7 +40,11 @@ final readonly class JsonDecoder implements DecoderInterface
     }
 
     /**
-     * @param JsonDecodeConfig $config
+     * @param array{
+     *   date_time_format?: string,
+     *   force_generate_template?: bool,
+     *   json_decode_flags?: int,
+     * } $config
      */
     public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed
     {

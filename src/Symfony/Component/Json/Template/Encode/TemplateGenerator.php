@@ -43,8 +43,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type JsonEncodeConfig from JsonEncoder
  */
 final readonly class TemplateGenerator
 {
@@ -57,7 +55,7 @@ final readonly class TemplateGenerator
     }
 
     /**
-     * @param JsonEncodeConfig     $config
+     * @param array<string, mixed> $config
      * @param array<string, mixed> $context
      *
      * @return list<Stmt>

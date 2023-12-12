@@ -21,16 +21,14 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
- *
- * @phpstan-type DecodeConfig array{
- *   date_time_format?: string,
- * }
  */
 interface DecoderInterface
 {
     /**
      * @param (StreamReaderInterface&SeekableStreamInterface)|\Traversable<string>|\Stringable|string $input
-     * @param DecodeConfig                                                                            $config
+     * @param array{
+     *   date_time_format?: string,
+     * } $config
      */
     public function decode((StreamReaderInterface&SeekableStreamInterface)|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed;
 }

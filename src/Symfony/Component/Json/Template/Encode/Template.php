@@ -23,7 +23,6 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\Encoder\DataModel\Encode\DataModelBuilder;
 use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
 use Symfony\Component\Encoder\Stream\StreamWriterInterface;
-use Symfony\Component\Json\JsonEncoder;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -32,8 +31,6 @@ use Symfony\Component\TypeInfo\Type;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type JsonEncodeConfig from JsonEncoder
  */
 final readonly class Template
 {
@@ -62,7 +59,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonEncodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateContent(Type $type, array $config = []): string
     {
@@ -85,7 +82,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonEncodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateStreamContent(Type $type, array $config = []): string
     {
@@ -109,7 +106,7 @@ final readonly class Template
     }
 
     /**
-     * @param JsonEncodeConfig $config
+     * @param array<string, mixed> $config
      */
     public function generateResourceContent(Type $type, array $config = []): string
     {

@@ -16,7 +16,6 @@ use Symfony\Component\Encoder\DataModel\DataAccessorInterface;
 use Symfony\Component\Encoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\Encoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
-use Symfony\Component\Encoder\DecoderInterface;
 use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Encoder\Mapping\PropertyMetadata;
 use Symfony\Component\Encoder\Mapping\PropertyMetadataLoaderInterface;
@@ -27,8 +26,6 @@ use Symfony\Component\VarExporter\ProxyHelper;
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
- *
- * @phpstan-import-type DecodeConfig from DecoderInterface
  */
 final readonly class DataModelBuilder
 {
@@ -39,7 +36,7 @@ final readonly class DataModelBuilder
     }
 
     /**
-     * @param DecodeConfig         $config
+     * @param array<string, mixed> $config
      * @param array<string, mixed> $context
      */
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
