@@ -33,7 +33,7 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
             ]),
         ], $metadata);
 
-        $formatter = $metadata['foo']->getFormatters()[0];
+        $formatter = $metadata['foo']->formatters[0];
 
         $this->assertEquals(
             new \DateTimeImmutable('2023-07-26'),

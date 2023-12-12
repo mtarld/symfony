@@ -39,7 +39,7 @@ final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetad
         $result = $this->decorated->load($className, $config, $context);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
+            $type = $metadata->type;
 
             if ($type->isObject() && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
                 $metadata = $metadata

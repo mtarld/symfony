@@ -33,7 +33,7 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
             ]),
         ], $metadata);
 
-        $formatter = $metadata['foo']->getFormatters()[0];
+        $formatter = $metadata['foo']->formatters[0];
 
         $this->assertEquals(
             '2023-07-26T00:00:00+00:00',

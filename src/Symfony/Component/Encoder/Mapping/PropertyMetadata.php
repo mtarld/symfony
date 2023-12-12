@@ -21,51 +21,33 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @experimental
  */
-final class PropertyMetadata
+final readonly class PropertyMetadata
 {
     /**
      * @param list<callable> $formatters
      */
     public function __construct(
-        private string $name,
-        private Type $type,
-        private array $formatters = [],
+        public string $name,
+        public Type $type,
+        public array $formatters = [],
     ) {
         self::validateFormatters($this);
     }
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
     public function withName(string $name): self
     {
-        $clone = clone $this;
-        $clone->name = $name;
+        $args = (array) $this;
+        $args['name'] = $name;
 
-        return $clone;
-    }
-
-    public function getType(): Type
-    {
-        return $this->type;
+        return new self(...$args);
     }
 
     public function withType(Type $type): self
     {
-        $clone = clone $this;
-        $clone->type = $type;
+        $args = (array) $this;
+        $args['type'] = $type;
 
-        return $clone;
-    }
-
-    /**
-     * @return list<callable>
-     */
-    public function getFormatters(): array
-    {
-        return $this->formatters;
+        return new self(...$args);
     }
 
     /**
@@ -73,12 +55,10 @@ final class PropertyMetadata
      */
     public function withFormatters(array $formatters): self
     {
-        $clone = clone $this;
-        $clone->formatters = $formatters;
+        $args = (array) $this;
+        $args['formatters'] = $formatters;
 
-        self::validateFormatters($clone);
-
-        return $clone;
+        return new self(...$args);
     }
 
     public function withFormatter(callable $formatter): self
@@ -98,10 +78,12 @@ final class PropertyMetadata
                 if (!$reflection->isStatic()) {
                     throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must be a static method.', $metadata->name));
                 }
-            } else {
-                if ($reflection->isAnonymous()) {
-                    throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must not be anonymous.', $metadata->name));
-                }
+
+                continue;
+            }
+
+            if ($reflection->isAnonymous()) {
+                throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must not be anonymous.', $metadata->name));
             }
         }
     }

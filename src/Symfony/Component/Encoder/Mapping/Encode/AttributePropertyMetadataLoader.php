@@ -38,7 +38,7 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
         $result = [];
 
         foreach ($initialResult as $initialEncodedName => $initialMetadata) {
-            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->getName()));
+            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->name));
             $encodedName = $attributesMetadata['name'] ?? $initialEncodedName;
 
             if (isset($attributesMetadata['max_depth']) && ($context['depth_counters'][$className] ?? 0) > $attributesMetadata['max_depth']) {

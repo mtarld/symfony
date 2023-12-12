@@ -36,7 +36,7 @@ final readonly class GenericTypePropertyMetadataLoader implements PropertyMetada
         $genericTypes = $this->typeGenericsHelper->getClassGenericTypes($className, $context['original_type']);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
+            $type = $metadata->type;
 
             if (isset($genericTypes[(string) $type])) {
                 $metadata = $metadata->withType($this->typeGenericsHelper->replaceGenericTypes($type, $genericTypes));

@@ -37,7 +37,7 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
         $result = [];
 
         foreach ($initialResult as $initialEncodedName => $initialMetadata) {
-            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->getName()));
+            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->name));
             $encodedName = $attributesMetadata['name'] ?? $initialEncodedName;
 
             if (null !== $formatter = $attributesMetadata['formatter'] ?? null) {

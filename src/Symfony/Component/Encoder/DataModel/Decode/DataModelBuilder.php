@@ -59,17 +59,17 @@ final readonly class DataModelBuilder
             $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
 
             if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
-                || array_values(array_map(fn (PropertyMetadata $m): string => $m->getName(), $propertiesMetadata)) !== array_keys($propertiesMetadata)
+                || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
             ) {
                 $transformed = true;
             }
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
                 $propertiesNodes[$encodedName] = [
-                    'name' => $propertyMetadata->getName(),
-                    'value' => $this->build($propertyMetadata->getType(), $config, $context),
+                    'name' => $propertyMetadata->name,
+                    'value' => $this->build($propertyMetadata->type, $config, $context),
                     'accessor' => function (DataAccessorInterface $accessor) use ($propertyMetadata): DataAccessorInterface {
-                        foreach ($propertyMetadata->getFormatters() as $f) {
+                        foreach ($propertyMetadata->formatters as $f) {
                             $reflection = new \ReflectionFunction(\Closure::fromCallable($f));
                             $functionName = null === $reflection->getClosureScopeClass()
                                 ? $reflection->getName()
@@ -111,7 +111,7 @@ final readonly class DataModelBuilder
                     },
                 ];
 
-                $transformed = $transformed || $propertiesNodes[$encodedName]['value']->isTransformed() || \count($propertyMetadata->getFormatters());
+                $transformed = $transformed || $propertiesNodes[$encodedName]['value']->isTransformed() || \count($propertyMetadata->formatters);
             }
 
             return new ObjectNode($type, $propertiesNodes, $transformed);

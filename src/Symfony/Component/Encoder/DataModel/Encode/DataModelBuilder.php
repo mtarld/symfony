@@ -64,7 +64,7 @@ final readonly class DataModelBuilder
             $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
 
             if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
-                || array_values(array_map(fn (PropertyMetadata $m): string => $m->getName(), $propertiesMetadata)) !== array_keys($propertiesMetadata)
+                || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
             ) {
                 $transformed = true;
             }
@@ -72,9 +72,9 @@ final readonly class DataModelBuilder
             $propertiesNodes = [];
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->name);
 
-                foreach ($propertyMetadata->getFormatters() as $f) {
+                foreach ($propertyMetadata->formatters as $f) {
                     $transformed = true;
                     $reflection = new \ReflectionFunction(\Closure::fromCallable($f));
                     $functionName = null === $reflection->getClosureScopeClass()
@@ -113,7 +113,7 @@ final readonly class DataModelBuilder
                     $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                 }
 
-                $propertiesNodes[$encodedName] = $this->build($propertyMetadata->getType(), $propertyAccessor, $config, $context);
+                $propertiesNodes[$encodedName] = $this->build($propertyMetadata->type, $propertyAccessor, $config, $context);
                 $transformed = $transformed || $propertiesNodes[$encodedName]->isTransformed();
             }
 
