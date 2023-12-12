@@ -65,7 +65,7 @@ class DataModelBuilderTest extends TestCase
         yield [Type::list(Type::string()), new CollectionNode(Type::list(Type::string()), new ScalarNode(Type::string()))];
         yield [Type::dict(Type::string()), new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string()))];
 
-        yield [Type::object(self::class), new ObjectNode(Type::object(self::class), [], false)];
+        yield [Type::object(self::class), new ObjectNode(Type::object(self::class), [], true)];
     }
 
     /**

@@ -63,7 +63,9 @@ final readonly class DataModelBuilder
 
             $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
 
-            if (array_values(array_map(fn (PropertyMetadata $m): string => $m->getName(), $propertiesMetadata)) !== array_keys($propertiesMetadata)) {
+            if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
+                || array_values(array_map(fn (PropertyMetadata $m): string => $m->getName(), $propertiesMetadata)) !== array_keys($propertiesMetadata)
+            ) {
                 $transformed = true;
             }
 

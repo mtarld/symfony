@@ -69,7 +69,7 @@ class DataModelBuilderTest extends TestCase
         yield [Type::list(Type::string()), new CollectionNode($accessor, Type::list(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
         yield [Type::dict(Type::string()), new CollectionNode($accessor, Type::dict(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
 
-        yield [Type::object(self::class), new ObjectNode($accessor, Type::object(self::class), [], false)];
+        yield [Type::object(self::class), new ObjectNode($accessor, Type::object(self::class), [], true)];
     }
 
     /**
