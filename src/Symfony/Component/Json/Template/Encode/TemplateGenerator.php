@@ -27,14 +27,14 @@ use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
-use Symfony\Component\Encoder\DataModel\Encode\CollectionNode;
-use Symfony\Component\Encoder\DataModel\Encode\DataModelNodeInterface;
-use Symfony\Component\Encoder\DataModel\Encode\ObjectNode;
-use Symfony\Component\Encoder\DataModel\Encode\ScalarNode;
-use Symfony\Component\Encoder\Exception\LogicException;
-use Symfony\Component\Encoder\Exception\RuntimeException;
-use Symfony\Component\Encoder\VariableNameScoperTrait;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
+use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface;
+use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\ScalarNode;
+use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\RuntimeException;
+use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
 use Symfony\Component\TypeInfo\Type;
 
 /**

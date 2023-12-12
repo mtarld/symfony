@@ -13,14 +13,14 @@ namespace Symfony\Component\Json\Tests\CacheWarmer;
 
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Tests\TestCase;
-use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder as DecodeDataModelBuilder;
-use Symfony\Component\Encoder\DataModel\Encode\DataModelBuilder as EncodeDataModelBuilder;
-use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\Json\CacheWarmer\TemplateCacheWarmer;
 use Symfony\Component\Json\Template\Decode\Template as DecodeTemplate;
 use Symfony\Component\Json\Template\Encode\Template as EncodeTemplate;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\Json\Tests\TypeResolverAwareTrait;
+use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder as DecodeDataModelBuilder;
+use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder as EncodeDataModelBuilder;
+use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 
 class TemplateCacheWarmerTest extends TestCase
 {

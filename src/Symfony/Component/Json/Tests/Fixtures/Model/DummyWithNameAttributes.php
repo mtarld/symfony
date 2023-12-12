@@ -2,7 +2,7 @@
 
 namespace Symfony\Component\Json\Tests\Fixtures\Model;
 
-use Symfony\Component\Encoder\Attribute\EncodedName;
+use Symfony\Component\JsonEncoder\Attribute\EncodedName;
 
 class DummyWithNameAttributes
 {

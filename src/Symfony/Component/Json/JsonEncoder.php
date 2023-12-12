@@ -12,11 +12,11 @@
 namespace Symfony\Component\Json;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Encoder\Encoded;
-use Symfony\Component\Encoder\EncoderInterface;
-use Symfony\Component\Encoder\Exception\LogicException;
-use Symfony\Component\Encoder\Exception\RuntimeException;
 use Symfony\Component\Json\Template\Encode\Template;
+use Symfony\Component\JsonEncoder\Encoded;
+use Symfony\Component\JsonEncoder\EncoderInterface;
+use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\TypeInfo\Type;
 
 /**

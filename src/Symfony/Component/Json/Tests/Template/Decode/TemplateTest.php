@@ -12,16 +12,16 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder;
-use Symfony\Component\Encoder\Mapping\Decode\AttributePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\GenericTypePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\Json\Template\Decode\Template;
 use Symfony\Component\Json\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\Json\Tests\TypeResolverAwareTrait;
+use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\TypeInfo\Type;
 
 class TemplateTest extends TestCase

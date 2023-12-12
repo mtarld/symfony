@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\Json\Template\Decode;
 
-use Symfony\Component\Encoder\Exception\InvalidResourceException;
-use Symfony\Component\Encoder\Stream\StreamReaderInterface;
+use Symfony\Component\JsonEncoder\Exception\InvalidResourceException;
+use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

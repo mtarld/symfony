@@ -12,9 +12,9 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\Exception\UnexpectedValueException;
-use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Json\Template\Decode\Splitter;
+use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
+use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 
 class SplitterTest extends TestCase
 {

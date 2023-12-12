@@ -3,10 +3,10 @@
 namespace Symfony\Component\Json\Tests\Fixtures\Model;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Encoder\Attribute\DecodeFormatter;
-use Symfony\Component\Encoder\Attribute\MaxDepth;
-use Symfony\Component\Encoder\Attribute\EncodeFormatter;
-use Symfony\Component\Encoder\DecoderInterface;
+use Symfony\Component\JsonEncoder\Attribute\DecodeFormatter;
+use Symfony\Component\JsonEncoder\Attribute\MaxDepth;
+use Symfony\Component\JsonEncoder\Attribute\EncodeFormatter;
+use Symfony\Component\JsonEncoder\DecoderInterface;
 use Symfony\Component\TypeInfo\Type;
 
 class DummyWithAttributesUsingServices

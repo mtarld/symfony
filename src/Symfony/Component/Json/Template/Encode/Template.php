@@ -20,9 +20,9 @@ use PhpParser\Node\Stmt\Return_;
 use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Encoder\DataModel\Encode\DataModelBuilder;
-use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
-use Symfony\Component\Encoder\Stream\StreamWriterInterface;
+use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
+use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**

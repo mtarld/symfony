@@ -12,14 +12,14 @@
 namespace Symfony\Component\Json;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Encoder\DecoderInterface;
-use Symfony\Component\Encoder\Exception\LogicException;
-use Symfony\Component\Encoder\Exception\RuntimeException;
-use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
-use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
-use Symfony\Component\Encoder\Stream\BufferedStream;
-use Symfony\Component\Encoder\Stream\StreamReaderInterface;
 use Symfony\Component\Json\Template\Decode\Template;
+use Symfony\Component\JsonEncoder\DecoderInterface;
+use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\RuntimeException;
+use Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface;
+use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface;
+use Symfony\Component\JsonEncoder\Stream\BufferedStream;
+use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**

@@ -13,8 +13,8 @@ namespace Symfony\Component\Json\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Encoder\DecoderInterface;
-use Symfony\Component\Encoder\EncoderInterface;
+use Symfony\Component\JsonEncoder\DecoderInterface;
+use Symfony\Component\JsonEncoder\EncoderInterface;
 
 /**
  * Injects encodable classes into services and registers aliases.
@@ -23,6 +23,7 @@ use Symfony\Component\Encoder\EncoderInterface;
  */
 final readonly class JsonPass implements CompilerPassInterface
 {
+    // TODO merge with JsonEncoderPass
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition('json.encoder')) {
@@ -31,7 +32,7 @@ final readonly class JsonPass implements CompilerPassInterface
 
         $encodableClassNames = array_map(
             fn (string $id) => $container->getDefinition($id)->getClass(),
-            array_keys($container->findTaggedServiceIds('encoder.encodable')),
+            array_keys($container->findTaggedServiceIds('json_encoder.encodable')),
         );
 
         $container->getDefinition('.json.cache_warmer.template')

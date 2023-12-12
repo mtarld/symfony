@@ -2,8 +2,8 @@
 
 namespace Symfony\Component\Json\Tests\Fixtures\Model;
 
-use Symfony\Component\Encoder\Attribute\DecodeFormatter;
-use Symfony\Component\Encoder\Attribute\EncodeFormatter;
+use Symfony\Component\JsonEncoder\Attribute\DecodeFormatter;
+use Symfony\Component\JsonEncoder\Attribute\EncodeFormatter;
 
 class DummyWithFormatterAttributes
 {

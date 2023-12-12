@@ -13,10 +13,10 @@ namespace Symfony\Component\Json\CacheWarmer;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Symfony\Component\Encoder\Exception\ExceptionInterface;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmer;
 use Symfony\Component\Json\Template\Decode\Template as DecodeTemplate;
 use Symfony\Component\Json\Template\Encode\Template as EncodeTemplate;
+use Symfony\Component\JsonEncoder\Exception\ExceptionInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**

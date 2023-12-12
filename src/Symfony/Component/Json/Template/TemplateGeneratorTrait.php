@@ -13,18 +13,18 @@ namespace Symfony\Component\Json\Template;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Expr;
-use Symfony\Component\Encoder\DataModel\DataAccessorInterface;
-use Symfony\Component\Encoder\DataModel\Decode\CollectionNode as DecodeCollectionNode;
-use Symfony\Component\Encoder\DataModel\Decode\DataModelNodeInterface as DecodeDataModelNodeInterface;
-use Symfony\Component\Encoder\DataModel\Decode\ObjectNode as DecodeObjectNode;
-use Symfony\Component\Encoder\DataModel\Encode\CollectionNode as EncodeCollectionNode;
-use Symfony\Component\Encoder\DataModel\Encode\DataModelNodeInterface as EncodeDataModelNodeInterface;
-use Symfony\Component\Encoder\DataModel\Encode\ObjectNode as EncodeObjectNode;
-use Symfony\Component\Encoder\DataModel\FunctionDataAccessor;
-use Symfony\Component\Encoder\DataModel\PropertyDataAccessor;
-use Symfony\Component\Encoder\DataModel\ScalarDataAccessor;
-use Symfony\Component\Encoder\DataModel\VariableDataAccessor;
-use Symfony\Component\Encoder\Exception\InvalidArgumentException;
+use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
+use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode as DecodeCollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface as DecodeDataModelNodeInterface;
+use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode as DecodeObjectNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode as EncodeCollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface as EncodeDataModelNodeInterface;
+use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode as EncodeObjectNode;
+use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
+use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

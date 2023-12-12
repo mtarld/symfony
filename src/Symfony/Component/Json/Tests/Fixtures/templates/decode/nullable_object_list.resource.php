@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $stream, array $config, \Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
+return static function (mixed $stream, array $config, \Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
     $flags = $config['json_decode_flags'] ?? 0;
     $providers['?array<int,Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy>'] = static function ($stream, $offset, $length) use($config, $instantiator, $services, &$providers, $flags) {
         $boundaries = \Symfony\Component\Json\Template\Decode\Splitter::splitList($stream, $offset, $length);

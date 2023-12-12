@@ -95,7 +95,6 @@ use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\HttpKernel\Log\DebugLoggerConfigurator;
-use Symfony\Component\Json\JsonEncoder;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Lock\PersistingStoreInterface;
@@ -389,8 +388,8 @@ class FrameworkExtension extends Extension
             $container->removeDefinition('console.command.serializer_debug');
         }
 
-        if ($this->readConfigEnabled('encoder', $container, $config['encoder'])) {
-            $this->registerEncoderConfiguration($config['encoder'], $container, $loader);
+        if ($this->readConfigEnabled('json_encoder', $container, $config['json_encoder'])) {
+            $this->registerJsonEncoderConfiguration($config['json_encoder'], $container, $loader);
         }
 
         if ($propertyInfoEnabled) {
@@ -1928,11 +1927,11 @@ class FrameworkExtension extends Extension
         }
     }
 
-    private function registerEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
+    private function registerJsonEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
     {
-        $loader->load('encoder.php');
+        $loader->load('json_encoder.php');
 
-        $container->setParameter('encoder.encodable_paths', $config['encodable_paths']);
+        $container->setParameter('json_encoder.encodable_paths', $config['encodable_paths']);
 
         foreach ($config['encodable_paths'] as $path) {
             if (!is_dir($path)) {
@@ -1940,10 +1939,6 @@ class FrameworkExtension extends Extension
             }
 
             $container->fileExists($path, '/\.php$/');
-        }
-
-        if (class_exists(JsonEncoder::class)) {
-            $loader->load('json.php');
         }
 
         // temporary as TypeInfo component is not created yet

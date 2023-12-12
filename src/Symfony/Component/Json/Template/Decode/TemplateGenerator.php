@@ -32,13 +32,13 @@ use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
-use Symfony\Component\Encoder\DataModel\Decode\CollectionNode;
-use Symfony\Component\Encoder\DataModel\Decode\DataModelNodeInterface;
-use Symfony\Component\Encoder\DataModel\Decode\ObjectNode;
-use Symfony\Component\Encoder\DataModel\Decode\ScalarNode;
-use Symfony\Component\Encoder\Exception\LogicException;
 use Symfony\Component\Json\Template\PhpExprDataAccessor;
 use Symfony\Component\Json\Template\TemplateGeneratorTrait;
+use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface;
+use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode;
+use Symfony\Component\JsonEncoder\DataModel\Decode\ScalarNode;
+use Symfony\Component\JsonEncoder\Exception\LogicException;
 
 /**
  * Generates a template PHP syntax tree that decodes data.

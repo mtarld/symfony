@@ -25,11 +25,11 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
-use Symfony\Component\Encoder\EncoderInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\JsonEncoder\EncoderInterface;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
@@ -178,7 +178,7 @@ class Configuration implements ConfigurationInterface
         $this->addHtmlSanitizerSection($rootNode, $enableIfStandalone);
         $this->addWebhookSection($rootNode, $enableIfStandalone);
         $this->addRemoteEventSection($rootNode, $enableIfStandalone);
-        $this->addEncoderSection($rootNode, $enableIfStandalone);
+        $this->addJsonEncoderSection($rootNode, $enableIfStandalone);
 
         return $treeBuilder;
     }
@@ -2447,13 +2447,13 @@ class Configuration implements ConfigurationInterface
         ;
     }
 
-    private function addEncoderSection(ArrayNodeDefinition $rootNode, callable $enableIfStandalone): void
+    private function addJsonEncoderSection(ArrayNodeDefinition $rootNode, callable $enableIfStandalone): void
     {
         $rootNode
             ->children()
-                ->arrayNode('encoder')
-                    ->info('encoder configuration')
-                    ->{$enableIfStandalone('symfony/encoder', EncoderInterface::class)}()
+                ->arrayNode('json_encoder')
+                    ->info('JSON encoder configuration')
+                    ->{$enableIfStandalone('symfony/json-encoder', EncoderInterface::class)}()
                     ->fixXmlConfig('encodable_path')
                     ->children()
                         ->arrayNode('encodable_paths')

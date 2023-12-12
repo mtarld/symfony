@@ -13,13 +13,6 @@ namespace Symfony\Component\Json\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Encoder\DataModel\Encode\DataModelBuilder;
-use Symfony\Component\Encoder\Mapping\Encode\AttributePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\GenericTypePropertyMetadataLoader;
-use Symfony\Component\Encoder\Mapping\PropertyMetadataLoader;
-use Symfony\Component\Encoder\Stream\BufferedStream;
-use Symfony\Component\Encoder\Stream\MemoryStream;
 use Symfony\Component\Json\JsonEncoder;
 use Symfony\Component\Json\Template\Encode\Template;
 use Symfony\Component\Json\Tests\Fixtures\Enum\DummyBackedEnum;
@@ -27,6 +20,13 @@ use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Stream\BufferedStream;
+use Symfony\Component\JsonEncoder\Stream\MemoryStream;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 

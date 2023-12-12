@@ -12,8 +12,8 @@
 namespace Symfony\Component\Json\Tests\Template\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Encoder\Stream\BufferedStream;
 use Symfony\Component\Json\Template\Decode\Lexer;
+use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 
 class LexerTest extends TestCase
 {

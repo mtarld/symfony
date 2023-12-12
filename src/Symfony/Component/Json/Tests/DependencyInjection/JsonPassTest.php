@@ -13,12 +13,12 @@ namespace Symfony\Component\Json\Tests\DependencyInjection;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Encoder\DecoderInterface;
-use Symfony\Component\Encoder\EncoderInterface;
 use Symfony\Component\Json\DependencyInjection\JsonPass;
 use Symfony\Component\Json\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\Json\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\DecoderInterface;
+use Symfony\Component\JsonEncoder\EncoderInterface;
 
 class JsonPassTest extends TestCase
 {
@@ -31,9 +31,9 @@ class JsonPassTest extends TestCase
         $container->register('json.decoder.eager')->setArguments([null, null, null, null]);
         $container->register('json.decoder.lazy')->setArguments([null, null, null, null]);
 
-        $container->register(ClassicDummy::class, ClassicDummy::class)->addTag('encoder.encodable');
-        $container->register(DummyWithFormatterAttributes::class, DummyWithFormatterAttributes::class)->addTag('encoder.encodable');
-        $container->register(DummyWithAttributesUsingServices::class, DummyWithAttributesUsingServices::class)->addTag('encoder.encodable');
+        $container->register(ClassicDummy::class, ClassicDummy::class)->addTag('json_encoder.encodable');
+        $container->register(DummyWithFormatterAttributes::class, DummyWithFormatterAttributes::class)->addTag('json_encoder.encodable');
+        $container->register(DummyWithAttributesUsingServices::class, DummyWithAttributesUsingServices::class)->addTag('json_encoder.encodable');
 
         (new JsonPass())->process($container);
 

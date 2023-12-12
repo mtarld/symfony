@@ -1,6 +1,6 @@
 <?php
 
-return static function (string $string, array $config, \Symfony\Component\Encoder\Instantiator\InstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
+return static function (string $string, array $config, \Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
     $flags = $config['json_decode_flags'] ?? 0;
     $providers['array<string,Symfony\\Component\\Json\\Tests\\Fixtures\\Model\\ClassicDummy>'] = static function ($data) use($config, $instantiator, $services, &$providers) {
         $iterable = static function ($data) use($config, $instantiator, $services, &$providers) {

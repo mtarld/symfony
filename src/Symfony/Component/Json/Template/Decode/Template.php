@@ -20,10 +20,10 @@ use PhpParser\Node\Stmt\Return_;
 use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Encoder\DataModel\Decode\DataModelBuilder;
-use Symfony\Component\Encoder\Instantiator\InstantiatorInterface;
-use Symfony\Component\Encoder\Instantiator\LazyInstantiatorInterface;
-use Symfony\Component\Encoder\Stream\StreamReaderInterface;
+use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface;
+use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface;
+use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 
 /**
