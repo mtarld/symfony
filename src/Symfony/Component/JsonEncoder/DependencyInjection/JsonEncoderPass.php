@@ -34,7 +34,7 @@ final readonly class JsonEncoderPass implements CompilerPassInterface
             array_keys($container->findTaggedServiceIds('json_encoder.encodable')),
         );
 
-        $container->getDefinition('.json_encoder.cache_warmer.template')
+        $container->getDefinition('.json_encoder.cache_warmer.encoder_decoder')
             ->replaceArgument(0, $encodableClassNames);
 
         $container->getDefinition('.json_encoder.cache_warmer.lazy_ghost')

@@ -12,13 +12,12 @@
 namespace Symfony\Component\JsonEncoder;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\JsonEncoder\Exception\LogicException;
-use Symfony\Component\JsonEncoder\Exception\RuntimeException;
+use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
+use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
 use Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
-use Symfony\Component\JsonEncoder\Template\Decode\Template;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -29,10 +28,9 @@ use Symfony\Component\TypeInfo\Type;
 final readonly class JsonDecoder implements DecoderInterface
 {
     public function __construct(
-        private Template $template,
+        private DecoderGenerator $decoderGenerator,
         private InstantiatorInterface $instantiator,
         private LazyInstantiatorInterface $lazyInstantiator,
-        private string $templateCacheDir,
         private ?ContainerInterface $runtimeServices = null,
     ) {
     }
@@ -40,7 +38,7 @@ final readonly class JsonDecoder implements DecoderInterface
     /**
      * @param array{
      *   date_time_format?: string,
-     *   force_generate_template?: bool,
+     *   force_generation?: bool,
      *   json_decode_flags?: int,
      * } $config
      */
@@ -57,34 +55,11 @@ final readonly class JsonDecoder implements DecoderInterface
         $isStream = $input instanceof StreamReaderInterface;
         $isResourceStream = $isStream && method_exists($input, 'getResource');
 
-        $decodeFrom = match (true) {
-            $isResourceStream => Template::DECODE_FROM_RESOURCE,
-            $isStream => Template::DECODE_FROM_STREAM,
-            default => Template::DECODE_FROM_STRING,
-        };
-
-        $path = $this->template->getPath($type, $decodeFrom);
-
-        if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = match ($decodeFrom) {
-                Template::DECODE_FROM_RESOURCE => $this->template->generateResourceContent($type, $config),
-                Template::DECODE_FROM_STREAM => $this->template->generateStreamContent($type, $config),
-                Template::DECODE_FROM_STRING => $this->template->generateContent($type, $config),
-                default => throw new LogicException(sprintf('Decoding from "%s" is not handled.', $decodeFrom)),
-            };
-
-            if (!file_exists($this->templateCacheDir)) {
-                mkdir($this->templateCacheDir, recursive: true);
-            }
-
-            $tmpFile = @tempnam(\dirname($path), basename($path));
-            if (false === @file_put_contents($tmpFile, $content)) {
-                throw new RuntimeException(sprintf('Failed to write "%s" template file.', $path));
-            }
-
-            @rename($tmpFile, $path);
-            @chmod($path, 0666 & ~umask());
-        }
+        $path = $this->decoderGenerator->generate($type, match (true) {
+            $isResourceStream => DecodeFrom::RESOURCE,
+            $isStream => DecodeFrom::STREAM,
+            default => DecodeFrom::STRING,
+        }, $config);
 
         return (require $path)($isResourceStream ? $input->getResource() : $input, $config, $isStream ? $this->lazyInstantiator : $this->instantiator, $this->runtimeServices);
     }

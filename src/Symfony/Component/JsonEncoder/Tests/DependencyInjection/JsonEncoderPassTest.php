@@ -27,7 +27,7 @@ class JsonEncoderPassTest extends TestCase
         $container = new ContainerBuilder();
 
         $container->register('json_encoder.encoder');
-        $container->register('.json_encoder.cache_warmer.template')->setArguments([null]);
+        $container->register('.json_encoder.cache_warmer.encoder_decoder')->setArguments([null]);
         $container->register('.json_encoder.cache_warmer.lazy_ghost')->setArguments([null]);
 
         $container->register(ClassicDummy::class, ClassicDummy::class)->addTag('json_encoder.encodable');
@@ -38,7 +38,7 @@ class JsonEncoderPassTest extends TestCase
 
         $encoableClasses = [ClassicDummy::class, DummyWithFormatterAttributes::class, DummyWithAttributesUsingServices::class];
 
-        $this->assertSame($encoableClasses, $container->getDefinition('.json_encoder.cache_warmer.template')->getArgument(0));
+        $this->assertSame($encoableClasses, $container->getDefinition('.json_encoder.cache_warmer.encoder_decoder')->getArgument(0));
         $this->assertSame($encoableClasses, $container->getDefinition('.json_encoder.cache_warmer.lazy_ghost')->getArgument(0));
     }
 
@@ -47,7 +47,7 @@ class JsonEncoderPassTest extends TestCase
         $container = new ContainerBuilder();
 
         $container->register('json_encoder.encoder');
-        $container->register('.json_encoder.cache_warmer.template')->setArguments([null]);
+        $container->register('.json_encoder.cache_warmer.encoder_decoder')->setArguments([null]);
         $container->register('.json_encoder.cache_warmer.lazy_ghost')->setArguments([null]);
 
         (new JsonEncoderPass())->process($container);

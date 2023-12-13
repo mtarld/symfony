@@ -14,6 +14,8 @@ namespace Symfony\Component\JsonEncoder\Tests;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
+use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
 use Symfony\Component\JsonEncoder\Instantiator\Instantiator;
 use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiator;
 use Symfony\Component\JsonEncoder\JsonDecoder;
@@ -22,7 +24,6 @@ use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoa
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
-use Symfony\Component\JsonEncoder\Template\Decode\Template;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
@@ -35,7 +36,7 @@ class JsonDecoderTest extends TestCase
 {
     use TypeResolverAwareTrait;
 
-    private string $templateCacheDir;
+    private string $decoderCacheDir;
     private string $lazyObjectCacheDir;
     private JsonDecoder $decoder;
 
@@ -43,12 +44,12 @@ class JsonDecoderTest extends TestCase
     {
         parent::setUp();
 
-        $this->templateCacheDir = sprintf('%s/symfony_json_template', sys_get_temp_dir());
-        $this->lazyObjectCacheDir = sprintf('%s/symfony_encoder_lazy_ghost', sys_get_temp_dir());
+        $this->decoderCacheDir = sprintf('%s/symfony_json_encoder_decoder', sys_get_temp_dir());
+        $this->lazyObjectCacheDir = sprintf('%s/symfony_json_encoder_lazy_ghost', sys_get_temp_dir());
 
-        if (is_dir($this->templateCacheDir)) {
-            array_map('unlink', glob($this->templateCacheDir.'/*'));
-            rmdir($this->templateCacheDir);
+        if (is_dir($this->decoderCacheDir)) {
+            array_map('unlink', glob($this->decoderCacheDir.'/*'));
+            rmdir($this->decoderCacheDir);
         }
 
         if (is_dir($this->lazyObjectCacheDir)) {
@@ -66,9 +67,11 @@ class JsonDecoderTest extends TestCase
         );
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
-        $template = new Template($dataModeBuilder, $this->templateCacheDir);
+        $generator = new DecoderGenerator($dataModeBuilder, $this->decoderCacheDir);
+        $instantiator = new Instantiator();
+        $lazyInstantiator = new LazyInstantiator($this->lazyObjectCacheDir);
 
-        $this->decoder = new JsonDecoder($template, new Instantiator(), new LazyInstantiator($this->lazyObjectCacheDir), $this->templateCacheDir);
+        $this->decoder = new JsonDecoder($generator, $instantiator, $lazyInstantiator);
     }
 
     public function testDecodeScalar()
@@ -127,10 +130,9 @@ class JsonDecoderTest extends TestCase
         $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $service = new JsonDecoder(
-            new Template(new DataModelBuilder($propertyMetadataLoader), $this->templateCacheDir),
+            new DecoderGenerator(new DataModelBuilder($propertyMetadataLoader), $this->decoderCacheDir),
             new Instantiator(),
             new LazyInstantiator($this->lazyObjectCacheDir),
-            $this->templateCacheDir,
         );
 
         $runtimeServices = new class([sprintf('%s::serviceAndConfig[service]', DummyWithAttributesUsingServices::class) => fn () => $service]) implements ContainerInterface {
@@ -140,10 +142,9 @@ class JsonDecoderTest extends TestCase
         $dataModelBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);
 
         $decoder = new JsonDecoder(
-            new Template($dataModelBuilder, $this->templateCacheDir),
+            new DecoderGenerator($dataModelBuilder, $this->decoderCacheDir),
             new Instantiator(),
             new LazyInstantiator($this->lazyObjectCacheDir),
-            $this->templateCacheDir,
             $runtimeServices,
         );
 
@@ -168,40 +169,36 @@ class JsonDecoderTest extends TestCase
     {
         $this->decoder->decode('true', Type::bool());
 
-        $this->assertFileExists($this->templateCacheDir);
-        $this->assertCount(1, glob($this->templateCacheDir.'/*'));
+        $this->assertFileExists($this->decoderCacheDir);
+        $this->assertCount(1, glob($this->decoderCacheDir.'/*'));
     }
 
     public function testCreateCacheFileOnlyIfNotExists()
     {
-        $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
-            $this->templateCacheDir,
-        );
-
-        if (!file_exists($this->templateCacheDir)) {
-            mkdir($this->templateCacheDir, recursive: true);
+        if (!file_exists($this->decoderCacheDir)) {
+            mkdir($this->decoderCacheDir, recursive: true);
         }
 
-        file_put_contents($template->getPath(Type::bool(), Template::DECODE_FROM_STRING), '<?php return static function () { return "CACHED"; };');
+        file_put_contents(
+            sprintf('%s%s%s.json.%s.php', $this->decoderCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
+            '<?php return static function () { return "CACHED"; };'
+        );
 
         $this->assertSame('CACHED', $this->decoder->decode('true', Type::bool()));
     }
 
-    public function testRecreateCacheFileIfForceGenerateTemplate()
+    public function testRecreateCacheFileIfForceGeneration()
     {
-        $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
-            $this->templateCacheDir,
-        );
-
-        if (!file_exists($this->templateCacheDir)) {
-            mkdir($this->templateCacheDir, recursive: true);
+        if (!file_exists($this->decoderCacheDir)) {
+            mkdir($this->decoderCacheDir, recursive: true);
         }
 
-        file_put_contents($template->getPath(Type::bool(), Template::DECODE_FROM_STRING), '<?php return static function () { return "CACHED"; };');
+        file_put_contents(
+            sprintf('%s%s%s.json.%s.php', $this->decoderCacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
+            '<?php return static function () { return "CACHED"; };'
+        );
 
-        $this->assertTrue($this->decoder->decode('true', Type::bool(), ['force_generate_template' => true]));
+        $this->assertTrue($this->decoder->decode('true', Type::bool(), ['force_generation' => true]));
     }
 
     private function decode(string $input, Type $type, JsonDecoder $decoder, array $config = []): mixed

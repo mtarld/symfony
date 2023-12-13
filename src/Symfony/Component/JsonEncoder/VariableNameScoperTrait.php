@@ -13,13 +13,17 @@ namespace Symfony\Component\JsonEncoder;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
+ *
+ * @experimental
+ *
+ * @internal
  */
 trait VariableNameScoperTrait
 {
     /**
      * @param array{variable_counters?: array<string, int>}&array<string, mixed> $context
      */
-    protected function scopeVariableName(string $variableName, array &$context): string
+    private function scopeVariableName(string $variableName, array &$context): string
     {
         if (!isset($context['variable_counters'][$variableName])) {
             $context['variable_counters'][$variableName] = 0;

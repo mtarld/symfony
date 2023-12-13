@@ -11,9 +11,6 @@
 
 namespace Symfony\Component\JsonEncoder;
 
-use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
-use Symfony\Component\TypeInfo\Type;
-
 /**
  * Encodes $data into a specific format according to a $config.
  *
@@ -24,12 +21,7 @@ use Symfony\Component\TypeInfo\Type;
 interface EncoderInterface
 {
     /**
-     * @param array{
-     *   type?: Type,
-     *   stream?: StreamWriterInterface,
-     *   max_depth?: int,
-     *   date_time_format?: string,
-     * } $config
+     * @param array<string, mixed> $config
      *
      * @return \Traversable<string>&\Stringable
      */

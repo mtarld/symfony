@@ -24,7 +24,7 @@ class LazyInstantiatorTest extends TestCase
     {
         parent::setUp();
 
-        $this->cacheDir = sprintf('%s/symfony_encoder_lazy_ghost', sys_get_temp_dir());
+        $this->cacheDir = sprintf('%s/symfony_json_encoder_lazy_ghost', sys_get_temp_dir());
 
         if (is_dir($this->cacheDir)) {
             array_map('unlink', glob($this->cacheDir.'/*'));

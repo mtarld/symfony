@@ -25,9 +25,7 @@ interface DecoderInterface
 {
     /**
      * @param StreamReaderInterface|\Traversable<string>|\Stringable|string $input
-     * @param array{
-     *   date_time_format?: string,
-     * } $config
+     * @param array<string, mixed>                                          $config
      */
     public function decode(StreamReaderInterface|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed;
 }

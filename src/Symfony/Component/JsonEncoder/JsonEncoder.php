@@ -12,9 +12,8 @@
 namespace Symfony\Component\JsonEncoder;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\JsonEncoder\Exception\LogicException;
-use Symfony\Component\JsonEncoder\Exception\RuntimeException;
-use Symfony\Component\JsonEncoder\Template\Encode\Template;
+use Symfony\Component\JsonEncoder\Encode\EncodeAs;
+use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -25,8 +24,7 @@ use Symfony\Component\TypeInfo\Type;
 final readonly class JsonEncoder implements EncoderInterface
 {
     public function __construct(
-        private Template $template,
-        private string $templateCacheDir,
+        private EncoderGenerator $encoderGenerator,
         private ?ContainerInterface $runtimeServices = null,
     ) {
     }
@@ -37,7 +35,7 @@ final readonly class JsonEncoder implements EncoderInterface
      *   stream?: StreamWriterInterface,
      *   max_depth?: int,
      *   date_time_format?: string,
-     *   force_generate_template?: bool,
+     *   force_generation?: bool,
      *   json_encode_flags?: int,
      * } $config
      */
@@ -50,34 +48,11 @@ final readonly class JsonEncoder implements EncoderInterface
         $stream = $config['stream'] ?? null;
         $isResourceStream = null !== $stream && method_exists($stream, 'getResource');
 
-        $encodeTo = match (true) {
-            $isResourceStream => Template::ENCODE_TO_RESOURCE,
-            null !== $stream => Template::ENCODE_TO_STREAM,
-            default => Template::ENCODE_TO_STRING,
-        };
-
-        $path = $this->template->getPath($type, $encodeTo);
-
-        if (!file_exists($path) || ($config['force_generate_template'] ?? false)) {
-            $content = match ($encodeTo) {
-                Template::ENCODE_TO_RESOURCE => $this->template->generateResourceContent($type, $config),
-                Template::ENCODE_TO_STREAM => $this->template->generateStreamContent($type, $config),
-                Template::ENCODE_TO_STRING => $this->template->generateContent($type, $config),
-                default => throw new LogicException(sprintf('Encoding to "%s" is not handled.', $encodeTo)),
-            };
-
-            if (!file_exists($this->templateCacheDir)) {
-                mkdir($this->templateCacheDir, recursive: true);
-            }
-
-            $tmpFile = @tempnam(\dirname($path), basename($path));
-            if (false === @file_put_contents($tmpFile, $content)) {
-                throw new RuntimeException(sprintf('Failed to write "%s" template file.', $path));
-            }
-
-            @rename($tmpFile, $path);
-            @chmod($path, 0666 & ~umask());
-        }
+        $path = $this->encoderGenerator->generate($type, match (true) {
+            $isResourceStream => EncodeAs::RESOURCE,
+            null !== $stream => EncodeAs::STREAM,
+            default => EncodeAs::STRING,
+        }, $config);
 
         if (null !== $stream) {
             (require $path)($data, $isResourceStream ? $stream->getResource() : $stream, $config, $this->runtimeServices);

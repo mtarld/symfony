@@ -18,7 +18,7 @@ namespace Symfony\Component\JsonEncoder\Stream;
  *
  * @experimental
  */
-final class MemoryStream implements StreamReaderInterface, StreamWriterInterface
+final readonly class MemoryStream implements StreamReaderInterface, StreamWriterInterface
 {
     private const CHUNK_LENGTH = 8192;
 

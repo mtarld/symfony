@@ -14,6 +14,8 @@ namespace Symfony\Component\JsonEncoder\Tests;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
+use Symfony\Component\JsonEncoder\Encode\EncodeAs;
+use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
 use Symfony\Component\JsonEncoder\JsonEncoder;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
@@ -21,7 +23,6 @@ use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
-use Symfony\Component\JsonEncoder\Template\Encode\Template;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
@@ -41,7 +42,7 @@ class JsonEncoderTest extends TestCase
     {
         parent::setUp();
 
-        $this->cacheDir = sprintf('%s/symfony_json_template', sys_get_temp_dir());
+        $this->cacheDir = sprintf('%s/symfony_json_encoder_encoder', sys_get_temp_dir());
 
         if (is_dir($this->cacheDir)) {
             array_map('unlink', glob($this->cacheDir.'/*'));
@@ -58,9 +59,9 @@ class JsonEncoderTest extends TestCase
         );
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
-        $template = new Template($dataModeBuilder, $this->cacheDir);
+        $generator = new EncoderGenerator($dataModeBuilder, $this->cacheDir);
 
-        $this->encoder = new JsonEncoder($template, $this->cacheDir);
+        $this->encoder = new JsonEncoder($generator);
     }
 
     public function testReturnTraversableStringableEncoded()
@@ -121,9 +122,9 @@ class JsonEncoderTest extends TestCase
         $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);
-        $template = new Template($dataModeBuilder, $this->cacheDir);
+        $generator = new EncoderGenerator($dataModeBuilder, $this->cacheDir);
 
-        $encoder = new JsonEncoder($template, $this->cacheDir, $runtimeServices);
+        $encoder = new JsonEncoder($generator, $runtimeServices);
 
         $dummy = new DummyWithAttributesUsingServices();
 
@@ -144,32 +145,30 @@ class JsonEncoderTest extends TestCase
 
     public function testCreateCacheFileOnlyIfNotExists()
     {
-        $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
-            $this->cacheDir,
-        );
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }
 
-        file_put_contents($template->getPath(Type::bool(), Template::ENCODE_TO_STRING), '<?php return static function ($data): \Traversable { yield "CACHED"; };');
+        file_put_contents(
+            sprintf('%s%s%s.json.%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
+            '<?php return static function ($data): \Traversable { yield "CACHED"; };'
+        );
 
         $this->assertSame('CACHED', (string) $this->encoder->encode(true));
     }
 
-    public function testRecreateCacheFileIfForceGenerateTemplate()
+    public function testRecreateCacheFileIfForceGeneration()
     {
-        $template = new Template(
-            new DataModelBuilder(new PropertyMetadataLoader(self::getTypeResolver())),
-            $this->cacheDir,
-        );
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, recursive: true);
         }
 
-        file_put_contents($template->getPath(Type::bool(), Template::ENCODE_TO_STRING), '<?php return static function ($data): \Traversable { yield "CACHED"; };');
+        file_put_contents(
+            sprintf('%s%s%s.json.%s.php', $this->cacheDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
+            '<?php return static function ($data): \Traversable { yield "CACHED"; };'
+        );
 
-        $this->assertSame('true', (string) $this->encoder->encode(true, ['force_generate_template' => true]));
+        $this->assertSame('true', (string) $this->encoder->encode(true, ['force_generation' => true]));
     }
 
     private function assertEncoded(string $encoded, mixed $decoded): void

@@ -18,7 +18,7 @@ class VariableNameScoperTest extends TestCase
 {
     public function testScopeVariableName()
     {
-        $templateGenerator = new class() {
+        $generator = new class() {
             use VariableNameScoperTrait {
                 scopeVariableName as private doScopeVariableName;
             }
@@ -31,8 +31,8 @@ class VariableNameScoperTest extends TestCase
 
         $context = [];
 
-        $this->assertSame('foo_0', $templateGenerator->scopeVariableName('foo', $context));
-        $this->assertSame('foo_1', $templateGenerator->scopeVariableName('foo', $context));
+        $this->assertSame('foo_0', $generator->scopeVariableName('foo', $context));
+        $this->assertSame('foo_1', $generator->scopeVariableName('foo', $context));
         $this->assertSame(['variable_counters' => ['foo' => 2]], $context);
     }
 }

@@ -11,10 +11,12 @@
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use Symfony\Component\JsonEncoder\CacheWarmer\EncoderDecoderCacheWarmer;
 use Symfony\Component\JsonEncoder\CacheWarmer\LazyGhostCacheWarmer;
-use Symfony\Component\JsonEncoder\CacheWarmer\TemplateCacheWarmer;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder as DecodeDataModelBuilder;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder as EncodeDataModelBuilder;
+use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
+use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
 use Symfony\Component\JsonEncoder\Instantiator\Instantiator;
 use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiator;
 use Symfony\Component\JsonEncoder\JsonDecoder;
@@ -25,12 +27,11 @@ use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader
 use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader as EncodeDateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Template\Decode\Template as DecodeTemplate;
-use Symfony\Component\JsonEncoder\Template\Encode\Template as EncodeTemplate;
 
 return static function (ContainerConfigurator $container) {
     $container->parameters()
-        ->set('.json_encoder.cache_dir.template', '%kernel.cache_dir%/json_encoder/template')
+        ->set('.json_encoder.cache_dir.encoder', '%kernel.cache_dir%/json_encoder/encoder')
+        ->set('.json_encoder.cache_dir.decoder', '%kernel.cache_dir%/json_encoder/decoder')
         ->set('.json_encoder.cache_dir.lazy_ghost', '%kernel.cache_dir%/json_encoder/lazy_ghost')
     ;
 
@@ -38,16 +39,14 @@ return static function (ContainerConfigurator $container) {
         // Encoder/Decoder
         ->set('json_encoder.encoder', JsonEncoder::class)
             ->args([
-                service('.json_encoder.encode.template'),
-                param('.json_encoder.cache_dir.template'),
+                service('.json_encoder.encode.encoder_generator'),
                 service('.json_encoder.runtime_services'),
             ])
         ->set('json.decoder', JsonDecoder::class)
             ->args([
-                service('.json_encoder.decode.template'),
+                service('.json_encoder.decode.decoder_generator'),
                 service('json_encoder.instantiator'),
                 service('json_encoder.instantiator.lazy'),
-                param('.json_encoder.cache_dir.template'),
                 service('.json_encoder.runtime_services'),
             ])
         ->alias(JsonEncoder::class, 'json_encoder.encoder')
@@ -117,26 +116,25 @@ return static function (ContainerConfigurator $container) {
                 service('type_info.resolver'),
             ])
 
-        // Template
-        ->set('.json_encoder.encode.template', EncodeTemplate::class)
+        // Generators
+        ->set('.json_encoder.encode.encoder_generator', EncoderGenerator::class)
             ->args([
                 service('.json_encoder.encode.data_model_builder'),
-                param('.json_encoder.cache_dir.template'),
+                param('.json_encoder.cache_dir.encoder'),
             ])
 
-        ->set('.json.decode.template', DecodeTemplate::class)
+        ->set('.json_encoder.decode.decoder_generator', DecoderGenerator::class)
             ->args([
-                service('.encoder.decode.data_model_builder'),
-                param('.json.cache_dir.template'),
+                service('.json_encoder.decode.data_model_builder'),
+                param('.json_encoder.cache_dir.decoder'),
             ])
 
         // Cache
-        ->set('.json_encoder.cache_warmer.template', TemplateCacheWarmer::class)
+        ->set('.json_encoder.cache_warmer.encoder_decoder', EncoderDecoderCacheWarmer::class)
             ->args([
                 abstract_arg('json encodable types'),
-                service('.json_encoder.encode.template'),
-                service('.json_encoder.decode.template'),
-                param('.json_encoder.cache_dir.template'),
+                service('.json_encoder.encode.encoder_generator'),
+                service('.json_encoder.encode.decoder_generator'),
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('kernel.cache_warmer')
