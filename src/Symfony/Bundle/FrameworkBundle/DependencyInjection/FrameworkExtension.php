@@ -1930,6 +1930,7 @@ class FrameworkExtension extends Extension
     private function registerJsonEncoderConfiguration(array $config, ContainerBuilder $container, PhpFileLoader $loader): void
     {
         $loader->load('json_encoder.php');
+        $loader->load('type_info.php'); // temporary as TypeInfo component is not created yet
 
         $container->setParameter('json_encoder.encodable_paths', $config['encodable_paths']);
 
@@ -1940,9 +1941,6 @@ class FrameworkExtension extends Extension
 
             $container->fileExists($path, '/\.php$/');
         }
-
-        // temporary as TypeInfo component is not created yet
-        $loader->load('type_info.php');
     }
 
     private function registerPropertyInfoConfiguration(ContainerBuilder $container, PhpFileLoader $loader): void
