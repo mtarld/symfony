@@ -11,7 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
-use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Represents a collection in the data model graph representation.
@@ -20,8 +22,11 @@ use Symfony\Component\TypeInfo\Type;
  */
 final readonly class CollectionNode implements DataModelNodeInterface
 {
+    /**
+     * @param CollectionType|UnionType<CollectionType|BuiltinType> $type
+     */
     public function __construct(
-        public Type $type,
+        public CollectionType|UnionType $type,
         public DataModelNodeInterface $item,
     ) {
     }
@@ -31,7 +36,10 @@ final readonly class CollectionNode implements DataModelNodeInterface
         return (string) $this->type;
     }
 
-    public function getType(): Type
+    /**
+     * @return CollectionType|UnionType<CollectionType|BuiltinType>
+     */
+    public function getType(): CollectionType|UnionType
     {
         return $this->type;
     }

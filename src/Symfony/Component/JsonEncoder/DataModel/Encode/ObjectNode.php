@@ -12,7 +12,9 @@
 namespace Symfony\Component\JsonEncoder\DataModel\Encode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
-use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Represents an object in the data model graph representation.
@@ -22,17 +24,21 @@ use Symfony\Component\TypeInfo\Type;
 final readonly class ObjectNode implements DataModelNodeInterface
 {
     /**
-     * @param array<string, DataModelNodeInterface> $properties
+     * @param ObjectType|UnionType<ObjectType|BuiltinType> $type
+     * @param array<string, DataModelNodeInterface>        $properties
      */
     public function __construct(
         public DataAccessorInterface $accessor,
-        public Type $type,
+        public ObjectType|UnionType $type,
         public array $properties,
         public bool $transformed,
     ) {
     }
 
-    public function getType(): Type
+    /**
+     * @return ObjectType|UnionType<ObjectType|BuiltinType>
+     */
+    public function getType(): ObjectType|UnionType
     {
         return $this->type;
     }

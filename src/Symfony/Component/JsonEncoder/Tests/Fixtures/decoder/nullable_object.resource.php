@@ -2,7 +2,7 @@
 
 return static function (mixed $stream, array $config, \Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
     $flags = $config['json_decode_flags'] ?? 0;
-    $providers['?Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy'] = static function ($stream, $offset, $length) use($config, $instantiator, $services, &$providers, $flags) {
+    $providers['Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy|null'] = static function ($stream, $offset, $length) use($config, $instantiator, $services, &$providers, $flags) {
         $boundaries = \Symfony\Component\JsonEncoder\Decode\Splitter::splitDict($stream, $offset, $length);
         if (null === $boundaries) {
             return null;
@@ -21,5 +21,5 @@ return static function (mixed $stream, array $config, \Symfony\Component\JsonEnc
         }
         return $instantiator->instantiate(\Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy::class, $properties);
     };
-    return $providers['?Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy']($stream, 0, null);
+    return $providers['Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy|null']($stream, 0, null);
 };

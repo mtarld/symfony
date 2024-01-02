@@ -26,6 +26,8 @@ use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
+use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -84,7 +86,7 @@ trait PhpAstBuilderTrait
             return true;
         }
 
-        if ($node instanceof DecodeDataModelNodeInterface && $node->getType()->isObject()) {
+        if ($node instanceof DecodeDataModelNodeInterface && $node->getType()->is(fn (Type $t): bool => $t instanceof ObjectType)) {
             return true;
         }
 

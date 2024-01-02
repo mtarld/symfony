@@ -41,7 +41,8 @@ use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
-use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BackedEnumType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Builds a PHP syntax tree that encodes data to JSON.
@@ -243,13 +244,13 @@ final readonly class PhpAstBuilder
             $scalarAccessor = $accessor;
 
             $type = $dataModelNode->getType();
-            if ($type->isBackedEnum()) {
+            if ($type instanceof BackedEnumType) {
                 $scalarAccessor = $type->isNullable() ? new NullsafePropertyFetch($accessor, 'value') : new PropertyFetch($accessor, 'value');
             }
 
             $scalarStmts = [$this->yieldJson($this->encodeValue($scalarAccessor), $encodeAs)];
 
-            if ($type->isNullable() && !$type->isBackedEnum() && !\in_array($type->getBuiltinType(), [Type::BUILTIN_TYPE_MIXED, Type::BUILTIN_TYPE_NULL], true)) {
+            if ($type->isNullable() && !$type instanceof BackedEnumType && !$type->isA(TypeIdentifier::NULL) && !$type->isA(TypeIdentifier::MIXED)) {
                 return [
                     ...$setupStmts,
                     new If_(new Identical($this->builder->val(null), $accessor), [

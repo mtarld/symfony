@@ -14,7 +14,7 @@ namespace Symfony\Component\JsonEncoder\Mapping\Decode;
 use Symfony\Component\JsonEncoder\Attribute\DecodeFormatter;
 use Symfony\Component\JsonEncoder\Attribute\EncodedName;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\TypeInfo\Resolver\TypeResolverInterface;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
 /**
  * Enhances properties decoding metadata based on properties' attributes.

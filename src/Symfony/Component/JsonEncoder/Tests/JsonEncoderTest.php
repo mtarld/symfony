@@ -29,12 +29,13 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingS
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
 class JsonEncoderTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     private string $cacheDir;
     private JsonEncoder $encoder;
 
@@ -49,13 +50,13 @@ class JsonEncoderTest extends TestCase
             rmdir($this->cacheDir);
         }
 
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
                 new PropertyMetadataLoader($typeResolver),
                 $typeResolver,
             )),
-            $typeResolver,
+            new TypeContextFactory(new StringTypeResolver()),
         );
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
@@ -118,7 +119,7 @@ class JsonEncoderTest extends TestCase
             use ServiceLocatorTrait;
         };
 
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader, $runtimeServices);

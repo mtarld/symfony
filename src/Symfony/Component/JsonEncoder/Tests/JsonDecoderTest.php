@@ -30,12 +30,13 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingS
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
 class JsonDecoderTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     private string $decoderCacheDir;
     private string $lazyObjectCacheDir;
     private JsonDecoder $decoder;
@@ -57,13 +58,13 @@ class JsonDecoderTest extends TestCase
             rmdir($this->lazyObjectCacheDir);
         }
 
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
                 new PropertyMetadataLoader($typeResolver),
                 $typeResolver,
             )),
-            $typeResolver,
+            new TypeContextFactory(new StringTypeResolver()),
         );
 
         $dataModeBuilder = new DataModelBuilder($propertyMetadataLoader);
@@ -76,7 +77,7 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeScalar()
     {
-        $this->assertDecoded(null, 'null', Type::int(nullable: true));
+        $this->assertDecoded(null, 'null', Type::nullable(Type::int()));
         $this->assertDecoded(true, 'true', Type::bool());
         $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::array());
         $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterable());
@@ -95,7 +96,7 @@ class JsonDecoderTest extends TestCase
             }
 
             $this->assertSame([['foo' => 1, 'bar' => 2], ['foo' => 3]], $array);
-        }, '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterableList(Type::iterableDict(Type::int())));
+        }, '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterable(Type::iterable(Type::int()), Type::int(), asList: true));
     }
 
     public function testDecodeObject()
@@ -126,7 +127,7 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeObjectWithRuntimeServices()
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $service = new JsonDecoder(

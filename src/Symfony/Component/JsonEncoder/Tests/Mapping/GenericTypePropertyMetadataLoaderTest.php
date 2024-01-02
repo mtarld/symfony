@@ -17,14 +17,17 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithGenerics;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
 
 class GenericTypePropertyMetadataLoaderTest extends TestCase
 {
+    // TODO test better
     public function testReplaceGenerics()
     {
         $loader = new GenericTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'foo' => new PropertyMetadata('foo', new Type('T'), []),
-        ]));
+            'foo' => new PropertyMetadata('foo', Type::template('T'), []),
+        ]), new TypeContextFactory(new StringTypeResolver()));
 
         $metadata = $loader->load(
             DummyWithGenerics::class,

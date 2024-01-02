@@ -20,12 +20,10 @@ use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
 use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\TypeResolverAwareTrait;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 class EncoderDecoderCacheWarmerTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     private string $encoderCacheDir;
     private string $decoderCacheDir;
 
@@ -69,7 +67,7 @@ class EncoderDecoderCacheWarmerTest extends TestCase
      */
     private function cacheWarmer(array $encodable): EncoderDecoderCacheWarmer
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
 
         return new EncoderDecoderCacheWarmer(
             $encodable,

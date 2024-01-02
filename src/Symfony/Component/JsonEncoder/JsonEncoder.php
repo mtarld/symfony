@@ -42,7 +42,7 @@ final readonly class JsonEncoder implements EncoderInterface
     public function encode(mixed $data, array $config = []): \Traversable&\Stringable
     {
         if (null === ($type = $config['type'] ?? null)) {
-            $type = \is_object($data) ? Type::object($data::class) : new Type(get_debug_type($data));
+            $type = \is_object($data) ? Type::object($data::class) : Type::builtin(get_debug_type($data));
         }
 
         $stream = $config['stream'] ?? null;

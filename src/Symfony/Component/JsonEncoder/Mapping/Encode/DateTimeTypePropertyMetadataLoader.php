@@ -13,6 +13,7 @@ namespace Symfony\Component\JsonEncoder\Mapping\Encode;
 
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
  * Casts DateTime properties to string properties.
@@ -35,7 +36,7 @@ final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetad
         foreach ($result as &$metadata) {
             $type = $metadata->type;
 
-            if ($type->isObject() && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
+            if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
                 $metadata = $metadata
                     ->withType(Type::string())
                     ->withFormatter(self::castDateTimeToString(...));

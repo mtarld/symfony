@@ -13,6 +13,7 @@ namespace Symfony\Component\JsonEncoder\DataModel\Encode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BackedEnumType;
 
 /**
  * Represents a scalar in the data model graph representation.
@@ -41,6 +42,6 @@ final readonly class ScalarNode implements DataModelNodeInterface
 
     public function isTransformed(): bool
     {
-        return $this->type->isBackedEnum();
+        return $this->type instanceof BackedEnumType;
     }
 }

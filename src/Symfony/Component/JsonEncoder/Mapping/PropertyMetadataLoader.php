@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder\Mapping;
 
-use Symfony\Component\TypeInfo\Resolver\TypeResolverInterface;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
 /**
  * Loads basic properties encoding/decoding metadata for a given $className.

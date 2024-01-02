@@ -18,16 +18,14 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMaxDepthAttribute;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
-use Symfony\Component\JsonEncoder\Tests\TypeResolverAwareTrait;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 class AttributePropertyMetadataLoaderTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     public function testRetrieveEncodedName()
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $this->assertSame(['@id', 'name'], array_keys($loader->load(DummyWithNameAttributes::class, [], [])));
@@ -35,7 +33,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 
     public function testRetrieveEncodeFormatter()
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $this->assertEquals([
@@ -46,7 +44,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 
     public function testRetrieveMaxDepthFormatter()
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
 
         $this->assertEquals([

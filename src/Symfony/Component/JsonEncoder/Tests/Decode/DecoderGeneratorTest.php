@@ -22,13 +22,13 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
-use Symfony\Component\JsonEncoder\Tests\TypeResolverAwareTrait;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 class DecoderGeneratorTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     private string $cacheDir;
 
     protected function setUp(): void
@@ -48,13 +48,13 @@ class DecoderGeneratorTest extends TestCase
      */
     public function testGeneratedDecoder(string $fixture, Type $type)
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
                 new PropertyMetadataLoader($typeResolver),
                 $typeResolver,
             )),
-            $typeResolver,
+            new TypeContextFactory(new StringTypeResolver()),
         );
 
         $generator = new DecoderGenerator(new DataModelBuilder($propertyMetadataLoader), $this->cacheDir);
@@ -83,20 +83,20 @@ class DecoderGeneratorTest extends TestCase
         yield ['scalar', Type::int()];
         yield ['mixed', Type::mixed()];
         yield ['backed_enum', Type::enum(DummyBackedEnum::class, Type::string())];
-        yield ['nullable_backed_enum', Type::enum(DummyBackedEnum::class, Type::string(), nullable: true)];
+        yield ['nullable_backed_enum', Type::nullable(Type::enum(DummyBackedEnum::class, Type::string()))];
 
         yield ['list', Type::list()];
         yield ['object_list', Type::list(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_list', Type::list(Type::object(ClassicDummy::class), nullable: true)];
-        yield ['iterable_list', Type::iterableList()];
+        yield ['nullable_object_list', Type::nullable(Type::list(Type::object(ClassicDummy::class)))];
+        yield ['iterable_list', Type::iterable(key: Type::int(), asList: true)];
 
         yield ['dict', Type::dict()];
         yield ['object_dict', Type::dict(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_dict', Type::dict(Type::object(ClassicDummy::class), nullable: true)];
-        yield ['iterable_dict', Type::iterableDict()];
+        yield ['nullable_object_dict', Type::nullable(Type::dict(Type::object(ClassicDummy::class)))];
+        yield ['iterable_dict', Type::iterable(key: Type::string())];
 
         yield ['object', Type::object(ClassicDummy::class)];
-        yield ['nullable_object', Type::object(ClassicDummy::class, nullable: true)];
+        yield ['nullable_object', Type::nullable(Type::object(ClassicDummy::class))];
         yield ['object_in_object', Type::object(DummyWithOtherDummies::class)];
     }
 }

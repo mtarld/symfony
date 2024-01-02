@@ -20,6 +20,9 @@ use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\EnumType;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -41,7 +44,7 @@ final readonly class DataModelBuilder
      */
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
     {
-        if ($type->isObject() && !$type->isEnum() && \stdClass::class !== $type->getClassName()) {
+        if ($type instanceof ObjectType && !$type instanceof EnumType) {
             $transformed = false;
             $typeString = (string) $type;
             $className = $type->getClassName();
@@ -114,7 +117,7 @@ final readonly class DataModelBuilder
             return new ObjectNode($type, $propertiesNodes, $transformed);
         }
 
-        if ($type->isCollection() && ($type->isList() || $type->isDict())) {
+        if ($type instanceof CollectionType) {
             return new CollectionNode($type, $this->build($type->getCollectionValueType(), $config, $context));
         }
 

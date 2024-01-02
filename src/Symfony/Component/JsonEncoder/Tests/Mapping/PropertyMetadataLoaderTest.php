@@ -15,16 +15,14 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\TypeResolverAwareTrait;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 class PropertyMetadataLoaderTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     public function testReadPropertyType()
     {
-        $loader = new PropertyMetadataLoader(self::getTypeResolver());
+        $loader = new PropertyMetadataLoader(TypeResolver::create());
 
         $this->assertEquals([
             'id' => new PropertyMetadata('id', Type::int(), []),

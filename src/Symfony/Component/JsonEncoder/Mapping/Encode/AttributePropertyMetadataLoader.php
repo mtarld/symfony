@@ -15,7 +15,7 @@ use Symfony\Component\JsonEncoder\Attribute\EncodedName;
 use Symfony\Component\JsonEncoder\Attribute\EncodeFormatter;
 use Symfony\Component\JsonEncoder\Attribute\MaxDepth;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\TypeInfo\Resolver\TypeResolverInterface;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
 /**
  * Enhances properties encoding metadata based on properties' attributes.

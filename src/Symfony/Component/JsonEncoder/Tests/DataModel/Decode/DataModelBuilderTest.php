@@ -32,14 +32,13 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttribu
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
-use Symfony\Component\JsonEncoder\Tests\TypeResolverAwareTrait;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeIdentifier;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
 class DataModelBuilderTest extends TestCase
 {
-    use TypeResolverAwareTrait;
-
     /**
      * @dataProvider buildDataModelDataProvider
      */
@@ -56,12 +55,12 @@ class DataModelBuilderTest extends TestCase
     public static function buildDataModelDataProvider(): iterable
     {
         yield [Type::int(), new ScalarNode(Type::int())];
-        yield [Type::array(), new ScalarNode(Type::array())];
+        yield [Type::builtin(TypeIdentifier::ARRAY), new ScalarNode(Type::builtin(TypeIdentifier::ARRAY))];
         yield [Type::object(), new ScalarNode(Type::object())];
-        yield [Type::object(\stdClass::class), new ScalarNode(Type::object())];
         yield [Type::union(Type::int(), Type::string()), new ScalarNode(Type::union(Type::int(), Type::string()))];
         yield [Type::intersection(Type::int(), Type::string()), new ScalarNode(Type::intersection(Type::int(), Type::string()))];
 
+        yield [Type::array(Type::string()), new CollectionNode(Type::array(Type::string()), new ScalarNode(Type::string()))];
         yield [Type::list(Type::string()), new CollectionNode(Type::list(Type::string()), new ScalarNode(Type::string()))];
         yield [Type::dict(Type::string()), new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string()))];
 
@@ -73,7 +72,7 @@ class DataModelBuilderTest extends TestCase
      */
     public function testTransformedDataModel(bool $transformed, Type $type)
     {
-        $typeResolver = self::getTypeResolver();
+        $typeResolver = TypeResolver::create();
         $dataModelBuilder = new DataModelBuilder(new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver));
 
         $this->assertEquals(
@@ -90,7 +89,7 @@ class DataModelBuilderTest extends TestCase
         yield [false, Type::int()];
         yield [false, Type::object()];
         yield [false, Type::list(Type::int())];
-        yield [false, Type::iterableList(Type::int())];
+        yield [false, Type::iterable(Type::int())];
         yield [false, Type::object(ClassicDummy::class)];
         yield [true, Type::object(DummyWithNameAttributes::class)];
         yield [true, Type::object(DummyWithFormatterAttributes::class)];
