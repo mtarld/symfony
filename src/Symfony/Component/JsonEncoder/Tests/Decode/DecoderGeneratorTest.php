@@ -70,7 +70,7 @@ class DecoderGeneratorTest extends TestCase
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/decoder/%s.resource.php', \dirname(__DIR__), $fixture),
+            sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, DecodeFrom::RESOURCE)),
         );
     }
@@ -82,6 +82,7 @@ class DecoderGeneratorTest extends TestCase
     {
         yield ['scalar', Type::int()];
         yield ['mixed', Type::mixed()];
+        yield ['null', Type::null()];
         yield ['backed_enum', Type::enum(DummyBackedEnum::class, Type::string())];
         yield ['nullable_backed_enum', Type::nullable(Type::enum(DummyBackedEnum::class, Type::string()))];
 

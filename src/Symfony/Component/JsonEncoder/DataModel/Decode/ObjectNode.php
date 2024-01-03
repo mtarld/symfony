@@ -15,6 +15,7 @@ use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Represents an object in the data model graph representation.
@@ -24,7 +25,7 @@ use Symfony\Component\TypeInfo\Type\UnionType;
 final readonly class ObjectNode implements DataModelNodeInterface
 {
     /**
-     * @param ObjectType|UnionType<ObjectType|BuiltinType>                                                                                        $type
+     * @param ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>>                                                                  $type
      * @param array<string, array{name: string, value: DataModelNodeInterface, accessor: callable(DataAccessorInterface): DataAccessorInterface}> $properties
      */
     public function __construct(
@@ -36,7 +37,7 @@ final readonly class ObjectNode implements DataModelNodeInterface
     }
 
     /**
-     * @param ObjectType|UnionType<ObjectType|BuiltinType> $type
+     * @param ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>> $type
      */
     public static function ghost(ObjectType|UnionType $type): self
     {
@@ -49,7 +50,7 @@ final readonly class ObjectNode implements DataModelNodeInterface
     }
 
     /**
-     * @return ObjectType|UnionType<ObjectType|BuiltinType>
+     * @return ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>>
      */
     public function getType(): ObjectType|UnionType
     {

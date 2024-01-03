@@ -47,9 +47,9 @@ use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
+use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
-use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\Type\UnionType;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
@@ -149,20 +149,20 @@ final readonly class PhpAstBuilder
             ];
         }
 
-        $type = $dataModelNode->getType();
-        $nullable = $type->isNullable();
-        if ($nullable && $type instanceof UnionType) {
+        $originalType = $type = $dataModelNode->getType();
+        try {
             $type = $type->asNonNullable();
+        } catch (TypeInfoLogicException) {
         }
 
         if ($dataModelNode instanceof ScalarNode) {
             $accessor = match (true) {
                 $type instanceof BackedEnumType => $this->builder->staticCall(
                     new FullyQualified($type->getClassName()),
-                    $nullable ? 'tryFrom' : 'from',
+                    $originalType->isNullable() ? 'tryFrom' : 'from',
                     [$this->builder->var('data')],
                 ),
-                $type instanceof ObjectType => new ObjectCast($this->builder->var('data')),
+                $type->isA(TypeIdentifier::OBJECT) => new ObjectCast($this->builder->var('data')),
                 default => $this->builder->var('data'),
             };
 
@@ -179,7 +179,7 @@ final readonly class PhpAstBuilder
         }
 
         if ($dataModelNode instanceof CollectionNode) {
-            $returnNullStmts = $nullable ? [
+            $returnNullStmts = $originalType->isNullable() ? [
                 new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
                     'stmts' => [new Return_($this->builder->val(null))],
                 ]),
@@ -215,9 +215,7 @@ final readonly class PhpAstBuilder
             ];
 
             $iterableValueStmt = $this->builder->funcCall($this->builder->var('iterable'), [$this->builder->var('data')]);
-
             $returnStmts = [new Return_($type->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
-
             $providerStmts = $this->isNodeAlteringJson($dataModelNode->item) ? $this->buildEagerProviderStatements($dataModelNode->item, $context) : [];
 
             return [
@@ -244,7 +242,7 @@ final readonly class PhpAstBuilder
                 return [];
             }
 
-            $returnNullStmts = $nullable ? [
+            $returnNullStmts = $originalType->isNullable() ? [
                 new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
                     'stmts' => [new Return_($this->builder->val(null))],
                 ]),
@@ -324,6 +322,12 @@ final readonly class PhpAstBuilder
 
         $context['providers'][$dataModelNode->getIdentifier()] = true;
 
+        $originalType = $type = $dataModelNode->getType();
+        try {
+            $type = $type->asNonNullable();
+        } catch (TypeInfoLogicException) {
+        }
+
         $prepareScalarNode = function (ScalarNode $node, Expr $offset, Expr $length): Node {
             $accessor = $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
                 $this->builder->var('stream'),
@@ -332,32 +336,26 @@ final readonly class PhpAstBuilder
                 $this->builder->var('flags'),
             ]);
 
-            $type = $node->getType();
-            $nullable = $type->isNullable();
-            if ($nullable && $type instanceof UnionType) {
+            $originalType = $type = $node->getType();
+            try {
                 $type = $type->asNonNullable();
+            } catch (TypeInfoLogicException) {
             }
 
             if ($type instanceof BackedEnumType) {
                 return $this->builder->staticCall(
                     new FullyQualified($type->getClassName()),
-                    $nullable ? 'tryFrom' : 'from',
+                    $originalType->isNullable() ? 'tryFrom' : 'from',
                     [$accessor],
                 );
             }
 
-            if ($type instanceof ObjectType) {
+            if ($type instanceof BuiltinType && TypeIdentifier::OBJECT === $type->getTypeIdentifier()) {
                 return new ObjectCast($accessor);
             }
 
             return $accessor;
         };
-
-        $type = $dataModelNode->getType();
-        $nullable = $type->isNullable();
-        if ($nullable && $type instanceof UnionType) {
-            $type = $type->asNonNullable();
-        }
 
         if ($dataModelNode instanceof ScalarNode) {
             return [
@@ -386,7 +384,7 @@ final readonly class PhpAstBuilder
                 ))),
             ];
 
-            if ($nullable) {
+            if ($originalType->isNullable()) {
                 $getBoundariesStmts[] = new If_(new Identical($this->builder->val(null), $this->builder->var('boundaries')), [
                     'stmts' => [new Return_($this->builder->val(null))],
                 ]);
@@ -433,9 +431,7 @@ final readonly class PhpAstBuilder
             ];
 
             $iterableValueStmt = $this->builder->funcCall($this->builder->var('iterable'), [$this->builder->var('stream'), $this->builder->var('boundaries')]);
-
             $returnStmts = [new Return_($type->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
-
             $providerStmts = $dataModelNode->item instanceof ScalarNode ? [] : $this->buildLazyProviderStatements($dataModelNode->item, $context);
 
             return [
@@ -475,7 +471,7 @@ final readonly class PhpAstBuilder
                 ))),
             ];
 
-            if ($nullable) {
+            if ($originalType->isNullable()) {
                 $getBoundariesStmts[] = new If_(new Identical($this->builder->val(null), $this->builder->var('boundaries')), [
                     'stmts' => [new Return_($this->builder->val(null))],
                 ]);

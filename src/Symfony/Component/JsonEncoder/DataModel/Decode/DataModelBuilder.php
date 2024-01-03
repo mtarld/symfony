@@ -19,6 +19,7 @@ use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
@@ -44,7 +45,17 @@ final readonly class DataModelBuilder
      */
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
     {
-        if ($type instanceof ObjectType && !$type instanceof EnumType) {
+        $originalType = $type;
+        try {
+            $type = $type->isNullable() ? $type->asNonNullable() : $type;
+        } catch (TypeInfoLogicException) {
+        }
+
+        if ($type instanceof EnumType) {
+            return new ScalarNode($originalType);
+        }
+
+        if ($type instanceof ObjectType) {
             $transformed = false;
             $typeString = (string) $type;
             $className = $type->getClassName();
@@ -56,7 +67,7 @@ final readonly class DataModelBuilder
             $propertiesNodes = [];
             $context['generated_classes'][$typeString] = true;
 
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $originalType] + $context);
 
             if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
                 || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
@@ -114,13 +125,13 @@ final readonly class DataModelBuilder
                 $transformed = $transformed || $propertiesNodes[$encodedName]['value']->isTransformed() || \count($propertyMetadata->formatters);
             }
 
-            return new ObjectNode($type, $propertiesNodes, $transformed);
+            return new ObjectNode($originalType, $propertiesNodes, $transformed);
         }
 
         if ($type instanceof CollectionType) {
-            return new CollectionNode($type, $this->build($type->getCollectionValueType(), $config, $context));
+            return new CollectionNode($originalType, $this->build($type->getCollectionValueType(), $config, $context));
         }
 
-        return new ScalarNode($type);
+        return new ScalarNode($originalType);
     }
 }

@@ -12,7 +12,6 @@
 namespace Symfony\Component\JsonEncoder\DataModel\Encode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
-use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\UnionType;
@@ -27,7 +26,7 @@ final readonly class CollectionNode implements DataModelNodeInterface
     public bool $transformed;
 
     /**
-     * @param CollectionType|UnionType<CollectionType|BuiltinType> $type
+     * @param CollectionType|UnionType<CollectionType|BuiltinType<TypeIdentifier::NULL>> $type
      */
     public function __construct(
         public DataAccessorInterface $accessor,
@@ -38,9 +37,9 @@ final readonly class CollectionNode implements DataModelNodeInterface
     }
 
     /**
-     * @return CollectionType|UnionType<CollectionType|BuiltinType>
+     * @return CollectionType|UnionType<CollectionType|BuiltinType<TypeIdentifier::NULL>>
      */
-    public function getType(): Type|UnionType
+    public function getType(): CollectionType|UnionType
     {
         return $this->type;
     }

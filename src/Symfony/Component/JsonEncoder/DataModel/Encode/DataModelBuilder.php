@@ -22,6 +22,7 @@ use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
+use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
@@ -49,7 +50,17 @@ final readonly class DataModelBuilder
      */
     public function build(Type $type, DataAccessorInterface $accessor, array $config, array $context = []): DataModelNodeInterface
     {
-        if ($type instanceof ObjectType && !$type instanceof EnumType) {
+        $originalType = $type;
+        try {
+            $type = $type->isNullable() ? $type->asNonNullable() : $type;
+        } catch (TypeInfoLogicException) {
+        }
+
+        if ($type instanceof EnumType) {
+            return new ScalarNode($accessor, $originalType);
+        }
+
+        if ($type instanceof ObjectType) {
             $transformed = false;
             $className = $type->getClassName();
 
@@ -117,17 +128,17 @@ final readonly class DataModelBuilder
                 $transformed = $transformed || $propertiesNodes[$encodedName]->isTransformed();
             }
 
-            return new ObjectNode($accessor, $type, $propertiesNodes, $transformed);
+            return new ObjectNode($accessor, $originalType, $propertiesNodes, $transformed);
         }
 
         if ($type instanceof CollectionType) {
             return new CollectionNode(
                 $accessor,
-                $type,
+                $originalType,
                 $this->build($type->getCollectionValueType(), new VariableDataAccessor($this->scopeVariableName('value', $context)), $config, $context),
             );
         }
 
-        return new ScalarNode($accessor, $type);
+        return new ScalarNode($accessor, $originalType);
     }
 }

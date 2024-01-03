@@ -41,6 +41,7 @@ use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
+use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -129,6 +130,12 @@ final readonly class PhpAstBuilder
             ];
         }
 
+        $originalType = $type = $dataModelNode->getType();
+        try {
+            $type = $type->asNonNullable();
+        } catch (TypeInfoLogicException) {
+        }
+
         if (!$this->isNodeAlteringJson($dataModelNode)) {
             return [
                 ...$setupStmts,
@@ -139,7 +146,7 @@ final readonly class PhpAstBuilder
         if ($dataModelNode instanceof CollectionNode) {
             $prefixName = $this->scopeVariableName('prefix', $context);
 
-            if ($dataModelNode->getType()->isList()) {
+            if ($type->isList()) {
                 $listStmts = [
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
@@ -153,7 +160,7 @@ final readonly class PhpAstBuilder
                     $this->yieldJson($this->builder->val(']'), $encodeAs),
                 ];
 
-                if ($dataModelNode->getType()->isNullable()) {
+                if ($originalType->isNullable()) {
                     return [
                         ...$setupStmts,
                         new If_(new Identical($this->builder->val(null), $accessor), [
@@ -188,7 +195,7 @@ final readonly class PhpAstBuilder
                 $this->yieldJson($this->builder->val('}'), $encodeAs),
             ];
 
-            if ($dataModelNode->getType()->isNullable()) {
+            if ($originalType->isNullable()) {
                 return [
                     ...$setupStmts,
                     new If_(new Identical($this->builder->val(null), $accessor), [
@@ -227,7 +234,7 @@ final readonly class PhpAstBuilder
 
             $objectStmts[] = $this->yieldJson($this->builder->val('}'), $encodeAs);
 
-            if ($dataModelNode->getType()->isNullable()) {
+            if ($originalType->isNullable()) {
                 return [
                     ...$setupStmts,
                     new If_(new Identical($this->builder->val(null), $accessor), [
@@ -243,9 +250,8 @@ final readonly class PhpAstBuilder
         if ($dataModelNode instanceof ScalarNode) {
             $scalarAccessor = $accessor;
 
-            $type = $dataModelNode->getType();
             if ($type instanceof BackedEnumType) {
-                $scalarAccessor = $type->isNullable() ? new NullsafePropertyFetch($accessor, 'value') : new PropertyFetch($accessor, 'value');
+                $scalarAccessor = $originalType->isNullable() ? new NullsafePropertyFetch($accessor, 'value') : new PropertyFetch($accessor, 'value');
             }
 
             $scalarStmts = [$this->yieldJson($this->encodeValue($scalarAccessor), $encodeAs)];

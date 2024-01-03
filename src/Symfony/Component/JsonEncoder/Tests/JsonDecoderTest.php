@@ -31,6 +31,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttribu
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
@@ -79,8 +80,8 @@ class JsonDecoderTest extends TestCase
     {
         $this->assertDecoded(null, 'null', Type::nullable(Type::int()));
         $this->assertDecoded(true, 'true', Type::bool());
-        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::array());
-        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::iterable());
+        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ARRAY));
+        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ITERABLE));
         $this->assertDecoded((object) ['foo' => 'bar'], '{"foo": "bar"}', Type::object());
         $this->assertDecoded(DummyBackedEnum::ONE, '1', Type::enum(DummyBackedEnum::class, Type::string()));
     }

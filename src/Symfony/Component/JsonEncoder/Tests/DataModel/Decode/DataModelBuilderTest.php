@@ -42,7 +42,7 @@ class DataModelBuilderTest extends TestCase
     /**
      * @dataProvider buildDataModelDataProvider
      */
-    public function testBuildDataModel(Type $type, DataModelNodeInterface $dataModel)
+    public function testBuildDataModel(DataModelNodeInterface $dataModel, Type $type)
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
 
@@ -50,21 +50,26 @@ class DataModelBuilderTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: Type, 1: DataModelNodeInterface}>
+     * @return iterable<array{0: DataModelNodeInterface, 1: Type}>
      */
     public static function buildDataModelDataProvider(): iterable
     {
-        yield [Type::int(), new ScalarNode(Type::int())];
-        yield [Type::builtin(TypeIdentifier::ARRAY), new ScalarNode(Type::builtin(TypeIdentifier::ARRAY))];
-        yield [Type::object(), new ScalarNode(Type::object())];
-        yield [Type::union(Type::int(), Type::string()), new ScalarNode(Type::union(Type::int(), Type::string()))];
-        yield [Type::intersection(Type::int(), Type::string()), new ScalarNode(Type::intersection(Type::int(), Type::string()))];
+        yield [new ScalarNode(Type::int()), Type::int()];
+        yield [new ScalarNode(Type::nullable(Type::int())), Type::nullable(Type::int())];
+        yield [new ScalarNode(Type::builtin(TypeIdentifier::ARRAY)), Type::builtin(TypeIdentifier::ARRAY)];
+        yield [new ScalarNode(Type::object()), Type::object()];
+        yield [new ScalarNode(Type::null()), Type::null()];
 
-        yield [Type::array(Type::string()), new CollectionNode(Type::array(Type::string()), new ScalarNode(Type::string()))];
-        yield [Type::list(Type::string()), new CollectionNode(Type::list(Type::string()), new ScalarNode(Type::string()))];
-        yield [Type::dict(Type::string()), new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string()))];
+        yield [new CollectionNode(Type::array(Type::string()), new ScalarNode(Type::string())), Type::array(Type::string())];
+        yield [new CollectionNode(Type::list(Type::string()), new ScalarNode(Type::string())), Type::list(Type::string())];
+        yield [new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string())), Type::dict(Type::string())];
 
-        yield [Type::object(self::class), new ObjectNode(Type::object(self::class), [], true)];
+        yield [new ObjectNode(Type::object(self::class), [], transformed: true), Type::object(self::class)];
+        yield [new ObjectNode(Type::nullable(Type::object(self::class)), [], transformed: true), Type::nullable(Type::object(self::class))];
+
+        // TODO
+        // yield [new ScalarNode(Type::union(Type::int(), Type::string())), Type::union(Type::int(), Type::string())];
+        // yield [new ScalarNode(Type::intersection(Type::int(), Type::string())), Type::intersection(Type::int(), Type::string())];
     }
 
     /**
@@ -87,6 +92,7 @@ class DataModelBuilderTest extends TestCase
     public static function transformedDataModelDataProvider(): iterable
     {
         yield [false, Type::int()];
+        yield [false, Type::nullable(Type::int())];
         yield [false, Type::object()];
         yield [false, Type::list(Type::int())];
         yield [false, Type::iterable(Type::int())];
@@ -95,6 +101,7 @@ class DataModelBuilderTest extends TestCase
         yield [true, Type::object(DummyWithFormatterAttributes::class)];
         yield [true, Type::list(Type::object(DummyWithNameAttributes::class))];
         yield [true, Type::object(DummyWithOtherDummies::class)];
+        yield [true, Type::nullable(Type::object(DummyWithOtherDummies::class))];
     }
 
     public function testAddGhostLeafWhenClassAlreadyGenerated()

@@ -21,6 +21,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  *
  * @template T of TypeIdentifier
  */
+// TODO template
 final class BuiltinType extends Type
 {
     /**
