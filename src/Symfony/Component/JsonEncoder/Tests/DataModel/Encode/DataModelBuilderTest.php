@@ -84,7 +84,7 @@ class DataModelBuilderTest extends TestCase
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::null()),
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::string()),
                 ]),
-            ], true)
+            ], true),
         ];
     }
 

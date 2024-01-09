@@ -91,11 +91,10 @@ class JsonEncoderTest extends TestCase
     {
         $this->assertEncoded(
             '[1,true,["foo","bar"]]',
-            [DummyBackedEnum::ONE, true, ['foo','bar']],
+            [DummyBackedEnum::ONE, true, ['foo', 'bar']],
             Type::list(Type::union(Type::enum(DummyBackedEnum::class), Type::bool(), Type::list(Type::string()))),
         );
 
-        // TODO test tempalte generation
         $dummy = new DummyWithUnionProperties();
         $dummy->value = DummyBackedEnum::ONE;
         $this->assertEncoded('{"value":1}', $dummy);

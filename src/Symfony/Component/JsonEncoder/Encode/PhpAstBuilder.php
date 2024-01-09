@@ -20,7 +20,6 @@ use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Expr\New_;
-use PhpParser\Node\Expr\NullsafePropertyFetch;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Expr\Yield_;
@@ -30,8 +29,8 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Scalar\Encapsed;
 use PhpParser\Node\Scalar\EncapsedStringPart;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\Else_;
+use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
@@ -47,11 +46,9 @@ use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
-use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
-use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Builds a PHP syntax tree that encodes data to JSON.
@@ -148,7 +145,7 @@ final readonly class PhpAstBuilder
 
             return [
                 ...$setupStmts,
-                $this->yieldJson($scalarAccessor, $encodeAs)
+                $this->yieldJson($scalarAccessor, $encodeAs),
             ];
         }
 
@@ -161,7 +158,7 @@ final readonly class PhpAstBuilder
 
         if ($dataModelNode instanceof CompositeNode) {
             $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
-                'condition' =>$this->getNodeCondition($n),
+                'condition' => $this->getNodeCondition($n),
                 'stmts' => $this->buildClosureStatements($n, $encodeAs, $config, $context),
             ], $dataModelNode->nodes);
 
