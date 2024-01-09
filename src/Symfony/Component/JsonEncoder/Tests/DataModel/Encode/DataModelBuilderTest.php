@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonEncoder\Tests\DataModel\Encode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode;
@@ -24,16 +25,19 @@ use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
+use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
@@ -46,7 +50,8 @@ class DataModelBuilderTest extends TestCase
      */
     public function testBuildDataModel(Type $type, DataModelNodeInterface $dataModel)
     {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $typeResolver = TypeResolver::create();
+        $dataModelBuilder = new DataModelBuilder(new PropertyMetadataLoader($typeResolver));
 
         $this->assertEquals($dataModel, $dataModelBuilder->build($type, new VariableDataAccessor('data'), []));
     }
@@ -59,8 +64,10 @@ class DataModelBuilderTest extends TestCase
         $accessor = new VariableDataAccessor('data');
 
         yield [Type::int(), new ScalarNode($accessor, Type::int())];
+        yield [Type::nullable(Type::int()), new CompositeNode($accessor, [new ScalarNode($accessor, Type::int()), new ScalarNode($accessor, Type::null())])];
         yield [Type::builtin(TypeIdentifier::ARRAY), new ScalarNode($accessor, Type::builtin(TypeIdentifier::ARRAY))];
         yield [Type::object(), new ScalarNode($accessor, Type::object())];
+        yield [Type::enum(DummyBackedEnum::class), new ScalarNode($accessor, Type::enum(DummyBackedEnum::class))];
 
         yield [Type::array(Type::string()), new CollectionNode($accessor, Type::array(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
         yield [Type::list(Type::string()), new CollectionNode($accessor, Type::list(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
@@ -68,9 +75,25 @@ class DataModelBuilderTest extends TestCase
 
         yield [Type::object(self::class), new ObjectNode($accessor, Type::object(self::class), [], true)];
 
-        // TODO
-        // yield [Type::union(Type::int(), Type::string()), new ScalarNode($accessor, Type::union(Type::int(), Type::string()))];
-        // yield [Type::intersection(Type::int(), Type::string()), new ScalarNode($accessor, Type::intersection(Type::int(), Type::string()))];
+        yield [Type::union(Type::int(), Type::string()), new CompositeNode($accessor, [new ScalarNode($accessor, Type::int()), new ScalarNode($accessor, Type::string())])];
+        yield [
+            Type::object(DummyWithUnionProperties::class),
+            new ObjectNode($accessor, Type::object(DummyWithUnionProperties::class), [
+                'value' => new CompositeNode(new PropertyDataAccessor($accessor, 'value'), [
+                    new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::enum(DummyBackedEnum::class)),
+                    new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::null()),
+                    new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::string()),
+                ]),
+            ], true)
+        ];
+    }
+
+    public function testDoNotSupportIntersectionType()
+    {
+        $this->expectException(UnsupportedException::class);
+
+        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), new VariableDataAccessor('data'), []);
     }
 
     /**

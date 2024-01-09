@@ -67,8 +67,9 @@ class DataModelBuilderTest extends TestCase
         yield [new ObjectNode(Type::object(self::class), [], transformed: true), Type::object(self::class)];
         yield [new ObjectNode(Type::nullable(Type::object(self::class)), [], transformed: true), Type::nullable(Type::object(self::class))];
 
+        yield [new ScalarNode(Type::union(Type::int(), Type::string())), Type::union(Type::int(), Type::string())];
+
         // TODO
-        // yield [new ScalarNode(Type::union(Type::int(), Type::string())), Type::union(Type::int(), Type::string())];
         // yield [new ScalarNode(Type::intersection(Type::int(), Type::string())), Type::intersection(Type::int(), Type::string())];
     }
 

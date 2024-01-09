@@ -18,8 +18,11 @@ use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\Expr\Instanceof_;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\NullsafePropertyFetch;
 use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Expr\Yield_;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
@@ -27,6 +30,7 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Scalar\Encapsed;
 use PhpParser\Node\Scalar\EncapsedStringPart;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
@@ -34,16 +38,20 @@ use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\ScalarNode;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\RuntimeException;
+use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
 use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
+use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
  * Builds a PHP syntax tree that encodes data to JSON.
@@ -117,6 +125,7 @@ final readonly class PhpAstBuilder
      */
     public function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
     {
+        // TODO handle union
         $setupStmts = [];
         $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());
 
@@ -130,10 +139,17 @@ final readonly class PhpAstBuilder
             ];
         }
 
-        $originalType = $type = $dataModelNode->getType();
-        try {
-            $type = $type->asNonNullable();
-        } catch (TypeInfoLogicException) {
+        if ($dataModelNode instanceof ScalarNode) {
+            $scalarAccessor = match (true) {
+                $dataModelNode->getType() instanceof BackedEnumType => $this->encodeValue(new PropertyFetch($accessor, 'value')),
+                TypeIdentifier::NULL === $dataModelNode->getType()->getBaseType()->getTypeIdentifier() => $this->builder->val('null'),
+                default => $this->encodeValue($accessor),
+            };
+
+            return [
+                ...$setupStmts,
+                $this->yieldJson($scalarAccessor, $encodeAs)
+            ];
         }
 
         if (!$this->isNodeAlteringJson($dataModelNode)) {
@@ -143,11 +159,36 @@ final readonly class PhpAstBuilder
             ];
         }
 
+        if ($dataModelNode instanceof CompositeNode) {
+            $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
+                'condition' =>$this->getNodeCondition($n),
+                'stmts' => $this->buildClosureStatements($n, $encodeAs, $config, $context),
+            ], $dataModelNode->nodes);
+
+            $if = $stmtsAndConditions[0];
+            unset($stmtsAndConditions[0]);
+
+            return [
+                ...$setupStmts,
+                new If_($if['condition'], [
+                    'stmts' => $if['stmts'],
+                    'elseifs' => array_map(fn (array $s): ElseIf_ => new ElseIf_($s['condition'], $s['stmts']), $stmtsAndConditions),
+                    'else' => new Else_([
+                        new Expression(new Throw_(new New_(new FullyQualified(UnexpectedValueException::class), [$this->builder->funcCall('\sprintf', [
+                            $this->builder->val('Unexpected "%s" value.'),
+                            $this->builder->funcCall('\get_debug_type', [$accessor]),
+                        ])]))),
+                    ]),
+                ]),
+            ];
+        }
+
         if ($dataModelNode instanceof CollectionNode) {
             $prefixName = $this->scopeVariableName('prefix', $context);
 
-            if ($type->isList()) {
-                $listStmts = [
+            if ($dataModelNode->getType()->isList()) {
+                return [
+                    ...$setupStmts,
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
                     new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
@@ -159,23 +200,12 @@ final readonly class PhpAstBuilder
                     ]),
                     $this->yieldJson($this->builder->val(']'), $encodeAs),
                 ];
-
-                if ($originalType->isNullable()) {
-                    return [
-                        ...$setupStmts,
-                        new If_(new Identical($this->builder->val(null), $accessor), [
-                            'stmts' => [$this->yieldJson($this->builder->val('null'), $encodeAs)],
-                            'else' => new Else_($listStmts),
-                        ]),
-                    ];
-                }
-
-                return [...$setupStmts, ...$listStmts];
             }
 
             $keyName = $this->scopeVariableName('key', $context);
 
-            $dictStmts = [
+            return [
+                ...$setupStmts,
                 $this->yieldJson($this->builder->val('{'), $encodeAs),
                 new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
                 new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
@@ -194,18 +224,6 @@ final readonly class PhpAstBuilder
                 ]),
                 $this->yieldJson($this->builder->val('}'), $encodeAs),
             ];
-
-            if ($originalType->isNullable()) {
-                return [
-                    ...$setupStmts,
-                    new If_(new Identical($this->builder->val(null), $accessor), [
-                        'stmts' => [$this->yieldJson($this->builder->val('null'), $encodeAs)],
-                        'else' => new Else_($dictStmts),
-                    ]),
-                ];
-            }
-
-            return [...$setupStmts, ...$dictStmts];
         }
 
         if ($dataModelNode instanceof ObjectNode) {
@@ -234,39 +252,7 @@ final readonly class PhpAstBuilder
 
             $objectStmts[] = $this->yieldJson($this->builder->val('}'), $encodeAs);
 
-            if ($originalType->isNullable()) {
-                return [
-                    ...$setupStmts,
-                    new If_(new Identical($this->builder->val(null), $accessor), [
-                        'stmts' => [$this->yieldJson($this->builder->val('null'), $encodeAs)],
-                        'else' => new Else_($objectStmts),
-                    ]),
-                ];
-            }
-
             return [...$setupStmts, ...$objectStmts];
-        }
-
-        if ($dataModelNode instanceof ScalarNode) {
-            $scalarAccessor = $accessor;
-
-            if ($type instanceof BackedEnumType) {
-                $scalarAccessor = $originalType->isNullable() ? new NullsafePropertyFetch($accessor, 'value') : new PropertyFetch($accessor, 'value');
-            }
-
-            $scalarStmts = [$this->yieldJson($this->encodeValue($scalarAccessor), $encodeAs)];
-
-            if ($type->isNullable() && !$type instanceof BackedEnumType && !$type->isA(TypeIdentifier::NULL) && !$type->isA(TypeIdentifier::MIXED)) {
-                return [
-                    ...$setupStmts,
-                    new If_(new Identical($this->builder->val(null), $accessor), [
-                        'stmts' => [$this->yieldJson($this->builder->val('null'), $encodeAs)],
-                        'else' => new Else_($scalarStmts),
-                    ]),
-                ];
-            }
-
-            return [...$setupStmts, ...$scalarStmts];
         }
 
         throw new LogicException(sprintf('Unexpected "%s" node', $dataModelNode::class));
@@ -289,5 +275,18 @@ final readonly class PhpAstBuilder
             EncodeAs::STREAM => $this->builder->methodCall($this->builder->var('stream'), 'write', [$json]),
             EncodeAs::RESOURCE => $this->builder->funcCall('\fwrite', [$this->builder->var('stream'), $json]),
         });
+    }
+
+    private function getNodeCondition(DataModelNodeInterface $node): Expr
+    {
+        $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
+        $type = $node->getType()->getBaseType();
+
+        return match (true) {
+            $type instanceof ObjectType => new Instanceof_($accessor, new FullyQualified($type->getClassName())),
+            TypeIdentifier::NULL === $type->getTypeIdentifier() => new Identical($this->builder->val(null), $accessor),
+            TypeIdentifier::MIXED === $type->getTypeIdentifier() => $this->builder->val(true),
+            default => $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]),
+        };
     }
 }

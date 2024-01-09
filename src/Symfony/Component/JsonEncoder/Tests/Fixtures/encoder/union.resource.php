@@ -8,8 +8,17 @@ return static function (mixed $data, mixed $stream, array $config, ?\Psr\Contain
         \fwrite($stream, ',"name":');
         \fwrite($stream, \json_encode($data->name, $flags));
         \fwrite($stream, '}');
-    } elseif (null === $data) {
-        \fwrite($stream, 'null');
+    } elseif (\is_array($data)) {
+        \fwrite($stream, '[');
+        $prefix_0 = '';
+        foreach ($data as $value_0) {
+            \fwrite($stream, $prefix_0);
+            \fwrite($stream, \json_encode($value_0->value, $flags));
+            $prefix_0 = ',';
+        }
+        \fwrite($stream, ']');
+    } elseif (\is_int($data)) {
+        \fwrite($stream, \json_encode($data, $flags));
     } else {
         throw new \Symfony\Component\JsonEncoder\Exception\UnexpectedValueException(\sprintf('Unexpected "%s" value.', \get_debug_type($data)));
     }

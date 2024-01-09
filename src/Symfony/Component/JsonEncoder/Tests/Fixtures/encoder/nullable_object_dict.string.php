@@ -2,9 +2,7 @@
 
 return static function (mixed $data, array $config, ?\Psr\Container\ContainerInterface $services) : \Traversable {
     $flags = $config['json_encode_flags'] ?? 0;
-    if (null === $data) {
-        (yield 'null');
-    } else {
+    if (\is_array($data)) {
         (yield '{');
         $prefix_0 = '';
         foreach ($data as $key_0 => $value_0) {
@@ -18,5 +16,9 @@ return static function (mixed $data, array $config, ?\Psr\Container\ContainerInt
             $prefix_0 = ',';
         }
         (yield '}');
+    } elseif (null === $data) {
+        (yield 'null');
+    } else {
+        throw new \Symfony\Component\JsonEncoder\Exception\UnexpectedValueException(\sprintf('Unexpected "%s" value.', \get_debug_type($data)));
     }
 };

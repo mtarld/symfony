@@ -30,7 +30,6 @@ final readonly class ScalarNode implements DataModelNodeInterface
      * @param BuiltinType|EnumType|UnionType<BuiltinType|EnumType> $type
      */
     public function __construct(
-        // TODO intersection?
         public BuiltinType|EnumType|UnionType $type,
     ) {
     }

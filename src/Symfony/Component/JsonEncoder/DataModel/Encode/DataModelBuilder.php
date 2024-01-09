@@ -19,14 +19,16 @@ use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
+use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
-use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
+use Symfony\Component\TypeInfo\Type\IntersectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\TypeInfo\Type\UnionType;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -50,14 +52,18 @@ final readonly class DataModelBuilder
      */
     public function build(Type $type, DataAccessorInterface $accessor, array $config, array $context = []): DataModelNodeInterface
     {
-        $originalType = $type;
-        try {
-            $type = $type->isNullable() ? $type->asNonNullable() : $type;
-        } catch (TypeInfoLogicException) {
+        $context['original_type'] ??= $type;
+
+        if ($type instanceof IntersectionType) {
+            throw new UnsupportedException('Intersection types are not supported.');
+        }
+
+        if ($type instanceof UnionType) {
+            return new CompositeNode($accessor, array_map(fn (Type $t): DataModelNodeInterface => $this->build($t, $accessor, $config, $context), $type->getTypes()));
         }
 
         if ($type instanceof EnumType) {
-            return new ScalarNode($accessor, $originalType);
+            return new ScalarNode($accessor, $type);
         }
 
         if ($type instanceof ObjectType) {
@@ -128,17 +134,17 @@ final readonly class DataModelBuilder
                 $transformed = $transformed || $propertiesNodes[$encodedName]->isTransformed();
             }
 
-            return new ObjectNode($accessor, $originalType, $propertiesNodes, $transformed);
+            return new ObjectNode($accessor, $type, $propertiesNodes, $transformed);
         }
 
         if ($type instanceof CollectionType) {
             return new CollectionNode(
                 $accessor,
-                $originalType,
+                $type,
                 $this->build($type->getCollectionValueType(), new VariableDataAccessor($this->scopeVariableName('value', $context)), $config, $context),
             );
         }
 
-        return new ScalarNode($accessor, $originalType);
+        return new ScalarNode($accessor, $type);
     }
 }

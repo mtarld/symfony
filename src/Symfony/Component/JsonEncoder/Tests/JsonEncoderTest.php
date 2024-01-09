@@ -28,6 +28,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
 use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
@@ -84,6 +85,26 @@ class JsonEncoderTest extends TestCase
         $this->assertEncoded('[{"foo":1,"bar":2},{"foo":3}]', [['foo' => 1, 'bar' => 2], ['foo' => 3]]);
         $this->assertEncoded('{"foo":"bar"}', (object) ['foo' => 'bar']);
         $this->assertEncoded('1', DummyBackedEnum::ONE);
+    }
+
+    public function testEncodeUnion()
+    {
+        $this->assertEncoded(
+            '[1,true,["foo","bar"]]',
+            [DummyBackedEnum::ONE, true, ['foo','bar']],
+            Type::list(Type::union(Type::enum(DummyBackedEnum::class), Type::bool(), Type::list(Type::string()))),
+        );
+
+        // TODO test tempalte generation
+        $dummy = new DummyWithUnionProperties();
+        $dummy->value = DummyBackedEnum::ONE;
+        $this->assertEncoded('{"value":1}', $dummy);
+
+        $dummy->value = 'foo';
+        $this->assertEncoded('{"value":"foo"}', $dummy);
+
+        $dummy->value = null;
+        $this->assertEncoded('{"value":null}', $dummy);
     }
 
     public function testEncodeObject()
@@ -172,15 +193,15 @@ class JsonEncoderTest extends TestCase
         $this->assertSame('true', (string) $this->encoder->encode(true, ['force_generation' => true]));
     }
 
-    private function assertEncoded(string $encoded, mixed $decoded): void
+    private function assertEncoded(string $encoded, mixed $decoded, Type $type = null): void
     {
         $this->assertSame($encoded, (string) $this->encoder->encode($decoded));
 
-        $this->encoder->encode($decoded, ['stream' => $stream = new MemoryStream()]);
+        $this->encoder->encode($decoded, ['stream' => $stream = new MemoryStream(), 'type' => $type]);
         $stream->rewind();
         $this->assertSame($encoded, (string) $stream);
 
-        $this->encoder->encode($decoded, ['stream' => $stream = new BufferedStream()]);
+        $this->encoder->encode($decoded, ['stream' => $stream = new BufferedStream(), 'type' => $type]);
         $stream->rewind();
         $this->assertSame($encoded, (string) $stream);
     }

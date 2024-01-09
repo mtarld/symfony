@@ -17,12 +17,14 @@ use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
+use Symfony\Component\TypeInfo\Type\IntersectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\VarExporter\ProxyHelper;
 
@@ -49,6 +51,10 @@ final readonly class DataModelBuilder
         try {
             $type = $type->isNullable() ? $type->asNonNullable() : $type;
         } catch (TypeInfoLogicException) {
+        }
+
+        if ($type instanceof IntersectionType) {
+            throw new UnsupportedException('Intersection types are not supported.');
         }
 
         if ($type instanceof EnumType) {

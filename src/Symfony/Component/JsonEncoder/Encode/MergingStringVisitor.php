@@ -20,6 +20,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\ElseIf_;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Finally_;
 use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
@@ -40,29 +41,12 @@ use PhpParser\NodeVisitorAbstract;
  */
 abstract class MergingStringVisitor extends NodeVisitorAbstract
 {
-    private const BRANCHING_NODE_CLASSES = [
-        Catch_::class,
-        Case_::class,
-        ClassMethod::class,
-        Closure::class,
-        Function_::class,
-        Do_::class,
-        Else_::class,
-        ElseIf_::class,
-        For_::class,
-        Foreach_::class,
-        Finally_::class,
-        If_::class,
-        TryCatch::class,
-        While_::class,
-    ];
+    /** @var list<array{buffer: string, toMerge: string}> */
+    private array $stack = [['toMerge' => '', 'buffer' => '']];
+    private int $index = 0;
 
-    /**
-     * @var list<string>
-     */
-    private array $merged = [];
-
-    private int $branchIndex = 0;
+    /** @var array<string, array{buffer: string, toMerge: string}> */
+    private array $strings = [];
 
     abstract protected function isMergeableNode(Node $node): bool;
 
@@ -72,9 +56,33 @@ abstract class MergingStringVisitor extends NodeVisitorAbstract
 
     final public function enterNode(Node $node): int|Node|array|null
     {
+        if ($this->isBranchingNode($node) || $node instanceof Expression) {
+            dump($this->index.' > '.$node::class);
+        }
+
         if ($this->isBranchingNode($node)) {
-            ++$this->branchIndex;
-            $this->merged[$this->branchIndex] = '';
+            $this->stack[$this->index]['toMerge'] = $this->stack[$this->index]['buffer'];
+            $this->stack[$this->index]['buffer'] = '';
+
+            ++$this->index;
+
+            dump('override');
+            $this->stack[$this->index] = ['toMerge' => '', 'buffer' => ''];
+
+            return null;
+        }
+
+        if ($this->isMergeableNode($node)) {
+            $this->stack[$this->index]['buffer'] .= $this->getStringToMerge($node);
+
+            return null;
+        }
+
+        if ($node instanceof Expression && '' !== $this->stack[$this->index]['buffer']) {
+            $this->stack[$this->index]['toMerge'] = $this->stack[$this->index]['buffer'];
+            $this->stack[$this->index]['buffer'] = '';
+
+            return null;
         }
 
         return null;
@@ -82,42 +90,86 @@ abstract class MergingStringVisitor extends NodeVisitorAbstract
 
     final public function leaveNode(Node $node): int|Node|array|null
     {
-        if ($this->isMergeableNode($node)) {
-            $this->merged[$this->branchIndex] .= $this->getStringToMerge($node);
+        if ($this->isBranchingNode($node) || $node instanceof Expression) {
+            dump($this->index.' < '.$node::class);
+        }
 
+        if ($this->isMergeableNode($node)) {
             return NodeTraverser::REMOVE_NODE;
         }
 
-        if ($this->isBranchingNode($node)) {
-            $merged = $this->merged[$this->branchIndex] ?? '';
-            $this->merged[$this->branchIndex] = '';
-            --$this->branchIndex;
+        $string = $this->stack[$this->index]['toMerge'];
 
-            if ('' === $merged) {
-                return null;
-            }
+        if ('' !== $string && $this->canAddNode($node)) {
+            $this->stack[$this->index]['toMerge'] = '';
 
-            $node->stmts[] = $this->getMergedNode($merged);
-
-            return $node;
+            return $this->addNode($node, $string);
         }
 
-        if ($node instanceof Stmt) {
-            $merged = $this->merged[$this->branchIndex] ?? '';
-            $this->merged[$this->branchIndex] = '';
-
-            if ('' === $merged) {
-                return null;
+        if ($this->isBranchingNode($node)) {
+            if ('' !== $this->stack[$this->index]['buffer']) {
+                $this->stack[$this->index]['toMerge'] = $this->stack[$this->index]['buffer'];
+                $this->stack[$this->index]['buffer'] = '';
             }
 
-            return [$this->getMergedNode($merged), $node];
+            if ($node instanceof ElseIf_) {
+                dump($this->stack, $this->index);
+            }
+
+            $string = $this->stack[$this->index]['toMerge'];
+
+            if ('' !== $string && $this->canAddNode($node)) {
+                $this->stack[$this->index]['toMerge'] = '';
+                --$this->index;
+
+                return $this->addNode($node, $string);
+            }
+
+            --$this->index;
         }
 
         return null;
     }
 
+    private function canAddNode(Node $node): bool
+    {
+        return $node instanceof Expression | $this->isBranchingNode($node);
+    }
+
+    private function addNode(Node $node, string $string): Node|array
+    {
+        $mergedNode = $this->getMergedNode($string);
+
+        if ($this->isBranchingNode($node)) {
+            $node->stmts[] = $mergedNode;
+
+            return $node;
+        }
+
+        if ($node instanceof Expression) {
+            return [$mergedNode, $node];
+        }
+
+        return $node;
+    }
+
     private function isBranchingNode(Node $node): bool
     {
-        return \in_array($node::class, self::BRANCHING_NODE_CLASSES, true);
+        return \in_array($node::class, [
+            Catch_::class,
+            Case_::class,
+            ClassMethod::class,
+            Closure::class,
+            Function_::class,
+            Do_::class,
+            Else_::class,
+            ElseIf_::class,
+            For_::class,
+            Foreach_::class,
+            Finally_::class,
+            If_::class,
+            TryCatch::class,
+            While_::class,
+        ], true);
     }
 }

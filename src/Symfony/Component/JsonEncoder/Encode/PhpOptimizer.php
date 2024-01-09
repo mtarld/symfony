@@ -32,8 +32,8 @@ final readonly class PhpOptimizer
     {
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new MergingStringYieldVisitor());
-        $traverser->addVisitor(new MergingStringStreamWriteVisitor());
-        $traverser->addVisitor(new MergingStringFwriteVisitor());
+        // $traverser->addVisitor(new MergingStringStreamWriteVisitor());
+        // $traverser->addVisitor(new MergingStringFwriteVisitor());
 
         return $traverser->traverse($nodes);
     }

@@ -130,6 +130,7 @@ final readonly class PhpAstBuilder
      */
     public function buildEagerProviderStatements(DataModelNodeInterface $dataModelNode, array &$context): array
     {
+        // TODO handle union
         if ($context['providers'][$dataModelNode->getIdentifier()] ?? false) {
             return [];
         }
