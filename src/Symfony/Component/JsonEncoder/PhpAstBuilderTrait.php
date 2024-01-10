@@ -93,7 +93,7 @@ trait PhpAstBuilderTrait
             return true;
         }
 
-        if ($type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
+        if ($node instanceof EncodeDataModelNodeInterface && $type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
             return true;
         }
 

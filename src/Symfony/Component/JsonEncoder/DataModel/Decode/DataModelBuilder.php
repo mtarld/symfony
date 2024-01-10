@@ -62,7 +62,6 @@ final readonly class DataModelBuilder
         }
 
         if ($type instanceof ObjectType) {
-            $transformed = false;
             $typeString = (string) $type;
             $className = $type->getClassName();
 
@@ -74,12 +73,6 @@ final readonly class DataModelBuilder
             $context['generated_classes'][$typeString] = true;
 
             $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, $context);
-
-            if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
-                || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
-            ) {
-                $transformed = true;
-            }
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
                 $propertiesNodes[$encodedName] = [
@@ -127,11 +120,9 @@ final readonly class DataModelBuilder
                         return $accessor;
                     },
                 ];
-
-                $transformed = $transformed || $propertiesNodes[$encodedName]['value']->isTransformed() || \count($propertyMetadata->formatters);
             }
 
-            return new ObjectNode($type, $propertiesNodes, $transformed);
+            return new ObjectNode($type, $propertiesNodes);
         }
 
         if ($type instanceof CollectionType) {

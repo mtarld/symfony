@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder\Decode;
 
+use PHPUnit\Framework\Constraint\LogicalNot;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
@@ -18,21 +19,28 @@ use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Identical;
+use PhpParser\Node\Expr\BinaryOp\LogicalAnd;
 use PhpParser\Node\Expr\BinaryOp\NotIdentical;
+use PhpParser\Node\Expr\BooleanNot;
 use PhpParser\Node\Expr\Cast\Object_ as ObjectCast;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\ClosureUse;
 use PhpParser\Node\Expr\Match_;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\Ternary;
+use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Expr\Yield_;
 use PhpParser\Node\MatchArm;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Else_;
+use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
@@ -45,12 +53,15 @@ use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\ScalarNode;
 use Symfony\Component\JsonEncoder\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
 use Symfony\Component\JsonEncoder\Instantiator\InstantiatorInterface;
 use Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface;
 use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\Type\EnumType;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
@@ -93,9 +104,13 @@ final readonly class PhpAstBuilder
                         new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_decode_flags')), $this->builder->val(0)),
                     )),
                     ...$this->buildEagerProviderStatements($dataModel, $context),
-                    new Return_($this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
-                        $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')]),
-                    ])),
+                    new Return_(
+                        $this->isNodeAlteringJson($dataModel)
+                        ? $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
+                            $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')])
+                        ])
+                        : $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')]),
+                    ),
                 ],
             ]))],
 
@@ -129,6 +144,7 @@ final readonly class PhpAstBuilder
      *
      * @return list<Stmt>
      */
+    // TODO try to merge with lazy
     public function buildEagerProviderStatements(DataModelNodeInterface $dataModelNode, array &$context): array
     {
         if ($context['providers'][$dataModelNode->getIdentifier()] ?? false) {
@@ -138,44 +154,77 @@ final readonly class PhpAstBuilder
         $context['providers'][$dataModelNode->getIdentifier()] = true;
 
         if (!$this->isNodeAlteringJson($dataModelNode)) {
-            return [
-                new Expression(new Assign(
-                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModelNode->getIdentifier())),
-                    new Closure([
-                        'static' => true,
-                        'params' => [new Param($this->builder->var('data'))],
-                        'stmts' => [new Return_($this->builder->var('data'))],
-                    ]),
-                )),
-            ];
+            return [];
         }
 
-        if ($dataModelNode instanceof ScalarNode) {
-            $accessor = match (true) {
-                $dataModelNode->getType() instanceof BackedEnumType => $this->builder->staticCall(
-                    new FullyQualified($dataModelNode->getType()->getClassName()),
+        $prepareScalarNode = function (ScalarNode $node): Node {
+            $type = $node->getType();
+
+            return match (true) {
+                $type instanceof BackedEnumType => $this->builder->staticCall(
+                    new FullyQualified($type->getClassName()),
                     'from',
                     [$this->builder->var('data')],
                 ),
-                TypeIdentifier::NULL === $dataModelNode->getType()->getTypeIdentifier() => $this->builder->val(null),
-                TypeIdentifier::OBJECT === $dataModelNode->getType()->getTypeIdentifier() => new ObjectCast($this->builder->var('data')),
+                TypeIdentifier::NULL === $type->getTypeIdentifier() => $this->builder->val(null),
+                TypeIdentifier::OBJECT === $type->getTypeIdentifier() => new ObjectCast($this->builder->var('data')),
                 default => $this->builder->var('data'),
             };
+        };
 
+        if ($dataModelNode instanceof ScalarNode) {
             return [
                 new Expression(new Assign(
                     new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModelNode->getIdentifier())),
                     new Closure([
                         'static' => true,
                         'params' => [new Param($this->builder->var('data'))],
-                        'stmts' => [new Return_($accessor)],
+                        'stmts' => [new Return_($prepareScalarNode($dataModelNode))],
                     ]),
                 )),
             ];
         }
 
         if ($dataModelNode instanceof CompositeNode) {
-            dd($dataModelNode);
+            $providersStmts = [];
+            $nodesStmts = [];
+            foreach ($dataModelNode->nodes as $node) {
+                if ($this->isNodeAlteringJson($node)) {
+                    $providersStmts = [...$providersStmts, ...$this->buildEagerProviderStatements($node, $context)];
+                    $nodeValueStmt = $this->builder->funcCall(
+                        new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getIdentifier())),
+                        [$this->builder->var('data')],
+                    );
+                } else {
+                    $nodeValueStmt = $prepareScalarNode($node);
+                }
+
+                $nodesStmts[] = new If_($this->getNodeCondition($node), ['stmts' => [new Return_($nodeValueStmt)]]);
+            }
+
+            return [
+                ...$providersStmts,
+                new Expression(new Assign(
+                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModelNode->getIdentifier())),
+                    new Closure([
+                        'static' => true,
+                        'params' => [new Param($this->builder->var('data'))],
+                        'uses' => [
+                            new ClosureUse($this->builder->var('config')),
+                            new ClosureUse($this->builder->var('instantiator')),
+                            new ClosureUse($this->builder->var('services')),
+                            new ClosureUse($this->builder->var('providers'), byRef: true),
+                        ],
+                        'stmts' => [
+                            ...$nodesStmts,
+                            new Expression(new Throw_(new New_(new FullyQualified(UnexpectedValueException::class), [$this->builder->funcCall('\sprintf', [
+                                $this->builder->val(sprintf('Unexpected "%%s" value for "%s".', $dataModelNode->getIdentifier())),
+                                $this->builder->funcCall('\get_debug_type', [$this->builder->var('data')]),
+                            ])]))),
+                        ],
+                    ]),
+                )),
+            ];
         }
 
         if ($dataModelNode instanceof CollectionNode) {
@@ -209,8 +258,6 @@ final readonly class PhpAstBuilder
             ];
 
             $iterableValueStmt = $this->builder->funcCall($this->builder->var('iterable'), [$this->builder->var('data')]);
-            $returnStmts = [new Return_($dataModelNode->getType()->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
-            $providerStmts = $this->isNodeAlteringJson($dataModelNode->item) ? $this->buildEagerProviderStatements($dataModelNode->item, $context) : [];
 
             return [
                 new Expression(new Assign(
@@ -224,10 +271,13 @@ final readonly class PhpAstBuilder
                             new ClosureUse($this->builder->var('services')),
                             new ClosureUse($this->builder->var('providers'), byRef: true),
                         ],
-                        'stmts' => [...$iterableClosureStmts, ...$returnStmts],
+                        'stmts' => [
+                            ...$iterableClosureStmts,
+                            new Return_($dataModelNode->getType()->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt),
+                        ],
                     ]),
                 )),
-                ...$providerStmts,
+                ...$this->buildEagerProviderStatements($dataModelNode->item, $context),
             ];
         }
 
@@ -556,5 +606,41 @@ final readonly class PhpAstBuilder
         }
 
         throw new LogicException(sprintf('Unexpected "%s" data model node', $dataModelNode::class));
+    }
+
+    private function getNodeCondition(DataModelNodeInterface $node): Expr
+    {
+        $accessor = $this->builder->var('data');
+        $type = $node->getType()->getBaseType();
+
+        // TODO remove support of EnumType
+        if ($type instanceof BackedEnumType) {
+             return $this->builder->funcCall('\is_'.$type->getBackingType()->getTypeIdentifier()->value, [$accessor]);
+        }
+
+        if ($type instanceof ObjectType) {
+             return $this->builder->funcCall('\is_array', [$accessor]);
+        }
+
+        if ($node instanceof CollectionNode) {
+            return $node->getType()->isList()
+                ? new BooleanAnd($this->builder->funcCall('\is_array', [$accessor]), $this->builder->funcCall('\array_is_list', [$accessor]))
+                : $this->builder->funcCall('\is_array', [$accessor]);
+        }
+
+        if (TypeIdentifier::NULL === $type->getTypeIdentifier()) {
+            return new Identical($this->builder->val(null), $accessor);
+        }
+
+        if (TypeIdentifier::MIXED === $type->getTypeIdentifier()) {
+            return $this->builder->val(true);
+        }
+
+        return $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]);
+    }
+
+    private function isNodeAlteringJson(DataModelNodeInterface $node): bool
+    {
+        return $node->isTransformed();
     }
 }

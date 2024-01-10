@@ -27,8 +27,8 @@ use Symfony\Component\TypeInfo\Type\UnionType;
 final readonly class CompositeNode implements DataModelNodeInterface
 {
     private const NODE_PRECISION = [
-        ObjectNode::class => 2,
-        CollectionNode::class => 1,
+        CollectionNode::class => 2,
+        ObjectNode::class => 1,
         ScalarNode::class => 0,
     ];
 

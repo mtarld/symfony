@@ -12,10 +12,8 @@
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
-use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Represents an object in the data model graph representation.
@@ -30,14 +28,13 @@ final readonly class ObjectNode implements DataModelNodeInterface
     public function __construct(
         public ObjectType $type,
         public array $properties,
-        public bool $transformed,
         public bool $ghost = false,
     ) {
     }
 
     public static function ghost(ObjectType|UnionType $type): self
     {
-        return new self($type, [], false, ghost: true);
+        return new self($type, [], true);
     }
 
     public function getIdentifier(): string
@@ -50,8 +47,9 @@ final readonly class ObjectNode implements DataModelNodeInterface
         return $this->type;
     }
 
+    // TODO rename or maybe remove
     public function isTransformed(): bool
     {
-        return $this->transformed;
+        return true;
     }
 }

@@ -21,6 +21,7 @@ use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
@@ -81,12 +82,11 @@ class DecoderGeneratorTest extends TestCase
      */
     public static function generatedDecoderDataProvider(): iterable
     {
-        // yield ['scalar', Type::int()];
-        // yield ['mixed', Type::mixed()];
-        // yield ['null', Type::null()];
-        // yield ['backed_enum', Type::enum(DummyBackedEnum::class, Type::string())];
-        yield ['nullable_backed_enum', Type::nullable(Type::enum(DummyBackedEnum::class, Type::string()))];
-        return;
+        yield ['scalar', Type::int()];
+        yield ['mixed', Type::mixed()];
+        yield ['null', Type::null()];
+        yield ['backed_enum', Type::enum(DummyBackedEnum::class)];
+        yield ['nullable_backed_enum', Type::nullable(Type::enum(DummyBackedEnum::class))];
 
         yield ['list', Type::list()];
         yield ['object_list', Type::list(Type::object(ClassicDummy::class))];
