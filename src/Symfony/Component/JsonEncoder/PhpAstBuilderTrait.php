@@ -27,6 +27,7 @@ use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\TypeIdentifier;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -79,13 +80,20 @@ trait PhpAstBuilderTrait
         throw new InvalidArgumentException(sprintf('"%s" cannot be converted to PHP node.', $accessor::class));
     }
 
+    // TODO code it better
     private function isNodeAlteringJson(EncodeDataModelNodeInterface|DecodeDataModelNodeInterface $node): bool
     {
         if ($node->isTransformed()) {
             return true;
         }
 
-        if ($node instanceof DecodeDataModelNodeInterface && $node->getType()->isA(TypeIdentifier::OBJECT)) {
+        $type = $node->getType();
+
+        if ($node instanceof DecodeDataModelNodeInterface && $type instanceof BuiltinType && TypeIdentifier::OBJECT === $type->getTypeIdentifier()) {
+            return true;
+        }
+
+        if ($type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
             return true;
         }
 

@@ -20,12 +20,12 @@ use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\TypeInfo\Exception\LogicException as TypeInfoLogicException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\IntersectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\TypeInfo\Type\UnionType;
 use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
@@ -47,18 +47,18 @@ final readonly class DataModelBuilder
      */
     public function build(Type $type, array $config, array $context = []): DataModelNodeInterface
     {
-        $originalType = $type;
-        try {
-            $type = $type->isNullable() ? $type->asNonNullable() : $type;
-        } catch (TypeInfoLogicException) {
-        }
+        $context['original_type'] ??= $type;
 
         if ($type instanceof IntersectionType) {
             throw new UnsupportedException('Intersection types are not supported.');
         }
 
+        if ($type instanceof UnionType) {
+            return new CompositeNode(array_map(fn (Type $t): DataModelNodeInterface => $this->build($t, $config, $context), $type->getTypes()));
+        }
+
         if ($type instanceof EnumType) {
-            return new ScalarNode($originalType);
+            return new ScalarNode($type);
         }
 
         if ($type instanceof ObjectType) {
@@ -73,7 +73,7 @@ final readonly class DataModelBuilder
             $propertiesNodes = [];
             $context['generated_classes'][$typeString] = true;
 
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $originalType] + $context);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, $context);
 
             if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
                 || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
@@ -131,13 +131,13 @@ final readonly class DataModelBuilder
                 $transformed = $transformed || $propertiesNodes[$encodedName]['value']->isTransformed() || \count($propertyMetadata->formatters);
             }
 
-            return new ObjectNode($originalType, $propertiesNodes, $transformed);
+            return new ObjectNode($type, $propertiesNodes, $transformed);
         }
 
         if ($type instanceof CollectionType) {
-            return new CollectionNode($originalType, $this->build($type->getCollectionValueType(), $config, $context));
+            return new CollectionNode($type, $this->build($type->getCollectionValueType(), $config, $context));
         }
 
-        return new ScalarNode($originalType);
+        return new ScalarNode($type);
     }
 }

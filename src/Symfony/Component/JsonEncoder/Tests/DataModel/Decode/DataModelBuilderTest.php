@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonEncoder\Tests\DataModel\Decode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Decode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode;
@@ -22,16 +23,19 @@ use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
+use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
@@ -44,7 +48,8 @@ class DataModelBuilderTest extends TestCase
      */
     public function testBuildDataModel(DataModelNodeInterface $dataModel, Type $type)
     {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $typeResolver = TypeResolver::create();
+        $dataModelBuilder = new DataModelBuilder(new PropertyMetadataLoader($typeResolver));
 
         $this->assertEquals($dataModel, $dataModelBuilder->build($type, []));
     }
@@ -55,7 +60,7 @@ class DataModelBuilderTest extends TestCase
     public static function buildDataModelDataProvider(): iterable
     {
         yield [new ScalarNode(Type::int()), Type::int()];
-        yield [new ScalarNode(Type::nullable(Type::int())), Type::nullable(Type::int())];
+        yield [new CompositeNode([new ScalarNode(Type::int()), new ScalarNode(Type::null())]), Type::nullable(Type::int())];
         yield [new ScalarNode(Type::builtin(TypeIdentifier::ARRAY)), Type::builtin(TypeIdentifier::ARRAY)];
         yield [new ScalarNode(Type::object()), Type::object()];
         yield [new ScalarNode(Type::null()), Type::null()];
@@ -65,12 +70,30 @@ class DataModelBuilderTest extends TestCase
         yield [new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string())), Type::dict(Type::string())];
 
         yield [new ObjectNode(Type::object(self::class), [], transformed: true), Type::object(self::class)];
-        yield [new ObjectNode(Type::nullable(Type::object(self::class)), [], transformed: true), Type::nullable(Type::object(self::class))];
 
-        yield [new ScalarNode(Type::union(Type::int(), Type::string())), Type::union(Type::int(), Type::string())];
+        yield [new CompositeNode([new ScalarNode(Type::int()), new ScalarNode(Type::string())]), Type::union(Type::int(), Type::string())];
+        yield [
+            new ObjectNode(Type::object(DummyWithUnionProperties::class), [
+                'value' => [
+                    'name' => 'value',
+                    'value' => new CompositeNode([
+                        new ScalarNode(Type::enum(DummyBackedEnum::class)),
+                        new ScalarNode(Type::null()),
+                        new ScalarNode(Type::string()),
+                    ]),
+                    'accessor' => fn () => false,
+                ],
+            ], true),
+            Type::object(DummyWithUnionProperties::class),
+        ];
+    }
 
-        // TODO
-        // yield [new ScalarNode(Type::intersection(Type::int(), Type::string())), Type::intersection(Type::int(), Type::string())];
+    public function testDoNotSupportIntersectionType()
+    {
+        $this->expectException(UnsupportedException::class);
+
+        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), []);
     }
 
     /**

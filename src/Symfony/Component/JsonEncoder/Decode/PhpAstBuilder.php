@@ -39,6 +39,7 @@ use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
+use Symfony\Component\JsonEncoder\DataModel\Decode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\ScalarNode;
@@ -130,7 +131,6 @@ final readonly class PhpAstBuilder
      */
     public function buildEagerProviderStatements(DataModelNodeInterface $dataModelNode, array &$context): array
     {
-        // TODO handle union
         if ($context['providers'][$dataModelNode->getIdentifier()] ?? false) {
             return [];
         }
@@ -150,20 +150,15 @@ final readonly class PhpAstBuilder
             ];
         }
 
-        $originalType = $type = $dataModelNode->getType();
-        try {
-            $type = $type->asNonNullable();
-        } catch (TypeInfoLogicException) {
-        }
-
         if ($dataModelNode instanceof ScalarNode) {
             $accessor = match (true) {
-                $type instanceof BackedEnumType => $this->builder->staticCall(
-                    new FullyQualified($type->getClassName()),
-                    $originalType->isNullable() ? 'tryFrom' : 'from',
+                $dataModelNode->getType() instanceof BackedEnumType => $this->builder->staticCall(
+                    new FullyQualified($dataModelNode->getType()->getClassName()),
+                    'from',
                     [$this->builder->var('data')],
                 ),
-                $type->isA(TypeIdentifier::OBJECT) => new ObjectCast($this->builder->var('data')),
+                TypeIdentifier::NULL === $dataModelNode->getType()->getTypeIdentifier() => $this->builder->val(null),
+                TypeIdentifier::OBJECT === $dataModelNode->getType()->getTypeIdentifier() => new ObjectCast($this->builder->var('data')),
                 default => $this->builder->var('data'),
             };
 
@@ -179,13 +174,11 @@ final readonly class PhpAstBuilder
             ];
         }
 
-        if ($dataModelNode instanceof CollectionNode) {
-            $returnNullStmts = $originalType->isNullable() ? [
-                new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
-                    'stmts' => [new Return_($this->builder->val(null))],
-                ]),
-            ] : [];
+        if ($dataModelNode instanceof CompositeNode) {
+            dd($dataModelNode);
+        }
 
+        if ($dataModelNode instanceof CollectionNode) {
             $itemValueStmt = $this->isNodeAlteringJson($dataModelNode->item)
                 ? $this->builder->funcCall(
                     new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModelNode->item->getIdentifier())),
@@ -216,7 +209,7 @@ final readonly class PhpAstBuilder
             ];
 
             $iterableValueStmt = $this->builder->funcCall($this->builder->var('iterable'), [$this->builder->var('data')]);
-            $returnStmts = [new Return_($type->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
+            $returnStmts = [new Return_($dataModelNode->getType()->isA(TypeIdentifier::ARRAY) ? $this->builder->funcCall('\iterator_to_array', [$iterableValueStmt]) : $iterableValueStmt)];
             $providerStmts = $this->isNodeAlteringJson($dataModelNode->item) ? $this->buildEagerProviderStatements($dataModelNode->item, $context) : [];
 
             return [
@@ -231,7 +224,7 @@ final readonly class PhpAstBuilder
                             new ClosureUse($this->builder->var('services')),
                             new ClosureUse($this->builder->var('providers'), byRef: true),
                         ],
-                        'stmts' => [...$returnNullStmts, ...$iterableClosureStmts, ...$returnStmts],
+                        'stmts' => [...$iterableClosureStmts, ...$returnStmts],
                     ]),
                 )),
                 ...$providerStmts,
@@ -242,12 +235,6 @@ final readonly class PhpAstBuilder
             if ($dataModelNode->ghost) {
                 return [];
             }
-
-            $returnNullStmts = $originalType->isNullable() ? [
-                new If_(new Identical($this->builder->val(null), $this->builder->var('data')), [
-                    'stmts' => [new Return_($this->builder->val(null))],
-                ]),
-            ] : [];
 
             $propertyValueProvidersStmts = [];
             $propertiesValues = [];
@@ -288,9 +275,8 @@ final readonly class PhpAstBuilder
                             new ClosureUse($this->builder->var('providers'), byRef: true),
                         ],
                         'stmts' => [
-                            ...$returnNullStmts,
                             new Return_($this->builder->methodCall($this->builder->var('instantiator'), 'instantiate', [
-                                new ClassConstFetch(new FullyQualified($type->getClassName()), 'class'),
+                                new ClassConstFetch(new FullyQualified($dataModelNode->getType()->getClassName()), 'class'),
                                 $this->builder->funcCall('\array_filter', [
                                     new Array_($propertiesValues, ['kind' => Array_::KIND_SHORT]),
                                     new Closure([
@@ -317,6 +303,8 @@ final readonly class PhpAstBuilder
      */
     public function buildLazyProviderStatements(DataModelNodeInterface $dataModelNode, array &$context): array
     {
+        // TODO handle union
+
         if ($context['providers'][$dataModelNode->getIdentifier()] ?? false) {
             return [];
         }

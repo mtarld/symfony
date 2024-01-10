@@ -11,11 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
-use Symfony\Component\TypeInfo\Exception\LogicException;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\EnumType;
-use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Represents a scalar in the data model graph representation.
@@ -26,11 +24,8 @@ use Symfony\Component\TypeInfo\Type\UnionType;
  */
 final readonly class ScalarNode implements DataModelNodeInterface
 {
-    /**
-     * @param BuiltinType|EnumType|UnionType<BuiltinType|EnumType> $type
-     */
     public function __construct(
-        public BuiltinType|EnumType|UnionType $type,
+        public BuiltinType|EnumType $type,
     ) {
     }
 
@@ -39,22 +34,13 @@ final readonly class ScalarNode implements DataModelNodeInterface
         return (string) $this->type;
     }
 
-    /**
-     * @return BuiltinType|EnumType|UnionType<BuiltinType|EnumType>
-     */
-    public function getType(): BuiltinType|EnumType|UnionType
+    public function getType(): BuiltinType|EnumType
     {
         return $this->type;
     }
 
     public function isTransformed(): bool
     {
-        $nonNullableType = $this->type;
-        try {
-            $nonNullableType = $nonNullableType->asNonNullable();
-        } catch (LogicException) {
-        }
-
-        return $nonNullableType instanceof BackedEnumType;
+        return $this->type instanceof BackedEnumType;
     }
 }

@@ -122,7 +122,6 @@ final readonly class PhpAstBuilder
      */
     public function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
     {
-        // TODO handle union
         $setupStmts = [];
         $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());
 
@@ -136,23 +135,23 @@ final readonly class PhpAstBuilder
             ];
         }
 
+        if (!$this->isNodeAlteringJson($dataModelNode)) {
+            return [
+                ...$setupStmts,
+                $this->yieldJson($this->encodeValue($accessor), $encodeAs),
+            ];
+        }
+
         if ($dataModelNode instanceof ScalarNode) {
             $scalarAccessor = match (true) {
                 $dataModelNode->getType() instanceof BackedEnumType => $this->encodeValue(new PropertyFetch($accessor, 'value')),
-                TypeIdentifier::NULL === $dataModelNode->getType()->getBaseType()->getTypeIdentifier() => $this->builder->val('null'),
+                TypeIdentifier::NULL === $dataModelNode->getType()->getTypeIdentifier() => $this->builder->val('null'),
                 default => $this->encodeValue($accessor),
             };
 
             return [
                 ...$setupStmts,
                 $this->yieldJson($scalarAccessor, $encodeAs),
-            ];
-        }
-
-        if (!$this->isNodeAlteringJson($dataModelNode)) {
-            return [
-                ...$setupStmts,
-                $this->yieldJson($this->encodeValue($accessor), $encodeAs),
             ];
         }
 

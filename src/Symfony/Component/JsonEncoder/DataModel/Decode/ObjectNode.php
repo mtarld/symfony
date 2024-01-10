@@ -25,20 +25,16 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
 final readonly class ObjectNode implements DataModelNodeInterface
 {
     /**
-     * @param ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>>                                                                  $type
      * @param array<string, array{name: string, value: DataModelNodeInterface, accessor: callable(DataAccessorInterface): DataAccessorInterface}> $properties
      */
     public function __construct(
-        public ObjectType|UnionType $type,
+        public ObjectType $type,
         public array $properties,
         public bool $transformed,
         public bool $ghost = false,
     ) {
     }
 
-    /**
-     * @param ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>> $type
-     */
     public static function ghost(ObjectType|UnionType $type): self
     {
         return new self($type, [], false, ghost: true);
@@ -49,10 +45,7 @@ final readonly class ObjectNode implements DataModelNodeInterface
         return (string) $this->type;
     }
 
-    /**
-     * @return ObjectType|UnionType<ObjectType|BuiltinType<TypeIdentifier::NULL>>
-     */
-    public function getType(): ObjectType|UnionType
+    public function getType(): ObjectType
     {
         return $this->type;
     }
