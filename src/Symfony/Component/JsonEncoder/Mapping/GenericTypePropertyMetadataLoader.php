@@ -72,6 +72,10 @@ final readonly class GenericTypePropertyMetadataLoader implements PropertyMetada
 
             $baseType = $type->getBaseType();
 
+            if ($type instanceof CollectionType) {
+                $type = $type->getType();
+            }
+
             if ($type instanceof GenericType) {
                 foreach ($type->getVariableTypes() as $t) {
                     if (null !== $classType = $findTypeWithClassName($className, $t)) {
