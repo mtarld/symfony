@@ -182,7 +182,7 @@ final readonly class PhpAstBuilder
                 return [
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
+                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->getAccessor()), [
                         'stmts' => [
                             $this->yieldJson($this->builder->var($prefixName), $encodeAs),
                             ...$this->buildClosureStatements($dataModelNode->item, $encodeAs, $config, $context),
@@ -198,7 +198,7 @@ final readonly class PhpAstBuilder
             return [
                 $this->yieldJson($this->builder->val('{'), $encodeAs),
                 new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
+                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->getAccessor()), [
                     'keyVar' => $this->builder->var($keyName),
                     'stmts' => [
                         new Expression(new Assign($this->builder->var($keyName), $this->escapeString($this->builder->var($keyName)))),

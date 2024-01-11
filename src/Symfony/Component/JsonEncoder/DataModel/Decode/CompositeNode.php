@@ -18,11 +18,10 @@ use Symfony\Component\TypeInfo\Type\UnionType;
 /**
  * Represents a "OR" node composition in the data model graph representation.
  *
- * Composing nodes are sorted by their preicision.
+ * Composing nodes are sorted by their preicision (descending).
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-// TODO test
 final readonly class CompositeNode implements DataModelNodeInterface
 {
     private const NODE_PRECISION = [
