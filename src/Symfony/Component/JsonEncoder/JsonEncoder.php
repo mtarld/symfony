@@ -36,7 +36,6 @@ final readonly class JsonEncoder implements EncoderInterface
      *   max_depth?: int,
      *   date_time_format?: string,
      *   force_generation?: bool,
-     *   json_encode_flags?: int,
      * } $config
      */
     public function encode(mixed $data, array $config = []): \Traversable&\Stringable

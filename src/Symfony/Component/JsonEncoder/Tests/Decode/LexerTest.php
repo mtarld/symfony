@@ -44,6 +44,8 @@ class LexerTest extends TestCase
     }
 
     /**
+     * Ensures that the lexer is compliant with RFC 8259.
+     *
      * @dataProvider jsonDataProvider
      */
     public function testValidJson(string $name, string $json, bool $valid)

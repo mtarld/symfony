@@ -1,14 +1,13 @@
 <?php
 
 return static function (mixed $data, array $config, ?\Psr\Container\ContainerInterface $services) : \Traversable {
-    $flags = $config['json_encode_flags'] ?? 0;
     (yield '{"name":');
-    (yield \json_encode($data->name, $flags));
+    (yield \json_encode($data->name));
     (yield ',"otherDummyOne":{"@id":');
-    (yield \json_encode($data->otherDummyOne->id, $flags));
+    (yield \json_encode($data->otherDummyOne->id));
     (yield ',"name":');
-    (yield \json_encode($data->otherDummyOne->name, $flags));
+    (yield \json_encode($data->otherDummyOne->name));
     (yield '},"otherDummyTwo":');
-    (yield \json_encode($data->otherDummyTwo, $flags));
+    (yield \json_encode($data->otherDummyTwo));
     (yield '}');
 };

@@ -28,12 +28,6 @@ class DecoderTest extends TestCase
         $this->assertDecoded('bar', '["foo","bar","baz"]', 7, 5);
     }
 
-    public function testDecodeWithJsonDecodeFlags()
-    {
-        $this->assertDecoded(1.2345678901234568E+29, '123456789012345678901234567890');
-        $this->assertDecoded('123456789012345678901234567890', '123456789012345678901234567890', flags: \JSON_BIGINT_AS_STRING);
-    }
-
     public function testDecodeThrowOnInvalidJsonString()
     {
         $this->expectException(UnexpectedValueException::class);
@@ -52,22 +46,22 @@ class DecoderTest extends TestCase
         NativeDecoder::decodeStream($stream);
     }
 
-    private function assertDecoded(mixed $decoded, string $encoded, int $offset = 0, int $length = null, int $flags = 0): void
+    private function assertDecoded(mixed $decoded, string $encoded, int $offset = 0, int $length = null): void
     {
         if (0 === $offset && null === $length) {
-            $this->assertEquals($decoded, NativeDecoder::decodeString($encoded, $flags));
+            $this->assertEquals($decoded, NativeDecoder::decodeString($encoded));
         }
 
         $stream = new BufferedStream();
         $stream->write($encoded);
         $stream->rewind();
 
-        $this->assertEquals($decoded, NativeDecoder::decodeStream($stream, $offset, $length, $flags));
+        $this->assertEquals($decoded, NativeDecoder::decodeStream($stream, $offset, $length));
 
         $resource = fopen('php://temp', 'w');
         fwrite($resource, $encoded);
         rewind($resource);
 
-        $this->assertEquals($decoded, NativeDecoder::decodeStream($resource, $offset, $length, $flags));
+        $this->assertEquals($decoded, NativeDecoder::decodeStream($resource, $offset, $length));
     }
 }

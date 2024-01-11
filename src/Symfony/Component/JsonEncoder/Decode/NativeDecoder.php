@@ -21,11 +21,10 @@ use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
  */
 final readonly class NativeDecoder
 {
-    // TODO remove flags
-    public static function decodeString(string $json, int $flags = 0): mixed
+    public static function decodeString(string $json): mixed
     {
         try {
-            return json_decode($json, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
+            return json_decode($json, associative: true, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             throw new UnexpectedValueException('JSON is not valid.');
         }
@@ -34,8 +33,7 @@ final readonly class NativeDecoder
     /**
      * @param StreamReaderInterface|resource $stream
      */
-    // TODO remove flags
-    public static function decodeStream(mixed $stream, int $offset = 0, int $length = null, int $flags = 0): mixed
+    public static function decodeStream(mixed $stream, int $offset = 0, int $length = null): mixed
     {
         if (\is_resource($stream)) {
             $json = stream_get_contents($stream, $length ?? -1, $offset);
@@ -45,7 +43,7 @@ final readonly class NativeDecoder
         }
 
         try {
-            return json_decode($json, associative: true, flags: $flags | \JSON_THROW_ON_ERROR);
+            return json_decode($json, associative: true, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             throw new UnexpectedValueException('JSON is not valid.');
         }

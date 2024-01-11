@@ -69,7 +69,7 @@ class DataModelBuilderTest extends TestCase
         yield [new CollectionNode(Type::list(Type::string()), new ScalarNode(Type::string())), Type::list(Type::string())];
         yield [new CollectionNode(Type::dict(Type::string()), new ScalarNode(Type::string())), Type::dict(Type::string())];
 
-        yield [new ObjectNode(Type::object(self::class), [], transformed: true), Type::object(self::class)];
+        yield [new ObjectNode(Type::object(self::class), []), Type::object(self::class)];
 
         yield [new CompositeNode([new ScalarNode(Type::int()), new ScalarNode(Type::string())]), Type::union(Type::int(), Type::string())];
         yield [
@@ -83,7 +83,7 @@ class DataModelBuilderTest extends TestCase
                     ]),
                     'accessor' => fn () => false,
                 ],
-            ], true),
+            ]),
             Type::object(DummyWithUnionProperties::class),
         ];
     }
@@ -117,10 +117,10 @@ class DataModelBuilderTest extends TestCase
     {
         yield [false, Type::int()];
         yield [false, Type::nullable(Type::int())];
-        yield [false, Type::object()];
+        yield [true, Type::object()];
         yield [false, Type::list(Type::int())];
         yield [false, Type::iterable(Type::int())];
-        yield [false, Type::object(ClassicDummy::class)];
+        yield [true, Type::object(ClassicDummy::class)];
         yield [true, Type::object(DummyWithNameAttributes::class)];
         yield [true, Type::object(DummyWithFormatterAttributes::class)];
         yield [true, Type::list(Type::object(DummyWithNameAttributes::class))];
@@ -136,9 +136,9 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(new ObjectNode(Type::object(self::class), [[
             'name' => 'foo',
-            'value' => new ObjectNode(Type::object(self::class), [], false, true),
+            'value' => new ObjectNode(Type::object(self::class), [], true),
             'accessor' => fn () => false,
-        ]], true), $dataModelBuilder->build(Type::object(self::class), []));
+        ]]), $dataModelBuilder->build(Type::object(self::class), []));
     }
 
     public function testCallPropertyMetadataLoaderWithProperContext()

@@ -122,22 +122,10 @@ final readonly class PhpAstBuilder
      */
     private function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
     {
-        $setupStmts = [];
         $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());
-
-        if (true === ($context['root'] ?? true)) {
-            $context['root'] = false;
-            $setupStmts = [
-                new Expression(new Assign(
-                    $this->builder->var('flags'),
-                    new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_encode_flags')), $this->builder->val(0)),
-                )),
-            ];
-        }
 
         if (!$this->isNodeAlteringJson($dataModelNode)) {
             return [
-                ...$setupStmts,
                 $this->yieldJson($this->encodeValue($accessor), $encodeAs),
             ];
         }
@@ -150,7 +138,6 @@ final readonly class PhpAstBuilder
             };
 
             return [
-                ...$setupStmts,
                 $this->yieldJson($scalarAccessor, $encodeAs),
             ];
         }
@@ -165,7 +152,6 @@ final readonly class PhpAstBuilder
             unset($stmtsAndConditions[0]);
 
             return [
-                ...$setupStmts,
                 new If_($if['condition'], [
                     'stmts' => $if['stmts'],
                     'elseifs' => array_map(fn (array $s): ElseIf_ => new ElseIf_($s['condition'], $s['stmts']), $stmtsAndConditions),
@@ -184,7 +170,6 @@ final readonly class PhpAstBuilder
 
             if ($dataModelNode->getType()->isList()) {
                 return [
-                    ...$setupStmts,
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
                     new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
@@ -201,7 +186,6 @@ final readonly class PhpAstBuilder
             $keyName = $this->scopeVariableName('key', $context);
 
             return [
-                ...$setupStmts,
                 $this->yieldJson($this->builder->val('{'), $encodeAs),
                 new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
                 new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->accessor), [
@@ -248,7 +232,7 @@ final readonly class PhpAstBuilder
 
             $objectStmts[] = $this->yieldJson($this->builder->val('}'), $encodeAs);
 
-            return [...$setupStmts, ...$objectStmts];
+            return $objectStmts;
         }
 
         throw new LogicException(sprintf('Unexpected "%s" node', $dataModelNode::class));
@@ -256,7 +240,7 @@ final readonly class PhpAstBuilder
 
     private function encodeValue(Expr $value): Expr
     {
-        return $this->builder->funcCall('\json_encode', [$value, $this->builder->var('flags')]);
+        return $this->builder->funcCall('\json_encode', [$value]);
     }
 
     private function escapeString(Expr $string): Expr

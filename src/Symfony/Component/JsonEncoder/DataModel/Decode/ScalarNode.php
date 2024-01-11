@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
+use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\EnumType;
@@ -41,6 +42,6 @@ final readonly class ScalarNode implements DataModelNodeInterface
 
     public function isTransformed(): bool
     {
-        return $this->type instanceof BackedEnumType;
+        return $this->type instanceof BackedEnumType || $this->type->isA(TypeIdentifier::OBJECT);
     }
 }

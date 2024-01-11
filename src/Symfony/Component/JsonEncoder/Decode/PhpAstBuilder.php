@@ -11,8 +11,6 @@
 
 namespace Symfony\Component\JsonEncoder\Decode;
 
-// TODO remove json_encode/decode flags
-
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
@@ -93,17 +91,13 @@ final readonly class PhpAstBuilder
                 ],
                 'returnType' => 'mixed',
                 'stmts' => [
-                    new Expression(new Assign(
-                        $this->builder->var('flags'),
-                        new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_decode_flags')), $this->builder->val(0)),
-                    )),
                     ...$this->buildProvidersStatements($dataModel, $decodeFrom, $context),
                     new Return_(
                         $this->isNodeAlteringJson($dataModel, $decodeFrom)
                         ? $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
-                            $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')]),
+                            $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string')]),
                         ])
-                        : $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string'), $this->builder->var('flags')]),
+                        : $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string')]),
                     ),
                 ],
             ]))],
@@ -118,10 +112,6 @@ final readonly class PhpAstBuilder
                 ],
                 'returnType' => 'mixed',
                 'stmts' => [
-                    new Expression(new Assign(
-                        $this->builder->var('flags'),
-                        new Coalesce(new ArrayDimFetch($this->builder->var('config'), $this->builder->val('json_decode_flags')), $this->builder->val(0)),
-                    )),
                     ...$this->buildProvidersStatements($dataModel, $decodeFrom, $context),
                     new Return_(
                         $this->isNodeAlteringJson($dataModel, $decodeFrom)
@@ -192,7 +182,6 @@ final readonly class PhpAstBuilder
                 new Closure([
                     'static' => true,
                     'params' => $params,
-                    'uses' => [new ClosureUse($this->builder->var('flags'))],
                     'stmts' => [new Return_($this->buildFormatScalarStatement($node, $accessor))],
                 ]),
             )),
@@ -288,7 +277,6 @@ final readonly class PhpAstBuilder
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('services')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
-                        new ClosureUse($this->builder->var('flags')),
                     ],
                     'stmts' => [
                         ...$prepareDataStmts,
@@ -350,7 +338,6 @@ final readonly class PhpAstBuilder
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('services')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
-                        new ClosureUse($this->builder->var('flags')),
                     ],
                     'stmts' => [
                         new Foreach_($this->builder->var('data'), $this->builder->var('v'), [
@@ -389,7 +376,6 @@ final readonly class PhpAstBuilder
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('services')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
-                        new ClosureUse($this->builder->var('flags')),
                     ],
                     'stmts' => [
                         ...$prepareDataStmts,
@@ -467,7 +453,6 @@ final readonly class PhpAstBuilder
                             new ClosureUse($this->builder->var('instantiator')),
                             new ClosureUse($this->builder->var('services')),
                             new ClosureUse($this->builder->var('providers'), byRef: true),
-                            new ClosureUse($this->builder->var('flags')),
                         ],
                         'stmts' => [
                             new Return_($this->convertDataAccessorToPhpExpr($property['accessor'](new PhpExprDataAccessor($propertyValueStmt)))),
@@ -531,7 +516,6 @@ final readonly class PhpAstBuilder
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('services')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
-                        new ClosureUse($this->builder->var('flags')),
                     ],
                     'stmts' => [
                         ...$prepareDataStmts,

@@ -1,16 +1,15 @@
 <?php
 
 return static function (mixed $stream, array $config, \Symfony\Component\JsonEncoder\Instantiator\LazyInstantiatorInterface $instantiator, ?\Psr\Container\ContainerInterface $services) : mixed {
-    $flags = $config['json_decode_flags'] ?? 0;
-    $providers['Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy'] = static function ($stream, $offset, $length) use($config, $instantiator, $services, &$providers, $flags) {
+    $providers['Symfony\\Component\\JsonEncoder\\Tests\\Fixtures\\Model\\ClassicDummy'] = static function ($stream, $offset, $length) use($config, $instantiator, $services, &$providers) {
         $data = \Symfony\Component\JsonEncoder\Decode\Splitter::splitDict($stream, $offset, $length);
         $properties = [];
         foreach ($data as $k => $v) {
             match ($k) {
-                'id' => $properties['id'] = static function () use($stream, $v, $config, $instantiator, $services, &$providers, $flags) {
+                'id' => $properties['id'] = static function () use($stream, $v, $config, $instantiator, $services, &$providers) {
                     return \Symfony\Component\JsonEncoder\Decode\NativeDecoder::decodeStream($stream, $v[0], $v[1]);
                 },
-                'name' => $properties['name'] = static function () use($stream, $v, $config, $instantiator, $services, &$providers, $flags) {
+                'name' => $properties['name'] = static function () use($stream, $v, $config, $instantiator, $services, &$providers) {
                     return \Symfony\Component\JsonEncoder\Decode\NativeDecoder::decodeStream($stream, $v[0], $v[1]);
                 },
                 default => null,

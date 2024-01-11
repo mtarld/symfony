@@ -39,7 +39,6 @@ final readonly class JsonDecoder implements DecoderInterface
      * @param array{
      *   date_time_format?: string,
      *   force_generation?: bool,
-     *   json_decode_flags?: int,
      * } $config
      */
     public function decode(StreamReaderInterface|\Traversable|\Stringable|string $input, Type $type, array $config = []): mixed
