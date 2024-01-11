@@ -66,15 +66,15 @@ class DecoderGeneratorTest extends TestCase
             file_get_contents($generator->generate($type, DecodeFrom::STRING)),
         );
 
-        // $this->assertStringEqualsFile(
-        //     sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
-        //     file_get_contents($generator->generate($type, DecodeFrom::STREAM)),
-        // );
-        //
-        // $this->assertStringEqualsFile(
-        //     sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
-        //     file_get_contents($generator->generate($type, DecodeFrom::RESOURCE)),
-        // );
+        $this->assertStringEqualsFile(
+            sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
+            file_get_contents($generator->generate($type, DecodeFrom::STREAM)),
+        );
+
+        $this->assertStringEqualsFile(
+            sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
+            file_get_contents($generator->generate($type, DecodeFrom::RESOURCE)),
+        );
     }
 
     /**

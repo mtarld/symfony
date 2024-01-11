@@ -32,8 +32,6 @@ use Symfony\Component\TypeInfo\Type\BuiltinType;
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental
- *
  * @internal
  */
 trait PhpAstBuilderTrait

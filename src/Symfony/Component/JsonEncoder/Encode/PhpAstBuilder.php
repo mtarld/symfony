@@ -120,7 +120,7 @@ final readonly class PhpAstBuilder
      *
      * @return list<Stmt>
      */
-    public function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
+    private function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
     {
         $setupStmts = [];
         $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());

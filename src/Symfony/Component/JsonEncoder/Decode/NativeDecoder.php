@@ -21,6 +21,7 @@ use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
  */
 final readonly class NativeDecoder
 {
+    // TODO remove flags
     public static function decodeString(string $json, int $flags = 0): mixed
     {
         try {
@@ -33,6 +34,7 @@ final readonly class NativeDecoder
     /**
      * @param StreamReaderInterface|resource $stream
      */
+    // TODO remove flags
     public static function decodeStream(mixed $stream, int $offset = 0, int $length = null, int $flags = 0): mixed
     {
         if (\is_resource($stream)) {
