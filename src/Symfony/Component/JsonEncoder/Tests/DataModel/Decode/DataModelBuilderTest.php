@@ -28,6 +28,7 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
@@ -90,6 +91,14 @@ class DataModelBuilderTest extends TestCase
 
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
         $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), []);
+    }
+
+    public function testDoNotSupportEnumType()
+    {
+        $this->expectException(UnsupportedException::class);
+
+        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $dataModelBuilder->build(Type::enum(DummyEnum::class), []);
     }
 
     public function testAddGhostLeafWhenClassAlreadyGenerated()

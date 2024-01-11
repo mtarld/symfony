@@ -141,8 +141,20 @@ final readonly class PhpAstBuilder
         }
 
         if ($dataModelNode instanceof CompositeNode) {
+            $nodeCondition = function (DataModelNodeInterface $node): Expr {
+                $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
+                $type = $node->getType()->getBaseType();
+
+                return match (true) {
+                    $type instanceof ObjectType => new Instanceof_($accessor, new FullyQualified($type->getClassName())),
+                    TypeIdentifier::NULL === $type->getTypeIdentifier() => new Identical($this->builder->val(null), $accessor),
+                    TypeIdentifier::MIXED === $type->getTypeIdentifier() => $this->builder->val(true),
+                    default => $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]),
+                };
+            };
+
             $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
-                'condition' => $this->getNodeCondition($n),
+                'condition' => $nodeCondition($n),
                 'stmts' => $this->buildClosureStatements($n, $encodeAs, $config, $context),
             ], $dataModelNode->nodes);
 
@@ -253,20 +265,6 @@ final readonly class PhpAstBuilder
             EncodeAs::STREAM => $this->builder->methodCall($this->builder->var('stream'), 'write', [$json]),
             EncodeAs::RESOURCE => $this->builder->funcCall('\fwrite', [$this->builder->var('stream'), $json]),
         });
-    }
-
-    // TODO move in method
-    private function getNodeCondition(DataModelNodeInterface $node): Expr
-    {
-        $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
-        $type = $node->getType()->getBaseType();
-
-        return match (true) {
-            $type instanceof ObjectType => new Instanceof_($accessor, new FullyQualified($type->getClassName())),
-            TypeIdentifier::NULL === $type->getTypeIdentifier() => new Identical($this->builder->val(null), $accessor),
-            TypeIdentifier::MIXED === $type->getTypeIdentifier() => $this->builder->val(true),
-            default => $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]),
-        };
     }
 
     private function nodeOnlyNeedsEncode(DataModelNodeInterface $node): bool

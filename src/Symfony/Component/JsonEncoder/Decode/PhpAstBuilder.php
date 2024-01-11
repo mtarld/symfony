@@ -221,7 +221,6 @@ final readonly class PhpAstBuilder
         $nodeCondition = function (DataModelNodeInterface $node, Expr $accessor): Expr {
             $type = $node->getType()->getBaseType();
 
-            // TODO remove support of EnumType
             if ($type instanceof BackedEnumType) {
                 return $this->builder->funcCall('\is_'.$type->getBackingType()->getTypeIdentifier()->value, [$this->builder->var('data')]);
             }

@@ -31,6 +31,7 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
@@ -94,6 +95,14 @@ class DataModelBuilderTest extends TestCase
 
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
         $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), new VariableDataAccessor('data'), []);
+    }
+
+    public function testDoNotSupportEnumType()
+    {
+        $this->expectException(UnsupportedException::class);
+
+        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
+        $dataModelBuilder->build(Type::enum(DummyEnum::class), new VariableDataAccessor('data'), []);
     }
 
     /**

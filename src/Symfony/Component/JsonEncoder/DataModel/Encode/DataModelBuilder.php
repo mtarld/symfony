@@ -24,9 +24,10 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BackedEnumType;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
-use Symfony\Component\TypeInfo\Type\IntersectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
 use Symfony\Component\VarExporter\ProxyHelper;
@@ -54,19 +55,15 @@ final readonly class DataModelBuilder
     {
         $context['original_type'] ??= $type;
 
-        if ($type instanceof IntersectionType) {
-            throw new UnsupportedException('Intersection types are not supported.');
-        }
-
         if ($type instanceof UnionType) {
             return new CompositeNode($accessor, array_map(fn (Type $t): DataModelNodeInterface => $this->build($t, $accessor, $config, $context), $type->getTypes()));
         }
 
-        if ($type instanceof EnumType) {
+        if ($type instanceof BuiltinType || $type instanceof BackedEnumType) {
             return new ScalarNode($accessor, $type);
         }
 
-        if ($type instanceof ObjectType) {
+        if ($type instanceof ObjectType && !$type instanceof EnumType) {
             $transformed = false;
             $className = $type->getClassName();
 
@@ -144,6 +141,6 @@ final readonly class DataModelBuilder
             );
         }
 
-        return new ScalarNode($accessor, $type);
+        throw new UnsupportedException(sprintf('"%s" type is not supported.', (string) $type));
     }
 }

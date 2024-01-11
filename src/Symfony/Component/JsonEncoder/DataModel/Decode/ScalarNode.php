@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
+use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
-use Symfony\Component\TypeInfo\Type\EnumType;
 
 /**
  * Represents a scalar in the data model graph representation.
@@ -24,7 +24,7 @@ use Symfony\Component\TypeInfo\Type\EnumType;
 final readonly class ScalarNode implements DataModelNodeInterface
 {
     public function __construct(
-        public BuiltinType|EnumType $type,
+        public BuiltinType|BackedEnumType $type,
     ) {
     }
 
@@ -33,7 +33,7 @@ final readonly class ScalarNode implements DataModelNodeInterface
         return (string) $this->type;
     }
 
-    public function getType(): BuiltinType|EnumType
+    public function getType(): BuiltinType|BackedEnumType
     {
         return $this->type;
     }
