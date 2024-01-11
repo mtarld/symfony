@@ -24,9 +24,4 @@ interface DataModelNodeInterface
     public function getType(): Type;
 
     public function getAccessor(): DataAccessorInterface;
-
-    /**
-     * Whether the data will be transformed during the encoding process.
-     */
-    public function isTransformed(): bool;
 }

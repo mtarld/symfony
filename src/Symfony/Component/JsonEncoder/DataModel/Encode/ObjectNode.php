@@ -41,9 +41,4 @@ final readonly class ObjectNode implements DataModelNodeInterface
     {
         return $this->accessor;
     }
-
-    public function isTransformed(): bool
-    {
-        return $this->transformed;
-    }
 }

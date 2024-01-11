@@ -12,11 +12,7 @@
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
-use Symfony\Component\TypeInfo\Exception\LogicException;
 use Symfony\Component\TypeInfo\Type;
-use Symfony\Component\TypeInfo\Type\BackedEnumType;
-use Symfony\Component\TypeInfo\Type\BuiltinType;
-use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
@@ -67,16 +63,5 @@ final readonly class CompositeNode implements DataModelNodeInterface
     public function getType(): UnionType
     {
         return Type::union(...array_map(fn (DataModelNodeInterface $n): Type => $n->getType(), $this->nodes));
-    }
-
-    public function isTransformed(): bool
-    {
-        foreach ($this->nodes as $node) {
-            if ($node->isTransformed()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

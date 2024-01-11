@@ -93,11 +93,11 @@ final readonly class PhpAstBuilder
                 'stmts' => [
                     ...$this->buildProvidersStatements($dataModel, $decodeFrom, $context),
                     new Return_(
-                        $this->isNodeAlteringJson($dataModel, $decodeFrom)
-                        ? $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
+                        $this->nodeOnlyNeedsDecode($dataModel, $decodeFrom)
+                        ? $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string')])
+                        : $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
                             $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string')]),
-                        ])
-                        : $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeString', [$this->builder->var('string')]),
+                        ]),
                     ),
                 ],
             ]))],
@@ -114,13 +114,13 @@ final readonly class PhpAstBuilder
                 'stmts' => [
                     ...$this->buildProvidersStatements($dataModel, $decodeFrom, $context),
                     new Return_(
-                        $this->isNodeAlteringJson($dataModel, $decodeFrom)
-                        ? $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
+                        $this->nodeOnlyNeedsDecode($dataModel, $decodeFrom)
+                        ? $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
                             $this->builder->var('stream'),
                             $this->builder->val(0),
                             $this->builder->val(null),
                         ])
-                        : $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
+                        : $this->builder->funcCall(new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($dataModel->getIdentifier())), [
                             $this->builder->var('stream'),
                             $this->builder->val(0),
                             $this->builder->val(null),
@@ -144,7 +144,7 @@ final readonly class PhpAstBuilder
 
         $context['providers'][$node->getIdentifier()] = true;
 
-        if (!$this->isNodeAlteringJson($node, $decodeFrom)) {
+        if ($this->nodeOnlyNeedsDecode($node, $decodeFrom)) {
             return [];
         }
 
@@ -248,14 +248,14 @@ final readonly class PhpAstBuilder
         };
 
         foreach ($node->nodes as $n) {
-            if ($this->isNodeAlteringJson($n, $decodeFrom)) {
+            if ($this->nodeOnlyNeedsDecode($n, $decodeFrom)) {
+                $nodeValueStmt = $this->buildFormatScalarStatement($n, $this->builder->var('data'));
+            } else {
                 $providersStmts = [...$providersStmts, ...$this->buildProvidersStatements($n, $decodeFrom, $context)];
                 $nodeValueStmt = $this->builder->funcCall(
                     new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($n->getIdentifier())),
                     [$this->builder->var('data')],
                 );
-            } else {
-                $nodeValueStmt = $this->buildFormatScalarStatement($n, $this->builder->var('data'));
             }
 
             $nodesStmts[] = new If_($nodeCondition($n, $this->builder->var('data')), ['stmts' => [new Return_($nodeValueStmt)]]);
@@ -299,27 +299,28 @@ final readonly class PhpAstBuilder
     private function buildCollectionNodeStatements(CollectionNode $node, DecodeFrom $decodeFrom, array &$context): array
     {
         if (DecodeFrom::STRING === $decodeFrom) {
-            $itemValueStmt = $this->isNodeAlteringJson($node->item, $decodeFrom)
-                ? $this->builder->funcCall(
+            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->item, $decodeFrom)
+                ? $this->builder->var('v')
+                : $this->builder->funcCall(
                     new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())),
                     [$this->builder->var('v')],
-                )
-                : $this->builder->var('v');
+                );
         } else {
-            $itemValueStmt = $this->isNodeAlteringJson($node->item, $decodeFrom)
-                ? $this->builder->funcCall(
-                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())), [
-                        $this->builder->var('stream'),
-                        new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
-                        new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
-                    ],
-                ) : $this->buildFormatScalarStatement(
+            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->item, $decodeFrom)
+                ? $this->buildFormatScalarStatement(
                     $node->item,
                     $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
                         $this->builder->var('stream'),
                         new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
                         new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
                     ]),
+                )
+                : $this->builder->funcCall(
+                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())), [
+                        $this->builder->var('stream'),
+                        new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
+                        new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
+                    ],
                 );
         }
 
@@ -384,7 +385,7 @@ final readonly class PhpAstBuilder
                     ],
                 ]),
             )),
-            ...($this->isNodeAlteringJson($node->item, $decodeFrom) ? $this->buildProvidersStatements($node->item, $decodeFrom, $context) : []),
+            ...($this->nodeOnlyNeedsDecode($node->item, $decodeFrom) ? [] : $this->buildProvidersStatements($node->item, $decodeFrom, $context)),
         ];
     }
 
@@ -405,41 +406,41 @@ final readonly class PhpAstBuilder
         foreach ($node->properties as $encodedName => $property) {
             $propertyValueProvidersStmts = [
                 ...$propertyValueProvidersStmts,
-                ...($this->isNodeAlteringJson($property['value'], $decodeFrom) ? $this->buildProvidersStatements($property['value'], $decodeFrom, $context) : []),
+                ...($this->nodeOnlyNeedsDecode($property['value'], $decodeFrom) ? [] : $this->buildProvidersStatements($property['value'], $decodeFrom, $context)),
             ];
 
             if (DecodeFrom::STRING === $decodeFrom) {
-                $propertyValueStmt = $this->isNodeAlteringJson($property['value'], $decodeFrom)
-                    ? new Ternary(
+                $propertyValueStmt = $this->nodeOnlyNeedsDecode($property['value'], $decodeFrom)
+                    ? new Coalesce(new ArrayDimFetch($this->builder->var('data'), $this->builder->val($encodedName)), $this->builder->val('_symfony_missing_value'))
+                    : new Ternary(
                         $this->builder->funcCall('\array_key_exists', [$this->builder->val($encodedName), $this->builder->var('data')]),
                         $this->builder->funcCall(
                             new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($property['value']->getIdentifier())),
                             [new ArrayDimFetch($this->builder->var('data'), $this->builder->val($encodedName))],
                         ),
                         $this->builder->val('_symfony_missing_value'),
-                    )
-                    : new Coalesce(new ArrayDimFetch($this->builder->var('data'), $this->builder->val($encodedName)), $this->builder->val('_symfony_missing_value'));
+                    );
 
                 $propertiesValuesStmts[] = new ArrayItem(
                     $this->convertDataAccessorToPhpExpr($property['accessor'](new PhpExprDataAccessor($propertyValueStmt))),
                     $this->builder->val($property['name']),
                 );
             } else {
-                $propertyValueStmt = $this->isNodeAlteringJson($property['value'], $decodeFrom)
-                    ? $this->builder->funcCall(
-                        new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($property['value']->getIdentifier())), [
-                            $this->builder->var('stream'),
-                            new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
-                            new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
-                        ],
-                    )
-                    : $this->buildFormatScalarStatement(
+                $propertyValueStmt = $this->nodeOnlyNeedsDecode($property['value'], $decodeFrom)
+                    ? $this->buildFormatScalarStatement(
                         $property['value'],
                         $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
                             $this->builder->var('stream'),
                             new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
                             new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
                         ]),
+                    )
+                    : $this->builder->funcCall(
+                        new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($property['value']->getIdentifier())), [
+                            $this->builder->var('stream'),
+                            new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
+                            new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
+                        ],
                     );
 
                 $propertiesValuesStmts[] = new MatchArm([$this->builder->val($encodedName)], new Assign(
@@ -527,13 +528,38 @@ final readonly class PhpAstBuilder
         ];
     }
 
-    // TODO
-    private function isNodeAlteringJson(DataModelNodeInterface $node, DecodeFrom $decodeFrom): bool
+    private function nodeOnlyNeedsDecode(DataModelNodeInterface $node, DecodeFrom $decodeFrom): bool
     {
-        if (DecodeFrom::STRING === $decodeFrom) {
-            return $node->isTransformed();
+        $streaming = DecodeFrom::RESOURCE === $decodeFrom || DecodeFrom::STREAM === $decodeFrom;
+
+        if ($node instanceof CompositeNode) {
+            foreach ($node->nodes as $n) {
+                if (!$this->nodeOnlyNeedsDecode($n, $decodeFrom)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
-        return $node->isTransformed() || !$node instanceof ScalarNode;
+        if ($node instanceof CollectionNode) {
+            if ($streaming) {
+                return false;
+            }
+
+            return $this->nodeOnlyNeedsDecode($node->item, $decodeFrom);
+        }
+
+        if ($node instanceof ObjectNode) {
+            return false;
+        }
+
+        if ($node instanceof ScalarNode) {
+            $type = $node->getType();
+
+            return !$type instanceof BackedEnumType && !$type->isA(TypeIdentifier::OBJECT);
+        }
+
+        return true;
     }
 }

@@ -84,7 +84,7 @@ class DataModelBuilderTest extends TestCase
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::null()),
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::string()),
                 ]),
-            ], true),
+            ], false),
         ];
     }
 
@@ -106,7 +106,7 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(
             $transformed,
-            $dataModelBuilder->build($type, new VariableDataAccessor('data'), [])->isTransformed(),
+            $dataModelBuilder->build($type, new VariableDataAccessor('data'), [])->transformed,
         );
     }
 
@@ -115,15 +115,10 @@ class DataModelBuilderTest extends TestCase
      */
     public static function transformedDataModelDataProvider(): iterable
     {
-        yield [false, Type::int()];
-        yield [false, Type::object()];
-        yield [false, Type::list(Type::int())];
-        yield [false, Type::iterable(Type::int())];
         yield [false, Type::object(ClassicDummy::class)];
         yield [true, Type::object(DummyWithNameAttributes::class)];
         yield [true, Type::object(DummyWithFormatterAttributes::class)];
-        yield [true, Type::list(Type::object(DummyWithNameAttributes::class))];
-        yield [true, Type::object(DummyWithOtherDummies::class)];
+        yield [false, Type::object(DummyWithOtherDummies::class)];
     }
 
     public function testThrowWhenMaxDepthIsReached()

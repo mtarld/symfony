@@ -14,20 +14,12 @@ namespace Symfony\Component\JsonEncoder;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Expr;
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
-use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode as DecodeCollectionNode;
-use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface as DecodeDataModelNodeInterface;
-use Symfony\Component\JsonEncoder\DataModel\Decode\ObjectNode as DecodeObjectNode;
-use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode as EncodeCollectionNode;
-use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface as EncodeDataModelNodeInterface;
-use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode as EncodeObjectNode;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
-use Symfony\Component\TypeInfo\TypeIdentifier;
-use Symfony\Component\TypeInfo\Type\BuiltinType;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -76,45 +68,5 @@ trait PhpAstBuilderTrait
         }
 
         throw new InvalidArgumentException(sprintf('"%s" cannot be converted to PHP node.', $accessor::class));
-    }
-
-    // TODO code it better
-    private function isNodeAlteringJson(EncodeDataModelNodeInterface|DecodeDataModelNodeInterface $node): bool
-    {
-        if ($node->isTransformed()) {
-            return true;
-        }
-
-        $type = $node->getType();
-
-        if ($node instanceof DecodeDataModelNodeInterface && $type instanceof BuiltinType && TypeIdentifier::OBJECT === $type->getTypeIdentifier()) {
-            return true;
-        }
-
-        if ($node instanceof EncodeDataModelNodeInterface && $type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
-            return true;
-        }
-
-        if ($node instanceof EncodeCollectionNode || $node instanceof DecodeCollectionNode) {
-            return $this->isNodeAlteringJson($node->item);
-        }
-
-        if ($node instanceof EncodeObjectNode) {
-            foreach ($node->properties as $property) {
-                if ($this->isNodeAlteringJson($property)) {
-                    return true;
-                }
-            }
-        }
-
-        if ($node instanceof DecodeObjectNode) {
-            foreach ($node->properties as $property) {
-                if ($this->isNodeAlteringJson($property['value'])) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

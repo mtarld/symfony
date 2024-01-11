@@ -46,10 +46,4 @@ final readonly class ObjectNode implements DataModelNodeInterface
     {
         return $this->type;
     }
-
-    // TODO rename or maybe remove
-    public function isTransformed(): bool
-    {
-        return true;
-    }
 }

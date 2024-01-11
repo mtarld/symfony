@@ -12,7 +12,6 @@
 namespace Symfony\Component\JsonEncoder\DataModel\Encode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
-use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 
@@ -39,10 +38,5 @@ final readonly class ScalarNode implements DataModelNodeInterface
     public function getAccessor(): DataAccessorInterface
     {
         return $this->accessor;
-    }
-
-    public function isTransformed(): bool
-    {
-        return $this->type instanceof BackedEnumType;
     }
 }

@@ -23,9 +23,4 @@ interface DataModelNodeInterface
     public function getIdentifier(): string;
 
     public function getType(): Type;
-
-    /**
-     * Whether the data will be transformed during the decoding process.
-     */
-    public function isTransformed(): bool;
 }

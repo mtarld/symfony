@@ -24,17 +24,13 @@ use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
-use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingServices;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
@@ -94,38 +90,6 @@ class DataModelBuilderTest extends TestCase
 
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
         $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), []);
-    }
-
-    /**
-     * @dataProvider transformedDataModelDataProvider
-     */
-    public function testTransformedDataModel(bool $transformed, Type $type)
-    {
-        $typeResolver = TypeResolver::create();
-        $dataModelBuilder = new DataModelBuilder(new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver));
-
-        $this->assertEquals(
-            $transformed,
-            $dataModelBuilder->build($type, [])->isTransformed(),
-        );
-    }
-
-    /**
-     * @return iterable<array{0: bool, 1: Type}>
-     */
-    public static function transformedDataModelDataProvider(): iterable
-    {
-        yield [false, Type::int()];
-        yield [false, Type::nullable(Type::int())];
-        yield [true, Type::object()];
-        yield [false, Type::list(Type::int())];
-        yield [false, Type::iterable(Type::int())];
-        yield [true, Type::object(ClassicDummy::class)];
-        yield [true, Type::object(DummyWithNameAttributes::class)];
-        yield [true, Type::object(DummyWithFormatterAttributes::class)];
-        yield [true, Type::list(Type::object(DummyWithNameAttributes::class))];
-        yield [true, Type::object(DummyWithOtherDummies::class)];
-        yield [true, Type::nullable(Type::object(DummyWithOtherDummies::class))];
     }
 
     public function testAddGhostLeafWhenClassAlreadyGenerated()

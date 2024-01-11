@@ -67,15 +67,4 @@ final readonly class CompositeNode implements DataModelNodeInterface
     {
         return $this->accessor;
     }
-
-    public function isTransformed(): bool
-    {
-        foreach ($this->nodes as $node) {
-            if ($node->isTransformed()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

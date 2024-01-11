@@ -131,7 +131,6 @@ final readonly class DataModelBuilder
                 }
 
                 $propertiesNodes[$encodedName] = $this->build($propertyMetadata->type, $propertyAccessor, $config, $context);
-                $transformed = $transformed || $propertiesNodes[$encodedName]->isTransformed();
             }
 
             return new ObjectNode($accessor, $type, $propertiesNodes, $transformed);

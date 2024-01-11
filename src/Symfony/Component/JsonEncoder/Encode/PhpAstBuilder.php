@@ -13,9 +13,7 @@ namespace Symfony\Component\JsonEncoder\Encode;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Assign;
-use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Instanceof_;
@@ -124,7 +122,7 @@ final readonly class PhpAstBuilder
     {
         $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());
 
-        if (!$this->isNodeAlteringJson($dataModelNode)) {
+        if ($this->nodeOnlyNeedsEncode($dataModelNode)) {
             return [
                 $this->yieldJson($this->encodeValue($accessor), $encodeAs),
             ];
@@ -257,6 +255,7 @@ final readonly class PhpAstBuilder
         });
     }
 
+    // TODO move in method
     private function getNodeCondition(DataModelNodeInterface $node): Expr
     {
         $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
@@ -268,5 +267,45 @@ final readonly class PhpAstBuilder
             TypeIdentifier::MIXED === $type->getTypeIdentifier() => $this->builder->val(true),
             default => $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]),
         };
+    }
+
+    private function nodeOnlyNeedsEncode(DataModelNodeInterface $node): bool
+    {
+        if ($node instanceof CompositeNode) {
+            foreach ($node->nodes as $n) {
+                if (!$this->nodeOnlyNeedsEncode($n)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($node instanceof CollectionNode) {
+            return $this->nodeOnlyNeedsEncode($node->item);
+        }
+
+        if ($node instanceof ObjectNode) {
+            if ($node->transformed) {
+                return false;
+            }
+
+            foreach ($node->properties as $property) {
+                if (!$this->nodeOnlyNeedsEncode($property)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($node instanceof ScalarNode) {
+            $type = $node->getType();
+
+            // "null" will be written directly using the "null" string
+            return !$type instanceof BackedEnumType && !$type->isA(TypeIdentifier::NULL);
+        }
+
+        return true;
     }
 }

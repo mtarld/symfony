@@ -28,7 +28,6 @@ final readonly class CollectionNode implements DataModelNodeInterface
         public CollectionType $type,
         public DataModelNodeInterface $item,
     ) {
-        $this->transformed = $item->isTransformed();
     }
 
     public function getType(): CollectionType
@@ -39,10 +38,5 @@ final readonly class CollectionNode implements DataModelNodeInterface
     public function getAccessor(): DataAccessorInterface
     {
         return $this->accessor;
-    }
-
-    public function isTransformed(): bool
-    {
-        return $this->transformed;
     }
 }
