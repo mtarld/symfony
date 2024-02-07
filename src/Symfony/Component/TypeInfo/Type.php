@@ -65,7 +65,7 @@ abstract class Type implements \Stringable
      */
     public function is(callable $callable): bool
     {
-        return match(true) {
+        return match (true) {
             $this instanceof UnionType => $this->atLeastOneTypeIs($callable),
             $this instanceof IntersectionType => $this->everyTypeIs($callable),
             default => $callable($this),

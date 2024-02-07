@@ -69,7 +69,7 @@ final class StringTypeResolver implements TypeResolverInterface
         $this->parser = new TypeParser(new ConstExprParser());
     }
 
-    public function resolve(mixed $subject, TypeContext $typeContext = null): Type
+    public function resolve(mixed $subject, ?TypeContext $typeContext = null): Type
     {
         $backwardCompatible = \func_get_args()[2] ?? false;
 
