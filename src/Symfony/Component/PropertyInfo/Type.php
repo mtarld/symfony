@@ -14,6 +14,7 @@ namespace Symfony\Component\PropertyInfo;
 use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type as TypeInfoType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\GenericType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -146,11 +147,15 @@ class Type
     {
         $internalType = BackwardCompatibilityHelper::unwrapNullableType($this->internalType);
 
-        if (!$internalType instanceof CollectionType) {
-            return [];
+        if ($internalType instanceof CollectionType) {
+            return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionKeyType()) ?? [];
         }
 
-        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionKeyType()) ?? [];
+        if ($internalType instanceof GenericType) {
+            return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getVariableTypes()[0]) ?? [];
+        }
+
+        return [];
     }
 
     /**
@@ -164,11 +169,15 @@ class Type
     {
         $internalType = BackwardCompatibilityHelper::unwrapNullableType($this->internalType);
 
-        if (!$internalType instanceof CollectionType) {
-            return [];
+        if ($internalType instanceof CollectionType) {
+            return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionValueType()) ?? [];
         }
 
-        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionValueType()) ?? [];
+        if ($internalType instanceof GenericType) {
+            return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getVariableTypes()[1]) ?? [];
+        }
+
+        return [];
     }
 
     private function validateCollectionArgument(array|self|null $collectionArgument, int $argumentIndex, string $argumentName): ?array

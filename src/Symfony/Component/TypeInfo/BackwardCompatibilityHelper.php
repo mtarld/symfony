@@ -25,7 +25,6 @@ use Symfony\Component\TypeInfo\Type\UnionType;
  * A helper about PropertyInfo Type conversion.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
- * @author Baptiste Leduc <baptiste.leduc@gmail.com>
  *
  * @internal
  */
@@ -74,11 +73,115 @@ final class BackwardCompatibilityHelper
     }
 
     /**
+     * Converts a {@see LegacyType} to what is should have been in the "symfony/type-info" component.
+     *
+     * @param list<LegacyType>|null $types
+     */
+    public static function convertLegacyTypesToType(?array $legacyTypes): ?Type
+    {
+        if (!$legacyTypes) {
+            return null;
+        }
+
+        $types = [];
+        $nullable = false;
+
+        foreach (array_map(self::convertLegacyTypeToType(...), $legacyTypes) as $type) {
+            if ($type->isNullable()) {
+                $nullable = true;
+
+                if ($type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
+                    continue;
+                }
+
+                $type = self::unwrapNullableType($type);
+            }
+
+            if ($type instanceof UnionType) {
+                $types = [$types, ...$type->getTypes()];
+
+                continue;
+            }
+
+            $types[] = $type;
+        }
+
+        if ($nullable && [] === $types) {
+            return Type::null();
+        }
+
+        $type = \count($types) > 1 ? Type::union(...$types) : $types[0];
+        if ($nullable) {
+            $type = Type::nullable($type);
+        }
+
+        return $type;
+    }
+
+    /**
+     * @param list<LegacyType> $collectionKeyTypes
+     * @param list<LegacyType> $collectionValueTypes
+     */
+    public static function createTypeFromLegacyValues(string $builtinType, bool $nullable, ?string $class, bool $collection, array $collectionKeyTypes, array $collectionValueTypes): Type
+    {
+        $variableTypes = [];
+
+        if ($collectionKeyTypes) {
+            $collectionKeyTypes = array_unique(array_map(self::convertLegacyTypeToType(...), $collectionKeyTypes));
+            $variableTypes[] = \count($collectionKeyTypes) > 1 ? Type::union(...$collectionKeyTypes) : $collectionKeyTypes[0];
+        }
+
+        if ($collectionValueTypes) {
+            if (!$collectionKeyTypes) {
+                $variableTypes[] = [] === $collectionKeyTypes ? Type::mixed() : Type::union(Type::int(), Type::string());
+            }
+
+            $collectionValueTypes = array_unique(array_map(self::convertLegacyTypeToType(...), $collectionValueTypes));
+            $variableTypes[] = \count($collectionValueTypes) > 1 ? Type::union(...$collectionValueTypes) : $collectionValueTypes[0];
+        }
+
+        if ($collectionKeyTypes && !$collectionValueTypes) {
+            $variableTypes[] = Type::mixed();
+        }
+
+        try {
+            $type = null !== $class ? Type::object($class) : Type::builtin(TypeIdentifier::from($builtinType));
+        } catch (\ValueError) {
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid PHP type.', $builtinType));
+        }
+
+        if (\count($variableTypes)) {
+            $type = Type::generic($type, ...$variableTypes);
+        }
+
+        if ($collection) {
+            $type = Type::collection($type);
+        }
+
+        if ($nullable && !$type->isNullable) {
+            $type = Type::nullable($type);
+        }
+
+        $type->setCollection($collection);
+
+        return $type;
+    }
+
+    public static function unwrapNullableType(Type $type): Type
+    {
+        if (!$type instanceof UnionType) {
+            return $type;
+        }
+
+        return $type->asNonNullable();
+    }
+
+    /**
      * Recursive method that converts {@see Type} to its related {@see LegacyType} (or list of {@see @LegacyType}).
      *
      * @return LegacyType|list<LegacyType>
      */
-    public static function convertTypeToLegacy(Type $type): LegacyType|array
+    private static function convertTypeToLegacy(Type $type): LegacyType|array
     {
         if ($type instanceof UnionType) {
             $nullable = $type->isNullable();
@@ -175,50 +278,9 @@ final class BackwardCompatibilityHelper
     }
 
     /**
-     * Converts a {@see LegacyType} to what is should have been in the "symfony/type-info" component.
-     *
-     * @param list<LegacyType>|null $types
-     */
-    public static function convertLegacyTypesToType(?array $legacyTypes): ?Type
-    {
-        if ([] === $legacyTypes) {
-            return null;
-        }
-
-        $types = [];
-        $nullable = false;
-
-        foreach (array_map(self::convertLegacyTypeToType(...), $legacyTypes) as $type) {
-            if ($type->isNullable()) {
-                $nullable = true;
-                if ($type instanceof BuiltinType && TypeIdentifier::NULL === $type->getTypeIdentifier()) {
-                    continue;
-                }
-
-                $type = self::unwrapNullableType($type);
-            }
-
-            if ($type instanceof UnionType) {
-                $types = [$types, ...$type->getTypes()];
-
-                continue;
-            }
-
-            $types[] = $type;
-        }
-
-        $type = \count($types) > 1 ? Type::union(...$types) : $types[0];
-        if ($nullable) {
-            $type = Type::nullable($type);
-        }
-
-        return $type;
-    }
-
-    /**
      * Recursive method that converts {@see LegacyType} to its related {@see Type}.
      */
-    public static function convertLegacyTypeToType(LegacyType $legacyType): Type
+    private static function convertLegacyTypeToType(LegacyType $legacyType): Type
     {
         return self::createTypeFromLegacyValues(
             $legacyType->getBuiltinType(),
@@ -228,63 +290,5 @@ final class BackwardCompatibilityHelper
             $legacyType->getCollectionKeyTypes(),
             $legacyType->getCollectionValueTypes(),
         );
-    }
-
-    /**
-     * @param list<LegacyType> $collectionKeyTypes
-     * @param list<LegacyType> $collectionValueTypes
-     */
-    public static function createTypeFromLegacyValues(string $builtinType, bool $nullable, ?string $class, bool $collection, array $collectionKeyTypes, array $collectionValueTypes): Type
-    {
-        $variableTypes = [];
-
-        if ($collectionKeyTypes) {
-            $collectionKeyTypes = array_unique(array_map(self::convertLegacyTypeToType(...), $collectionKeyTypes));
-            $variableTypes[] = \count($collectionKeyTypes) > 1 ? Type::union(...$collectionKeyTypes) : $collectionKeyTypes[0];
-        }
-
-        if ($collectionValueTypes) {
-            if (!$collectionKeyTypes) {
-                $variableTypes[] = [] === $collectionKeyTypes ? Type::mixed() : Type::union(Type::int(), Type::string());
-            }
-
-            $collectionValueTypes = array_unique(array_map(self::convertLegacyTypeToType(...), $collectionValueTypes));
-            $variableTypes[] = \count($collectionValueTypes) > 1 ? Type::union(...$collectionValueTypes) : $collectionValueTypes[0];
-        }
-
-        if ($collectionKeyTypes && !$collectionValueTypes) {
-            $variableTypes[] = Type::mixed();
-        }
-
-        try {
-            $type = null !== $class ? Type::object($class) : Type::builtin(TypeIdentifier::from($builtinType));
-        } catch (\ValueError) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid PHP type.', $builtinType));
-        }
-
-        if (\count($variableTypes)) {
-            $type = Type::generic($type, ...$variableTypes);
-        }
-
-        if ($collection) {
-            $type = Type::collection($type);
-        }
-
-        if ($nullable && !$type->isNullable) {
-            $type = Type::nullable($type);
-        }
-
-        $type->setCollection($collection);
-
-        return $type;
-    }
-
-    public static function unwrapNullableType(Type $type): Type
-    {
-        if (!$type instanceof UnionType) {
-            return $type;
-        }
-
-        return $type->asNonNullable();
     }
 }
