@@ -11,10 +11,9 @@
 
 namespace Symfony\Component\PropertyInfo;
 
-use Symfony\Component\PropertyInfo\Util\BackwardCompatibilityHelper;
-use Symfony\Component\TypeInfo\Exception\InvalidArgumentException;
+use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type as TypeInfoType;
-use Symfony\Component\TypeInfo\Type\GenericType;
+use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -87,53 +86,14 @@ class Type
      */
     public function __construct(string $builtinType, bool $nullable = false, ?string $class = null, bool $collection = false, array|self|null $collectionKeyType = null, array|self|null $collectionValueType = null)
     {
-        $typeIdentifier = $builtinType;
-        $variableTypes = [];
-
-        $collectionKeyType = $this->validateCollectionArgument($collectionKeyType, 5, '$collectionKeyType') ?? [];
-        $collectionValueType = $this->validateCollectionArgument($collectionValueType, 6, '$collectionValueType') ?? [];
-
-        if ($collectionKeyType) {
-            if (\is_array($collectionKeyType)) {
-                $collectionKeyType = array_unique(array_map(fn ($t): TypeInfoType => $t->internalType, $collectionKeyType));
-                $variableTypes[] = \count($collectionKeyType) > 1 ? TypeInfoType::union(...$collectionKeyType) : $collectionKeyType[0];
-            } else {
-                $variableTypes[] = $collectionKeyType->internalType;
-            }
-        }
-
-        if ($collectionValueType) {
-            if (!$collectionKeyType) {
-                $variableTypes[] = [] === $collectionKeyType ? TypeInfoType::mixed() : TypeInfoType::union(TypeInfoType::int(), TypeInfoType::string());
-            }
-
-            if (\is_array($collectionValueType)) {
-                $collectionValueType = array_unique(array_map(fn ($t): TypeInfoType => $t->internalType, $collectionValueType));
-                $variableTypes[] = \count($collectionValueType) > 1 ? TypeInfoType::union(...$collectionValueType) : $collectionValueType[0];
-            } else {
-                $variableTypes[] = $collectionValueType->internalType;
-            }
-        }
-
-        if ($collectionKeyType && !$collectionValueType) {
-            $variableTypes[] = TypeInfoType::mixed();
-        }
-
-        try {
-            $this->internalType = null !== $class ? TypeInfoType::object($class) : TypeInfoType::builtin(TypeIdentifier::from($typeIdentifier));
-        } catch (\ValueError) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid PHP type.', $typeIdentifier));
-        }
-
-        if (\count($variableTypes)) {
-            $this->internalType = TypeInfoType::generic($this->internalType, ...$variableTypes);
-        }
-
-        if ($nullable && !$this->internalType->isNullable) {
-            $this->internalType = TypeInfoType::nullable($this->internalType);
-        }
-
-        $this->internalType->setCollection($collection);
+        $this->internalType = BackwardCompatibilityHelper::createTypeFromLegacyValues(
+            $builtinType,
+            $nullable,
+            $class,
+            $collection,
+            $this->validateCollectionArgument($collectionKeyType, 5, '$collectionKeyType') ?? [],
+            $this->validateCollectionArgument($collectionValueType, 6, '$collectionValueType') ?? [],
+        );
     }
 
     /**
@@ -186,15 +146,11 @@ class Type
     {
         $internalType = BackwardCompatibilityHelper::unwrapNullableType($this->internalType);
 
-        if (!$internalType instanceof GenericType) {
+        if (!$internalType instanceof CollectionType) {
             return [];
         }
 
-        if (null === ($collectionKeyType = $internalType->getVariableTypes()[0] ?? null)) {
-            return [];
-        }
-
-        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($collectionKeyType) ?? [];
+        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionKeyType()) ?? [];
     }
 
     /**
@@ -208,15 +164,11 @@ class Type
     {
         $internalType = BackwardCompatibilityHelper::unwrapNullableType($this->internalType);
 
-        if (!$internalType instanceof GenericType) {
+        if (!$internalType instanceof CollectionType) {
             return [];
         }
 
-        if (null === ($collectionValueType = $internalType->getVariableTypes()[1] ?? null)) {
-            return [];
-        }
-
-        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($collectionValueType) ?? [];
+        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($internalType->getCollectionValueType()) ?? [];
     }
 
     private function validateCollectionArgument(array|self|null $collectionArgument, int $argumentIndex, string $argumentName): ?array

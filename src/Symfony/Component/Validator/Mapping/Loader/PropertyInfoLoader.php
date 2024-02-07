@@ -14,6 +14,7 @@ namespace Symfony\Component\Validator\Mapping\Loader;
 use Symfony\Component\PropertyInfo\PropertyAccessExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyListExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
+use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type as TypeInfoType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\IntersectionType;
@@ -105,7 +106,7 @@ final class PropertyInfoLoader implements LoaderInterface
                 continue;
             }
 
-            if (null === $type = $this->typeExtractor->getType($className, $property)) {
+            if (null === $type = $this->getPropertyType($className, $property)) {
                 continue;
             }
 
@@ -130,6 +131,18 @@ final class PropertyInfoLoader implements LoaderInterface
         }
 
         return $loaded;
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface::getTypes.
+     */
+    private function getPropertyType(string $className, string $property): ?TypeInfoType
+    {
+        if (method_exists($this->typeExtractor, 'getType')) {
+            return $this->typeExtractor->getType($className, $property);
+        }
+
+        return BackwardCompatibilityHelper::convertLegacyTypesToType($this->typeExtractor->getTypes($className, $property));
     }
 
     private function getTypeConstraint(TypeInfoType $type): ?Type

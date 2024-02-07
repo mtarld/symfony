@@ -12,7 +12,7 @@
 namespace Symfony\Component\PropertyInfo\Extractor;
 
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
-use Symfony\Component\PropertyInfo\Util\BackwardCompatibilityHelper;
+use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type;
 
 /**

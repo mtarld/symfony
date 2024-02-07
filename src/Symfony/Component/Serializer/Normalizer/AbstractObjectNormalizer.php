@@ -31,6 +31,7 @@ use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
 use Symfony\Component\Serializer\Mapping\ClassMetadataInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
+use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\IntersectionType;
@@ -646,6 +647,18 @@ abstract class AbstractObjectNormalizer extends AbstractNormalizer
         $this->typeCache[$key] = false;
 
         return null;
+    }
+
+    /**
+     * BC Layer for Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface::getTypes.
+     */
+    private function getPropertyType(string $className, string $property): ?Type
+    {
+        if (method_exists($this->propertyTypeExtractor, 'getType')) {
+            return $this->propertyTypeExtractor->getType($className, $property);
+        }
+
+        return BackwardCompatibilityHelper::convertLegacyTypesToType($this->propertyTypeExtractor->getTypes($className, $property));
     }
 
     /**

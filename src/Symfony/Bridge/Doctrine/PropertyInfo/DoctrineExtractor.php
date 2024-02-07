@@ -24,7 +24,7 @@ use Doctrine\Persistence\Mapping\MappingException;
 use Symfony\Component\PropertyInfo\PropertyAccessExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyListExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
-use Symfony\Component\PropertyInfo\Type as LegacyType;
+use Symfony\Component\TypeInfo\BackwardCompatibilityHelper;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -201,136 +201,9 @@ class DoctrineExtractor implements PropertyListExtractorInterface, PropertyTypeE
      */
     public function getTypes(string $class, string $property, array $context = []): ?array
     {
-        trigger_deprecation('symfony/doctrine-bridge', '7.1', 'The "%s()" method is deprecated, use "%s::getType()" instead.', __METHOD__, self::class);
+        trigger_deprecation('symfony/property-info', '7.1', 'The "%s()" method is deprecated, use "%s::getType()" instead.', __METHOD__, self::class);
 
-        if (null === $metadata = $this->getMetadata($class)) {
-            return null;
-        }
-
-        if ($metadata->hasAssociation($property)) {
-            $class = $metadata->getAssociationTargetClass($property);
-
-            if ($metadata->isSingleValuedAssociation($property)) {
-                if ($metadata instanceof ClassMetadata) {
-                    $associationMapping = $metadata->getAssociationMapping($property);
-
-                    $nullable = $this->isAssociationNullable($associationMapping);
-                } else {
-                    $nullable = false;
-                }
-
-                return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, $class)];
-            }
-
-            $collectionKeyType = LegacyType::BUILTIN_TYPE_INT;
-
-            if ($metadata instanceof ClassMetadata) {
-                $associationMapping = $metadata->getAssociationMapping($property);
-
-                if (isset($associationMapping['indexBy'])) {
-                    $subMetadata = $this->entityManager->getClassMetadata($associationMapping['targetEntity']);
-
-                    // Check if indexBy value is a property
-                    $fieldName = $associationMapping['indexBy'];
-                    if (null === ($typeOfField = $subMetadata->getTypeOfField($fieldName))) {
-                        $fieldName = $subMetadata->getFieldForColumn($associationMapping['indexBy']);
-                        // Not a property, maybe a column name?
-                        if (null === ($typeOfField = $subMetadata->getTypeOfField($fieldName))) {
-                            // Maybe the column name is the association join column?
-                            $associationMapping = $subMetadata->getAssociationMapping($fieldName);
-
-                            $indexProperty = $subMetadata->getSingleAssociationReferencedJoinColumnName($fieldName);
-                            $subMetadata = $this->entityManager->getClassMetadata($associationMapping['targetEntity']);
-
-                            // Not a property, maybe a column name?
-                            if (null === ($typeOfField = $subMetadata->getTypeOfField($indexProperty))) {
-                                $fieldName = $subMetadata->getFieldForColumn($indexProperty);
-                                $typeOfField = $subMetadata->getTypeOfField($fieldName);
-                            }
-                        }
-                    }
-
-                    if (!$collectionKeyType = $this->getPhpType($typeOfField)?->value) {
-                        return null;
-                    }
-                }
-            }
-
-            return [new LegacyType(
-                LegacyType::BUILTIN_TYPE_OBJECT,
-                false,
-                Collection::class,
-                true,
-                new LegacyType($collectionKeyType),
-                new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, false, $class)
-            )];
-        }
-
-        if ($metadata instanceof ClassMetadata && isset($metadata->embeddedClasses[$property])) {
-            return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, false, $metadata->embeddedClasses[$property]['class'])];
-        }
-
-        if ($metadata->hasField($property)) {
-            $typeOfField = $metadata->getTypeOfField($property);
-
-            if (!$builtinType = $this->getPhpType($typeOfField)?->value) {
-                return null;
-            }
-
-            $nullable = $metadata instanceof ClassMetadata && $metadata->isNullable($property);
-            $enumType = null;
-            if (null !== $enumClass = $metadata->getFieldMapping($property)['enumType'] ?? null) {
-                $enumType = new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, $enumClass);
-            }
-
-            switch ($builtinType) {
-                case LegacyType::BUILTIN_TYPE_OBJECT:
-                    switch ($typeOfField) {
-                        case Types::DATE_MUTABLE:
-                        case Types::DATETIME_MUTABLE:
-                        case Types::DATETIMETZ_MUTABLE:
-                        case 'vardatetime':
-                        case Types::TIME_MUTABLE:
-                            return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, 'DateTime')];
-
-                        case Types::DATE_IMMUTABLE:
-                        case Types::DATETIME_IMMUTABLE:
-                        case Types::DATETIMETZ_IMMUTABLE:
-                        case Types::TIME_IMMUTABLE:
-                            return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, 'DateTimeImmutable')];
-
-                        case Types::DATEINTERVAL:
-                            return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, 'DateInterval')];
-                    }
-
-                    break;
-                case LegacyType::BUILTIN_TYPE_ARRAY:
-                    switch ($typeOfField) {
-                        case 'array':      // DBAL < 4
-                        case 'json_array': // DBAL < 3
-                            // return null if $enumType is set, because we can't determine if collectionKeyType is string or int
-                            if ($enumType) {
-                                return null;
-                            }
-
-                            return [new LegacyType(LegacyType::BUILTIN_TYPE_ARRAY, $nullable, null, true)];
-
-                        case Types::SIMPLE_ARRAY:
-                            return [new LegacyType(LegacyType::BUILTIN_TYPE_ARRAY, $nullable, null, true, new LegacyType(LegacyType::BUILTIN_TYPE_INT), $enumType ?? new LegacyType(LegacyType::BUILTIN_TYPE_STRING))];
-                    }
-                    break;
-                case LegacyType::BUILTIN_TYPE_INT:
-                case LegacyType::BUILTIN_TYPE_STRING:
-                    if ($enumType) {
-                        return [$enumType];
-                    }
-                    break;
-            }
-
-            return [new LegacyType($builtinType, $nullable)];
-        }
-
-        return null;
+        return BackwardCompatibilityHelper::convertTypeToLegacyTypes($this->getType($class, $property, $context));
     }
 
     public function isReadable(string $class, string $property, array $context = []): ?bool

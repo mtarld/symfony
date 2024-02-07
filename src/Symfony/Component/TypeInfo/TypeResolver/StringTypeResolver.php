@@ -94,7 +94,7 @@ final class StringTypeResolver implements TypeResolverInterface
         }
 
         if ($node instanceof ArrayTypeNode) {
-            return Type::array($this->getTypeFromNode($node->type, $typeContext, $backwardCompatible));
+            return Type::list($this->getTypeFromNode($node->type, $typeContext, $backwardCompatible));
         }
 
         if ($node instanceof ArrayShapeNode) {

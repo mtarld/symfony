@@ -36,8 +36,9 @@
         "symfony/cache": "^6.4|^7.0",
         "symfony/mime": "^6.4|^7.0",
         "symfony/property-access": "^6.4|^7.0",
-        "symfony/property-info": "^7.1",
+        "symfony/property-info": "^6.4|^7.0",
         "symfony/translation": "^6.4.3|^7.0.3",
+        "symfony/type-info": "^7.1",
         "egulias/email-validator": "^2.1.10|^3|^4"
     },
     "conflict": {
@@ -47,8 +48,9 @@
         "symfony/expression-language": "<6.4",
         "symfony/http-kernel": "<6.4",
         "symfony/intl": "<6.4",
-        "symfony/property-info": "<7.1",
+        "symfony/property-info": "<6.4",
         "symfony/translation": "<6.4.3|>=7.0,<7.0.3",
+        "symfony/type-info": "<7.1",
         "symfony/yaml": "<6.4"
     },
     "autoload": {

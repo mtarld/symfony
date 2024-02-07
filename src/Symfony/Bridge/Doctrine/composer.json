@@ -39,6 +39,7 @@
         "symfony/security-core": "^6.4|^7.0",
         "symfony/stopwatch": "^6.4|^7.0",
         "symfony/translation": "^6.4|^7.0",
+        "symfony/type-info": "^7.1",
         "symfony/uid": "^6.4|^7.0",
         "symfony/validator": "^6.4|^7.0",
         "symfony/var-dumper": "^6.4|^7.0",
@@ -62,6 +63,7 @@
         "symfony/property-info": "<6.4",
         "symfony/security-bundle": "<6.4",
         "symfony/security-core": "<6.4",
+        "symfony/type-info": "<7.1",
         "symfony/validator": "<6.4"
     },
     "autoload": {
