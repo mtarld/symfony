@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\JsonEncoder;
 
+use Symfony\Component\TypeInfo\Type;
+
 /**
  * Encodes $data into a specific format according to a $config.
  *
@@ -27,5 +29,5 @@ interface EncoderInterface
      *
      * @return \Traversable<string>&\Stringable
      */
-    public function encode(mixed $data, array $config = []): \Traversable&\Stringable;
+    public function encode(mixed $data, Type $type, array $config = []): \Traversable&\Stringable;
 }
