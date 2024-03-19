@@ -17,10 +17,16 @@ use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
 use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
 use Symfony\Component\JsonEncoder\Decode\Instantiator;
 use Symfony\Component\JsonEncoder\Decode\LazyInstantiator;
+use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 /**
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
@@ -68,5 +74,23 @@ final readonly class JsonDecoder implements DecoderInterface
         }, $config);
 
         return (require $path)($isResourceStream ? $input->getResource() : $input, $config, $isStream ? $this->lazyInstantiator : $this->instantiator, $this->runtimeServices);
+    }
+
+    public static function create(?string $cacheDir = null, ?ContainerInterface $runtimeServices = null): static
+    {
+        $cacheDir ??= sys_get_temp_dir() . '/json_encoder';
+
+        $typeContextFactory = new TypeContextFactory();
+        $typeResolver = TypeResolver::create();
+
+        return new static(new GenericTypePropertyMetadataLoader(
+            new DateTimeTypePropertyMetadataLoader(
+                new AttributePropertyMetadataLoader(
+                    new PropertyMetadataLoader($typeResolver),
+                    $typeResolver,
+                ),
+            ),
+            $typeContextFactory,
+        ), $cacheDir, $runtimeServices);
     }
 }

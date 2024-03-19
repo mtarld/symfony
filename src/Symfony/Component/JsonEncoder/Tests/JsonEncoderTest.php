@@ -16,8 +16,6 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Encode\EncodeAs;
 use Symfony\Component\JsonEncoder\JsonEncoder;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
@@ -28,8 +26,6 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttribu
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\TypeInfo\Type;
-use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
-use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
@@ -50,16 +46,7 @@ class JsonEncoderTest extends TestCase
             rmdir($encoderCacheDir);
         }
 
-        $typeResolver = TypeResolver::create();
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
-                new PropertyMetadataLoader($typeResolver),
-                $typeResolver,
-            )),
-            new TypeContextFactory(new StringTypeResolver()),
-        );
-
-        $this->encoder = new JsonEncoder($propertyMetadataLoader, $this->cacheDir);
+        $this->encoder = JsonEncoder::create($this->cacheDir);
     }
 
     public function testReturnTraversableStringableEncoded()
@@ -138,7 +125,7 @@ class JsonEncoderTest extends TestCase
 
         $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
-        $encoder = new JsonEncoder($propertyMetadataLoader, $this->cacheDir, $runtimeServices);
+        $encoder = JsonEncoder::create($this->cacheDir, $runtimeServices);
 
         $dummy = new DummyWithAttributesUsingServices();
 

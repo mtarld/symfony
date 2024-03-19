@@ -15,10 +15,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
 use Symfony\Component\JsonEncoder\JsonDecoder;
-use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
@@ -26,10 +22,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithAttributesUsingS
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\TypeInfo\Type;
-use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
 use Symfony\Component\TypeInfo\TypeIdentifier;
-use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
-use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Contracts\Service\ServiceLocatorTrait;
 
 class JsonDecoderTest extends TestCase
@@ -56,16 +49,7 @@ class JsonDecoderTest extends TestCase
             rmdir($lazyGhostCacheDir);
         }
 
-        $typeResolver = TypeResolver::create();
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
-                new PropertyMetadataLoader($typeResolver),
-                $typeResolver,
-            )),
-            new TypeContextFactory(new StringTypeResolver()),
-        );
-
-        $this->decoder = new JsonDecoder($propertyMetadataLoader, $this->cacheDir);
+        $this->decoder = JsonDecoder::create($this->cacheDir);
     }
 
     public function testDecodeScalar()
@@ -121,16 +105,13 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeObjectWithRuntimeServices()
     {
-        $typeResolver = TypeResolver::create();
-        $propertyMetadataLoader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
-
-        $service = new JsonDecoder($propertyMetadataLoader, $this->cacheDir);
+        $service = JsonDecoder::create();
 
         $runtimeServices = new class([sprintf('%s::serviceAndConfig[service]', DummyWithAttributesUsingServices::class) => fn () => $service]) implements ContainerInterface {
             use ServiceLocatorTrait;
         };
 
-        $decoder = new JsonDecoder($propertyMetadataLoader, $this->cacheDir, $runtimeServices);
+        $decoder = JsonDecoder::create($this->cacheDir, $runtimeServices);
 
         $encoded = '{"one":"\"one\"","two":"two","three":"three"}';
 
