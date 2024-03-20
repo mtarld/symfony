@@ -19,6 +19,7 @@ use Symfony\Component\JsonEncoder\Decode\Instantiator;
 use Symfony\Component\JsonEncoder\Decode\LazyInstantiator;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\PhpDocAwareReflectionTypeResolver;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
@@ -26,6 +27,7 @@ use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
+use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
 /**
@@ -80,8 +82,13 @@ final readonly class JsonDecoder implements DecoderInterface
     {
         $cacheDir ??= sys_get_temp_dir() . '/json_encoder';
 
-        $typeContextFactory = new TypeContextFactory();
-        $typeResolver = TypeResolver::create();
+        try {
+            $stringTypeResolver = new StringTypeResolver();
+        } catch (\Throwable) {
+        }
+
+        $typeContextFactory = new TypeContextFactory($stringTypeResolver ?? null);
+        $typeResolver = new PhpDocAwareReflectionTypeResolver(TypeResolver::create(), $typeContextFactory);
 
         return new static(new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(
