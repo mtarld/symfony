@@ -54,7 +54,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  *
  * @internal
  */
-final readonly class PhpAstBuilder
+final class PhpAstBuilder
 {
     use PhpAstBuilderTrait;
 
@@ -153,7 +153,7 @@ final readonly class PhpAstBuilder
             $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
                 'condition' => $nodeCondition($n),
                 'stmts' => $this->buildClosureStatements($n, $encodeAs, $config, $context),
-            ], $dataModelNode->nodes);
+            ], $dataModelNode->getNodes());
 
             $if = $stmtsAndConditions[0];
             unset($stmtsAndConditions[0]);
@@ -179,10 +179,10 @@ final readonly class PhpAstBuilder
                 return [
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->getAccessor()), [
+                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->getItemNode()->getAccessor()), [
                         'stmts' => [
                             $this->yieldJson($this->builder->var($prefixName), $encodeAs),
-                            ...$this->buildClosureStatements($dataModelNode->item, $encodeAs, $config, $context),
+                            ...$this->buildClosureStatements($dataModelNode->getItemNode(), $encodeAs, $config, $context),
                             new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(','))),
                         ],
                     ]),
@@ -195,7 +195,7 @@ final readonly class PhpAstBuilder
             return [
                 $this->yieldJson($this->builder->val('{'), $encodeAs),
                 new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->item->getAccessor()), [
+                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->getItemNode()->getAccessor()), [
                     'keyVar' => $this->builder->var($keyName),
                     'stmts' => [
                         new Expression(new Assign($this->builder->var($keyName), $this->escapeString($this->builder->var($keyName)))),
@@ -205,7 +205,7 @@ final readonly class PhpAstBuilder
                             $this->builder->var($keyName),
                             new EncapsedStringPart('":'),
                         ]), $encodeAs),
-                        ...$this->buildClosureStatements($dataModelNode->item, $encodeAs, $config, $context),
+                        ...$this->buildClosureStatements($dataModelNode->getItemNode(), $encodeAs, $config, $context),
                         new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(','))),
                     ],
                 ]),
@@ -217,7 +217,7 @@ final readonly class PhpAstBuilder
             $objectStmts = [$this->yieldJson($this->builder->val('{'), $encodeAs)];
             $separator = '';
 
-            foreach ($dataModelNode->properties as $name => $propertyNode) {
+            foreach ($dataModelNode->getProperties() as $name => $propertyNode) {
                 $encodedName = json_encode($name);
                 if (false === $encodedName) {
                     throw new RuntimeException(sprintf('Cannot encode "%s"', $name));
@@ -267,7 +267,7 @@ final readonly class PhpAstBuilder
     private function nodeOnlyNeedsEncode(DataModelNodeInterface $node, int $nestingLevel = 0): bool
     {
         if ($node instanceof CompositeNode) {
-            foreach ($node->nodes as $n) {
+            foreach ($node->getNodes() as $n) {
                 if (!$this->nodeOnlyNeedsEncode($n, $nestingLevel + 1)) {
                     return false;
                 }
@@ -277,15 +277,15 @@ final readonly class PhpAstBuilder
         }
 
         if ($node instanceof CollectionNode) {
-            return $this->nodeOnlyNeedsEncode($node->item, $nestingLevel + 1);
+            return $this->nodeOnlyNeedsEncode($node->getItemNode(), $nestingLevel + 1);
         }
 
         if ($node instanceof ObjectNode) {
-            if ($node->transformed) {
+            if ($node->isTransformed()) {
                 return false;
             }
 
-            foreach ($node->properties as $property) {
+            foreach ($node->getProperties() as $property) {
                 if (!$this->nodeOnlyNeedsEncode($property, $nestingLevel + 1)) {
                     return false;
                 }

@@ -110,7 +110,7 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(
             $transformed,
-            $dataModelBuilder->build($type, new VariableDataAccessor('data'), [])->transformed,
+            $dataModelBuilder->build($type, new VariableDataAccessor('data'), [])->isTransformed(),
         );
     }
 
@@ -161,7 +161,7 @@ class DataModelBuilderTest extends TestCase
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::object(self::class), new VariableDataAccessor('data'), []);
 
-        $this->assertEquals(new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'), $dataModel->properties[0]->accessor);
+        $this->assertEquals(new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'), $dataModel->getProperties()[0]->getAccessor());
     }
 
     public function testPropertyWithCustomAccessors()
@@ -178,7 +178,7 @@ class DataModelBuilderTest extends TestCase
                 sprintf('%s::doubleAndCastToString', DummyWithFormatterAttributes::class),
                 [new FunctionDataAccessor('strtoupper', [new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo')])],
             ),
-            $dataModel->properties[0]->accessor,
+            $dataModel->getProperties()[0]->getAccessor(),
         );
     }
 
@@ -200,7 +200,7 @@ class DataModelBuilderTest extends TestCase
                 new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'),
                 new VariableDataAccessor('config'),
             ]),
-            $dataModel->properties[0]->accessor,
+            $dataModel->getProperties()[0]->getAccessor(),
         );
     }
 
@@ -215,7 +215,7 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(
             new FunctionDataAccessor(sprintf('%s::const', DummyWithMethods::class), []),
-            $dataModel->properties[0]->accessor,
+            $dataModel->getProperties()[0]->getAccessor(),
         );
     }
 
@@ -225,7 +225,7 @@ class DataModelBuilderTest extends TestCase
     private static function propertyMetadataLoader(array $propertiesMetadata = []): PropertyMetadataLoaderInterface
     {
         return new class($propertiesMetadata) implements PropertyMetadataLoaderInterface {
-            public function __construct(private readonly array $propertiesMetadata)
+            public function __construct(private array $propertiesMetadata)
             {
             }
 

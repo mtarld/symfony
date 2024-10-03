@@ -16,15 +16,33 @@ namespace Symfony\Component\JsonEncoder\DataModel;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class FunctionDataAccessor implements DataAccessorInterface
+final class FunctionDataAccessor implements DataAccessorInterface
 {
     /**
      * @param list<DataAccessorInterface> $arguments
      */
     public function __construct(
-        public string $functionName,
-        public array $arguments,
-        public ?DataAccessorInterface $objectAccessor = null,
+        private string $functionName,
+        private array $arguments,
+        private ?DataAccessorInterface $objectAccessor = null,
     ) {
+    }
+
+    public function getFunctionName(): string
+    {
+        return $this->functionName;
+    }
+
+    /**
+     * @return list<DataAccessorInterface>
+     */
+    public function getArguments(): array
+    {
+        return $this->arguments;
+    }
+
+    public function getObjectAccessor(): ?DataAccessorInterface
+    {
+        return $this->objectAccessor;
     }
 }

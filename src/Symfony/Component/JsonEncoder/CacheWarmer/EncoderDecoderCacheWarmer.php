@@ -31,7 +31,7 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @internal
  */
-final readonly class EncoderDecoderCacheWarmer implements CacheWarmerInterface
+final class EncoderDecoderCacheWarmer implements CacheWarmerInterface
 {
     private EncoderGenerator $encoderGenerator;
     private DecoderGenerator $decoderGenerator;

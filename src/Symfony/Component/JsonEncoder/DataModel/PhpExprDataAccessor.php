@@ -18,10 +18,15 @@ use PhpParser\Node\Expr;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class PhpExprDataAccessor implements DataAccessorInterface
+final class PhpExprDataAccessor implements DataAccessorInterface
 {
     public function __construct(
-        public Expr $php,
+        private Expr $php,
     ) {
+    }
+
+    public function getPhp(): Expr
+    {
+        return $this->php;
     }
 }

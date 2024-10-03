@@ -27,7 +27,7 @@ use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
  *
  * @internal
  */
-final readonly class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
@@ -41,7 +41,7 @@ final readonly class GenericTypePropertyMetadataLoader implements PropertyMetada
         $variableTypes = $this->getClassVariableTypes($className, $context['original_type']);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->type;
+            $type = $metadata->getType();
 
             if (isset($variableTypes[(string) $type])) {
                 $metadata = $metadata->withType($this->replaceVariableTypes($type, $variableTypes));

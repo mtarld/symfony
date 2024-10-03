@@ -17,7 +17,6 @@ use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
-use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 
@@ -30,41 +29,37 @@ trait PhpAstBuilderTrait
 {
     use VariableNameScoperTrait;
 
-    private readonly BuilderFactory $builder;
+    private BuilderFactory $builder;
 
     private function convertDataAccessorToPhpExpr(DataAccessorInterface $accessor): Expr
     {
-        if ($accessor instanceof ScalarDataAccessor) {
-            return $this->builder->val($accessor->value);
-        }
-
         if ($accessor instanceof VariableDataAccessor) {
-            return $this->builder->var($accessor->name);
+            return $this->builder->var($accessor->getName());
         }
 
         if ($accessor instanceof PropertyDataAccessor) {
             return $this->builder->propertyFetch(
-                $this->convertDataAccessorToPhpExpr($accessor->objectAccessor),
-                $accessor->propertyName,
+                $this->convertDataAccessorToPhpExpr($accessor->getObjectAccessor()),
+                $accessor->getPropertyName(),
             );
         }
 
         if ($accessor instanceof FunctionDataAccessor) {
-            $arguments = array_map($this->convertDataAccessorToPhpExpr(...), $accessor->arguments);
+            $arguments = array_map($this->convertDataAccessorToPhpExpr(...), $accessor->getArguments());
 
-            if (null === $accessor->objectAccessor) {
-                return $this->builder->funcCall($accessor->functionName, $arguments);
+            if (null === $accessor->getObjectAccessor()) {
+                return $this->builder->funcCall($accessor->getFunctionName(), $arguments);
             }
 
             return $this->builder->methodCall(
-                $this->convertDataAccessorToPhpExpr($accessor->objectAccessor),
-                $accessor->functionName,
+                $this->convertDataAccessorToPhpExpr($accessor->getObjectAccessor()),
+                $accessor->getFunctionName(),
                 $arguments,
             );
         }
 
         if ($accessor instanceof PhpExprDataAccessor) {
-            return $accessor->php;
+            return $accessor->getPhp();
         }
 
         throw new InvalidArgumentException(sprintf('"%s" cannot be converted to PHP node.', $accessor::class));

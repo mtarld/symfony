@@ -19,10 +19,15 @@ namespace Symfony\Component\JsonEncoder\Attribute;
  * @experimental
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class EncodedName
+final class EncodedName
 {
     public function __construct(
-        public string $name,
+        private string $name,
     ) {
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 }

@@ -35,7 +35,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class DataModelBuilder
+final class DataModelBuilder
 {
     use VariableNameScoperTrait;
 
@@ -75,7 +75,7 @@ final readonly class DataModelBuilder
             $propertiesMetadata = $this->propertyMetadataLoader->load($className, $config, ['original_type' => $type] + $context);
 
             if (\count((new \ReflectionClass($className))->getProperties()) !== \count($propertiesMetadata)
-                || array_values(array_map(fn (PropertyMetadata $m): string => $m->name, $propertiesMetadata)) !== array_keys($propertiesMetadata)
+                || array_values(array_map(fn (PropertyMetadata $m): string => $m->getName(), $propertiesMetadata)) !== array_keys($propertiesMetadata)
             ) {
                 $transformed = true;
             }
@@ -83,9 +83,9 @@ final readonly class DataModelBuilder
             $propertiesNodes = [];
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->name);
+                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
 
-                foreach ($propertyMetadata->formatters as $f) {
+                foreach ($propertyMetadata->getFormatters() as $f) {
                     $transformed = true;
                     $reflection = new \ReflectionFunction($f);
                     $functionName = null === $reflection->getClosureScopeClass()
@@ -113,7 +113,7 @@ final readonly class DataModelBuilder
                     $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                 }
 
-                $propertiesNodes[$encodedName] = $this->build($propertyMetadata->type, $propertyAccessor, $config, $context);
+                $propertiesNodes[$encodedName] = $this->build($propertyMetadata->getType(), $propertyAccessor, $config, $context);
             }
 
             return new ObjectNode($accessor, $type, $propertiesNodes, $transformed);

@@ -23,7 +23,7 @@ use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
  *
  * @experimental
  */
-final readonly class Instantiator
+final class Instantiator
 {
     /**
      * @param array<string, mixed> $properties

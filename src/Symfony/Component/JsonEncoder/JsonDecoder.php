@@ -19,7 +19,6 @@ use Symfony\Component\JsonEncoder\Decode\LazyInstantiator;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Mapping\PhpDocAwareReflectionTypeResolver;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
@@ -39,7 +38,7 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
  *   force_generation?: bool,
  * }>
  */
-final readonly class JsonDecoder implements DecoderInterface
+final class JsonDecoder implements DecoderInterface
 {
     private DecoderGenerator $decoderGenerator;
     private Instantiator $instantiator;
@@ -88,7 +87,7 @@ final readonly class JsonDecoder implements DecoderInterface
         }
 
         $typeContextFactory = new TypeContextFactory($stringTypeResolver ?? null);
-        $typeResolver = new PhpDocAwareReflectionTypeResolver(TypeResolver::create(), $typeContextFactory);
+        $typeResolver = TypeResolver::create();
 
         return new static(new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(

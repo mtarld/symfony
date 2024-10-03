@@ -24,7 +24,7 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
  *
  * @internal
  */
-final readonly class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
@@ -38,7 +38,7 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
         $result = [];
 
         foreach ($initialResult as $initialEncodedName => $initialMetadata) {
-            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->name));
+            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->getName()));
             $encodedName = $attributesMetadata['name'] ?? $initialEncodedName;
 
             if (isset($attributesMetadata['max_depth']) && ($context['depth_counters'][$className] ?? 0) > $attributesMetadata['max_depth']) {
@@ -82,20 +82,20 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
 
         $reflectionAttribute = $reflectionProperty->getAttributes(EncodedName::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
-            $metadata['name'] = $reflectionAttribute->newInstance()->name;
+            $metadata['name'] = $reflectionAttribute->newInstance()->getName();
         }
 
         $reflectionAttribute = $reflectionProperty->getAttributes(EncodeFormatter::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
-            $metadata['formatter'] = $reflectionAttribute->newInstance()->formatter;
+            $metadata['formatter'] = $reflectionAttribute->newInstance()->getFormatter();
         }
 
         $reflectionAttribute = $reflectionProperty->getAttributes(MaxDepth::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
             $attributeInstance = $reflectionAttribute->newInstance();
 
-            $metadata['max_depth'] = $attributeInstance->maxDepth;
-            $metadata['max_depth_reached_formatter'] = $attributeInstance->maxDepthReachedFormatter;
+            $metadata['max_depth'] = $attributeInstance->getMaxDepth();
+            $metadata['max_depth_reached_formatter'] = $attributeInstance->getMaxDepthReachedFormatter();
         }
 
         return $metadata;

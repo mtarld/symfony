@@ -19,15 +19,18 @@ use Symfony\Component\TypeInfo\Type\CollectionType;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class CollectionNode implements DataModelNodeInterface
+final class CollectionNode implements DataModelNodeInterface
 {
-    public bool $transformed;
-
     public function __construct(
-        public DataAccessorInterface $accessor,
-        public CollectionType $type,
-        public DataModelNodeInterface $item,
+        private DataAccessorInterface $accessor,
+        private CollectionType $type,
+        private DataModelNodeInterface $item,
     ) {
+    }
+
+    public function getAccessor(): DataAccessorInterface
+    {
+        return $this->accessor;
     }
 
     public function getType(): CollectionType
@@ -35,8 +38,8 @@ final readonly class CollectionNode implements DataModelNodeInterface
         return $this->type;
     }
 
-    public function getAccessor(): DataAccessorInterface
+    public function getItemNode(): DataModelNodeInterface
     {
-        return $this->accessor;
+        return $this->item;
     }
 }

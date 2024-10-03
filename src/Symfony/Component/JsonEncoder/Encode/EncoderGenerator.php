@@ -25,7 +25,7 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @internal
  */
-final readonly class EncoderGenerator
+final class EncoderGenerator
 {
     private PhpAstBuilder $phpAstBuilder;
     private PhpOptimizer $phpOptimizer;

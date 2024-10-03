@@ -22,7 +22,7 @@ use PhpParser\NodeVisitor\NodeConnectingVisitor;
  *
  * @internal
  */
-final readonly class PhpOptimizer
+final class PhpOptimizer
 {
     /**
      * @param list<Node> $nodes

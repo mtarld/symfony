@@ -21,7 +21,7 @@ namespace Symfony\Component\JsonEncoder;
  *
  * @implements \IteratorAggregate<string>
  */
-final readonly class Encoded implements \IteratorAggregate, \Stringable
+final class Encoded implements \IteratorAggregate, \Stringable
 {
     /**
      * @param \Traversable<string> $chunks

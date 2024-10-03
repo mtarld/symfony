@@ -20,7 +20,7 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
  *
  * @internal
  */
-final readonly class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
         private TypeResolverInterface $typeResolver,

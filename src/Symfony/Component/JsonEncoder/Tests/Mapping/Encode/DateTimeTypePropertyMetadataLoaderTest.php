@@ -33,7 +33,7 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
             ]),
         ], $metadata);
 
-        $formatter = $metadata['foo']->formatters[0];
+        $formatter = $metadata['foo']->getFormatters()[0];
 
         $this->assertEquals(
             '2023-07-26T00:00:00+00:00',
@@ -52,7 +52,7 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
     private static function propertyMetadataLoader(array $propertiesMetadata = []): PropertyMetadataLoaderInterface
     {
         return new class($propertiesMetadata) implements PropertyMetadataLoaderInterface {
-            public function __construct(private readonly array $propertiesMetadata)
+            public function __construct(private array $propertiesMetadata)
             {
             }
 

@@ -21,7 +21,7 @@ use Symfony\Component\JsonEncoder\EncoderInterface;
  *
  * @author Mathias Arlaud<mathias.arlaud@gmail.com>
  */
-final readonly class JsonEncoderPass implements CompilerPassInterface
+final class JsonEncoderPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {

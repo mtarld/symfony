@@ -134,7 +134,7 @@ class DataModelBuilderTest extends TestCase
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::object(self::class), []);
-        $accessor = $dataModel->properties[0]['accessor'];
+        $accessor = $dataModel->getProperties()[0]['accessor'];
 
         $this->assertEquals(new VariableDataAccessor('data'), $accessor(new VariableDataAccessor('data')));
     }
@@ -147,7 +147,7 @@ class DataModelBuilderTest extends TestCase
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::object(self::class), []);
-        $accessor = $dataModel->properties[0]['accessor'];
+        $accessor = $dataModel->getProperties()[0]['accessor'];
 
         $this->assertEquals(
             new FunctionDataAccessor(
@@ -170,7 +170,7 @@ class DataModelBuilderTest extends TestCase
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::object(self::class), []);
-        $accessor = $dataModel->properties[0]['accessor'];
+        $accessor = $dataModel->getProperties()[0]['accessor'];
 
         $this->assertEquals(
             new FunctionDataAccessor(sprintf('%s::divideAndCastToIntWithConfig', DummyWithFormatterAttributes::class), [
@@ -189,7 +189,7 @@ class DataModelBuilderTest extends TestCase
 
         /** @var ObjectNode $dataModel */
         $dataModel = $dataModelBuilder->build(Type::object(self::class), []);
-        $accessor = $dataModel->properties[0]['accessor'];
+        $accessor = $dataModel->getProperties()[0]['accessor'];
 
         $this->assertEquals(
             new FunctionDataAccessor(sprintf('%s::const', DummyWithMethods::class), []),
@@ -203,7 +203,7 @@ class DataModelBuilderTest extends TestCase
     private static function propertyMetadataLoader(array $propertiesMetadata = []): PropertyMetadataLoaderInterface
     {
         return new class($propertiesMetadata) implements PropertyMetadataLoaderInterface {
-            public function __construct(private readonly array $propertiesMetadata)
+            public function __construct(private array $propertiesMetadata)
             {
             }
 

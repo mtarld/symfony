@@ -5,7 +5,7 @@ namespace Symfony\Component\JsonEncoder\Tests\Fixtures\Attribute;
 use Symfony\Component\JsonEncoder\Attribute\EncodeFormatter;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class BooleanStringEncodeFormatter extends EncodeFormatter
+final class BooleanStringEncodeFormatter extends EncodeFormatter
 {
     public function __construct()
     {

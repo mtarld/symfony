@@ -28,8 +28,8 @@ final class LazyGhostCacheWarmer extends CacheWarmer
      * @param list<class-string> $encodableClassNames
      */
     public function __construct(
-        private readonly array $encodableClassNames,
-        private readonly string $lazyGhostsDir,
+        private array $encodableClassNames,
+        private string $lazyGhostsDir,
     ) {
     }
 

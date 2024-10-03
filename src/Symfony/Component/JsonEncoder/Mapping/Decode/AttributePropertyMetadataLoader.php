@@ -23,7 +23,7 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
  *
  * @internal
  */
-final readonly class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
@@ -37,7 +37,7 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
         $result = [];
 
         foreach ($initialResult as $initialEncodedName => $initialMetadata) {
-            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->name));
+            $attributesMetadata = $this->getPropertyAttributesMetadata(new \ReflectionProperty($className, $initialMetadata->getName()));
             $encodedName = $attributesMetadata['name'] ?? $initialEncodedName;
 
             if (null !== $formatter = $attributesMetadata['formatter'] ?? null) {
@@ -66,12 +66,12 @@ final readonly class AttributePropertyMetadataLoader implements PropertyMetadata
 
         $reflectionAttribute = $reflectionProperty->getAttributes(EncodedName::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
-            $metadata['name'] = $reflectionAttribute->newInstance()->name;
+            $metadata['name'] = $reflectionAttribute->newInstance()->getName();
         }
 
         $reflectionAttribute = $reflectionProperty->getAttributes(DecodeFormatter::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
-            $metadata['formatter'] = $reflectionAttribute->newInstance()->formatter;
+            $metadata['formatter'] = $reflectionAttribute->newInstance()->getFormatter();
         }
 
         return $metadata;

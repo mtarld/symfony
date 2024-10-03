@@ -21,7 +21,7 @@ use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
  *
  * @internal
  */
-final readonly class Lexer
+final class Lexer
 {
     private const MAX_CHUNK_LENGTH = 8192;
 

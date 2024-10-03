@@ -16,11 +16,21 @@ namespace Symfony\Component\JsonEncoder\DataModel;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class PropertyDataAccessor implements DataAccessorInterface
+final class PropertyDataAccessor implements DataAccessorInterface
 {
     public function __construct(
-        public DataAccessorInterface $objectAccessor,
-        public string $propertyName,
+        private DataAccessorInterface $objectAccessor,
+        private string $propertyName,
     ) {
+    }
+
+    public function getObjectAccessor(): DataAccessorInterface
+    {
+        return $this->objectAccessor;
+    }
+
+    public function getPropertyName(): string
+    {
+        return $this->propertyName;
     }
 }

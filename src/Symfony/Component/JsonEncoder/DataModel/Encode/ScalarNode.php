@@ -22,21 +22,21 @@ use Symfony\Component\TypeInfo\Type\BuiltinType;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class ScalarNode implements DataModelNodeInterface
+final class ScalarNode implements DataModelNodeInterface
 {
     public function __construct(
-        public DataAccessorInterface $accessor,
-        public BuiltinType|BackedEnumType $type,
+        private DataAccessorInterface $accessor,
+        private BuiltinType|BackedEnumType $type,
     ) {
-    }
-
-    public function getType(): BuiltinType|BackedEnumType
-    {
-        return $this->type;
     }
 
     public function getAccessor(): DataAccessorInterface
     {
         return $this->accessor;
+    }
+
+    public function getType(): BuiltinType|BackedEnumType
+    {
+        return $this->type;
     }
 }

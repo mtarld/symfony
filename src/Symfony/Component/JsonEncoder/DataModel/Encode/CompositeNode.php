@@ -23,7 +23,7 @@ use Symfony\Component\TypeInfo\Type\UnionType;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class CompositeNode implements DataModelNodeInterface
+final class CompositeNode implements DataModelNodeInterface
 {
     private const NODE_PRECISION = [
         CollectionNode::class => 2,
@@ -34,13 +34,13 @@ final readonly class CompositeNode implements DataModelNodeInterface
     /**
      * @var list<DataModelNodeInterface>
      */
-    public array $nodes;
+    private array $nodes;
 
     /**
      * @param list<DataModelNodeInterface> $nodes
      */
     public function __construct(
-        public DataAccessorInterface $accessor,
+        private DataAccessorInterface $accessor,
         array $nodes,
     ) {
         if (\count($nodes) < 2) {
@@ -57,13 +57,21 @@ final readonly class CompositeNode implements DataModelNodeInterface
         $this->nodes = $nodes;
     }
 
+    public function getAccessor(): DataAccessorInterface
+    {
+        return $this->accessor;
+    }
+
     public function getType(): UnionType
     {
         return Type::union(...array_map(fn (DataModelNodeInterface $n): Type => $n->getType(), $this->nodes));
     }
 
-    public function getAccessor(): DataAccessorInterface
+    /**
+     * @return list<DataModelNodeInterface>
+     */
+    public function getNodes(): array
     {
-        return $this->accessor;
+        return $this->nodes;
     }
 }

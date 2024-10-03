@@ -21,35 +21,45 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @experimental
  */
-final readonly class PropertyMetadata
+final class PropertyMetadata
 {
     /**
      * @param list<\Closure> $formatters
      */
     public function __construct(
-        public string $name,
-        public Type $type,
-        public array $formatters = [],
+        private string $name,
+        private Type $type,
+        private array $formatters = [],
     ) {
         self::validateFormatters($this);
     }
 
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     public function withName(string $name): self
     {
-        /** @var array{name: string, type: Type, formatters: list<callable>} */
-        $args = (array) $this;
-        $args['name'] = $name;
+        return new self($name, $this->type, $this->formatters);
+    }
 
-        return new self(...$args);
+    public function getType(): Type
+    {
+        return $this->type;
     }
 
     public function withType(Type $type): self
     {
-        /** @var array{name: string, type: Type, formatters: list<\Closure>} */
-        $args = (array) $this;
-        $args['type'] = $type;
+        return new self($this->name, $type, $this->formatters);
+    }
 
-        return new self(...$args);
+    /**
+     * @return list<\Closure>
+     */
+    public function getFormatters(): array
+    {
+        return $this->formatters;
     }
 
     /**
@@ -57,11 +67,7 @@ final readonly class PropertyMetadata
      */
     public function withFormatters(array $formatters): self
     {
-        /** @var array{name: string, type: Type, formatters: list<\Closure>} */
-        $args = (array) $this;
-        $args['formatters'] = $formatters;
-
-        return new self(...$args);
+        return new self($this->name, $this->type, $formatters);
     }
 
     public function withFormatter(\Closure $formatter): self

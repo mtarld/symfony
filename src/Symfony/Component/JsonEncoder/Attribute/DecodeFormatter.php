@@ -24,9 +24,12 @@ namespace Symfony\Component\JsonEncoder\Attribute;
  * @experimental
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-readonly class DecodeFormatter
+class DecodeFormatter
 {
-    public \Closure $formatter;
+    /**
+     * @var \Closure(mixed, array=): mixed
+     */
+    private \Closure $formatter;
 
     /**
      * @param callable(mixed, array=): mixed $formatter
@@ -34,5 +37,13 @@ readonly class DecodeFormatter
     public function __construct(callable $formatter)
     {
         $this->formatter = \Closure::fromCallable($formatter);
+    }
+
+    /**
+     * @return \Closure(mixed, array=): mixed
+     */
+    public function getFormatter(): \Closure
+    {
+        return $this->formatter;
     }
 }

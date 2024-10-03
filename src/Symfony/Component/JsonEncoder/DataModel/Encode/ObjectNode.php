@@ -19,17 +19,22 @@ use Symfony\Component\TypeInfo\Type\ObjectType;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class ObjectNode implements DataModelNodeInterface
+final class ObjectNode implements DataModelNodeInterface
 {
     /**
      * @param array<string, DataModelNodeInterface> $properties
      */
     public function __construct(
-        public DataAccessorInterface $accessor,
-        public ObjectType $type,
-        public array $properties,
-        public bool $transformed,
+        private DataAccessorInterface $accessor,
+        private ObjectType $type,
+        private array $properties,
+        private bool $transformed,
     ) {
+    }
+
+    public function getAccessor(): DataAccessorInterface
+    {
+        return $this->accessor;
     }
 
     public function getType(): ObjectType
@@ -37,8 +42,16 @@ final readonly class ObjectNode implements DataModelNodeInterface
         return $this->type;
     }
 
-    public function getAccessor(): DataAccessorInterface
+    /**
+     * @return array<string, DataModelNodeInterface>
+     */
+    public function getProperties(): array
     {
-        return $this->accessor;
+        return $this->properties;
+    }
+
+    public function isTransformed(): bool
+    {
+        return $this->transformed;
     }
 }

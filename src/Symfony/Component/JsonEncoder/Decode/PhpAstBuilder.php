@@ -60,7 +60,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  *
  * @internal
  */
-final readonly class PhpAstBuilder
+final class PhpAstBuilder
 {
     use PhpAstBuilderTrait;
 
@@ -243,7 +243,7 @@ final readonly class PhpAstBuilder
             return $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$this->builder->var('data')]);
         };
 
-        foreach ($node->nodes as $n) {
+        foreach ($node->getNodes() as $n) {
             if ($this->nodeOnlyNeedsDecode($n, $decodeFrom)) {
                 $nodeValueStmt = $this->buildFormatValueStatement($n, $this->builder->var('data'));
             } else {
@@ -294,16 +294,16 @@ final readonly class PhpAstBuilder
     private function buildCollectionNodeStatements(CollectionNode $node, DecodeFrom $decodeFrom, array &$context): array
     {
         if (DecodeFrom::STRING === $decodeFrom) {
-            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->item, $decodeFrom)
+            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->getItemNode(), $decodeFrom)
                 ? $this->builder->var('v')
                 : $this->builder->funcCall(
-                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())),
+                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getItemNode()->getIdentifier())),
                     [$this->builder->var('v')],
                 );
         } else {
-            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->item, $decodeFrom)
+            $itemValueStmt = $this->nodeOnlyNeedsDecode($node->getItemNode(), $decodeFrom)
                 ? $this->buildFormatValueStatement(
-                    $node->item,
+                    $node->getItemNode(),
                     $this->builder->staticCall(new FullyQualified(NativeDecoder::class), 'decodeStream', [
                         $this->builder->var('stream'),
                         new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
@@ -311,7 +311,7 @@ final readonly class PhpAstBuilder
                     ]),
                 )
                 : $this->builder->funcCall(
-                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->item->getIdentifier())), [
+                    new ArrayDimFetch($this->builder->var('providers'), $this->builder->val($node->getItemNode()->getIdentifier())), [
                         $this->builder->var('stream'),
                         new ArrayDimFetch($this->builder->var('v'), $this->builder->val(0)),
                         new ArrayDimFetch($this->builder->var('v'), $this->builder->val(1)),
@@ -378,7 +378,7 @@ final readonly class PhpAstBuilder
                     ],
                 ]),
             )),
-            ...($this->nodeOnlyNeedsDecode($node->item, $decodeFrom) ? [] : $this->buildProvidersStatements($node->item, $decodeFrom, $context)),
+            ...($this->nodeOnlyNeedsDecode($node->getItemNode(), $decodeFrom) ? [] : $this->buildProvidersStatements($node->getItemNode(), $decodeFrom, $context)),
         ];
     }
 
@@ -389,7 +389,7 @@ final readonly class PhpAstBuilder
      */
     private function buildObjectNodeStatements(ObjectNode $node, DecodeFrom $decodeFrom, array &$context): array
     {
-        if ($node->ghost) {
+        if ($node->isGhost()) {
             return [];
         }
 
@@ -397,7 +397,7 @@ final readonly class PhpAstBuilder
         $stringPropertiesValuesStmts = [];
         $streamPropertiesValuesStmts = [];
 
-        foreach ($node->properties as $encodedName => $property) {
+        foreach ($node->getProperties() as $encodedName => $property) {
             $propertyValueProvidersStmts = [
                 ...$propertyValueProvidersStmts,
                 ...($this->nodeOnlyNeedsDecode($property['value'], $decodeFrom) ? [] : $this->buildProvidersStatements($property['value'], $decodeFrom, $context)),
@@ -525,7 +525,7 @@ final readonly class PhpAstBuilder
         $streaming = DecodeFrom::RESOURCE === $decodeFrom || DecodeFrom::STREAM === $decodeFrom;
 
         if ($node instanceof CompositeNode) {
-            foreach ($node->nodes as $n) {
+            foreach ($node->getNodes() as $n) {
                 if (!$this->nodeOnlyNeedsDecode($n, $decodeFrom)) {
                     return false;
                 }
@@ -539,7 +539,7 @@ final readonly class PhpAstBuilder
                 return false;
             }
 
-            return $this->nodeOnlyNeedsDecode($node->item, $decodeFrom);
+            return $this->nodeOnlyNeedsDecode($node->getItemNode(), $decodeFrom);
         }
 
         if ($node instanceof ObjectNode) {

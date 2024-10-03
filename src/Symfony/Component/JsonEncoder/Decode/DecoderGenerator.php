@@ -24,7 +24,7 @@ use Symfony\Component\TypeInfo\Type;
  *
  * @internal
  */
-final readonly class DecoderGenerator
+final class DecoderGenerator
 {
     private PhpAstBuilder $phpAstBuilder;
     private PhpPrinter $phpPrinter;

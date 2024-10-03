@@ -21,7 +21,7 @@ use Symfony\Component\JsonEncoder\Stream\StreamReaderInterface;
  *
  * @internal
  */
-final readonly class NativeDecoder
+final class NativeDecoder
 {
     public static function decodeString(string $json): mixed
     {

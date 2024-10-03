@@ -26,9 +26,12 @@ namespace Symfony\Component\JsonEncoder\Attribute;
  * @experimental
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final readonly class MaxDepth
+final class MaxDepth
 {
-    public ?\Closure $maxDepthReachedFormatter;
+    /**
+     * @var ?\Closure(mixed, array=): mixed
+     */
+    private ?\Closure $maxDepthReachedFormatter;
 
     /**
      * @param positive-int                    $maxDepth
@@ -39,5 +42,21 @@ final readonly class MaxDepth
         ?callable $maxDepthReachedFormatter = null,
     ) {
         $this->maxDepthReachedFormatter = \Closure::fromCallable($maxDepthReachedFormatter);
+    }
+
+    /**
+     * @return positive-int
+     */
+    public function getMaxDepth(): int
+    {
+        return $this->maxDepth;
+    }
+
+    /**
+     * @return ?\Closure(mixed, array=): mixed
+     */
+    public function getMaxDepthReachedFormatter(): ?\Closure
+    {
+        return $this->maxDepthReachedFormatter;
     }
 }

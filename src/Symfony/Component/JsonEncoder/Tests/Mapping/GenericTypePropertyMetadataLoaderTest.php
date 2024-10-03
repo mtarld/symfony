@@ -50,7 +50,7 @@ class GenericTypePropertyMetadataLoaderTest extends TestCase
     private static function propertyMetadataLoader(array $propertiesMetadata = []): PropertyMetadataLoaderInterface
     {
         return new class($propertiesMetadata) implements PropertyMetadataLoaderInterface {
-            public function __construct(private readonly array $propertiesMetadata)
+            public function __construct(private array $propertiesMetadata)
             {
             }
 

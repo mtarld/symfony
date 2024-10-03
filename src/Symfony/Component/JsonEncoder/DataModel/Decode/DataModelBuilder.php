@@ -33,7 +33,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @internal
  */
-final readonly class DataModelBuilder
+final class DataModelBuilder
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $propertyMetadataLoader,
@@ -61,7 +61,7 @@ final readonly class DataModelBuilder
             $className = $type->getClassName();
 
             if ($context['generated_classes'][$typeString] ??= false) {
-                return ObjectNode::ghost($type);
+                return ObjectNode::createGhost($type);
             }
 
             $propertiesNodes = [];
@@ -71,10 +71,10 @@ final readonly class DataModelBuilder
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
                 $propertiesNodes[$encodedName] = [
-                    'name' => $propertyMetadata->name,
-                    'value' => $this->build($propertyMetadata->type, $config, $context),
+                    'name' => $propertyMetadata->getName(),
+                    'value' => $this->build($propertyMetadata->getType(), $config, $context),
                     'accessor' => function (DataAccessorInterface $accessor) use ($propertyMetadata): DataAccessorInterface {
-                        foreach ($propertyMetadata->formatters as $f) {
+                        foreach ($propertyMetadata->getFormatters() as $f) {
                             $reflection = new \ReflectionFunction($f);
                             $functionName = null === $reflection->getClosureScopeClass()
                                 ? $reflection->getName()

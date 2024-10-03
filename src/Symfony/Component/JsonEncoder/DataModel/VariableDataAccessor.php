@@ -16,10 +16,15 @@ namespace Symfony\Component\JsonEncoder\DataModel;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class VariableDataAccessor implements DataAccessorInterface
+final class VariableDataAccessor implements DataAccessorInterface
 {
     public function __construct(
-        public string $name,
+        private string $name,
     ) {
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 }

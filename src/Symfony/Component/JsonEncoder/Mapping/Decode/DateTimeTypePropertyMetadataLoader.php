@@ -22,7 +22,7 @@ use Symfony\Component\TypeInfo\Type\ObjectType;
  *
  * @internal
  */
-final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
@@ -34,7 +34,7 @@ final readonly class DateTimeTypePropertyMetadataLoader implements PropertyMetad
         $result = $this->decorated->load($className, $config, $context);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->type;
+            $type = $metadata->getType();
 
             if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
                 $metadata = $metadata

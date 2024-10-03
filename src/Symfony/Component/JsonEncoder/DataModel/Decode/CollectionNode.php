@@ -18,11 +18,11 @@ use Symfony\Component\TypeInfo\Type\CollectionType;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final readonly class CollectionNode implements DataModelNodeInterface
+final class CollectionNode implements DataModelNodeInterface
 {
     public function __construct(
-        public CollectionType $type,
-        public DataModelNodeInterface $item,
+        private CollectionType $type,
+        private DataModelNodeInterface $item,
     ) {
     }
 
@@ -34,5 +34,10 @@ final readonly class CollectionNode implements DataModelNodeInterface
     public function getType(): CollectionType
     {
         return $this->type;
+    }
+
+    public function getItemNode(): DataModelNodeInterface
+    {
+        return $this->item;
     }
 }
