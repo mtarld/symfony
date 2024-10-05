@@ -40,7 +40,7 @@ class EncoderGeneratorTest extends TestCase
     {
         parent::setUp();
 
-        $this->encodersDir = sprintf('%s/symfony_json_encoder_test/encoder', sys_get_temp_dir());
+        $this->encodersDir = \sprintf('%s/symfony_json_encoder_test/encoder', sys_get_temp_dir());
 
         if (is_dir($this->encodersDir)) {
             array_map('unlink', glob($this->encodersDir.'/*'));
@@ -67,17 +67,17 @@ class EncoderGeneratorTest extends TestCase
         $generator = new EncoderGenerator(new DataModelBuilder($propertyMetadataLoader), $this->encodersDir);
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/encoder/%s.string.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/encoder/%s.string.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, EncodeAs::STRING)),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/encoder/%s.stream.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/encoder/%s.stream.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, EncodeAs::STREAM)),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/encoder/%s.resource.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/encoder/%s.resource.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, EncodeAs::RESOURCE)),
         );
     }

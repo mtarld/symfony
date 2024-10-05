@@ -224,7 +224,7 @@ final class PhpAstBuilder
             foreach ($dataModelNode->getProperties() as $name => $propertyNode) {
                 $encodedName = json_encode($name);
                 if (false === $encodedName) {
-                    throw new RuntimeException(sprintf('Cannot encode "%s"', $name));
+                    throw new RuntimeException(\sprintf('Cannot encode "%s"', $name));
                 }
 
                 $encodedName = substr($encodedName, 1, -1);
@@ -246,7 +246,7 @@ final class PhpAstBuilder
             return $objectStmts;
         }
 
-        throw new LogicException(sprintf('Unexpected "%s" node', $dataModelNode::class));
+        throw new LogicException(\sprintf('Unexpected "%s" node', $dataModelNode::class));
     }
 
     private function encodeValue(Expr $value): Expr

@@ -151,7 +151,7 @@ final class PhpAstBuilder
             $node instanceof CompositeNode => $this->buildCompositeNodeStatements($node, $decodeFrom, $context),
             $node instanceof CollectionNode => $this->buildCollectionNodeStatements($node, $decodeFrom, $context),
             $node instanceof ObjectNode => $this->buildObjectNodeStatements($node, $decodeFrom, $context),
-            default => throw new LogicException(sprintf('Unexpected "%s" data model node', $node::class)),
+            default => throw new LogicException(\sprintf('Unexpected "%s" data model node', $node::class)),
         };
     }
 
@@ -281,7 +281,7 @@ final class PhpAstBuilder
                         ...$prepareDataStmts,
                         ...$nodesStmts,
                         new Expression(new Throw_($this->builder->new(new FullyQualified(UnexpectedValueException::class), [$this->builder->funcCall('\sprintf', [
-                            $this->builder->val(sprintf('Unexpected "%%s" value for "%s".', $node->getIdentifier())),
+                            $this->builder->val(\sprintf('Unexpected "%%s" value for "%s".', $node->getIdentifier())),
                             $this->builder->funcCall('\get_debug_type', [$this->builder->var('data')]),
                         ])]))),
                     ],

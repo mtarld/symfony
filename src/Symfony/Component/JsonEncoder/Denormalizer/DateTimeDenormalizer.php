@@ -11,11 +11,10 @@
 
 namespace Symfony\Component\JsonEncoder\Denormalizer;
 
-use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\Type;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Casts string to DateTimeInterface.

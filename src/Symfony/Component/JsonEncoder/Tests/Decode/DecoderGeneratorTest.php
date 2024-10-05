@@ -42,7 +42,7 @@ class DecoderGeneratorTest extends TestCase
     {
         parent::setUp();
 
-        $this->decodersDir = sprintf('%s/symfony_json_encoder_test/decoder', sys_get_temp_dir());
+        $this->decodersDir = \sprintf('%s/symfony_json_encoder_test/decoder', sys_get_temp_dir());
 
         if (is_dir($this->decodersDir)) {
             array_map('unlink', glob($this->decodersDir.'/*'));
@@ -69,17 +69,17 @@ class DecoderGeneratorTest extends TestCase
         $generator = new DecoderGenerator(new DataModelBuilder($propertyMetadataLoader), $this->decodersDir);
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/decoder/%s.string.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/decoder/%s.string.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, DecodeFrom::STRING)),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, DecodeFrom::STREAM)),
         );
 
         $this->assertStringEqualsFile(
-            sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
+            \sprintf('%s/Fixtures/decoder/%s.stream.php', \dirname(__DIR__), $fixture),
             file_get_contents($generator->generate($type, DecodeFrom::RESOURCE)),
         );
     }

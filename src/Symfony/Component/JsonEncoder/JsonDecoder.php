@@ -86,7 +86,7 @@ final class JsonDecoder implements DecoderInterface
     {
         $decodersDir ??= sys_get_temp_dir().'/json_encoder/decoder';
         $lazyGhostsDir ??= sys_get_temp_dir().'/json_encoder/lazy_ghost';
-        $denormalizers = $denormalizers + [
+        $denormalizers += [
             'json_encoder.denormalizer.date_time' => new DateTimeDenormalizer(),
         ];
 

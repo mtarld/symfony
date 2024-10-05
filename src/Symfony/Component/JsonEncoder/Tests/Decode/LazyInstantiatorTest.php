@@ -24,7 +24,7 @@ class LazyInstantiatorTest extends TestCase
     {
         parent::setUp();
 
-        $this->lazyGhostsDir = sprintf('%s/symfony_json_encoder_test/lazy_ghost', sys_get_temp_dir());
+        $this->lazyGhostsDir = \sprintf('%s/symfony_json_encoder_test/lazy_ghost', sys_get_temp_dir());
 
         if (is_dir($this->lazyGhostsDir)) {
             array_map('unlink', glob($this->lazyGhostsDir.'/*'));
@@ -36,7 +36,7 @@ class LazyInstantiatorTest extends TestCase
     {
         $ghost = (new LazyInstantiator($this->lazyGhostsDir))->instantiate(ClassicDummy::class, []);
 
-        $this->assertArrayHasKey(sprintf("\0%sGhost\0lazyObjectState", preg_replace('/\\\\/', '', ClassicDummy::class)), (array) $ghost);
+        $this->assertArrayHasKey(\sprintf("\0%sGhost\0lazyObjectState", preg_replace('/\\\\/', '', ClassicDummy::class)), (array) $ghost);
     }
 
     public function testCreateCacheFile()

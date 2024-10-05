@@ -16,7 +16,6 @@ use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
-use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
 use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
@@ -29,7 +28,6 @@ use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
-use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
  * Builds a encoding graph representation of a given type.

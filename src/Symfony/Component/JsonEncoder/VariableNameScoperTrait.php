@@ -29,7 +29,7 @@ trait VariableNameScoperTrait
             $context['variable_counters'][$variableName] = 0;
         }
 
-        $name = sprintf('%s_%d', $variableName, $context['variable_counters'][$variableName]);
+        $name = \sprintf('%s_%d', $variableName, $context['variable_counters'][$variableName]);
 
         ++$context['variable_counters'][$variableName];
 

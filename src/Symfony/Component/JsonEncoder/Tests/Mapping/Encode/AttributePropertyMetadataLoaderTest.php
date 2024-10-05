@@ -53,7 +53,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
 
         $loader->load(DummyWithNormalizerAttributes::class, [], []);
     }
@@ -66,7 +66,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         ]));
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
 
         $loader->load(DummyWithNormalizerAttributes::class, [], []);
     }
@@ -95,7 +95,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         $loader->load(DummyWithMaxDepthAttribute::class, [], []);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
 
         $loader->load(DummyWithMaxDepthAttribute::class, [], ['depth_counters' => [DummyWithMaxDepthAttribute::class => 256]]);
     }
@@ -109,7 +109,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         $loader->load(DummyWithMaxDepthAttribute::class, [], []);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
 
         $loader->load(DummyWithMaxDepthAttribute::class, [], ['depth_counters' => [DummyWithMaxDepthAttribute::class => 256]]);
     }

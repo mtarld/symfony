@@ -16,8 +16,8 @@ use Symfony\Component\JsonEncoder\Attribute\EncodedName;
 use Symfony\Component\JsonEncoder\Attribute\MaxDepth;
 use Symfony\Component\JsonEncoder\Attribute\Normalizer;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
-use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 
 /**
  * Enhances properties encoding metadata based on properties' attributes.
@@ -104,12 +104,12 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
     private function getAndValidateNormalizer(string $normalizerId): NormalizerInterface
     {
         if (!$this->normalizers->has($normalizerId)) {
-            throw new InvalidArgumentException(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', $normalizerId, NormalizerInterface::class));
+            throw new InvalidArgumentException(\sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', $normalizerId, NormalizerInterface::class));
         }
 
         $normalizer = $this->normalizers->get($normalizerId);
         if (!$normalizer instanceof NormalizerInterface) {
-            throw new InvalidArgumentException(sprintf('The "%s" normalizer service does not implement "%s".', $normalizerId, NormalizerInterface::class));
+            throw new InvalidArgumentException(\sprintf('The "%s" normalizer service does not implement "%s".', $normalizerId, NormalizerInterface::class));
         }
 
         return $normalizer;

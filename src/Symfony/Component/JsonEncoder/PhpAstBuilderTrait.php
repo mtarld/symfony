@@ -67,6 +67,6 @@ trait PhpAstBuilderTrait
             return $accessor->getPhp();
         }
 
-        throw new InvalidArgumentException(sprintf('"%s" cannot be converted to PHP node.', $accessor::class));
+        throw new InvalidArgumentException(\sprintf('"%s" cannot be converted to PHP node.', $accessor::class));
     }
 }

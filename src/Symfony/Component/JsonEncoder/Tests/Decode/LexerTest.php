@@ -38,7 +38,7 @@ class LexerTest extends TestCase
 
     public function testTokenizeOverflowingBuffer()
     {
-        $veryLongString = sprintf('"%s"', str_repeat('.', 20000));
+        $veryLongString = \sprintf('"%s"', str_repeat('.', 20000));
 
         $this->assertTokens([[$veryLongString, 0]], $veryLongString);
     }
@@ -59,7 +59,7 @@ class LexerTest extends TestCase
             fclose($resource);
 
             if (!$valid) {
-                $this->fail(sprintf('"%s" should not be parseable.', $name));
+                $this->fail(\sprintf('"%s" should not be parseable.', $name));
             }
 
             $this->addToAssertionCount(1);
@@ -67,7 +67,7 @@ class LexerTest extends TestCase
             fclose($resource);
 
             if ($valid) {
-                $this->fail(sprintf('"%s" should be parseable.', $name));
+                $this->fail(\sprintf('"%s" should be parseable.', $name));
             }
 
             $this->addToAssertionCount(1);

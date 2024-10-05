@@ -14,7 +14,7 @@ namespace Symfony\Component\JsonEncoder\Tests;
 use Psr\Container\ContainerInterface;
 
 /**
- * A basic container implementation
+ * A basic container implementation.
  */
 class ServiceContainer implements ContainerInterface
 {

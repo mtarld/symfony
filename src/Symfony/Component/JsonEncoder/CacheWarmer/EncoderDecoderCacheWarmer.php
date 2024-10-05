@@ -38,8 +38,8 @@ final class EncoderDecoderCacheWarmer implements CacheWarmerInterface
 
     /**
      * @param list<class-string>   $encodableClassNames
-     * @param array<string, mixed> $defaultEncodeConfig
-     * @param array<string, mixed> $defaultDecodeConfig
+     * @param array<string, mixed> $encoderConfig
+     * @param array<string, mixed> $decoderConfig
      */
     public function __construct(
         private array $encodableClassNames,

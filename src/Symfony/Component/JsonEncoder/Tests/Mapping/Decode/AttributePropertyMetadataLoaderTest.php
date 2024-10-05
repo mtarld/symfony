@@ -52,7 +52,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('You have requested a non-existent denormalizer service "%s". Did you implement "%s"?', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('You have requested a non-existent denormalizer service "%s". Did you implement "%s"?', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
 
         $loader->load(DummyWithNormalizerAttributes::class, [], []);
     }
@@ -65,7 +65,7 @@ class AttributePropertyMetadataLoaderTest extends TestCase
         ]));
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('The "%s" denormalizer service does not implement "%s".', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
+        $this->expectExceptionMessage(\sprintf('The "%s" denormalizer service does not implement "%s".', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
 
         $loader->load(DummyWithNormalizerAttributes::class, [], []);
     }

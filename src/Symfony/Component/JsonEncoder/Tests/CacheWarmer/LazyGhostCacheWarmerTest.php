@@ -23,7 +23,7 @@ class LazyGhostCacheWarmerTest extends TestCase
     {
         parent::setUp();
 
-        $this->lazyGhostsDir = sprintf('%s/symfony_json_encoder_test/json_encoder/lazy_ghost', sys_get_temp_dir());
+        $this->lazyGhostsDir = \sprintf('%s/symfony_json_encoder_test/json_encoder/lazy_ghost', sys_get_temp_dir());
 
         if (is_dir($this->lazyGhostsDir)) {
             array_map('unlink', glob($this->lazyGhostsDir.'/*'));
@@ -36,7 +36,7 @@ class LazyGhostCacheWarmerTest extends TestCase
         (new LazyGhostCacheWarmer([ClassicDummy::class], $this->lazyGhostsDir))->warmUp('useless');
 
         $this->assertSame(
-            array_map(fn (string $c): string => sprintf('%s/%s.php', $this->lazyGhostsDir, hash('xxh128', $c)), [ClassicDummy::class]),
+            array_map(fn (string $c): string => \sprintf('%s/%s.php', $this->lazyGhostsDir, hash('xxh128', $c)), [ClassicDummy::class]),
             glob($this->lazyGhostsDir.'/*'),
         );
     }

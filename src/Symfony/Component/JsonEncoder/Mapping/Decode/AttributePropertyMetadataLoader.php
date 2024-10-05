@@ -14,8 +14,8 @@ namespace Symfony\Component\JsonEncoder\Mapping\Decode;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Attribute\Denormalizer;
 use Symfony\Component\JsonEncoder\Attribute\EncodedName;
-use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
+use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 
 /**
@@ -81,12 +81,12 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
     private function getAndValidateDenormalizer(string $denormalizerId): DenormalizerInterface
     {
         if (!$this->denormalizers->has($denormalizerId)) {
-            throw new InvalidArgumentException(sprintf('You have requested a non-existent denormalizer service "%s". Did you implement "%s"?', $denormalizerId, DenormalizerInterface::class));
+            throw new InvalidArgumentException(\sprintf('You have requested a non-existent denormalizer service "%s". Did you implement "%s"?', $denormalizerId, DenormalizerInterface::class));
         }
 
         $denormalizer = $this->denormalizers->get($denormalizerId);
         if (!$denormalizer instanceof DenormalizerInterface) {
-            throw new InvalidArgumentException(sprintf('The "%s" denormalizer service does not implement "%s".', $denormalizerId, DenormalizerInterface::class));
+            throw new InvalidArgumentException(\sprintf('The "%s" denormalizer service does not implement "%s".', $denormalizerId, DenormalizerInterface::class));
         }
 
         return $denormalizer;

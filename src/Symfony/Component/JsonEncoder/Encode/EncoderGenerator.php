@@ -65,7 +65,7 @@ final class EncoderGenerator
 
         $tmpFile = @tempnam(\dirname($path), basename($path));
         if (false === @file_put_contents($tmpFile, $content)) {
-            throw new RuntimeException(sprintf('Failed to write "%s" encoder file.', $path));
+            throw new RuntimeException(\sprintf('Failed to write "%s" encoder file.', $path));
         }
 
         @rename($tmpFile, $path);
@@ -76,6 +76,6 @@ final class EncoderGenerator
 
     private function getPath(Type $type, EncodeAs $encodeAs): string
     {
-        return sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type), $encodeAs->value);
+        return \sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type), $encodeAs->value);
     }
 }

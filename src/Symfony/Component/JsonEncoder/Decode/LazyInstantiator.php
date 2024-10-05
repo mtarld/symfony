@@ -50,7 +50,7 @@ final class LazyInstantiator
     public function instantiate(string $className, array $propertiesCallables): object
     {
         $reflection = self::$cache['reflection'][$className] ??= new \ReflectionClass($className);
-        $lazyClassName = self::$cache['lazy_class_name'][$className] ??= sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+        $lazyClassName = self::$cache['lazy_class_name'][$className] ??= \sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
 
         $initializer = function (object $object) use ($propertiesCallables) {
             foreach ($propertiesCallables as $name => $propertyCallable) {
@@ -62,17 +62,17 @@ final class LazyInstantiator
             return $lazyClassName::createLazyGhost($initializer);
         }
 
-        if (!file_exists($path = sprintf('%s%s%s.php', $this->lazyGhostsDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
+        if (!file_exists($path = \sprintf('%s%s%s.php', $this->lazyGhostsDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className)))) {
             if (!file_exists($this->lazyGhostsDir)) {
                 mkdir($this->lazyGhostsDir, recursive: true);
             }
 
-            $lazyClassName = sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
+            $lazyClassName = \sprintf('%sGhost', preg_replace('/\\\\/', '', $className));
 
-            file_put_contents($path, sprintf('<?php class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($reflection)));
+            file_put_contents($path, \sprintf('<?php class %s%s', $lazyClassName, ProxyHelper::generateLazyGhost($reflection)));
         }
 
-        require_once sprintf('%s%s%s.php', $this->lazyGhostsDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className));
+        require_once \sprintf('%s%s%s.php', $this->lazyGhostsDir, \DIRECTORY_SEPARATOR, hash('xxh128', $className));
 
         self::$lazyClassesLoaded[$className] = true;
 

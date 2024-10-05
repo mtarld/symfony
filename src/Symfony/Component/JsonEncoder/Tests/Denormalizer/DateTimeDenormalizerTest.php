@@ -44,14 +44,14 @@ class DateTimeDenormalizerTest extends TestCase
     {
         try {
             (new DateTimeDenormalizer())->denormalize('0', []);
-            $this->fail(sprintf('A "%s" exception must have been thrown.', InvalidArgumentException::class));
+            $this->fail(\sprintf('A "%s" exception must have been thrown.', InvalidArgumentException::class));
         } catch (InvalidArgumentException $e) {
             $this->assertEquals("Parsing datetime string \"0\" resulted in 1 errors: \nat position 0: Unexpected character", $e->getMessage());
         }
 
         try {
             (new DateTimeDenormalizer())->denormalize('0', [DateTimeDenormalizer::FORMAT_KEY => 'Y-m-d']);
-            $this->fail(sprintf('A "%s" exception must have been thrown.', InvalidArgumentException::class));
+            $this->fail(\sprintf('A "%s" exception must have been thrown.', InvalidArgumentException::class));
         } catch (InvalidArgumentException $e) {
             $this->assertEquals("Parsing datetime string \"0\" using format \"Y-m-d\" resulted in 1 errors: \nat position 1: Not enough data available to satisfy format", $e->getMessage());
         }

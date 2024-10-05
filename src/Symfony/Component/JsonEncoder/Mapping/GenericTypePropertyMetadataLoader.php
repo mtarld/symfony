@@ -98,7 +98,7 @@ final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderI
         $templates = $this->typeContextFactory->createFromClassName($className)->templates;
 
         if (\count($templates) !== \count($variableTypes)) {
-            throw new InvalidArgumentException(sprintf('Given %d variable types in "%s", but %d templates are defined in "%2$s".', \count($variableTypes), $className, \count($templates)));
+            throw new InvalidArgumentException(\sprintf('Given %d variable types in "%s", but %d templates are defined in "%2$s".', \count($variableTypes), $className, \count($templates)));
         }
 
         $templates = array_keys($templates);

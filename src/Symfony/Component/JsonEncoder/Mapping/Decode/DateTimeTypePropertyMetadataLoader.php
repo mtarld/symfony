@@ -11,9 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\Mapping\Decode;
 
+use Symfony\Component\JsonEncoder\Denormalizer\DateTimeDenormalizer;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\JsonEncoder\Denormalizer\DateTimeDenormalizer;
 
 /**
  * Casts DateTime properties to string properties.

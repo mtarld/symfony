@@ -12,10 +12,9 @@
 namespace Symfony\Component\JsonEncoder\Normalizer;
 
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
-use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\TypeInfo\Type;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * Casts DateTimeInterface to string.

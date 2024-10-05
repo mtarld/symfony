@@ -23,6 +23,6 @@ final class MaxDepthException extends RuntimeException
      */
     public function __construct(string $className, int $limit)
     {
-        parent::__construct(sprintf('Max depth has been reached for class "%s" (configured limit: %d).', $className, $limit));
+        parent::__construct(\sprintf('Max depth has been reached for class "%s" (configured limit: %d).', $className, $limit));
     }
 }

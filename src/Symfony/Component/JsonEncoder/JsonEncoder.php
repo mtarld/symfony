@@ -79,7 +79,7 @@ final class JsonEncoder implements EncoderInterface
     public static function create(array $normalizers = [], ?string $encodersDir = null): static
     {
         $encodersDir ??= sys_get_temp_dir().'/json_encoder/encoder';
-        $normalizers = $normalizers + [
+        $normalizers += [
             'json_encoder.normalizer.date_time' => new DateTimeNormalizer(),
         ];
 

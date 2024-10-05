@@ -18,8 +18,8 @@ use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
@@ -35,7 +35,7 @@ class JsonEncoderTest extends TestCase
     {
         parent::setUp();
 
-        $this->encodersDir = sprintf('%s/symfony_json_encoder_test/encoder', sys_get_temp_dir());
+        $this->encodersDir = \sprintf('%s/symfony_json_encoder_test/encoder', sys_get_temp_dir());
 
         if (is_dir($this->encodersDir)) {
             array_map('unlink', glob($this->encodersDir.'/*'));
@@ -169,7 +169,7 @@ class JsonEncoderTest extends TestCase
         }
 
         file_put_contents(
-            sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
+            \sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
             '<?php return static function ($data): \Traversable { yield "CACHED"; };'
         );
 
@@ -185,7 +185,7 @@ class JsonEncoderTest extends TestCase
         }
 
         file_put_contents(
-            sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
+            \sprintf('%s%s%s.json.%s.php', $this->encodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), EncodeAs::STRING->value),
             '<?php return static function ($data): \Traversable { yield "CACHED"; };'
         );
 

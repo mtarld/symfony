@@ -59,7 +59,7 @@ final class DecoderGenerator
 
         $tmpFile = @tempnam(\dirname($path), basename($path));
         if (false === @file_put_contents($tmpFile, $content)) {
-            throw new RuntimeException(sprintf('Failed to write "%s" decoder file.', $path));
+            throw new RuntimeException(\sprintf('Failed to write "%s" decoder file.', $path));
         }
 
         @rename($tmpFile, $path);
@@ -70,6 +70,6 @@ final class DecoderGenerator
 
     private function getPath(Type $type, DecodeFrom $decodeFrom): string
     {
-        return sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type), $decodeFrom->value);
+        return \sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type), $decodeFrom->value);
     }
 }

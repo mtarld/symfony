@@ -26,8 +26,8 @@ class EncoderDecoderCacheWarmerTest extends TestCase
     {
         parent::setUp();
 
-        $this->encodersDir = sprintf('%s/symfony_json_encoder_test/json_encoder/encoder', sys_get_temp_dir());
-        $this->decodersDir = sprintf('%s/symfony_json_encoder_test/json_encoder/decoder', sys_get_temp_dir());
+        $this->encodersDir = \sprintf('%s/symfony_json_encoder_test/json_encoder/encoder', sys_get_temp_dir());
+        $this->decodersDir = \sprintf('%s/symfony_json_encoder_test/json_encoder/decoder', sys_get_temp_dir());
 
         if (is_dir($this->encodersDir)) {
             array_map('unlink', glob($this->encodersDir.'/*'));
@@ -45,15 +45,15 @@ class EncoderDecoderCacheWarmerTest extends TestCase
         $this->cacheWarmer([ClassicDummy::class])->warmUp('useless');
 
         $this->assertSame([
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.resource.php', $this->encodersDir),
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.stream.php', $this->encodersDir),
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.string.php', $this->encodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.resource.php', $this->encodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.stream.php', $this->encodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.string.php', $this->encodersDir),
         ], glob($this->encodersDir.'/*'));
 
         $this->assertSame([
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.resource.php', $this->decodersDir),
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.stream.php', $this->decodersDir),
-            sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.string.php', $this->decodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.resource.php', $this->decodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.stream.php', $this->decodersDir),
+            \sprintf('%s/d147026bb5d25e5012afcdc1543cf097.json.string.php', $this->decodersDir),
         ], glob($this->decodersDir.'/*'));
     }
 

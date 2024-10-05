@@ -18,7 +18,7 @@ class VariableNameScoperTest extends TestCase
 {
     public function testScopeVariableName()
     {
-        $generator = new class() {
+        $generator = new class {
             use VariableNameScoperTrait {
                 scopeVariableName as private doScopeVariableName;
             }

@@ -50,7 +50,7 @@ class JsonEncoderPassTest extends TestCase
 
         (new JsonEncoderPass())->process($container);
 
-        $this->assertEquals('json_encoder.encoder', (string) $container->getAlias(sprintf('%s $jsonEncoder', EncoderInterface::class)));
-        $this->assertEquals('json_encoder.decoder', (string) $container->getAlias(sprintf('%s $jsonDecoder', DecoderInterface::class)));
+        $this->assertEquals('json_encoder.encoder', (string) $container->getAlias(\sprintf('%s $jsonEncoder', EncoderInterface::class)));
+        $this->assertEquals('json_encoder.decoder', (string) $container->getAlias(\sprintf('%s $jsonDecoder', DecoderInterface::class)));
     }
 }

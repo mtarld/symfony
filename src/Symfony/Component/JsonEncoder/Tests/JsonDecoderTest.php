@@ -35,8 +35,8 @@ class JsonDecoderTest extends TestCase
     {
         parent::setUp();
 
-        $this->decodersDir = sprintf('%s/symfony_json_encoder_test/decoder', sys_get_temp_dir());
-        $this->lazyGhostsDir = sprintf('%s/symfony_json_encoder_test/lazy_ghost', sys_get_temp_dir());
+        $this->decodersDir = \sprintf('%s/symfony_json_encoder_test/decoder', sys_get_temp_dir());
+        $this->lazyGhostsDir = \sprintf('%s/symfony_json_encoder_test/lazy_ghost', sys_get_temp_dir());
 
         if (is_dir($this->decodersDir)) {
             array_map('unlink', glob($this->decodersDir.'/*'));
@@ -158,7 +158,7 @@ class JsonDecoderTest extends TestCase
         }
 
         file_put_contents(
-            sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
+            \sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
             '<?php return static function () { return "CACHED"; };'
         );
 
@@ -174,7 +174,7 @@ class JsonDecoderTest extends TestCase
         }
 
         file_put_contents(
-            sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
+            \sprintf('%s%s%s.json.%s.php', $this->decodersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) Type::bool()), DecodeFrom::STRING->value),
             '<?php return static function () { return "CACHED"; };'
         );
 
