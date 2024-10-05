@@ -51,8 +51,12 @@ final class DataModelBuilder
             return new CompositeNode(array_map(fn (Type $t): DataModelNodeInterface => $this->build($t, $config, $context), $type->getTypes()));
         }
 
-        if ($type instanceof BuiltinType || $type instanceof BackedEnumType) {
+        if ($type instanceof BuiltinType) {
             return new ScalarNode($type);
+        }
+
+        if ($type instanceof BackedEnumType) {
+            return new BackedEnumNode($type);
         }
 
         if ($type instanceof ObjectType && !$type instanceof EnumType) {

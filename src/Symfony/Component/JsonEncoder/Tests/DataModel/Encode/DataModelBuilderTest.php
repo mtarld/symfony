@@ -12,6 +12,7 @@
 namespace Symfony\Component\JsonEncoder\Tests\DataModel\Encode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\DataModel\Encode\BackedEnumNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
@@ -66,7 +67,7 @@ class DataModelBuilderTest extends TestCase
         yield [Type::nullable(Type::int()), new CompositeNode($accessor, [new ScalarNode($accessor, Type::int()), new ScalarNode($accessor, Type::null())])];
         yield [Type::builtin(TypeIdentifier::ARRAY), new ScalarNode($accessor, Type::builtin(TypeIdentifier::ARRAY))];
         yield [Type::object(), new ScalarNode($accessor, Type::object())];
-        yield [Type::enum(DummyBackedEnum::class), new ScalarNode($accessor, Type::enum(DummyBackedEnum::class))];
+        yield [Type::enum(DummyBackedEnum::class), new BackedEnumNode($accessor, Type::enum(DummyBackedEnum::class))];
 
         yield [Type::array(Type::string()), new CollectionNode($accessor, Type::array(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
         yield [Type::list(Type::string()), new CollectionNode($accessor, Type::list(Type::string()), new ScalarNode(new VariableDataAccessor('value_0'), Type::string()))];
@@ -79,7 +80,7 @@ class DataModelBuilderTest extends TestCase
             Type::object(DummyWithUnionProperties::class),
             new ObjectNode($accessor, Type::object(DummyWithUnionProperties::class), [
                 'value' => new CompositeNode(new PropertyDataAccessor($accessor, 'value'), [
-                    new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::enum(DummyBackedEnum::class)),
+                    new BackedEnumNode(new PropertyDataAccessor($accessor, 'value'), Type::enum(DummyBackedEnum::class)),
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::null()),
                     new ScalarNode(new PropertyDataAccessor($accessor, 'value'), Type::string()),
                 ]),

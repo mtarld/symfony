@@ -25,8 +25,9 @@ use Symfony\Component\TypeInfo\Type\UnionType;
 final class CompositeNode implements DataModelNodeInterface
 {
     private const NODE_PRECISION = [
-        CollectionNode::class => 2,
-        ObjectNode::class => 1,
+        CollectionNode::class => 3,
+        ObjectNode::class => 2,
+        BackedEnumNode::class => 1,
         ScalarNode::class => 0,
     ];
 
@@ -50,7 +51,7 @@ final class CompositeNode implements DataModelNodeInterface
             }
         }
 
-        usort($nodes, fn (CollectionNode|ObjectNode|ScalarNode $a, CollectionNode|ObjectNode|ScalarNode $b): int => self::NODE_PRECISION[$b::class] <=> self::NODE_PRECISION[$a::class]);
+        usort($nodes, fn (CollectionNode|ObjectNode|BackedEnumNode|ScalarNode $a, CollectionNode|ObjectNode|BackedEnumNode|ScalarNode $b): int => self::NODE_PRECISION[$b::class] <=> self::NODE_PRECISION[$a::class]);
         $this->nodes = $nodes;
     }
 

@@ -12,6 +12,7 @@
 namespace Symfony\Component\JsonEncoder\Tests\DataModel\Decode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\DataModel\Decode\BackedEnumNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
@@ -69,7 +70,7 @@ class DataModelBuilderTest extends TestCase
                 'value' => [
                     'name' => 'value',
                     'value' => new CompositeNode([
-                        new ScalarNode(Type::enum(DummyBackedEnum::class)),
+                        new BackedEnumNode(Type::enum(DummyBackedEnum::class)),
                         new ScalarNode(Type::null()),
                         new ScalarNode(Type::string()),
                     ]),

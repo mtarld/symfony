@@ -11,19 +11,19 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
-use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\Type\BackedEnumType;
 
 /**
- * Represents a scalar in the data model graph representation.
+ * Represents a backed enum in the data model graph representation.
  *
- * Scalars are leaves in the data model tree.
+ * Backed enums are leaves in the data model tree.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class ScalarNode implements DataModelNodeInterface
+final class BackedEnumNode implements DataModelNodeInterface
 {
     public function __construct(
-        public BuiltinType $type,
+        public BackedEnumType $type,
     ) {
     }
 
@@ -32,7 +32,7 @@ final class ScalarNode implements DataModelNodeInterface
         return (string) $this->type;
     }
 
-    public function getType(): BuiltinType
+    public function getType(): BackedEnumType
     {
         return $this->type;
     }

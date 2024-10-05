@@ -41,6 +41,7 @@ use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\JsonEncoder\DataModel\Decode\BackedEnumNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface;
@@ -149,7 +150,7 @@ final class PhpAstBuilder
         }
 
         return match (true) {
-            $node instanceof ScalarNode => $this->buildScalarProviderStatements($node, $decodeFrom),
+            $node instanceof ScalarNode || $node instanceof BackedEnumNode => $this->buildLeafProviderStatements($node, $decodeFrom),
             $node instanceof CompositeNode => $this->buildCompositeNodeStatements($node, $decodeFrom, $context),
             $node instanceof CollectionNode => $this->buildCollectionNodeStatements($node, $decodeFrom, $context),
             $node instanceof ObjectNode => $this->buildObjectNodeStatements($node, $decodeFrom, $context),
@@ -160,7 +161,7 @@ final class PhpAstBuilder
     /**
      * @return list<Stmt>
      */
-    private function buildScalarProviderStatements(ScalarNode $node, DecodeFrom $decodeFrom): array
+    private function buildLeafProviderStatements(ScalarNode|BackedEnumNode $node, DecodeFrom $decodeFrom): array
     {
         $accessor = DecodeFrom::STRING === $decodeFrom
             ? $this->builder->var('data')
@@ -188,18 +189,21 @@ final class PhpAstBuilder
 
     private function buildFormatValueStatement(DataModelNodeInterface $node, Expr $accessor): Node
     {
-        if (!$node instanceof ScalarNode) {
-            return $accessor;
-        }
-
         $type = $node->getType();
 
-        return match (true) {
-            $type instanceof BackedEnumType => $this->builder->staticCall(new FullyQualified($type->getClassName()), 'from', [$accessor]),
-            TypeIdentifier::NULL === $type->getTypeIdentifier() => $this->builder->val(null),
-            TypeIdentifier::OBJECT === $type->getTypeIdentifier() => new ObjectCast($accessor),
-            default => $accessor,
-        };
+        if ($node instanceof BackedEnumNode) {
+            return $this->builder->staticCall(new FullyQualified($type->getClassName()), 'from', [$accessor]);
+        }
+
+        if ($node instanceof ScalarNode) {
+            return match (true) {
+                TypeIdentifier::NULL === $type->getTypeIdentifier() => $this->builder->val(null),
+                TypeIdentifier::OBJECT === $type->getTypeIdentifier() => new ObjectCast($accessor),
+                default => $accessor,
+            };
+        }
+
+        return $accessor;
     }
 
     /**
@@ -556,10 +560,12 @@ final class PhpAstBuilder
             return false;
         }
 
-        if ($node instanceof ScalarNode) {
-            $type = $node->getType();
+        if ($node instanceof BackedEnumNode) {
+            return false;
+        }
 
-            return !$type instanceof BackedEnumType && !$type->isA(TypeIdentifier::OBJECT);
+        if ($node instanceof ScalarNode) {
+            return !$node->getType()->isA(TypeIdentifier::OBJECT);
         }
 
         return true;

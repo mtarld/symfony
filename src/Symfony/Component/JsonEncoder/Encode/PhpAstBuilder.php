@@ -34,6 +34,7 @@ use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\JsonEncoder\DataModel\Encode\BackedEnumNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface;
@@ -44,7 +45,6 @@ use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
 use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
-use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -132,7 +132,6 @@ final class PhpAstBuilder
 
         if ($dataModelNode instanceof ScalarNode) {
             $scalarAccessor = match (true) {
-                $dataModelNode->getType() instanceof BackedEnumType => $this->encodeValue(new PropertyFetch($accessor, 'value')),
                 TypeIdentifier::NULL === $dataModelNode->getType()->getTypeIdentifier() => $this->builder->val('null'),
                 TypeIdentifier::BOOL === $dataModelNode->getType()->getTypeIdentifier() => new Ternary($accessor, $this->builder->val('true'), $this->builder->val('false')),
                 default => $this->encodeValue($accessor),
@@ -140,6 +139,12 @@ final class PhpAstBuilder
 
             return [
                 $this->yieldJson($scalarAccessor, $encodeAs),
+            ];
+        }
+
+        if ($dataModelNode instanceof BackedEnumNode) {
+            return [
+                $this->yieldJson($this->encodeValue(new PropertyFetch($accessor, 'value')), $encodeAs),
             ];
         }
 
@@ -300,12 +305,12 @@ final class PhpAstBuilder
             return true;
         }
 
+        if ($node instanceof BackedEnumNode) {
+            return false;
+        }
+
         if ($node instanceof ScalarNode) {
             $type = $node->getType();
-
-            if ($type instanceof BackedEnumType) {
-                return false;
-            }
 
             // "null" will be written directly using the "null" string
             // "bool" will be written directly using the "true" or "false" string
