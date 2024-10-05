@@ -46,7 +46,7 @@ final class CompositeNode implements DataModelNodeInterface
 
         foreach ($nodes as $n) {
             if ($n instanceof self) {
-                throw new InvalidArgumentException(\sprintf('Cannot set "%s" as a "%1$s" node.', self::class));
+                throw new InvalidArgumentException(\sprintf('Cannot set "%s" as a "%s" node.', self::class, self::class));
             }
         }
 

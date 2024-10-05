@@ -61,6 +61,9 @@ if (!class_exists(PhpVersion::class)) {
         }
     }
 } else {
+    /**
+     * @internal
+     */
     final class PhpPrinter extends Standard
     {
     }
