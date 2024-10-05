@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
+
 /**
  * Defines the way to access data using an object property.
  *
@@ -24,13 +27,8 @@ final class PropertyDataAccessor implements DataAccessorInterface
     ) {
     }
 
-    public function getObjectAccessor(): DataAccessorInterface
+    public function toPhpExpr(): Expr
     {
-        return $this->objectAccessor;
-    }
-
-    public function getPropertyName(): string
-    {
-        return $this->propertyName;
+        return (new BuilderFactory())->propertyFetch($this->objectAccessor->toPhpExpr(), $this->propertyName);
     }
 }

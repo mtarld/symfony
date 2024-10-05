@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
+
 /**
  * Defines the way to access a scalar value.
  *
@@ -23,8 +26,8 @@ final class ScalarDataAccessor implements DataAccessorInterface
     ) {
     }
 
-    public function getValue(): mixed
+    public function toPhpExpr(): Expr
     {
-        return $this->value;
+        return (new BuilderFactory())->val($this->value);
     }
 }

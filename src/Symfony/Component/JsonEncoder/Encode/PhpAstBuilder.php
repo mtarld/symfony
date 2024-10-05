@@ -42,8 +42,8 @@ use Symfony\Component\JsonEncoder\DataModel\Encode\ScalarNode;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\RuntimeException;
 use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
-use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
+use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
@@ -57,7 +57,9 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  */
 final class PhpAstBuilder
 {
-    use PhpAstBuilderTrait;
+    use VariableNameScoperTrait;
+
+    private BuilderFactory $builder;
 
     public function __construct()
     {
@@ -120,7 +122,7 @@ final class PhpAstBuilder
      */
     private function buildClosureStatements(DataModelNodeInterface $dataModelNode, EncodeAs $encodeAs, array $config, array $context): array
     {
-        $accessor = $this->convertDataAccessorToPhpExpr($dataModelNode->getAccessor());
+        $accessor = $dataModelNode->getAccessor()->toPhpExpr();
 
         if ($this->nodeOnlyNeedsEncode($dataModelNode)) {
             return [
@@ -143,7 +145,7 @@ final class PhpAstBuilder
 
         if ($dataModelNode instanceof CompositeNode) {
             $nodeCondition = function (DataModelNodeInterface $node): Expr {
-                $accessor = $this->convertDataAccessorToPhpExpr($node->getAccessor());
+                $accessor = $node->getAccessor()->toPhpExpr();
                 $type = $node->getType()->getBaseType();
 
                 return match (true) {
@@ -183,7 +185,7 @@ final class PhpAstBuilder
                 return [
                     $this->yieldJson($this->builder->val('['), $encodeAs),
                     new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                    new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->getItemNode()->getAccessor()), [
+                    new Foreach_($accessor, $dataModelNode->getItemNode()->getAccessor()->toPhpExpr(), [
                         'stmts' => [
                             $this->yieldJson($this->builder->var($prefixName), $encodeAs),
                             ...$this->buildClosureStatements($dataModelNode->getItemNode(), $encodeAs, $config, $context),
@@ -199,7 +201,7 @@ final class PhpAstBuilder
             return [
                 $this->yieldJson($this->builder->val('{'), $encodeAs),
                 new Expression(new Assign($this->builder->var($prefixName), $this->builder->val(''))),
-                new Foreach_($accessor, $this->convertDataAccessorToPhpExpr($dataModelNode->getItemNode()->getAccessor()), [
+                new Foreach_($accessor, $dataModelNode->getItemNode()->getAccessor()->toPhpExpr(), [
                     'keyVar' => $this->builder->var($keyName),
                     'stmts' => [
                         new Expression(new Assign($this->builder->var($keyName), $this->escapeString($this->builder->var($keyName)))),

@@ -11,11 +11,17 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel;
 
+use PhpParser\Node\Expr;
+
 /**
- * Represents a way to access data.
+ * Represents a way to access data on PHP.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
 interface DataAccessorInterface
 {
+    /**
+     * Converts to "nikic/php-parser" PHP expression.
+     */
+    public function toPhpExpr(): Expr;
 }

@@ -25,7 +25,7 @@ final class PhpExprDataAccessor implements DataAccessorInterface
     ) {
     }
 
-    public function getPhp(): Expr
+    public function toPhpExpr(): Expr
     {
         return $this->php;
     }

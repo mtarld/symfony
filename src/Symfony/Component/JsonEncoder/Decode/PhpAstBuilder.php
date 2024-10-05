@@ -49,7 +49,7 @@ use Symfony\Component\JsonEncoder\DataModel\Decode\ScalarNode;
 use Symfony\Component\JsonEncoder\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
-use Symfony\Component\JsonEncoder\PhpAstBuilderTrait;
+use Symfony\Component\JsonEncoder\VariableNameScoperTrait;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
@@ -63,7 +63,9 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  */
 final class PhpAstBuilder
 {
-    use PhpAstBuilderTrait;
+    use VariableNameScoperTrait;
+
+    private BuilderFactory $builder;
 
     public function __construct()
     {
@@ -422,7 +424,7 @@ final class PhpAstBuilder
                     );
 
                 $stringPropertiesValuesStmts[] = new ArrayItem(
-                    $this->convertDataAccessorToPhpExpr($property['accessor'](new PhpExprDataAccessor($propertyValueStmt))),
+                    $property['accessor'](new PhpExprDataAccessor($propertyValueStmt))->toPhpExpr(),
                     $this->builder->val($property['name']),
                 );
             } else {
@@ -456,7 +458,7 @@ final class PhpAstBuilder
                             new ClosureUse($this->builder->var('providers'), byRef: true),
                         ],
                         'stmts' => [
-                            new Return_($this->convertDataAccessorToPhpExpr($property['accessor'](new PhpExprDataAccessor($propertyValueStmt)))),
+                            new Return_($property['accessor'](new PhpExprDataAccessor($propertyValueStmt))->toPhpExpr()),
                         ],
                     ]),
                 ));

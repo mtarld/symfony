@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
+
 /**
  * Defines the way to access data using a variable.
  *
@@ -23,8 +26,8 @@ final class VariableDataAccessor implements DataAccessorInterface
     ) {
     }
 
-    public function getName(): string
+    public function toPhpExpr(): Expr
     {
-        return $this->name;
+        return (new BuilderFactory())->var($this->name);
     }
 }

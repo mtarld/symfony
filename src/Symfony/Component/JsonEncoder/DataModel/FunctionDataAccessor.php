@@ -11,6 +11,9 @@
 
 namespace Symfony\Component\JsonEncoder\DataModel;
 
+use PhpParser\BuilderFactory;
+use PhpParser\Node\Expr;
+
 /**
  * Defines the way to access data using a function (or a method).
  *
@@ -28,21 +31,15 @@ final class FunctionDataAccessor implements DataAccessorInterface
     ) {
     }
 
-    public function getFunctionName(): string
+    public function toPhpExpr(): Expr
     {
-        return $this->functionName;
-    }
+        $builder = new BuilderFactory();
+        $arguments = array_map(static fn (DataAccessorInterface $argument): Expr => $argument->toPhpExpr(), $this->arguments);
 
-    /**
-     * @return list<DataAccessorInterface>
-     */
-    public function getArguments(): array
-    {
-        return $this->arguments;
-    }
+        if (null === $this->objectAccessor) {
+            return $builder->funcCall($this->functionName, $arguments);
+        }
 
-    public function getObjectAccessor(): ?DataAccessorInterface
-    {
-        return $this->objectAccessor;
+        return $builder->methodCall($this->objectAccessor->toPhpExpr(), $this->functionName, $arguments);
     }
 }
