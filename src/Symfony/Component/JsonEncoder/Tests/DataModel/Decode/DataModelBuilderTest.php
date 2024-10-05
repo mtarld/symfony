@@ -83,6 +83,7 @@ class DataModelBuilderTest extends TestCase
     public function testDoNotSupportIntersectionType()
     {
         $this->expectException(UnsupportedException::class);
+        $this->expectExceptionMessage('"bool&int" type is not supported.');
 
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
         $dataModelBuilder->build(Type::intersection(Type::int(), Type::bool()), []);
@@ -91,6 +92,7 @@ class DataModelBuilderTest extends TestCase
     public function testDoNotSupportEnumType()
     {
         $this->expectException(UnsupportedException::class);
+        $this->expectExceptionMessage(\sprintf('"%s" type is not supported.', DummyEnum::class));
 
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader());
         $dataModelBuilder->build(Type::enum(DummyEnum::class), []);

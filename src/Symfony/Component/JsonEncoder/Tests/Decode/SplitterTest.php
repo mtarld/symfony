@@ -46,6 +46,7 @@ class SplitterTest extends TestCase
     public function testSplitDictInvalidThrowException(string $content)
     {
         $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Stream is not valid.');
 
         $stream = new BufferedStream();
         $stream->write($content);
@@ -70,6 +71,7 @@ class SplitterTest extends TestCase
     public function testSplitListInvalidThrowException(string $content)
     {
         $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Stream is not valid.');
 
         $stream = new BufferedStream();
         $stream->write($content);

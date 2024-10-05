@@ -35,6 +35,7 @@ class InstantiatorTest extends TestCase
     public function testThrowOnInvalidProperty()
     {
         $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage(\sprintf('Cannot assign array to property %s::$id of type int', ClassicDummy::class));
 
         (new Instantiator())->instantiate(ClassicDummy::class, [
             'id' => ['an', 'array'],

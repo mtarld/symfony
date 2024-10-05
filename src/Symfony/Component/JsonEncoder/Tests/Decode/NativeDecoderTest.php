@@ -16,7 +16,7 @@ use Symfony\Component\JsonEncoder\Decode\NativeDecoder;
 use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 
-class DecoderTest extends TestCase
+class NativeDecoderTest extends TestCase
 {
     public function testDecode()
     {
@@ -31,6 +31,7 @@ class DecoderTest extends TestCase
     public function testDecodeThrowOnInvalidJsonString()
     {
         $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('JSON is not valid: Syntax error');
 
         NativeDecoder::decodeString('foo"');
     }
@@ -38,6 +39,7 @@ class DecoderTest extends TestCase
     public function testDecodeThrowOnInvalidJsonStream()
     {
         $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('JSON is not valid: Syntax error');
 
         $stream = new BufferedStream();
         $stream->write('foo"');

@@ -24,12 +24,16 @@ class CompositeNodeTest extends TestCase
     public function testCannotCreateWithOnlyOneType()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(\sprintf('"%s" expects at least 2 nodes.', CompositeNode::class));
+
         new CompositeNode([new ScalarNode(Type::int())]);
     }
 
     public function testCannotCreateWithCompositeNodeParts()
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(\sprintf('Cannot set "%s" as a "%s" node.', CompositeNode::class, CompositeNode::class));
+
         new CompositeNode([
             new CompositeNode([
                 new ScalarNode(Type::int()),
