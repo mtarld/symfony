@@ -2,7 +2,7 @@
 
 namespace Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer;
 
-use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
+use Symfony\Component\JsonEncoder\Decode\Denormalizer\DenormalizerInterface;
 use Symfony\Component\TypeInfo\Type;
 
 final class DivideStringAndCastToIntDenormalizer implements DenormalizerInterface

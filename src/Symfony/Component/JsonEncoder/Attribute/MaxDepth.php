@@ -14,7 +14,7 @@ namespace Symfony\Component\JsonEncoder\Attribute;
 /**
  * Defines the maximum encoding depth for the property.
  *
- * When the maximum depth is reached, a {@see Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface} service is called if its id has been defined.
+ * When the maximum depth is reached, a {@see Symfony\Component\JsonEncoder\Encode\Normalizer\NormalizerInterface} service is called if its id has been defined.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *

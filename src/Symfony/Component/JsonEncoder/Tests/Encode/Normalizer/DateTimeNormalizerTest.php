@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\JsonEncoder\Tests\Normalizer;
+namespace Symfony\Component\JsonEncoder\Tests\Encode\Normalizer;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\Encode\Normalizer\DateTimeNormalizer;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
-use Symfony\Component\JsonEncoder\Normalizer\DateTimeNormalizer;
 
 class DateTimeNormalizerTest extends TestCase
 {

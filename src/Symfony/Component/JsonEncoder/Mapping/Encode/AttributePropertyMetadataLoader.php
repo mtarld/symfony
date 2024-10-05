@@ -15,9 +15,9 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Attribute\EncodedName;
 use Symfony\Component\JsonEncoder\Attribute\MaxDepth;
 use Symfony\Component\JsonEncoder\Attribute\Normalizer;
+use Symfony\Component\JsonEncoder\Encode\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 
 /**
  * Enhances properties encoding metadata based on properties' attributes.

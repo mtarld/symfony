@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\JsonEncoder\Normalizer;
+namespace Symfony\Component\JsonEncoder\Encode\Normalizer;
 
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\Type;

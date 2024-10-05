@@ -12,7 +12,7 @@
 namespace Symfony\Component\JsonEncoder\Attribute;
 
 /**
- * Defines a {@see Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface} service id
+ * Defines a {@see Symfony\Component\JsonEncoder\Decode\Denormalizer\DenormalizerInterface} service id
  * that will be used to denormalize the property data during decoding.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

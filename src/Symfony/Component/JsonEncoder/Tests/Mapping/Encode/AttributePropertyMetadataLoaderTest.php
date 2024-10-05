@@ -12,11 +12,11 @@
 namespace Symfony\Component\JsonEncoder\Tests\Mapping\Encode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\Encode\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMaxDepthAttribute;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;

@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\JsonEncoder\Mapping\Encode;
 
+use Symfony\Component\JsonEncoder\Encode\Normalizer\DateTimeNormalizer;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonEncoder\Normalizer\DateTimeNormalizer;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**

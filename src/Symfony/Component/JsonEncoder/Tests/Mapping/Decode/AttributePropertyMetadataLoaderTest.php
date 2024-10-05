@@ -12,7 +12,7 @@
 namespace Symfony\Component\JsonEncoder\Tests\Mapping\Decode;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
+use Symfony\Component\JsonEncoder\Decode\Denormalizer\DenormalizerInterface;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;

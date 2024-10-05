@@ -9,23 +9,23 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\JsonEncoder\Normalizer;
+namespace Symfony\Component\JsonEncoder\Decode\Denormalizer;
 
 use Symfony\Component\TypeInfo\Type;
 
 /**
- * Normalizes data during the encoding process.
+ * Denormalizes data during the decoding process.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
  */
-interface NormalizerInterface
+interface DenormalizerInterface
 {
     /**
      * @param array<string, mixed> $config
      */
-    public function normalize(mixed $denormalized, array $config): mixed;
+    public function denormalize(mixed $data, array $config): mixed;
 
     public static function getNormalizedType(): Type;
 }

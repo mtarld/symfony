@@ -12,7 +12,7 @@
 namespace Symfony\Component\JsonEncoder\Attribute;
 
 /**
- * Defines a {@see Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface} service id
+ * Defines a {@see Symfony\Component\JsonEncoder\Encode\Normalizer\NormalizerInterface} service id
  * that will be used to normalize the property data during encoding.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>

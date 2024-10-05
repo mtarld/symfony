@@ -14,7 +14,7 @@ namespace Symfony\Component\JsonEncoder\Mapping\Decode;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Attribute\Denormalizer;
 use Symfony\Component\JsonEncoder\Attribute\EncodedName;
-use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
+use Symfony\Component\JsonEncoder\Decode\Denormalizer\DenormalizerInterface;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 

@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\JsonEncoder\Tests\Denormalizer;
+namespace Symfony\Component\JsonEncoder\Tests\Decode\Denormalizer;
 
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\JsonEncoder\Denormalizer\DateTimeDenormalizer;
+use Symfony\Component\JsonEncoder\Decode\Denormalizer\DateTimeDenormalizer;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 
 class DateTimeDenormalizerTest extends TestCase
