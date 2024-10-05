@@ -21,12 +21,17 @@ use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental
+ * @internal
  */
 final class Instantiator
 {
     /**
+     * @template T of object
+     *
+     * @param class-string<T>      $className
      * @param array<string, mixed> $properties
+     *
+     * @return T
      */
     public function instantiate(string $className, array $properties): object
     {

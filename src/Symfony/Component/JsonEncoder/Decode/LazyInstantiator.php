@@ -22,7 +22,7 @@ use Symfony\Component\VarExporter\ProxyHelper;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
- * @experimental
+ * @internal
  */
 final class LazyInstantiator
 {
@@ -45,7 +45,12 @@ final class LazyInstantiator
     }
 
     /**
+     * @template T of object
+     *
+     * @param class-string<T>                  $className
      * @param array<string, callable(): mixed> $propertiesCallables
+     *
+     * @return T
      */
     public function instantiate(string $className, array $propertiesCallables): object
     {
