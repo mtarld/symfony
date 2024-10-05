@@ -13,7 +13,7 @@ namespace Symfony\Component\JsonEncoder\Tests\Decode;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Decode\Splitter;
-use Symfony\Component\JsonEncoder\Exception\UnexpectedValueException;
+use Symfony\Component\JsonEncoder\Exception\InvalidStreamException;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 
 class SplitterTest extends TestCase
@@ -43,10 +43,10 @@ class SplitterTest extends TestCase
     /**
      * @dataProvider splitDictInvalidDataProvider
      */
-    public function testSplitDictInvalidThrowException(string $content)
+    public function testSplitDictInvalidThrowException(string $expectedMessage, string $content)
     {
-        $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('Stream is not valid.');
+        $this->expectException(InvalidStreamException::class);
+        $this->expectExceptionMessage($expectedMessage);
 
         $stream = new BufferedStream();
         $stream->write($content);
@@ -56,22 +56,32 @@ class SplitterTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: list<array{0: string, 1: int}>}>
+     * @return iterable<array{0: list<array{0: string, 1: string}>}>
      */
     public static function splitDictInvalidDataProvider(): iterable
     {
-        yield ['{100'];
-        yield ['{{}'];
-        yield ['{{}]'];
+        yield ['Unterminated JSON.', '{"foo":1'];
+        yield ['Unexpected "{" token.', '{{}'];
+        yield ['Unexpected "}" token.', '}'];
+        yield ['Unexpected "}" token.', '{}}'];
+        yield ['Unexpected "," token.', ','];
+        yield ['Unexpected "," token.', '{"foo",}'];
+        yield ['Unexpected ":" token.', ':'];
+        yield ['Unexpected ":" token.', '{:'];
+        yield ['Unexpected "0" token.', '{"foo" 0}'];
+        yield ['Expected scalar value, but got "_".', '{"foo":_'];
+        yield ['Expected dict key, but got "100".', '{100'];
+        yield ['Got "foo" dict key twice.', '{"foo":1,"foo"'];
+        yield ['Expected end, but got ""x"".', '{"a": true} "x"'];
     }
 
     /**
      * @dataProvider splitListInvalidDataProvider
      */
-    public function testSplitListInvalidThrowException(string $content)
+    public function testSplitListInvalidThrowException(string $expectedMessage, string $content)
     {
-        $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('Stream is not valid.');
+        $this->expectException(InvalidStreamException::class);
+        $this->expectExceptionMessage($expectedMessage);
 
         $stream = new BufferedStream();
         $stream->write($content);
@@ -81,13 +91,21 @@ class SplitterTest extends TestCase
     }
 
     /**
-     * @return iterable<array{0: string}>
+     * @return iterable<array{0: string, 1: string}>
      */
     public static function splitListInvalidDataProvider(): iterable
     {
-        yield ['[100'];
-        yield ['[[]'];
-        yield ['[[]}'];
+        yield ['Unterminated JSON.', '[100'];
+        yield ['Unexpected "[" token.', '[]['];
+        yield ['Unexpected "]" token.', ']'];
+        yield ['Unexpected "]" token.', '[]]'];
+        yield ['Unexpected "," token.', ','];
+        yield ['Unexpected "," token.', '[100,,]'];
+        yield ['Unexpected ":" token.', ':'];
+        yield ['Unexpected ":" token.', '[100:'];
+        yield ['Unexpected "0" token.', '[1 0]'];
+        yield ['Expected scalar value, but got "_".', '[_'];
+        yield ['Expected end, but got "100".', '{"a": true} 100'];
     }
 
     private function assertListBoundaries(?array $expectedBoundaries, string $content, int $offset = 0, ?int $length = null): void

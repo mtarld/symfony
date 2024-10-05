@@ -28,16 +28,16 @@ final class Lexer
     private const WHITESPACE_CHARS = [' ' => true, "\r" => true, "\t" => true, "\n" => true];
     private const STRUCTURE_CHARS = [',' => true, ':' => true, '{' => true, '}' => true, '[' => true, ']' => true];
 
-    private const DICT_START = 1;
-    private const DICT_END = 2;
-    private const LIST_START = 4;
-    private const LIST_END = 8;
-    private const KEY = 16;
-    private const COLUMN = 32;
-    private const COMMA = 64;
-    private const SCALAR = 128;
-    private const END = 256;
-    private const VALUE = self::DICT_START | self::LIST_START | self::SCALAR;
+    private const TOKEN_DICT_START = 1;
+    private const TOKEN_DICT_END = 2;
+    private const TOKEN_LIST_START = 4;
+    private const TOKEN_LIST_END = 8;
+    private const TOKEN_KEY = 16;
+    private const TOKEN_COLUMN = 32;
+    private const TOKEN_COMMA = 64;
+    private const TOKEN_SCALAR = 128;
+    private const TOKEN_END = 256;
+    private const TOKEN_VALUE = self::TOKEN_DICT_START | self::TOKEN_LIST_START | self::TOKEN_SCALAR;
 
     private const KEY_REGEX = '/^(?:(?>"(?>\\\\(?>["\\\\\/bfnrt]|u[a-fA-F0-9]{4})|[^\0-\x1F\\\\"]+)*"))$/u';
     private const SCALAR_REGEX = '/^(?:(?:(?>"(?>\\\\(?>["\\\\\/bfnrt]|u[a-fA-F0-9]{4})|[^\0-\x1F\\\\"]+)*"))|(?:(?>-?(?>0|[1-9][0-9]*)(?>\.[0-9]+)?(?>[eE][+-]?[0-9]+)?))|true|false|null)$/u';
@@ -51,8 +51,11 @@ final class Lexer
      */
     public function getTokens(mixed $stream, int $offset, ?int $length): \Iterator
     {
+        /**
+         * @var array{expected_token: int-max-of<self::TOKEN_*>, pointer: int, structures: array<int, 'list'|'dict'>, keys: list<array<string, true>>}
+         */
         $context = [
-            'expected' => self::VALUE,
+            'expected_token' => self::TOKEN_VALUE,
             'pointer' => -1,
             'structures' => [],
             'keys' => [],
@@ -122,8 +125,8 @@ final class Lexer
             yield [$token, $currentTokenPosition];
         }
 
-        if (!(self::END & $context['expected'])) {
-            throw new InvalidStreamException();
+        if (!(self::TOKEN_END & $context['expected_token'])) {
+            throw new InvalidStreamException('Unterminated JSON.');
         }
     }
 
@@ -174,136 +177,136 @@ final class Lexer
     }
 
     /**
-     * @param array{expected: int, pointer: int, structures: list<string>, keys: list<array<string, true>>} $context
+     * @param array{expected_token: int-max-of<self::TOKEN_*>, pointer: int, structures: list<'list'|'dict'>, keys: list<array<string, true>>} $context
      *
      * @throws InvalidStreamException
      */
     private function validateToken(string $token, array &$context): void
     {
         if ('{' === $token) {
-            if (!(self::DICT_START & $context['expected'])) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_DICT_START & $context['expected_token'])) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
             ++$context['pointer'];
             $context['structures'][$context['pointer']] = 'dict';
             $context['keys'][$context['pointer']] = [];
-            $context['expected'] = self::DICT_END | self::KEY;
+            $context['expected_token'] = self::TOKEN_DICT_END | self::TOKEN_KEY;
 
             return;
         }
 
         if ('}' === $token) {
-            if (!(self::DICT_END & $context['expected']) || -1 === $context['pointer']) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_DICT_END & $context['expected_token']) || -1 === $context['pointer']) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
             unset($context['keys'][$context['pointer']]);
             --$context['pointer'];
 
             if (-1 === $context['pointer']) {
-                $context['expected'] = self::END;
+                $context['expected_token'] = self::TOKEN_END;
             } else {
-                $context['expected'] = 'list' === $context['structures'][$context['pointer']] ? self::LIST_END | self::COMMA : self::DICT_END | self::COMMA;
+                $context['expected_token'] = 'list' === $context['structures'][$context['pointer']] ? self::TOKEN_LIST_END | self::TOKEN_COMMA : self::TOKEN_DICT_END | self::TOKEN_COMMA;
             }
 
             return;
         }
 
         if ('[' === $token) {
-            if (!(self::LIST_START & $context['expected'])) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_LIST_START & $context['expected_token'])) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
-            $context['expected'] = self::LIST_END | self::VALUE;
+            $context['expected_token'] = self::TOKEN_LIST_END | self::TOKEN_VALUE;
             $context['structures'][++$context['pointer']] = 'list';
 
             return;
         }
 
         if (']' === $token) {
-            if (!(self::LIST_END & $context['expected']) || -1 === $context['pointer']) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_LIST_END & $context['expected_token']) || -1 === $context['pointer']) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
             --$context['pointer'];
 
             if (-1 === $context['pointer']) {
-                $context['expected'] = self::END;
+                $context['expected_token'] = self::TOKEN_END;
             } else {
-                $context['expected'] = 'list' === $context['structures'][$context['pointer']] ? self::LIST_END | self::COMMA : self::DICT_END | self::COMMA;
+                $context['expected_token'] = 'list' === $context['structures'][$context['pointer']] ? self::TOKEN_LIST_END | self::TOKEN_COMMA : self::TOKEN_DICT_END | self::TOKEN_COMMA;
             }
 
             return;
         }
 
         if (',' === $token) {
-            if (!(self::COMMA & $context['expected']) || -1 === $context['pointer']) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_COMMA & $context['expected_token']) || -1 === $context['pointer']) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
-            $context['expected'] = 'dict' === $context['structures'][$context['pointer']] ? self::KEY : self::VALUE;
+            $context['expected_token'] = 'dict' === $context['structures'][$context['pointer']] ? self::TOKEN_KEY : self::TOKEN_VALUE;
 
             return;
         }
 
         if (':' === $token) {
-            if (!(self::COLUMN & $context['expected']) || 'dict' !== ($context['structures'][$context['pointer']] ?? null)) {
-                throw new InvalidStreamException();
+            if (!(self::TOKEN_COLUMN & $context['expected_token']) || 'dict' !== ($context['structures'][$context['pointer']] ?? null)) {
+                throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
             }
 
-            $context['expected'] = self::VALUE;
+            $context['expected_token'] = self::TOKEN_VALUE;
 
             return;
         }
 
-        if (self::VALUE & $context['expected'] && !preg_match(self::SCALAR_REGEX, $token)) {
-            throw new InvalidStreamException();
+        if (self::TOKEN_VALUE & $context['expected_token'] && !preg_match(self::SCALAR_REGEX, $token)) {
+            throw new InvalidStreamException(\sprintf('Expected scalar value, but got "%s".', $token));
         }
 
         if (-1 === $context['pointer']) {
-            if (self::VALUE & $context['expected']) {
-                $context['expected'] = self::END;
+            if (self::TOKEN_VALUE & $context['expected_token']) {
+                $context['expected_token'] = self::TOKEN_END;
 
                 return;
             }
 
-            throw new InvalidStreamException();
+            throw new InvalidStreamException(\sprintf('Expected end, but got "%s".', $token));
         }
 
         if ('dict' === $context['structures'][$context['pointer']]) {
-            if (self::KEY & $context['expected']) {
+            if (self::TOKEN_KEY & $context['expected_token']) {
                 if (!preg_match(self::KEY_REGEX, $token)) {
-                    throw new InvalidStreamException();
+                    throw new InvalidStreamException(\sprintf('Expected dict key, but got "%s".', $token));
                 }
 
                 if (isset($context['keys'][$context['pointer']][$token])) {
-                    throw new InvalidStreamException();
+                    throw new InvalidStreamException(\sprintf('Got %s dict key twice.', $token));
                 }
 
                 $context['keys'][$context['pointer']][$token] = true;
-                $context['expected'] = self::COLUMN;
+                $context['expected_token'] = self::TOKEN_COLUMN;
 
                 return;
             }
 
-            if (self::VALUE & $context['expected']) {
-                $context['expected'] = self::DICT_END | self::COMMA;
+            if (self::TOKEN_VALUE & $context['expected_token']) {
+                $context['expected_token'] = self::TOKEN_DICT_END | self::TOKEN_COMMA;
 
                 return;
             }
 
-            throw new InvalidStreamException();
+            throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
         }
 
         if ('list' === $context['structures'][$context['pointer']]) {
-            if (self::VALUE & $context['expected']) {
-                $context['expected'] = self::LIST_END | self::COMMA;
+            if (self::TOKEN_VALUE & $context['expected_token']) {
+                $context['expected_token'] = self::TOKEN_LIST_END | self::TOKEN_COMMA;
 
                 return;
             }
 
-            throw new InvalidStreamException();
+            throw new InvalidStreamException(\sprintf('Unexpected "%s" token.', $token));
         }
     }
 }

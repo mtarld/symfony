@@ -18,8 +18,4 @@ namespace Symfony\Component\JsonEncoder\Exception;
  */
 final class InvalidStreamException extends UnexpectedValueException
 {
-    public function __construct()
-    {
-        parent::__construct('Stream is not valid.');
-    }
 }
