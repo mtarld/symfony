@@ -27,6 +27,11 @@ final class DateTimeDenormalizer implements DenormalizerInterface
 {
     public const FORMAT_KEY = 'date_time_format';
 
+    public function __construct(
+        private bool $immutable,
+    ) {
+    }
+
     public function denormalize(mixed $normalized, array $config): mixed
     {
         if (!\is_string($normalized) || '' === trim($normalized)) {
@@ -34,21 +39,22 @@ final class DateTimeDenormalizer implements DenormalizerInterface
         }
 
         $dateTimeFormat = $config[self::FORMAT_KEY] ?? null;
+        $dateTimeClassName = $this->immutable ? \DateTimeImmutable::class : \DateTime::class;
 
         if (null !== $dateTimeFormat) {
-            if (false !== $dateTime = \DateTimeImmutable::createFromFormat($dateTimeFormat, $normalized)) {
+            if (false !== $dateTime = $dateTimeClassName::createFromFormat($dateTimeFormat, $normalized)) {
                 return $dateTime;
             }
 
-            $dateTimeErrors = \DateTimeImmutable::getLastErrors();
+            $dateTimeErrors = $dateTimeClassName::getLastErrors();
 
             throw new InvalidArgumentException(\sprintf('Parsing datetime string "%s" using format "%s" resulted in %d errors: ', $normalized, $dateTimeFormat, $dateTimeErrors['error_count'])."\n".implode("\n", $this->formatDateTimeErrors($dateTimeErrors['errors'])));
         }
 
         try {
-            return new \DateTimeImmutable($normalized);
+            return new $dateTimeClassName($normalized);
         } catch (\Throwable) {
-            $dateTimeErrors = \DateTimeImmutable::getLastErrors();
+            $dateTimeErrors = $dateTimeClassName::getLastErrors();
 
             throw new InvalidArgumentException(\sprintf('Parsing datetime string "%s" resulted in %d errors: ', $normalized, $dateTimeErrors['error_count'])."\n".implode("\n", $this->formatDateTimeErrors($dateTimeErrors['errors'])));
         }
@@ -63,9 +69,9 @@ final class DateTimeDenormalizer implements DenormalizerInterface
     }
 
     /**
-     * Formats datetime errors.
+     * @param array<int, string> $errors
      *
-     * @return string[]
+     * @return list<string>
      */
     private function formatDateTimeErrors(array $errors): array
     {

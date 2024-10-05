@@ -19,6 +19,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\BooleanStringDenor
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\DivideStringAndCastToIntDenormalizer;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
@@ -137,6 +138,18 @@ class JsonDecoderTest extends TestCase
             $this->assertNull($decoded->name);
             $this->assertNull($decoded->enum);
         }, '{"name":null,"enum":null}', Type::object(DummyWithNullableProperties::class));
+    }
+
+    public function testDecodeObjectWithDateTimes()
+    {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
+            $this->assertInstanceOf(DummyWithDateTimes::class, $decoded);
+            $this->assertEquals(new \DateTimeImmutable('2024-11-20'), $decoded->interface);
+            $this->assertEquals(new \DateTimeImmutable('2025-11-20'), $decoded->immutable);
+            $this->assertEquals(new \DateTime('2024-10-05'), $decoded->mutable);
+        }, '{"interface":"2024-11-20","immutable":"2025-11-20","mutable":"2024-10-05"}', Type::object(DummyWithDateTimes::class));
     }
 
     public function testCreateDecoderFile()

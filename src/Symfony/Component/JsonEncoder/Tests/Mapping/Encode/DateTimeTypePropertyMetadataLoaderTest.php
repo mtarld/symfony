@@ -22,13 +22,15 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
     public function testAddDateTimeNormalizer()
     {
         $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'foo' => new PropertyMetadata('foo', Type::object(\DateTimeImmutable::class)),
+            'dateTime' => new PropertyMetadata('dateTime', Type::object(\DateTimeImmutable::class)),
+            'other' => new PropertyMetadata('other', Type::object(self::class)),
         ]));
 
         $metadata = $loader->load(self::class, [], []);
 
         $this->assertEquals([
-            'foo' => new PropertyMetadata('foo', Type::string(), ['json_encoder.normalizer.date_time']),
+            'dateTime' => new PropertyMetadata('dateTime', Type::string(), ['json_encoder.normalizer.date_time']),
+            'other' => new PropertyMetadata('other', Type::object(self::class)),
         ], $metadata);
     }
 

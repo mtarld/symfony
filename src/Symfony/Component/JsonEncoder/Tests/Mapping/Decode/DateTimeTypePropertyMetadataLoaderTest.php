@@ -22,13 +22,19 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
     public function testAddDateTimeDenormalizer()
     {
         $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'foo' => new PropertyMetadata('foo', Type::object(\DateTimeImmutable::class)),
+            'interface' => new PropertyMetadata('interface', Type::object(\DateTimeInterface::class)),
+            'immutable' => new PropertyMetadata('immutable', Type::object(\DateTimeImmutable::class)),
+            'mutable' => new PropertyMetadata('mutable', Type::object(\DateTime::class)),
+            'other' => new PropertyMetadata('other', Type::object(self::class)),
         ]));
 
         $metadata = $loader->load(self::class, [], []);
 
         $this->assertEquals([
-            'foo' => new PropertyMetadata('foo', Type::string(), [], ['json_encoder.denormalizer.date_time']),
+            'interface' => new PropertyMetadata('interface', Type::string(), [], ['json_encoder.denormalizer.date_time_immutable']),
+            'immutable' => new PropertyMetadata('immutable', Type::string(), [], ['json_encoder.denormalizer.date_time_immutable']),
+            'mutable' => new PropertyMetadata('mutable', Type::string(), [], ['json_encoder.denormalizer.date_time']),
+            'other' => new PropertyMetadata('other', Type::object(self::class)),
         ], $metadata);
     }
 

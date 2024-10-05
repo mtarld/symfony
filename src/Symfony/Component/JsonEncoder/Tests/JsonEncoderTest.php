@@ -13,11 +13,13 @@ namespace Symfony\Component\JsonEncoder\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Encode\EncodeAs;
+use Symfony\Component\JsonEncoder\Encode\Normalizer\DateTimeNormalizer;
 use Symfony\Component\JsonEncoder\JsonEncoder;
 use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
@@ -148,6 +150,21 @@ class JsonEncoderTest extends TestCase
         $dummy = new DummyWithNullableProperties();
 
         $this->assertEncoded($encoder, '{"name":null,"enum":null}', $dummy, Type::object(DummyWithNullableProperties::class));
+    }
+
+    public function testEncodeObjectWithDateTimes()
+    {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
+        $mutableDate = new \DateTime('2024-11-20');
+        $immutableDate = \DateTimeImmutable::createFromMutable($mutableDate);
+
+        $dummy = new DummyWithDateTimes();
+        $dummy->interface = $immutableDate;
+        $dummy->immutable = $immutableDate;
+        $dummy->mutable = $mutableDate;
+
+        $this->assertEncoded($encoder, '{"interface":"2024-11-20","immutable":"2024-11-20","mutable":"2024-11-20"}', $dummy, Type::object(DummyWithDateTimes::class), [DateTimeNormalizer::FORMAT_KEY => 'Y-m-d']);
     }
 
     public function testCreateEncoderFile()

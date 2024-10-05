@@ -37,9 +37,13 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
             $type = $metadata->getType();
 
             if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
+                $dateTimeDenormalizer = match ($type->getClassName()) {
+                    \DateTimeInterface::class, \DateTimeImmutable::class => 'json_encoder.denormalizer.date_time_immutable',
+                    default => 'json_encoder.denormalizer.date_time',
+                };
                 $metadata = $metadata
                     ->withType(DateTimeDenormalizer::getNormalizedType())
-                    ->withAdditionalDenormalizer('json_encoder.denormalizer.date_time');
+                    ->withAdditionalDenormalizer($dateTimeDenormalizer);
             }
         }
 
