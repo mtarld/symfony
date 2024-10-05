@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $data, mixed $stream, array $config): void {
+return static function (mixed $data, mixed $stream, \Psr\Container\ContainerInterface $normalizers, array $config): void {
     \fwrite($stream, '{"value":');
     if ($data->value instanceof \Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum) {
         \fwrite($stream, \json_encode($data->value->value));

@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $data, array $config): \Traversable {
+return static function (mixed $data, \Psr\Container\ContainerInterface $normalizers, array $config): \Traversable {
     if (\is_array($data)) {
         yield '[';
         $prefix_0 = '';

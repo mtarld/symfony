@@ -25,8 +25,8 @@ class PropertyMetadataLoaderTest extends TestCase
         $loader = new PropertyMetadataLoader(TypeResolver::create());
 
         $this->assertEquals([
-            'id' => new PropertyMetadata('id', Type::int(), []),
-            'name' => new PropertyMetadata('name', Type::string(), []),
+            'id' => new PropertyMetadata('id', Type::int()),
+            'name' => new PropertyMetadata('name', Type::string()),
         ], $loader->load(ClassicDummy::class, [], []));
     }
 }

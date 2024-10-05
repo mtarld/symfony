@@ -40,6 +40,7 @@ use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelNodeInterface;
@@ -82,8 +83,9 @@ final class PhpAstBuilder
                 'static' => true,
                 'params' => [
                     new Param($this->builder->var('string'), type: new Identifier('string|\\Stringable')),
-                    new Param($this->builder->var('config'), type: new Identifier('array')),
+                    new Param($this->builder->var('denormalizers'), type: new FullyQualified(ContainerInterface::class)),
                     new Param($this->builder->var('instantiator'), type: new FullyQualified(Instantiator::class)),
+                    new Param($this->builder->var('config'), type: new Identifier('array')),
                 ],
                 'returnType' => new Identifier('mixed'),
                 'stmts' => [
@@ -102,8 +104,9 @@ final class PhpAstBuilder
                 'static' => true,
                 'params' => [
                     new Param($this->builder->var('stream'), type: new Identifier('mixed')),
-                    new Param($this->builder->var('config'), type: new Identifier('array')),
+                    new Param($this->builder->var('denormalizers'), type: new FullyQualified(ContainerInterface::class)),
                     new Param($this->builder->var('instantiator'), type: new FullyQualified(LazyInstantiator::class)),
+                    new Param($this->builder->var('config'), type: new Identifier('array')),
                 ],
                 'returnType' => new Identifier('mixed'),
                 'stmts' => [
@@ -270,6 +273,7 @@ final class PhpAstBuilder
                     'params' => $params,
                     'uses' => [
                         new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('denormalizers')),
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
                     ],
@@ -331,6 +335,7 @@ final class PhpAstBuilder
                     'params' => $iterableClosureParams,
                     'uses' => [
                         new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('denormalizers')),
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
                     ],
@@ -368,6 +373,7 @@ final class PhpAstBuilder
                     'params' => $params,
                     'uses' => [
                         new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('denormalizers')),
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
                     ],
@@ -445,6 +451,7 @@ final class PhpAstBuilder
                             new ClosureUse($this->builder->var('stream')),
                             new ClosureUse($this->builder->var('v')),
                             new ClosureUse($this->builder->var('config')),
+                            new ClosureUse($this->builder->var('denormalizers')),
                             new ClosureUse($this->builder->var('instantiator')),
                             new ClosureUse($this->builder->var('providers'), byRef: true),
                         ],
@@ -507,6 +514,7 @@ final class PhpAstBuilder
                     'params' => $params,
                     'uses' => [
                         new ClosureUse($this->builder->var('config')),
+                        new ClosureUse($this->builder->var('denormalizers')),
                         new ClosureUse($this->builder->var('instantiator')),
                         new ClosureUse($this->builder->var('providers'), byRef: true),
                     ],

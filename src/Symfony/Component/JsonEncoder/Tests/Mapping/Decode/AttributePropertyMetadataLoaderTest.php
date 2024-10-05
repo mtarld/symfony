@@ -12,12 +12,16 @@
 namespace Symfony\Component\JsonEncoder\Tests\Mapping\Decode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
+use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Attribute\BooleanStringDecodeFormatter;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\BooleanStringDenormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\DivideStringAndCastToIntDenormalizer;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
+use Symfony\Component\JsonEncoder\Tests\ServiceContainer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
@@ -25,21 +29,44 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 {
     public function testRetrieveEncodedName()
     {
-        $typeResolver = TypeResolver::create();
-        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
 
         $this->assertSame(['@id', 'name'], array_keys($loader->load(DummyWithNameAttributes::class, [], [])));
     }
 
-    public function testRetrieveDecodeFormatter()
+    public function testRetrieveDenormalizer()
     {
-        $typeResolver = TypeResolver::create();
-        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DivideStringAndCastToIntDenormalizer::class => new DivideStringAndCastToIntDenormalizer(),
+            BooleanStringDenormalizer::class => new BooleanStringDenormalizer(),
+        ]));
 
         $this->assertEquals([
-            'id' => new PropertyMetadata('id', Type::string(), [DummyWithFormatterAttributes::divideAndCastToInt(...)]),
-            'name' => new PropertyMetadata('name', Type::string(), [strtolower(...)]),
-            'active' => new PropertyMetadata('active', Type::string(), [BooleanStringDecodeFormatter::toBool(...)]),
-        ], $loader->load(DummyWithFormatterAttributes::class, [], []));
+            'id' => new PropertyMetadata('id', Type::string(), [], [DivideStringAndCastToIntDenormalizer::class]),
+            'active' => new PropertyMetadata('active', Type::string(), [], [BooleanStringDenormalizer::class]),
+        ], $loader->load(DummyWithNormalizerAttributes::class, [], []));
+    }
+
+    public function testThrowWhenCannotRetrieveDenormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('You have requested a non-existent denormalizer service "%s". Did you implement "%s"?', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
+
+        $loader->load(DummyWithNormalizerAttributes::class, [], []);
+    }
+
+    public function testThrowWhenInvaliDenormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DivideStringAndCastToIntDenormalizer::class => true,
+            BooleanStringDenormalizer::class => new BooleanStringDenormalizer(),
+        ]));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('The "%s" denormalizer service does not implement "%s".', DivideStringAndCastToIntDenormalizer::class, DenormalizerInterface::class));
+
+        $loader->load(DummyWithNormalizerAttributes::class, [], []);
     }
 }

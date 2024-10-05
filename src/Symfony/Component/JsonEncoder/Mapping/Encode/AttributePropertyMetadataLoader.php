@@ -11,11 +11,13 @@
 
 namespace Symfony\Component\JsonEncoder\Mapping\Encode;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Attribute\EncodedName;
-use Symfony\Component\JsonEncoder\Attribute\EncodeFormatter;
 use Symfony\Component\JsonEncoder\Attribute\MaxDepth;
+use Symfony\Component\JsonEncoder\Attribute\Normalizer;
+use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
+use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
 /**
  * Enhances properties encoding metadata based on properties' attributes.
@@ -28,7 +30,7 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
 {
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
-        private TypeResolverInterface $typeResolver,
+        private ContainerInterface $normalizers,
     ) {
     }
 
@@ -42,27 +44,25 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
             $encodedName = $attributesMetadata['name'] ?? $initialEncodedName;
 
             if (isset($attributesMetadata['max_depth']) && ($context['depth_counters'][$className] ?? 0) > $attributesMetadata['max_depth']) {
-                if (null === $formatter = $attributesMetadata['max_depth_reached_formatter'] ?? null) {
+                if (null === $normalizerId = $attributesMetadata['max_depth_reached_normalizer_id'] ?? null) {
                     continue;
                 }
 
-                $reflectionFormatter = new \ReflectionFunction($formatter);
-                $type = $this->typeResolver->resolve($reflectionFormatter);
+                $normalizer = $this->getAndValidateNormalizer($normalizerId);
 
                 $result[$encodedName] = $initialMetadata
-                    ->withType($type)
-                    ->withFormatter($formatter(...));
+                    ->withType($normalizer::getNormalizedType())
+                    ->withAdditionalNormalizer($normalizerId);
 
                 continue;
             }
 
-            if (null !== $formatter = $attributesMetadata['formatter'] ?? null) {
-                $reflectionFormatter = new \ReflectionFunction($formatter);
-                $type = $this->typeResolver->resolve($reflectionFormatter);
+            if (null !== $normalizerId = $attributesMetadata['normalizer_id'] ?? null) {
+                $normalizer = $this->getAndValidateNormalizer($normalizerId);
 
                 $result[$encodedName] = $initialMetadata
-                    ->withType($type)
-                    ->withFormatter($formatter(...));
+                    ->withType($normalizer::getNormalizedType())
+                    ->withAdditionalNormalizer($normalizerId);
 
                 continue;
             }
@@ -74,7 +74,7 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
     }
 
     /**
-     * @return array{name?: string, formatter?: callable, max_depth?: int, max_depth_reached_formatter?: ?callable}
+     * @return array{name?: string, normalizer_id?: string, max_depth?: int, max_depth_reached_normalizer_id?: ?string}
      */
     private function getPropertyAttributesMetadata(\ReflectionProperty $reflectionProperty): array
     {
@@ -85,9 +85,9 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
             $metadata['name'] = $reflectionAttribute->newInstance()->getName();
         }
 
-        $reflectionAttribute = $reflectionProperty->getAttributes(EncodeFormatter::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
+        $reflectionAttribute = $reflectionProperty->getAttributes(Normalizer::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
         if (null !== $reflectionAttribute) {
-            $metadata['formatter'] = $reflectionAttribute->newInstance()->getFormatter();
+            $metadata['normalizer_id'] = $reflectionAttribute->newInstance()->getServiceId();
         }
 
         $reflectionAttribute = $reflectionProperty->getAttributes(MaxDepth::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
@@ -95,9 +95,23 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
             $attributeInstance = $reflectionAttribute->newInstance();
 
             $metadata['max_depth'] = $attributeInstance->getMaxDepth();
-            $metadata['max_depth_reached_formatter'] = $attributeInstance->getMaxDepthReachedFormatter();
+            $metadata['max_depth_reached_normalizer_id'] = $attributeInstance->getMaxDepthReachedNormalizerServiceId();
         }
 
         return $metadata;
+    }
+
+    private function getAndValidateNormalizer(string $normalizerId): NormalizerInterface
+    {
+        if (!$this->normalizers->has($normalizerId)) {
+            throw new InvalidArgumentException(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', $normalizerId, NormalizerInterface::class));
+        }
+
+        $normalizer = $this->normalizers->get($normalizerId);
+        if (!$normalizer instanceof NormalizerInterface) {
+            throw new InvalidArgumentException(sprintf('The "%s" normalizer service does not implement "%s".', $normalizerId, NormalizerInterface::class));
+        }
+
+        return $normalizer;
     }
 }

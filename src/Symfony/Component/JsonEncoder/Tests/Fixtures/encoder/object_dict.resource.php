@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $data, mixed $stream, array $config): void {
+return static function (mixed $data, mixed $stream, \Psr\Container\ContainerInterface $normalizers, array $config): void {
     \fwrite($stream, '{');
     $prefix_0 = '';
     foreach ($data as $key_0 => $value_0) {

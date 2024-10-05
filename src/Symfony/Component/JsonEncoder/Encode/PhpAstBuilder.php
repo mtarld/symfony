@@ -33,6 +33,7 @@ use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelNodeInterface;
@@ -78,6 +79,7 @@ final class PhpAstBuilder
                 'static' => true,
                 'params' => [
                     new Param($this->builder->var('data'), type: new Identifier('mixed')),
+                    new Param($this->builder->var('normalizers'), type: new FullyQualified(ContainerInterface::class)),
                     new Param($this->builder->var('config'), type: new Identifier('array')),
                 ],
                 'returnType' => new FullyQualified(\Traversable::class),
@@ -89,6 +91,7 @@ final class PhpAstBuilder
                 'params' => [
                     new Param($this->builder->var('data'), type: new Identifier('mixed')),
                     new Param($this->builder->var('stream'), type: new FullyQualified(StreamWriterInterface::class)),
+                    new Param($this->builder->var('normalizers'), type: new FullyQualified(ContainerInterface::class)),
                     new Param($this->builder->var('config'), type: new Identifier('array')),
                 ],
                 'returnType' => new Identifier('void'),
@@ -100,6 +103,7 @@ final class PhpAstBuilder
                 'params' => [
                     new Param($this->builder->var('data'), type: new Identifier('mixed')),
                     new Param($this->builder->var('stream'), type: new Identifier('mixed')),
+                    new Param($this->builder->var('normalizers'), type: new FullyQualified(ContainerInterface::class)),
                     new Param($this->builder->var('config'), type: new Identifier('array')),
                 ],
                 'returnType' => new Identifier('void'),

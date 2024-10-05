@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\DataModelBuilder;
 use Symfony\Component\JsonEncoder\Encode\EncodeAs;
 use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
@@ -19,6 +20,8 @@ use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoa
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonEncoder\Normalizer\DateTimeNormalizer;
+use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Stream\StreamWriterInterface;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
@@ -33,7 +36,6 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
  * @implements EncoderInterface<array{
  *   stream?: StreamWriterInterface,
  *   max_depth?: int,
- *   date_time_format?: string,
  *   force_generation?: bool,
  * }>
  */
@@ -42,7 +44,8 @@ final class JsonEncoder implements EncoderInterface
     private EncoderGenerator $encoderGenerator;
 
     public function __construct(
-        private PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private ContainerInterface $normalizers,
+        PropertyMetadataLoaderInterface $propertyMetadataLoader,
         string $encodersDir,
     ) {
         $this->encoderGenerator = new EncoderGenerator(new DataModelBuilder($propertyMetadataLoader), $encodersDir);
@@ -62,17 +65,40 @@ final class JsonEncoder implements EncoderInterface
         }, $config);
 
         if (null !== $stream) {
-            (require $path)($data, $stream, $config);
+            (require $path)($data, $stream, $this->normalizers, $config);
 
             return new Encoded(new \EmptyIterator());
         }
 
-        return new Encoded((require $path)($data, $config));
+        return new Encoded((require $path)($data, $this->normalizers, $config));
     }
 
-    public static function create(?string $encodersDir = null): static
+    /**
+     * @param array<string, NormalizerInterface> $normalizers
+     */
+    public static function create(array $normalizers = [], ?string $encodersDir = null): static
     {
         $encodersDir ??= sys_get_temp_dir().'/json_encoder/encoder';
+        $normalizers = $normalizers + [
+            'json_encoder.normalizer.date_time' => new DateTimeNormalizer(),
+        ];
+
+        $normalizersContainer = new class($normalizers) implements ContainerInterface {
+            public function __construct(
+                private array $normalizers,
+            ) {
+            }
+
+            public function has(string $id): bool
+            {
+                return isset($this->normalizers[$id]);
+            }
+
+            public function get(string $id): NormalizerInterface
+            {
+                return $this->normalizers[$id];
+            }
+        };
 
         try {
             $stringTypeResolver = new StringTypeResolver();
@@ -80,16 +106,17 @@ final class JsonEncoder implements EncoderInterface
         }
 
         $typeContextFactory = new TypeContextFactory($stringTypeResolver ?? null);
-        $typeResolver = TypeResolver::create();
 
-        return new static(new GenericTypePropertyMetadataLoader(
+        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(
                 new AttributePropertyMetadataLoader(
-                    new PropertyMetadataLoader($typeResolver),
-                    $typeResolver,
+                    new PropertyMetadataLoader(TypeResolver::create()),
+                    $normalizersContainer,
                 ),
             ),
             $typeContextFactory,
-        ), $encodersDir);
+        );
+
+        return new self($normalizersContainer, $propertyMetadataLoader, $encodersDir);
     }
 }

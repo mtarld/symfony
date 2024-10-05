@@ -18,7 +18,7 @@ use Symfony\Component\JsonEncoder\DependencyInjection\JsonEncoderPass;
 use Symfony\Component\JsonEncoder\EncoderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\AbstractDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 
 class JsonEncoderPassTest extends TestCase
@@ -34,7 +34,7 @@ class JsonEncoderPassTest extends TestCase
 
         (new JsonEncoderPass())->process($container);
 
-        $encodableClasses = [ClassicDummy::class, DummyWithFormatterAttributes::class, DummyWithPhpDoc::class];
+        $encodableClasses = [ClassicDummy::class, DummyWithNormalizerAttributes::class, DummyWithPhpDoc::class];
 
         $this->assertContains(ClassicDummy::class, $container->getDefinition('.json_encoder.cache_warmer.encoder_decoder')->getArgument(0));
         $this->assertNotContains(AbstractDummy::class, $container->getDefinition('.json_encoder.cache_warmer.encoder_decoder')->getArgument(0));

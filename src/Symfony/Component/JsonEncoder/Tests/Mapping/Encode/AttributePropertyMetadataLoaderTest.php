@@ -12,13 +12,17 @@
 namespace Symfony\Component\JsonEncoder\Tests\Mapping\Encode;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadata;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Attribute\BooleanStringEncodeFormatter;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMaxDepthAttribute;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\BooleanStringNormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\DoubleIntAndCastToStringNormalizer;
+use Symfony\Component\JsonEncoder\Tests\ServiceContainer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
@@ -26,37 +30,87 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 {
     public function testRetrieveEncodedName()
     {
-        $typeResolver = TypeResolver::create();
-        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
 
         $this->assertSame(['@id', 'name'], array_keys($loader->load(DummyWithNameAttributes::class, [], [])));
     }
 
-    public function testRetrieveEncodeFormatter()
+    public function testRetrieveNormalizer()
     {
-        $typeResolver = TypeResolver::create();
-        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringNormalizer::class => new DoubleIntAndCastToStringNormalizer(),
+            BooleanStringNormalizer::class => new BooleanStringNormalizer(),
+        ]));
 
         $this->assertEquals([
-            'id' => new PropertyMetadata('id', Type::string(), [DummyWithFormatterAttributes::doubleAndCastToString(...)]),
-            'name' => new PropertyMetadata('name', Type::string(), [strtoupper(...)]),
-            'active' => new PropertyMetadata('active', Type::string(), [BooleanStringEncodeFormatter::toString(...)]),
-        ], $loader->load(DummyWithFormatterAttributes::class, [], []));
+            'id' => new PropertyMetadata('id', Type::string(), [DoubleIntAndCastToStringNormalizer::class]),
+            'active' => new PropertyMetadata('active', Type::string(), [BooleanStringNormalizer::class]),
+        ], $loader->load(DummyWithNormalizerAttributes::class, [], []));
     }
 
-    public function testRetrieveMaxDepthFormatter()
+    public function testThrowWhenCannotRetrieveNormalizer()
     {
-        $typeResolver = TypeResolver::create();
-        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver);
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+
+        $loader->load(DummyWithNormalizerAttributes::class, [], []);
+    }
+
+    public function testThrowWhenInvalidNormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringNormalizer::class => true,
+            BooleanStringNormalizer::class => new BooleanStringNormalizer(),
+        ]));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+
+        $loader->load(DummyWithNormalizerAttributes::class, [], []);
+    }
+
+    public function testRetrieveMaxDepthNormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringNormalizer::class => new DoubleIntAndCastToStringNormalizer(),
+        ]));
 
         $this->assertEquals([
-            'id' => new PropertyMetadata('id', Type::int(), []),
+            'id' => new PropertyMetadata('id', Type::int()),
         ], $loader->load(DummyWithMaxDepthAttribute::class, [], []));
 
         $this->assertEquals([
-            'id' => new PropertyMetadata('id', Type::bool(), [DummyWithMaxDepthAttribute::boolean(...)]),
+            'id' => new PropertyMetadata('id', Type::string(), [DoubleIntAndCastToStringNormalizer::class]),
         ], $loader->load(DummyWithMaxDepthAttribute::class, [], [
             'depth_counters' => [DummyWithMaxDepthAttribute::class => 256],
         ]));
+    }
+
+    public function testThrowWhenCannotRetrieveMaxDepthNormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer());
+
+        $loader->load(DummyWithMaxDepthAttribute::class, [], []);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('You have requested a non-existent normalizer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+
+        $loader->load(DummyWithMaxDepthAttribute::class, [], ['depth_counters' => [DummyWithMaxDepthAttribute::class => 256]]);
+    }
+
+    public function testThrowWhenInvalidMaxDepthNormalizer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringNormalizer::class => true,
+        ]));
+
+        $loader->load(DummyWithMaxDepthAttribute::class, [], []);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('The "%s" normalizer service does not implement "%s".', DoubleIntAndCastToStringNormalizer::class, NormalizerInterface::class));
+
+        $loader->load(DummyWithMaxDepthAttribute::class, [], ['depth_counters' => [DummyWithMaxDepthAttribute::class => 256]]);
     }
 }

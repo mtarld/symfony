@@ -11,11 +11,14 @@
 
 namespace Symfony\Component\JsonEncoder;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\DataModel\Decode\DataModelBuilder;
 use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
 use Symfony\Component\JsonEncoder\Decode\DecoderGenerator;
 use Symfony\Component\JsonEncoder\Decode\Instantiator;
 use Symfony\Component\JsonEncoder\Decode\LazyInstantiator;
+use Symfony\Component\JsonEncoder\Denormalizer\DateTimeDenormalizer;
+use Symfony\Component\JsonEncoder\Denormalizer\DenormalizerInterface;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
@@ -34,7 +37,6 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
  * @experimental
  *
  * @implements DecoderInterface<array{
- *   date_time_format?: string,
  *   force_generation?: bool,
  * }>
  */
@@ -45,6 +47,7 @@ final class JsonDecoder implements DecoderInterface
     private LazyInstantiator $lazyInstantiator;
 
     public function __construct(
+        private ContainerInterface $denormalizers,
         PropertyMetadataLoaderInterface $propertyMetadataLoader,
         string $decodersDir,
         string $lazyGhostsDir,
@@ -73,13 +76,36 @@ final class JsonDecoder implements DecoderInterface
             default => DecodeFrom::STRING,
         }, $config);
 
-        return (require $path)($isResourceStream ? $input->getResource() : $input, $config, $isStream ? $this->lazyInstantiator : $this->instantiator);
+        return (require $path)($isResourceStream ? $input->getResource() : $input, $this->denormalizers, $isStream ? $this->lazyInstantiator : $this->instantiator, $config);
     }
 
-    public static function create(?string $decodersDir = null, ?string $lazyGhostsDir = null): static
+    /**
+     * @param array<string, DenormalizerInterface> $denormalizers
+     */
+    public static function create(array $denormalizers = [], ?string $decodersDir = null, ?string $lazyGhostsDir = null): static
     {
         $decodersDir ??= sys_get_temp_dir().'/json_encoder/decoder';
         $lazyGhostsDir ??= sys_get_temp_dir().'/json_encoder/lazy_ghost';
+        $denormalizers = $denormalizers + [
+            'json_encoder.denormalizer.date_time' => new DateTimeDenormalizer(),
+        ];
+
+        $denormalizersContainer = new class($denormalizers) implements ContainerInterface {
+            public function __construct(
+                private array $denormalizers,
+            ) {
+            }
+
+            public function has(string $id): bool
+            {
+                return isset($this->denormalizers[$id]);
+            }
+
+            public function get(string $id): DenormalizerInterface
+            {
+                return $this->denormalizers[$id];
+            }
+        };
 
         try {
             $stringTypeResolver = new StringTypeResolver();
@@ -87,16 +113,17 @@ final class JsonDecoder implements DecoderInterface
         }
 
         $typeContextFactory = new TypeContextFactory($stringTypeResolver ?? null);
-        $typeResolver = TypeResolver::create();
 
-        return new static(new GenericTypePropertyMetadataLoader(
+        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(
                 new AttributePropertyMetadataLoader(
-                    new PropertyMetadataLoader($typeResolver),
-                    $typeResolver,
+                    new PropertyMetadataLoader(TypeResolver::create()),
+                    $denormalizersContainer,
                 ),
             ),
             $typeContextFactory,
-        ), $decodersDir, $lazyGhostsDir);
+        );
+
+        return new self($denormalizersContainer, $propertyMetadataLoader, $decodersDir, $lazyGhostsDir);
     }
 }

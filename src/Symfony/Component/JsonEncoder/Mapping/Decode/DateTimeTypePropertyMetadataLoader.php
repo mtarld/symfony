@@ -12,8 +12,8 @@
 namespace Symfony\Component\JsonEncoder\Mapping\Decode;
 
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\JsonEncoder\Denormalizer\DateTimeDenormalizer;
 
 /**
  * Casts DateTime properties to string properties.
@@ -38,23 +38,11 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
 
             if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
                 $metadata = $metadata
-                    ->withType(Type::string())
-                    ->withFormatter(self::castStringToDateTime(...));
+                    ->withType(DateTimeDenormalizer::getNormalizedType())
+                    ->withAdditionalDenormalizer('json_encoder.denormalizer.date_time');
             }
         }
 
         return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function castStringToDateTime(string $string, array $config): \DateTimeInterface
-    {
-        if (false !== $dateTime = \DateTimeImmutable::createFromFormat($config['date_time_format'] ?? \DateTimeInterface::RFC3339, $string)) {
-            return $dateTime;
-        }
-
-        return new \DateTimeImmutable($string);
     }
 }

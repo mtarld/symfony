@@ -14,12 +14,7 @@ namespace Symfony\Component\JsonEncoder\Attribute;
 /**
  * Defines the maximum encoding depth for the property.
  *
- * When the maximum depth is reached, the $maxDepthReachedFormatter callable is called if it has been defined.
- *
- * The first argument of the callable is the input data.
- * It is possible to inject the configuration using the $config parameter.
- *
- * That callable must return the new data.
+ * When the maximum depth is reached, a {@see Symfony\Component\JsonEncoder\Normalizer\NormalizerInterface} service is called if its id has been defined.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
@@ -29,19 +24,12 @@ namespace Symfony\Component\JsonEncoder\Attribute;
 final class MaxDepth
 {
     /**
-     * @var ?\Closure(mixed, array=): mixed
-     */
-    private ?\Closure $maxDepthReachedFormatter;
-
-    /**
-     * @param positive-int                    $maxDepth
-     * @param ?callable(mixed, array=): mixed $maxDepthReachedFormatter
+     * @param positive-int $maxDepth
      */
     public function __construct(
         public int $maxDepth,
-        ?callable $maxDepthReachedFormatter = null,
+        private ?string $maxDepthReachedNormalizerServiceId = null,
     ) {
-        $this->maxDepthReachedFormatter = \Closure::fromCallable($maxDepthReachedFormatter);
     }
 
     /**
@@ -52,11 +40,8 @@ final class MaxDepth
         return $this->maxDepth;
     }
 
-    /**
-     * @return ?\Closure(mixed, array=): mixed
-     */
-    public function getMaxDepthReachedFormatter(): ?\Closure
+    public function getMaxDepthReachedNormalizerServiceId(): ?string
     {
-        return $this->maxDepthReachedFormatter;
+        return $this->maxDepthReachedNormalizerServiceId;
     }
 }

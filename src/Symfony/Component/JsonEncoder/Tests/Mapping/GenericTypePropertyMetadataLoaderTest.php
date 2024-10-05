@@ -25,23 +25,23 @@ class GenericTypePropertyMetadataLoaderTest extends TestCase
     public function testReplaceGenerics()
     {
         $loader = new GenericTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'foo' => new PropertyMetadata('foo', Type::template('T'), []),
+            'foo' => new PropertyMetadata('foo', Type::template('T')),
         ]), new TypeContextFactory(new StringTypeResolver()));
 
         $metadata = $loader->load(DummyWithGenerics::class, [], ['original_type' => Type::generic(Type::object(DummyWithGenerics::class), Type::int())]);
-        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int(), [])], $metadata);
+        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int())], $metadata);
 
         $metadata = $loader->load(DummyWithGenerics::class, [], ['original_type' => Type::generic(Type::string(), Type::generic(Type::object(DummyWithGenerics::class), Type::int()))]);
-        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int(), [])], $metadata);
+        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int())], $metadata);
 
         $metadata = $loader->load(DummyWithGenerics::class, [], ['original_type' => Type::list(Type::generic(Type::object(DummyWithGenerics::class), Type::int()))]);
-        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int(), [])], $metadata);
+        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int())], $metadata);
 
         $metadata = $loader->load(DummyWithGenerics::class, [], ['original_type' => Type::union(Type::string(), Type::generic(Type::object(DummyWithGenerics::class), Type::int()))]);
-        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int(), [])], $metadata);
+        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int())], $metadata);
 
         $metadata = $loader->load(DummyWithGenerics::class, [], ['original_type' => Type::intersection(Type::string(), Type::generic(Type::object(DummyWithGenerics::class), Type::int()))]);
-        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int(), [])], $metadata);
+        $this->assertEquals(['foo' => new PropertyMetadata('foo', Type::int())], $metadata);
     }
 
     /**

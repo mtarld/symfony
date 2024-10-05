@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\JsonEncoder\Mapping;
 
-use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -24,14 +23,15 @@ use Symfony\Component\TypeInfo\Type;
 final class PropertyMetadata
 {
     /**
-     * @param list<\Closure> $formatters
+     * @param list<string> $normalizers
+     * @param list<string> $denormalizers
      */
     public function __construct(
         private string $name,
         private Type $type,
-        private array $formatters = [],
+        private array $normalizers = [],
+        private array $denormalizers = [],
     ) {
-        self::validateFormatters($this);
     }
 
     public function getName(): string
@@ -41,7 +41,7 @@ final class PropertyMetadata
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->formatters);
+        return new self($name, $this->type, $this->normalizers, $this->denormalizers);
     }
 
     public function getType(): Type
@@ -51,49 +51,58 @@ final class PropertyMetadata
 
     public function withType(Type $type): self
     {
-        return new self($this->name, $type, $this->formatters);
+        return new self($this->name, $type, $this->normalizers, $this->denormalizers);
     }
 
     /**
-     * @return list<\Closure>
+     * @return list<string>
      */
-    public function getFormatters(): array
+    public function getNormalizers(): array
     {
-        return $this->formatters;
+        return $this->normalizers;
     }
 
     /**
-     * @param list<\Closure> $formatters
+     * @param list<string> $normalizers
      */
-    public function withFormatters(array $formatters): self
+    public function withNormalizers(array $normalizers): self
     {
-        return new self($this->name, $this->type, $formatters);
+        return new self($this->name, $this->type, $normalizers, $this->denormalizers);
     }
 
-    public function withFormatter(\Closure $formatter): self
+    public function withAdditionalNormalizer(string $normalizer): self
     {
-        $formatters = $this->formatters;
-        $formatters[] = $formatter;
+        $normalizers = $this->normalizers;
 
-        return $this->withFormatters($formatters);
+        $normalizers[] = $normalizer;
+        $normalizers = array_values(array_unique($normalizers));
+
+        return $this->withNormalizers($normalizers);
     }
 
-    private static function validateFormatters(self $metadata): void
+    /**
+     * @return list<string>
+     */
+    public function getDenormalizers(): array
     {
-        foreach ($metadata->formatters as $formatter) {
-            $reflection = new \ReflectionFunction($formatter);
+        return $this->denormalizers;
+    }
 
-            if ($reflection->getClosureScopeClass()?->hasMethod($reflection->getName())) {
-                if (!$reflection->isStatic()) {
-                    throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must be a static method.', $metadata->name));
-                }
+    /**
+     * @param list<string> $denormalizers
+     */
+    public function withDenormalizers(array $denormalizers): self
+    {
+        return new self($this->name, $this->type, $this->normalizers, $denormalizers);
+    }
 
-                continue;
-            }
+    public function withAdditionalDenormalizer(string $denormalizer): self
+    {
+        $denormalizers = $this->denormalizers;
 
-            if ($reflection->isAnonymous()) {
-                throw new InvalidArgumentException(sprintf('"%s"\'s property formatter must not be anonymous.', $metadata->name));
-            }
-        }
+        $denormalizers[] = $denormalizer;
+        $denormalizers = array_values(array_unique($denormalizers));
+
+        return $this->withDenormalizers($denormalizers);
     }
 }

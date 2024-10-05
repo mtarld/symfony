@@ -13,8 +13,8 @@ namespace Symfony\Component\JsonEncoder\DataModel\Decode;
 
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
-use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\TypeInfo\Type;
@@ -24,7 +24,6 @@ use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
-use Symfony\Component\VarExporter\ProxyHelper;
 
 /**
  * Builds a decoding graph representation of a given type.
@@ -74,31 +73,9 @@ final class DataModelBuilder
                     'name' => $propertyMetadata->getName(),
                     'value' => $this->build($propertyMetadata->getType(), $config, $context),
                     'accessor' => function (DataAccessorInterface $accessor) use ($propertyMetadata): DataAccessorInterface {
-                        foreach ($propertyMetadata->getFormatters() as $f) {
-                            $reflection = new \ReflectionFunction($f);
-                            $functionName = null === $reflection->getClosureScopeClass()
-                                ? $reflection->getName()
-                                : \sprintf('%s::%s', $reflection->getClosureScopeClass()->getName(), $reflection->getName());
-
-                            $arguments = [];
-                            foreach ($reflection->getParameters() as $i => $parameter) {
-                                if (0 === $i) {
-                                    $arguments[] = $accessor;
-
-                                    continue;
-                                }
-
-                                $parameterType = preg_replace('/^\\\\/', '\1', ltrim(ProxyHelper::exportType($parameter) ?? '', '?'));
-                                if ('array' === $parameterType && 'config' === $parameter->name) {
-                                    $arguments[] = new VariableDataAccessor('config');
-
-                                    continue;
-                                }
-
-                                throw new LogicException(\sprintf('Cannot resolve "%s" argument of "%s()".', $parameter->name, $functionName));
-                            }
-
-                            $accessor = new FunctionDataAccessor($functionName, $arguments);
+                        foreach ($propertyMetadata->getDenormalizers() as $denormalizerId) {
+                            $denormalizerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($denormalizerId)], new VariableDataAccessor('denormalizers'));
+                            $accessor = new FunctionDataAccessor('denormalize', [$accessor, new VariableDataAccessor('config')], $denormalizerServiceAccessor);
                         }
 
                         return $accessor;

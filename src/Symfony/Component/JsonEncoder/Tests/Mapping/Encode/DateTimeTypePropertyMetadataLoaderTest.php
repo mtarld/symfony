@@ -19,31 +19,17 @@ use Symfony\Component\TypeInfo\Type;
 
 class DateTimeTypePropertyMetadataLoaderTest extends TestCase
 {
-    public function testCastDateTimeToString()
+    public function testAddDateTimeNormalizer()
     {
         $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'foo' => new PropertyMetadata('foo', Type::object(\DateTimeImmutable::class), []),
+            'foo' => new PropertyMetadata('foo', Type::object(\DateTimeImmutable::class)),
         ]));
 
-        $metadata = $loader->load(self::class, [], ['original_type' => Type::string()]);
+        $metadata = $loader->load(self::class, [], []);
 
         $this->assertEquals([
-            'foo' => new PropertyMetadata('foo', Type::string(), [
-                \Closure::fromCallable(DateTimeTypePropertyMetadataLoader::castDateTimeToString(...)),
-            ]),
+            'foo' => new PropertyMetadata('foo', Type::string(), ['json_encoder.normalizer.date_time']),
         ], $metadata);
-
-        $formatter = $metadata['foo']->getFormatters()[0];
-
-        $this->assertEquals(
-            '2023-07-26T00:00:00+00:00',
-            $formatter(new \DateTimeImmutable('2023-07-26'), []),
-        );
-
-        $this->assertEquals(
-            '26/07/2023 00:00:00',
-            $formatter((new \DateTimeImmutable('2023-07-26'))->setTime(0, 0), ['date_time_format' => 'd/m/Y H:i:s']),
-        );
     }
 
     /**

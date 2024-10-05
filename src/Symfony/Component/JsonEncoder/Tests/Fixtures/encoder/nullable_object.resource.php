@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $data, mixed $stream, array $config): void {
+return static function (mixed $data, mixed $stream, \Psr\Container\ContainerInterface $normalizers, array $config): void {
     if ($data instanceof \Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes) {
         \fwrite($stream, '{"@id":');
         \fwrite($stream, \json_encode($data->id));

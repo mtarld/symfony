@@ -18,17 +18,18 @@ use Symfony\Component\JsonEncoder\Stream\BufferedStream;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\BooleanStringNormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\DoubleIntAndCastToStringNormalizer;
 use Symfony\Component\TypeInfo\Type;
 
 class JsonEncoderTest extends TestCase
 {
     private string $encodersDir;
-    private JsonEncoder $encoder;
 
     protected function setUp(): void
     {
@@ -40,34 +41,41 @@ class JsonEncoderTest extends TestCase
             array_map('unlink', glob($this->encodersDir.'/*'));
             rmdir($this->encodersDir);
         }
-
-        $this->encoder = JsonEncoder::create($this->encodersDir);
     }
 
     public function testReturnTraversableStringableEncoded()
     {
-        $this->assertSame(['true'], iterator_to_array($this->encoder->encode(true, Type::bool())));
-        $this->assertSame('true', (string) $this->encoder->encode(true, Type::bool()));
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
+        $this->assertSame(['true'], iterator_to_array($encoder->encode(true, Type::bool())));
+        $this->assertSame('true', (string) $encoder->encode(true, Type::bool()));
     }
 
     public function testReturnEmptyWhenUsingStream()
     {
-        $encoded = $this->encoder->encode(true, Type::bool(), ['stream' => $stream = new MemoryStream()]);
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
+        $encoded = $encoder->encode(true, Type::bool(), ['stream' => $stream = new MemoryStream()]);
         $this->assertEmpty(iterator_to_array($encoded));
     }
 
     public function testEncodeScalar()
     {
-        $this->assertEncoded('null', null, Type::null());
-        $this->assertEncoded('true', true, Type::bool());
-        $this->assertEncoded('[{"foo":1,"bar":2},{"foo":3}]', [['foo' => 1, 'bar' => 2], ['foo' => 3]], Type::array());
-        $this->assertEncoded('{"foo":"bar"}', (object) ['foo' => 'bar'], Type::object());
-        $this->assertEncoded('1', DummyBackedEnum::ONE, Type::enum(DummyBackedEnum::class));
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
+        $this->assertEncoded($encoder, 'null', null, Type::null());
+        $this->assertEncoded($encoder, 'true', true, Type::bool());
+        $this->assertEncoded($encoder, '[{"foo":1,"bar":2},{"foo":3}]', [['foo' => 1, 'bar' => 2], ['foo' => 3]], Type::array());
+        $this->assertEncoded($encoder, '{"foo":"bar"}', (object) ['foo' => 'bar'], Type::object());
+        $this->assertEncoded($encoder, '1', DummyBackedEnum::ONE, Type::enum(DummyBackedEnum::class));
     }
 
     public function testEncodeUnion()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         $this->assertEncoded(
+            $encoder,
             '[1,true,["foo","bar"]]',
             [DummyBackedEnum::ONE, true, ['foo', 'bar']],
             Type::list(Type::union(Type::enum(DummyBackedEnum::class), Type::bool(), Type::list(Type::string()))),
@@ -75,61 +83,78 @@ class JsonEncoderTest extends TestCase
 
         $dummy = new DummyWithUnionProperties();
         $dummy->value = DummyBackedEnum::ONE;
-        $this->assertEncoded('{"value":1}', $dummy, Type::object(DummyWithUnionProperties::class));
+        $this->assertEncoded($encoder, '{"value":1}', $dummy, Type::object(DummyWithUnionProperties::class));
 
         $dummy->value = 'foo';
-        $this->assertEncoded('{"value":"foo"}', $dummy, Type::object(DummyWithUnionProperties::class));
+        $this->assertEncoded($encoder, '{"value":"foo"}', $dummy, Type::object(DummyWithUnionProperties::class));
 
         $dummy->value = null;
-        $this->assertEncoded('{"value":null}', $dummy, Type::object(DummyWithUnionProperties::class));
+        $this->assertEncoded($encoder, '{"value":null}', $dummy, Type::object(DummyWithUnionProperties::class));
     }
 
     public function testEncodeObject()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         $dummy = new ClassicDummy();
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertEncoded('{"id":10,"name":"dummy name"}', $dummy, Type::object(ClassicDummy::class));
+        $this->assertEncoded($encoder, '{"id":10,"name":"dummy name"}', $dummy, Type::object(ClassicDummy::class));
     }
 
     public function testEncodeObjectWithEncodedName()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         $dummy = new DummyWithNameAttributes();
         $dummy->id = 10;
         $dummy->name = 'dummy name';
 
-        $this->assertEncoded('{"@id":10,"name":"dummy name"}', $dummy, Type::object(DummyWithNameAttributes::class));
+        $this->assertEncoded($encoder, '{"@id":10,"name":"dummy name"}', $dummy, Type::object(DummyWithNameAttributes::class));
     }
 
-    public function testEncodeObjectWithEncodeFormatter()
+    public function testEncodeObjectWithNormalizer()
     {
-        $dummy = new DummyWithFormatterAttributes();
+        $encoder = JsonEncoder::create(
+            normalizers: [
+                BooleanStringNormalizer::class => new BooleanStringNormalizer(),
+                DoubleIntAndCastToStringNormalizer::class => new DoubleIntAndCastToStringNormalizer(),
+            ],
+            encodersDir: $this->encodersDir,
+        );
+
+        $dummy = new DummyWithNormalizerAttributes();
         $dummy->id = 10;
-        $dummy->name = 'dummy name';
         $dummy->active = true;
 
-        $this->assertEncoded('{"id":"20","name":"DUMMY NAME","active":"true"}', $dummy, Type::object(DummyWithFormatterAttributes::class));
+        $this->assertEncoded($encoder, '{"id":"20","active":"true"}', $dummy, Type::object(DummyWithNormalizerAttributes::class), ['scale' => 1]);
     }
 
     public function testEncodeObjectWithPhpDoc()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         $dummy = new DummyWithPhpDoc();
         $dummy->arrayOfDummies = ['key' => new DummyWithNameAttributes()];
 
-        $this->assertEncoded('{"arrayOfDummies":{"key":{"@id":1,"name":"dummy"}},"array":[]}', $dummy, Type::object(DummyWithPhpDoc::class));
+        $this->assertEncoded($encoder, '{"arrayOfDummies":{"key":{"@id":1,"name":"dummy"}},"array":[]}', $dummy, Type::object(DummyWithPhpDoc::class));
     }
 
     public function testEncodeObjectWithNullableProperties()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         $dummy = new DummyWithNullableProperties();
 
-        $this->assertEncoded('{"name":null,"enum":null}', $dummy, Type::object(DummyWithNullableProperties::class));
+        $this->assertEncoded($encoder, '{"name":null,"enum":null}', $dummy, Type::object(DummyWithNullableProperties::class));
     }
 
     public function testCreateEncoderFile()
     {
-        $this->encoder->encode(true, Type::bool());
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
+        $encoder->encode(true, Type::bool());
 
         $this->assertFileExists($this->encodersDir);
         $this->assertCount(1, glob($this->encodersDir.'/*'));
@@ -137,6 +162,8 @@ class JsonEncoderTest extends TestCase
 
     public function testCreateEncoderFileOnlyIfNotExists()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         if (!file_exists($this->encodersDir)) {
             mkdir($this->encodersDir, recursive: true);
         }
@@ -146,11 +173,13 @@ class JsonEncoderTest extends TestCase
             '<?php return static function ($data): \Traversable { yield "CACHED"; };'
         );
 
-        $this->assertSame('CACHED', (string) $this->encoder->encode(true, Type::bool()));
+        $this->assertSame('CACHED', (string) $encoder->encode(true, Type::bool()));
     }
 
     public function testRecreateEncoderFileIfForceGeneration()
     {
+        $encoder = JsonEncoder::create(encodersDir: $this->encodersDir);
+
         if (!file_exists($this->encodersDir)) {
             mkdir($this->encodersDir, recursive: true);
         }
@@ -160,18 +189,18 @@ class JsonEncoderTest extends TestCase
             '<?php return static function ($data): \Traversable { yield "CACHED"; };'
         );
 
-        $this->assertSame('true', (string) $this->encoder->encode(true, Type::bool(), ['force_generation' => true]));
+        $this->assertSame('true', (string) $encoder->encode(true, Type::bool(), ['force_generation' => true]));
     }
 
-    private function assertEncoded(string $encoded, mixed $decoded, Type $type): void
+    private function assertEncoded(JsonEncoder $encoder, string $encoded, mixed $decoded, Type $type, array $config = []): void
     {
-        $this->assertSame($encoded, (string) $this->encoder->encode($decoded, $type));
+        $this->assertSame($encoded, (string) $encoder->encode($decoded, $type, $config));
 
-        $this->encoder->encode($decoded, $type, ['stream' => $stream = new MemoryStream()]);
+        $encoder->encode($decoded, $type, ['stream' => $stream = new MemoryStream(), ...$config]);
         $stream->rewind();
         $this->assertSame($encoded, (string) $stream);
 
-        $this->encoder->encode($decoded, $type, ['stream' => $stream = new BufferedStream()]);
+        $encoder->encode($decoded, $type, ['stream' => $stream = new BufferedStream(), ...$config]);
         $stream->rewind();
         $this->assertSame($encoded, (string) $stream);
     }

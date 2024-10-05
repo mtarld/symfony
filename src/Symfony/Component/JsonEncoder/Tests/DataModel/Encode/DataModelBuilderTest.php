@@ -20,6 +20,7 @@ use Symfony\Component\JsonEncoder\DataModel\Encode\ObjectNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\ScalarNode;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
 use Symfony\Component\JsonEncoder\Exception\UnsupportedException;
@@ -30,11 +31,13 @@ use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithMethods;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\BooleanStringNormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Normalizer\DoubleIntAndCastToStringNormalizer;
+use Symfony\Component\JsonEncoder\Tests\ServiceContainer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
@@ -106,7 +109,10 @@ class DataModelBuilderTest extends TestCase
     public function testTransformedDataModel(bool $transformed, Type $type)
     {
         $typeResolver = TypeResolver::create();
-        $dataModelBuilder = new DataModelBuilder(new AttributePropertyMetadataLoader(new PropertyMetadataLoader($typeResolver), $typeResolver));
+        $dataModelBuilder = new DataModelBuilder(new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringNormalizer::class => new DoubleIntAndCastToStringNormalizer(),
+            BooleanStringNormalizer::class => new BooleanStringNormalizer(),
+        ])));
 
         $this->assertEquals(
             $transformed,
@@ -121,14 +127,14 @@ class DataModelBuilderTest extends TestCase
     {
         yield [false, Type::object(ClassicDummy::class)];
         yield [true, Type::object(DummyWithNameAttributes::class)];
-        yield [true, Type::object(DummyWithFormatterAttributes::class)];
+        yield [true, Type::object(DummyWithNormalizerAttributes::class)];
         yield [false, Type::object(DummyWithOtherDummies::class)];
     }
 
     public function testThrowWhenMaxDepthIsReached()
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
-            new PropertyMetadata('foo', Type::object(self::class), []),
+            new PropertyMetadata('foo', Type::object(self::class)),
         ]));
 
         $this->expectException(MaxDepthException::class);
@@ -152,22 +158,14 @@ class DataModelBuilderTest extends TestCase
         $dataModelBuilder->build($type, new VariableDataAccessor('data'), []);
     }
 
-    public function testPropertyWithSimpleAccessor()
+    public function testPropertyWithNormalizer()
     {
         $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
-            new PropertyMetadata('foo', Type::int(), []),
-        ]));
-
-        /** @var ObjectNode $dataModel */
-        $dataModel = $dataModelBuilder->build(Type::object(self::class), new VariableDataAccessor('data'), []);
-
-        $this->assertEquals(new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'), $dataModel->getProperties()[0]->getAccessor());
-    }
-
-    public function testPropertyWithCustomAccessors()
-    {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
-            new PropertyMetadata('foo', Type::int(), ['strtoupper', DummyWithFormatterAttributes::doubleAndCastToString(...)]),
+            new PropertyMetadata(
+                'foo',
+                Type::int(),
+                ['normalizer_id'],
+            ),
         ]));
 
         /** @var ObjectNode $dataModel */
@@ -175,46 +173,10 @@ class DataModelBuilderTest extends TestCase
 
         $this->assertEquals(
             new FunctionDataAccessor(
-                sprintf('%s::doubleAndCastToString', DummyWithFormatterAttributes::class),
-                [new FunctionDataAccessor('strtoupper', [new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo')])],
+                'normalize',
+                [new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'), new VariableDataAccessor('config')],
+                new FunctionDataAccessor('get', [new ScalarDataAccessor('normalizer_id')], new VariableDataAccessor('normalizers')),
             ),
-            $dataModel->getProperties()[0]->getAccessor(),
-        );
-    }
-
-    public function testPropertyWithAccessorWithConfig()
-    {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
-            new PropertyMetadata(
-                'foo',
-                Type::int(),
-                [DummyWithFormatterAttributes::doubleAndCastToStringWithConfig(...)],
-            ),
-        ]));
-
-        /** @var ObjectNode $dataModel */
-        $dataModel = $dataModelBuilder->build(Type::object(self::class), new VariableDataAccessor('data'), []);
-
-        $this->assertEquals(
-            new FunctionDataAccessor(sprintf('%s::doubleAndCastToStringWithConfig', DummyWithFormatterAttributes::class), [
-                new PropertyDataAccessor(new VariableDataAccessor('data'), 'foo'),
-                new VariableDataAccessor('config'),
-            ]),
-            $dataModel->getProperties()[0]->getAccessor(),
-        );
-    }
-
-    public function testPropertyWithConstAccessor()
-    {
-        $dataModelBuilder = new DataModelBuilder(self::propertyMetadataLoader([
-            new PropertyMetadata('foo', Type::int(), [DummyWithMethods::const(...)]),
-        ]));
-
-        /** @var ObjectNode $dataModel */
-        $dataModel = $dataModelBuilder->build(Type::object(self::class), new VariableDataAccessor('data'), []);
-
-        $this->assertEquals(
-            new FunctionDataAccessor(sprintf('%s::const', DummyWithMethods::class), []),
             $dataModel->getProperties()[0]->getAccessor(),
         );
     }

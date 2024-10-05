@@ -1,6 +1,6 @@
 <?php
 
-return static function (mixed $data, array $config): \Traversable {
+return static function (mixed $data, \Psr\Container\ContainerInterface $normalizers, array $config): \Traversable {
     yield '{"value":';
     if ($data->value instanceof \Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum) {
         yield \json_encode($data->value->value);

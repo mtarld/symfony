@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonEncoder\DataModel\Encode;
 use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\LogicException;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
@@ -85,32 +86,10 @@ final class DataModelBuilder
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
                 $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
 
-                foreach ($propertyMetadata->getFormatters() as $f) {
+                foreach ($propertyMetadata->getNormalizers() as $normalizerId) {
                     $transformed = true;
-                    $reflection = new \ReflectionFunction($f);
-                    $functionName = null === $reflection->getClosureScopeClass()
-                        ? $reflection->getName()
-                        : \sprintf('%s::%s', $reflection->getClosureScopeClass()->getName(), $reflection->getName());
-
-                    $arguments = [];
-                    foreach ($reflection->getParameters() as $i => $parameter) {
-                        if (0 === $i) {
-                            $arguments[] = $propertyAccessor;
-
-                            continue;
-                        }
-
-                        $parameterType = preg_replace('/(^|[(|&])\\\\/', '\1', ltrim(ProxyHelper::exportType($parameter) ?? '', '?'));
-                        if ('array' === $parameterType && 'config' === $parameter->name) {
-                            $arguments[] = new VariableDataAccessor('config');
-
-                            continue;
-                        }
-
-                        throw new LogicException(\sprintf('Cannot resolve "%s" argument of "%s()".', $parameter->name, $functionName));
-                    }
-
-                    $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
+                    $normalizerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($normalizerId)], new VariableDataAccessor('normalizers'));
+                    $propertyAccessor = new FunctionDataAccessor('normalize', [$propertyAccessor, new VariableDataAccessor('config')], $normalizerServiceAccessor);
                 }
 
                 $propertiesNodes[$encodedName] = $this->build($propertyMetadata->getType(), $propertyAccessor, $config, $context);

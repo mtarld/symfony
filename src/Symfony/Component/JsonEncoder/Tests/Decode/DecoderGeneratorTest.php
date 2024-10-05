@@ -19,12 +19,16 @@ use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader
 use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\BooleanStringDenormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\DivideStringAndCastToIntDenormalizer;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonEncoder\Tests\ServiceContainer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
 use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
@@ -51,11 +55,13 @@ class DecoderGeneratorTest extends TestCase
      */
     public function testGeneratedDecoder(string $fixture, Type $type)
     {
-        $typeResolver = TypeResolver::create();
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
             new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
-                new PropertyMetadataLoader($typeResolver),
-                $typeResolver,
+                new PropertyMetadataLoader(TypeResolver::create()),
+                new ServiceContainer([
+                    DivideStringAndCastToIntDenormalizer::class => new DivideStringAndCastToIntDenormalizer(),
+                    BooleanStringDenormalizer::class => new BooleanStringDenormalizer(),
+                ]),
             )),
             new TypeContextFactory(new StringTypeResolver()),
         );
@@ -103,6 +109,7 @@ class DecoderGeneratorTest extends TestCase
         yield ['nullable_object', Type::nullable(Type::object(ClassicDummy::class))];
         yield ['object_in_object', Type::object(DummyWithOtherDummies::class)];
         yield ['object_with_nullable_properties', Type::object(DummyWithNullableProperties::class)];
+        yield ['object_with_denormalizer', Type::object(DummyWithNormalizerAttributes::class)];
 
         yield ['union', Type::union(Type::int(), Type::list(Type::enum(DummyBackedEnum::class)), Type::object(DummyWithNameAttributes::class))];
         yield ['object_with_union', Type::object(DummyWithUnionProperties::class)];

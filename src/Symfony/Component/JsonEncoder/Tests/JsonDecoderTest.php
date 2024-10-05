@@ -15,10 +15,12 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Decode\DecodeFrom;
 use Symfony\Component\JsonEncoder\JsonDecoder;
 use Symfony\Component\JsonEncoder\Stream\MemoryStream;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\BooleanStringDenormalizer;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Denormalizer\DivideStringAndCastToIntDenormalizer;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\TypeInfo\Type;
@@ -28,7 +30,6 @@ class JsonDecoderTest extends TestCase
 {
     private string $decodersDir;
     private string $lazyGhostsDir;
-    private JsonDecoder $decoder;
 
     protected function setUp(): void
     {
@@ -46,24 +47,26 @@ class JsonDecoderTest extends TestCase
             array_map('unlink', glob($this->lazyGhostsDir.'/*'));
             rmdir($this->lazyGhostsDir);
         }
-
-        $this->decoder = JsonDecoder::create($this->decodersDir, $this->lazyGhostsDir);
     }
 
     public function testDecodeScalar()
     {
-        $this->assertDecoded(null, 'null', Type::nullable(Type::int()));
-        $this->assertDecoded(true, 'true', Type::bool());
-        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ARRAY));
-        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ITERABLE));
-        $this->assertDecoded((object) ['foo' => 'bar'], '{"foo": "bar"}', Type::object());
-        $this->assertDecoded(DummyBackedEnum::ONE, '1', Type::enum(DummyBackedEnum::class, Type::string()));
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, null, 'null', Type::nullable(Type::int()));
+        $this->assertDecoded($decoder, true, 'true', Type::bool());
+        $this->assertDecoded($decoder, [['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ARRAY));
+        $this->assertDecoded($decoder, [['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::builtin(TypeIdentifier::ITERABLE));
+        $this->assertDecoded($decoder, (object) ['foo' => 'bar'], '{"foo": "bar"}', Type::object());
+        $this->assertDecoded($decoder, DummyBackedEnum::ONE, '1', Type::enum(DummyBackedEnum::class, Type::string()));
     }
 
     public function testDecodeCollection()
     {
-        $this->assertDecoded([['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::list(Type::dict(Type::int())));
-        $this->assertDecoded(function (mixed $decoded) {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, [['foo' => 1, 'bar' => 2], ['foo' => 3]], '[{"foo": 1, "bar": 2}, {"foo": 3}]', Type::list(Type::dict(Type::int())));
+        $this->assertDecoded($decoder, function (mixed $decoded) {
             $this->assertIsIterable($decoded);
             $array = [];
             foreach ($decoded as $item) {
@@ -76,7 +79,9 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeObject()
     {
-        $this->assertDecoded(function (mixed $decoded) {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
             $this->assertInstanceOf(ClassicDummy::class, $decoded);
             $this->assertSame(10, $decoded->id);
             $this->assertSame('dummy name', $decoded->name);
@@ -85,25 +90,37 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeObjectWithEncodedName()
     {
-        $this->assertDecoded(function (mixed $decoded) {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
             $this->assertInstanceOf(DummyWithNameAttributes::class, $decoded);
             $this->assertSame(10, $decoded->id);
         }, '{"@id": 10}', Type::object(DummyWithNameAttributes::class));
     }
 
-    public function testDecodeObjectWithDecodeFormatter()
+    public function testDecodeObjectWithDenormalizer()
     {
-        $this->assertDecoded(function (mixed $decoded) {
-            $this->assertInstanceOf(DummyWithFormatterAttributes::class, $decoded);
+        $decoder = JsonDecoder::create(
+            denormalizers: [
+                BooleanStringDenormalizer::class => new BooleanStringDenormalizer(),
+                DivideStringAndCastToIntDenormalizer::class => new DivideStringAndCastToIntDenormalizer(),
+            ],
+            decodersDir: $this->decodersDir,
+            lazyGhostsDir: $this->lazyGhostsDir,
+        );
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
+            $this->assertInstanceOf(DummyWithNormalizerAttributes::class, $decoded);
             $this->assertSame(10, $decoded->id);
-            $this->assertSame('dummy name', $decoded->name);
             $this->assertTrue($decoded->active);
-        }, '{"id": "20", "name": "DUMMY NAME", "active": "true"}', Type::object(DummyWithFormatterAttributes::class));
+        }, '{"id": "20", "name": "DUMMY NAME", "active": "true"}', Type::object(DummyWithNormalizerAttributes::class), ['scale' => 1]);
     }
 
     public function testDecodeObjectWithPhpDoc()
     {
-        $this->assertDecoded(function (mixed $decoded) {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
             $this->assertInstanceOf(DummyWithPhpDoc::class, $decoded);
             $this->assertIsArray($decoded->arrayOfDummies);
             $this->assertContainsOnlyInstancesOf(DummyWithNameAttributes::class, $decoded->arrayOfDummies);
@@ -113,7 +130,9 @@ class JsonDecoderTest extends TestCase
 
     public function testDecodeObjectWithNullableProperties()
     {
-        $this->assertDecoded(function (mixed $decoded) {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
             $this->assertInstanceOf(DummyWithNullableProperties::class, $decoded);
             $this->assertNull($decoded->name);
             $this->assertNull($decoded->enum);
@@ -122,7 +141,9 @@ class JsonDecoderTest extends TestCase
 
     public function testCreateDecoderFile()
     {
-        $this->decoder->decode('true', Type::bool());
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $decoder->decode('true', Type::bool());
 
         $this->assertFileExists($this->decodersDir);
         $this->assertCount(1, glob($this->decodersDir.'/*'));
@@ -130,6 +151,8 @@ class JsonDecoderTest extends TestCase
 
     public function testCreateDecoderFileOnlyIfNotExists()
     {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
         if (!file_exists($this->decodersDir)) {
             mkdir($this->decodersDir, recursive: true);
         }
@@ -139,11 +162,13 @@ class JsonDecoderTest extends TestCase
             '<?php return static function () { return "CACHED"; };'
         );
 
-        $this->assertSame('CACHED', $this->decoder->decode('true', Type::bool()));
+        $this->assertSame('CACHED', $decoder->decode('true', Type::bool()));
     }
 
     public function testRecreateDecoderFileIfForceGeneration()
     {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
         if (!file_exists($this->decodersDir)) {
             mkdir($this->decodersDir, recursive: true);
         }
@@ -153,7 +178,7 @@ class JsonDecoderTest extends TestCase
             '<?php return static function () { return "CACHED"; };'
         );
 
-        $this->assertTrue($this->decoder->decode('true', Type::bool(), ['force_generation' => true]));
+        $this->assertTrue($decoder->decode('true', Type::bool(), ['force_generation' => true]));
     }
 
     private function decode(string $input, Type $type, JsonDecoder $decoder, array $config = []): mixed
@@ -169,11 +194,11 @@ class JsonDecoderTest extends TestCase
         return $decoder->decode($inputStream, $type, $config);
     }
 
-    private function assertDecoded(mixed $decodedOrAssert, string $encoded, Type $type): void
+    private function assertDecoded(JsonDecoder $decoder, mixed $decodedOrAssert, string $encoded, Type $type, array $config = []): void
     {
         $assert = \is_callable($decodedOrAssert, syntax_only: true) ? $decodedOrAssert : fn (mixed $decoded) => $this->assertEquals($decodedOrAssert, $decoded);
 
-        $assert($this->decoder->decode($encoded, $type));
+        $assert($decoder->decode($encoded, $type, $config));
 
         $stringable = new class($encoded) implements \Stringable {
             public function __construct(private string $string)
@@ -185,14 +210,14 @@ class JsonDecoderTest extends TestCase
                 return $this->string;
             }
         };
-        $assert($this->decoder->decode($stringable, $type));
+        $assert($decoder->decode($stringable, $type, $config));
 
         $traversable = new \ArrayIterator(str_split($encoded, 2));
-        $assert($this->decoder->decode($traversable, $type));
+        $assert($decoder->decode($traversable, $type, $config));
 
         $stream = new MemoryStream();
         $stream->write($encoded);
         $stream->rewind();
-        $assert($this->decoder->decode($stream, $type));
+        $assert($decoder->decode($stream, $type, $config));
     }
 }

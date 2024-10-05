@@ -14,7 +14,7 @@ namespace Symfony\Component\JsonEncoder\Tests\Decode;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Decode\LazyInstantiator;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithFormatterAttributes;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNormalizerAttributes;
 
 class LazyInstantiatorTest extends TestCase
 {
@@ -41,7 +41,7 @@ class LazyInstantiatorTest extends TestCase
 
     public function testCreateCacheFile()
     {
-        (new LazyInstantiator($this->lazyGhostsDir))->instantiate(DummyWithFormatterAttributes::class, []);
+        (new LazyInstantiator($this->lazyGhostsDir))->instantiate(DummyWithNormalizerAttributes::class, []);
 
         $this->assertCount(1, glob($this->lazyGhostsDir.'/*'));
     }

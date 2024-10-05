@@ -17,6 +17,7 @@ use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonEncoder\DataModel\FunctionDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\PropertyDataAccessor;
+use Symfony\Component\JsonEncoder\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonEncoder\DataModel\VariableDataAccessor;
 use Symfony\Component\JsonEncoder\Exception\InvalidArgumentException;
 
@@ -33,6 +34,10 @@ trait PhpAstBuilderTrait
 
     private function convertDataAccessorToPhpExpr(DataAccessorInterface $accessor): Expr
     {
+        if ($accessor instanceof ScalarDataAccessor) {
+            return $this->builder->val($accessor->getValue());
+        }
+
         if ($accessor instanceof VariableDataAccessor) {
             return $this->builder->var($accessor->getName());
         }
