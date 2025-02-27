@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder\Tests;
 
+use BcMath\Number;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\Exception\MaxDepthException;
 use Symfony\Component\JsonEncoder\JsonEncoder;
@@ -19,6 +20,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNumbers;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
@@ -171,6 +173,19 @@ class JsonEncoderTest extends TestCase
             Type::object(DummyWithDateTimes::class),
             options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
         );
+    }
+
+    /**
+     * @requires extension bcmath
+     * @requires extension gmp
+     */
+    public function testEncodeObjectWithNumbers()
+    {
+        $dummy = new DummyWithNumbers();
+        $dummy->bcMathNumber = new Number(10);
+        $dummy->gmpNumber = new \GMP('20');
+
+        $this->assertEncoded('{"gmpNumber":"20","bcMathNumber":"10"}', $dummy, Type::object(DummyWithNumbers::class));
     }
 
     public function testThrowWhenMaxDepthIsReached()

@@ -11,7 +11,9 @@
 
 namespace Symfony\Bundle\FrameworkBundle\Tests\Functional;
 
+use BcMath\Number;
 use Symfony\Bundle\FrameworkBundle\Tests\Functional\app\JsonEncoder\Dto\Dummy;
+use Symfony\Bundle\FrameworkBundle\Tests\Functional\app\JsonEncoder\Dto\DummyWithNumbers;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\JsonEncoder\DecoderInterface;
 use Symfony\Component\JsonEncoder\EncoderInterface;
@@ -45,6 +47,27 @@ class JsonEncoderTest extends AbstractWebTestCase
         $expected->range = [0, 1];
 
         $this->assertEquals($expected, $decoder->decode('{"@name": "DUMMY", "range": "0..1"}', Type::object(Dummy::class)));
+    }
+
+    /**
+     * @requires extension bcmath
+     * @requires extension gmp
+     */
+    public function testEncodeAndDecodeNumbers()
+    {
+        $dummy = new DummyWithNumbers();
+        $dummy->bcMathNumber = new Number(10);
+        $dummy->gmpNumber = new \GMP(20);
+
+        /** @var EncoderInterface $encoder */
+        $encoder = static::getContainer()->get('json_encoder.encoder.alias');
+
+        $this->assertSame('{"bcMathNumber":"10","gmpNumber":"20"}', (string) $encoder->encode($dummy, Type::object(DummyWithNumbers::class)));
+
+        /** @var DecoderInterface $decoder */
+        $decoder = static::getContainer()->get('json_encoder.decoder.alias');
+
+        $this->assertEquals($dummy, $decoder->decode('{"bcMathNumber": 10, "gmpNumber": "20"}', Type::object(DummyWithNumbers::class)));
     }
 
     public function testWarmupEncodableClasses()

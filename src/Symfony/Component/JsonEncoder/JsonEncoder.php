@@ -16,10 +16,12 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonEncoder\Encode\EncoderGenerator;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Encode\NumberTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\JsonEncoder\ValueTransformer\NumberToStringValueTransformer;
 use Symfony\Component\JsonEncoder\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
@@ -60,6 +62,7 @@ final class JsonEncoder implements EncoderInterface
         $encodersDir ??= sys_get_temp_dir().'/json_encoder/encoder';
         $valueTransformers += [
             'json_encoder.value_transformer.date_time_to_string' => new DateTimeToStringValueTransformer(),
+            'json_encoder.value_transformer.number_to_string' => new NumberToStringValueTransformer(),
         ];
 
         $valueTransformersContainer = new class($valueTransformers) implements ContainerInterface {
@@ -82,11 +85,13 @@ final class JsonEncoder implements EncoderInterface
         $typeContextFactory = new TypeContextFactory(class_exists(PhpDocParser::class) ? new StringTypeResolver() : null);
 
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(
-                new AttributePropertyMetadataLoader(
-                    new PropertyMetadataLoader(TypeResolver::create()),
-                    $valueTransformersContainer,
-                    TypeResolver::create(),
+            new NumberTypePropertyMetadataLoader(
+                new DateTimeTypePropertyMetadataLoader(
+                    new AttributePropertyMetadataLoader(
+                        new PropertyMetadataLoader(TypeResolver::create()),
+                        $valueTransformersContainer,
+                        TypeResolver::create(),
+                    ),
                 ),
             ),
             $typeContextFactory,

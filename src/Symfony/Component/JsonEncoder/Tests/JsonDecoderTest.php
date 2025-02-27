@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonEncoder\Tests;
 
+use BcMath\Number;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonEncoder\JsonDecoder;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Enum\DummyBackedEnum;
@@ -18,6 +19,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNumbers;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\ValueTransformer\DivideStringAndCastToIntValueTransformer;
@@ -162,6 +164,21 @@ class JsonDecoderTest extends TestCase
             $this->assertEquals(new \DateTimeImmutable('2024-11-20'), $decoded->interface);
             $this->assertEquals(new \DateTimeImmutable('2025-11-20'), $decoded->immutable);
         }, '{"interface":"2024-11-20","immutable":"2025-11-20"}', Type::object(DummyWithDateTimes::class));
+    }
+
+    /**
+     * @requires extension bcmath
+     * @requires extension gmp
+     */
+    public function testDecodeObjectWithNumbers()
+    {
+        $decoder = JsonDecoder::create(decodersDir: $this->decodersDir, lazyGhostsDir: $this->lazyGhostsDir);
+
+        $this->assertDecoded($decoder, function (mixed $decoded) {
+            $this->assertInstanceOf(DummyWithNumbers::class, $decoded);
+            $this->assertEquals(new Number(10), $decoded->bcMathNumber);
+            $this->assertEquals(new \GMP(10), $decoded->gmpNumber);
+        }, '{"gmpNumber":"10","bcMathNumber":10}', Type::object(DummyWithNumbers::class));
     }
 
     public function testCreateDecoderFile()

@@ -11,17 +11,22 @@
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use BcMath\Number;
 use Symfony\Component\JsonEncoder\CacheWarmer\EncoderDecoderCacheWarmer;
 use Symfony\Component\JsonEncoder\CacheWarmer\LazyGhostCacheWarmer;
 use Symfony\Component\JsonEncoder\JsonDecoder;
 use Symfony\Component\JsonEncoder\JsonEncoder;
 use Symfony\Component\JsonEncoder\Mapping\Decode\AttributePropertyMetadataLoader as DecodeAttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Decode\DateTimeTypePropertyMetadataLoader as DecodeDateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Decode\NumberTypePropertyMetadataLoader as DecodeNumberTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Encode\AttributePropertyMetadataLoader as EncodeAttributePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\Encode\DateTimeTypePropertyMetadataLoader as EncodeDateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonEncoder\Mapping\Encode\NumberTypePropertyMetadataLoader as EncodeNumberTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonEncoder\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\JsonEncoder\ValueTransformer\NumberToStringValueTransformer;
+use Symfony\Component\JsonEncoder\ValueTransformer\ScalarToNumberValueTransformer;
 use Symfony\Component\JsonEncoder\ValueTransformer\StringToDateTimeValueTransformer;
 
 return static function (ContainerConfigurator $container) {
@@ -59,6 +64,11 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('.inner'),
             ])
+        ->set('.json_encoder.encode.property_metadata_loader.number', EncodeNumberTypePropertyMetadataLoader::class)
+            ->decorate('json_encoder.encode.property_metadata_loader')
+            ->args([
+                service('.inner'),
+            ])
         ->set('.json_encoder.encode.property_metadata_loader.attribute', EncodeAttributePropertyMetadataLoader::class)
             ->decorate('json_encoder.encode.property_metadata_loader')
             ->args([
@@ -82,6 +92,11 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('.inner'),
             ])
+        ->set('.json_encoder.decode.property_metadata_loader.number', DecodeNumberTypePropertyMetadataLoader::class)
+            ->decorate('json_encoder.decode.property_metadata_loader')
+            ->args([
+                service('.inner'),
+            ])
         ->set('.json_encoder.decode.property_metadata_loader.attribute', DecodeAttributePropertyMetadataLoader::class)
             ->decorate('json_encoder.decode.property_metadata_loader')
             ->args([
@@ -95,6 +110,17 @@ return static function (ContainerConfigurator $container) {
             ->tag('json_encoder.value_transformer')
 
         ->set('json_encoder.value_transformer.string_to_date_time', StringToDateTimeValueTransformer::class)
+            ->tag('json_encoder.value_transformer')
+
+        ->set('json_encoder.value_transformer.number_to_string', NumberToStringValueTransformer::class)
+            ->tag('json_encoder.value_transformer')
+
+        ->set('json_encoder.value_transformer.scalar_to_bc_math_number', ScalarToNumberValueTransformer::class)
+            ->args([Number::class])
+            ->tag('json_encoder.value_transformer')
+
+        ->set('json_encoder.value_transformer.scalar_to_gmp_number', ScalarToNumberValueTransformer::class)
+            ->args([\GMP::class])
             ->tag('json_encoder.value_transformer')
 
         // cache
