@@ -13,7 +13,6 @@ namespace Symfony\Component\JsonEncoder\Mapping\Encode;
 
 use Symfony\Component\JsonEncoder\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonEncoder\ValueTransformer\DateTimeToStringValueTransformer;
-use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
  * Transforms DateTimeInterface to string for properties with DateTimeInterface type.
@@ -34,13 +33,19 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
         $result = $this->decorated->load($className, $options, $context);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
+            $types = $updatedTypes = $metadata->getTypes();
 
-            if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
-                $metadata = $metadata
-                    ->withType(DateTimeToStringValueTransformer::getJsonValueType())
-                    ->withAdditionalToJsonValueTransformer('json_encoder.value_transformer.date_time_to_string');
+            foreach ($types as $i => $type) {
+                if (!$type['native']->isIdentifiedBy(\DateTimeInterface::class)) {
+                    continue;
+                }
+
+                $updatedTypes[$i]['json'] = DateTimeToStringValueTransformer::getJsonValueType();
+
+                $metadata = $metadata->withToJsonValueTransformer($type['native'], 'json_encoder.value_transformer.date_time_to_string');
             }
+
+            $metadata = $metadata->withTypes($updatedTypes);
         }
 
         return $result;

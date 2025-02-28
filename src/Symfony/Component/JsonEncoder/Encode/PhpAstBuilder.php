@@ -34,6 +34,7 @@ use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\JsonEncoder\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonEncoder\DataModel\Encode\BackedEnumNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CollectionNode;
 use Symfony\Component\JsonEncoder\DataModel\Encode\CompositeNode;
@@ -94,6 +95,7 @@ final class PhpAstBuilder
      */
     private function buildClosureStatements(DataModelNodeInterface $dataModelNode, array $options, array $context): array
     {
+        dd($dataModelNode);
         $accessor = $dataModelNode->getAccessor()->toPhpExpr();
 
         if ($dataModelNode instanceof ExceptionNode) {
@@ -127,8 +129,7 @@ final class PhpAstBuilder
         }
 
         if ($dataModelNode instanceof CompositeNode) {
-            $nodeCondition = function (DataModelNodeInterface $node): Expr {
-                $accessor = $node->getAccessor()->toPhpExpr();
+            $nodeCondition = function (DataModelNodeInterface $node, Expr $accessor): Expr {
                 $type = $node->getType();
 
                 if ($type->isIdentifiedBy(TypeIdentifier::NULL, TypeIdentifier::NEVER, TypeIdentifier::VOID)) {
@@ -159,7 +160,7 @@ final class PhpAstBuilder
             };
 
             $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
-                'condition' => $nodeCondition($n),
+                'condition' => $nodeCondition($n, $accessor),
                 'stmts' => $this->buildClosureStatements($n, $options, $context),
             ], $dataModelNode->getNodes());
 

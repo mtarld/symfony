@@ -36,6 +36,7 @@ use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\CompositeTypeInterface;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
@@ -109,36 +110,39 @@ final class EncoderGenerator
     }
 
     /**
+     * @param DataAccessorInterface|array<string, DataAccessorInterface> $accessor
      * @param array<string, mixed> $options
      * @param array<string, mixed> $context
      */
-    private function createDataModel(Type $type, DataAccessorInterface $accessor, array $options = [], array $context = []): DataModelNodeInterface
+    private function createDataModel(Type $nativeType, Type $jsonType, DataAccessorInterface|array $accessors, array $options = [], array $context = []): DataModelNodeInterface
     {
+        $accessor = $accessors instanceof DataAccessorInterface ? $accessors : $accessors['_main'];
+
         $context['depth'] ??= 0;
 
         if ($context['depth'] > self::MAX_DEPTH) {
             return new ExceptionNode(MaxDepthException::class);
         }
 
-        $context['original_type'] ??= $type;
+        $context['original_type'] ??= $nativeType;
 
-        if ($type instanceof UnionType) {
-            return new CompositeNode($accessor, array_map(fn (Type $t): DataModelNodeInterface => $this->createDataModel($t, $accessor, $options, $context), $type->getTypes()));
+        if ($nativeType instanceof UnionType) {
+            return new CompositeNode($accessor, array_map(fn (Type $t): DataModelNodeInterface => $this->createDataModel($t, $accessors[(string) $t], $options, $context), $nativeType->getTypes()));
         }
 
-        if ($type instanceof BuiltinType) {
-            return new ScalarNode($accessor, $type);
+        if ($nativeType instanceof BuiltinType) {
+            return new ScalarNode($accessor, $nativeType);
         }
 
-        if ($type instanceof BackedEnumType) {
-            return new BackedEnumNode($accessor, $type);
+        if ($nativeType instanceof BackedEnumType) {
+            return new BackedEnumNode($accessor, $nativeType);
         }
 
-        if ($type instanceof ObjectType && !$type instanceof EnumType) {
+        if ($nativeType instanceof ObjectType && !$nativeType instanceof EnumType) {
             ++$context['depth'];
 
-            $className = $type->getClassName();
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $options, ['original_type' => $type] + $context);
+            $className = $nativeType->getClassName();
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $options, ['original_type' => $nativeType] + $context);
 
             try {
                 $classReflection = new \ReflectionClass($className);
@@ -149,46 +153,62 @@ final class EncoderGenerator
             $propertiesNodes = [];
 
             foreach ($propertiesMetadata as $encodedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+                $propertyAccessors = ['_main' => new PropertyDataAccessor($accessor, $propertyMetadata->getName())];
 
-                foreach ($propertyMetadata->getToJsonValueTransformer() as $valueTransformer) {
-                    if (\is_string($valueTransformer)) {
-                        $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
-                        $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
+                foreach ($propertyMetadata->getTypes() as $t) {
+                    $propertyAccessor = $propertyAccessors['_main'];
 
-                        continue;
+                    $valueTransformers = $propertyMetadata->getToJsonValueTransformers($t['native']) ?? [];
+                    foreach ($valueTransformers as $valueTransformer) {
+                        if (\is_string($valueTransformer)) {
+                            $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
+                            $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
+
+                            continue;
+                        }
+
+                        try {
+                            $functionReflection = new \ReflectionFunction($valueTransformer);
+                        } catch (\ReflectionException $e) {
+                            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                        }
+
+                        $functionName = !$functionReflection->getClosureCalledClass()
+                            ? $functionReflection->getName()
+                            : \sprintf('%s::%s', $functionReflection->getClosureCalledClass()->getName(), $functionReflection->getName());
+                        $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new VariableDataAccessor('options')] : [$propertyAccessor];
+
+                        $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                     }
 
-                    try {
-                        $functionReflection = new \ReflectionFunction($valueTransformer);
-                    } catch (\ReflectionException $e) {
-                        throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-                    }
-
-                    $functionName = !$functionReflection->getClosureCalledClass()
-                        ? $functionReflection->getName()
-                        : \sprintf('%s::%s', $functionReflection->getClosureCalledClass()->getName(), $functionReflection->getName());
-                    $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new VariableDataAccessor('options')] : [$propertyAccessor];
-
-                    $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
+                    $propertyAccessors[(string) $t['native']] = $propertyAccessor;
                 }
 
-                $propertiesNodes[$encodedName] = $this->createDataModel($propertyMetadata->getType(), $propertyAccessor, $options, $context);
+                $propertyJsonTypes = array_column($propertyMetadata->getTypes(), 'native');
+                dd($propertyJsonTypes);
+                $propertyType = \count($propertyJsonTypes) > 1 ? Type::union(...$propertyJsonTypes) : $propertyJsonTypes[0];
+
+                $propertiesNodes[$encodedName] = $this->createDataModel(
+                    $propertyType,
+                    \count($propertyAccessors) === 1 ? $propertyAccessors[0] : $propertyAccessors,
+                    $options,
+                    $context,
+                );
             }
 
-            return new ObjectNode($accessor, $type, $propertiesNodes);
+            return new ObjectNode($accessor, $nativeType, $propertiesNodes);
         }
 
-        if ($type instanceof CollectionType) {
+        if ($nativeType instanceof CollectionType) {
             ++$context['depth'];
 
             return new CollectionNode(
                 $accessor,
-                $type,
-                $this->createDataModel($type->getCollectionValueType(), new VariableDataAccessor('value'), $options, $context),
+                $nativeType,
+                $this->createDataModel($nativeType->getCollectionValueType(), new VariableDataAccessor('value'), $options, $context),
             );
         }
 
-        throw new UnsupportedException(\sprintf('"%s" type is not supported.', (string) $type));
+        throw new UnsupportedException(\sprintf('"%s" type is not supported.', (string) $nativeType));
     }
 }

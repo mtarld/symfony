@@ -23,12 +23,13 @@ use Symfony\Component\TypeInfo\Type;
 final class PropertyMetadata
 {
     /**
-     * @param list<string|\Closure> $toJsonValueTransformers
-     * @param list<string|\Closure> $toNativeValueTransformers
+     * @param list<array{native: Type, json: Type}> $types
+     * @param array<string, list<string|\Closure>>           $toJsonValueTransformers
+     * @param list<string|\Closure>                          $toNativeValueTransformers
      */
     public function __construct(
         private string $name,
-        private Type $type,
+        private array $types,
         private array $toJsonValueTransformers = [],
         private array $toNativeValueTransformers = [],
     ) {
@@ -41,43 +42,46 @@ final class PropertyMetadata
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->toJsonValueTransformers, $this->toNativeValueTransformers);
-    }
-
-    public function getType(): Type
-    {
-        return $this->type;
-    }
-
-    public function withType(Type $type): self
-    {
-        return new self($this->name, $type, $this->toJsonValueTransformers, $this->toNativeValueTransformers);
+        return new self($name, $this->types, $this->toJsonValueTransformers, $this->toNativeValueTransformers);
     }
 
     /**
-     * @return list<string|\Closure>
+     * @return list<array{native: Type, json: Type}>
      */
-    public function getToJsonValueTransformer(): array
+    public function getTypes(): array
     {
-        return $this->toJsonValueTransformers;
+        return $this->types;
     }
 
     /**
-     * @param list<string|\Closure> $toJsonValueTransformers
+     * @param list<array{native: Type, json: Type}> $types
      */
-    public function withToJsonValueTransformers(array $toJsonValueTransformers): self
+    public function withTypes(array $types): self
     {
-        return new self($this->name, $this->type, $toJsonValueTransformers, $this->toNativeValueTransformers);
+        return new self($this->name, $types, $this->toJsonValueTransformers, $this->toNativeValueTransformers);
     }
 
-    public function withAdditionalToJsonValueTransformer(string|\Closure $toJsonValueTransformer): self
+    /**
+     * @return array<string, string|\Closure>
+     */
+    public function getToJsonValueTransformers(Type $type): array
     {
-        $toJsonValueTransformers = $this->toJsonValueTransformers;
+        return $this->toJsonValueTransformers[(string) $type] ?? [];
+    }
 
-        $toJsonValueTransformers[] = $toJsonValueTransformer;
-        $toJsonValueTransformers = array_values(array_unique($toJsonValueTransformers));
+    public function withToJsonValueTransformer(Type $type, string|\Closure $toJsonValueTransformer): self
+    {
+        $transformers = $this->toJsonValueTransformers[(string) $type] ?? [];
+        $transformers[] = $toJsonValueTransformer;
 
-        return $this->withToJsonValueTransformers($toJsonValueTransformers);
+        $transformers = array_values(array_unique($transformers));
+
+        return new self(
+            $this->name,
+            $this->types,
+            [(string) $type => $transformers] + $this->toJsonValueTransformers,
+            $this->toNativeValueTransformers,
+        );
     }
 
     /**
@@ -93,7 +97,7 @@ final class PropertyMetadata
      */
     public function withToNativeValueTransformers(array $toNativeValueTransformers): self
     {
-        return new self($this->name, $this->type, $this->toJsonValueTransformers, $toNativeValueTransformers);
+        return new self($this->name, $this->types, $this->toJsonValueTransformers, $toNativeValueTransformers);
     }
 
     public function withAdditionalToNativeValueTransformer(string|\Closure $toNativeValueTransformer): self

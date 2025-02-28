@@ -12,7 +12,9 @@
 namespace Symfony\Component\JsonEncoder\Mapping;
 
 use Symfony\Component\JsonEncoder\Exception\RuntimeException;
+use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
+use Symfony\Component\TypeInfo\Type\CompositeTypeInterface;
 
 /**
  * Loads basic properties encoding/decoding metadata for a given $className.
@@ -46,7 +48,10 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
             $name = $encodedName = $reflectionProperty->getName();
             $type = $this->typeResolver->resolve($reflectionProperty);
 
-            $result[$encodedName] = new PropertyMetadata($name, $type);
+            $result[$encodedName] = new PropertyMetadata($name, array_map(
+                static fn (Type $t): array => ['native' => $t, 'json' => $t],
+                $type instanceof CompositeTypeInterface ? $type->getTypes() : [$type],
+            ));
         }
 
         return $result;

@@ -20,6 +20,7 @@ use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithPhpDoc;
+use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionAndValueTransformer;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonEncoder\Tests\Fixtures\Model\SelfReferencingDummy;
@@ -169,6 +170,19 @@ class JsonEncoderTest extends TestCase
             '{"interface":"2024-11-20","immutable":"2025-11-20"}',
             $dummy,
             Type::object(DummyWithDateTimes::class),
+            options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
+        );
+    }
+
+    public function testEncodeObjectWithUnionAndValueTransformer()
+    {
+        $dummy = new DummyWithUnionAndValueTransformer();
+        $dummy->foo = new \DateTimeImmutable('2024-11-20');
+
+        $this->assertEncoded(
+            '{"foo":"2024-11-20"}',
+            $dummy,
+            Type::object(DummyWithUnionAndValueTransformer::class),
             options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
         );
     }
