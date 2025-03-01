@@ -21,6 +21,7 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithGenerics;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithPhpDoc;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionAndValueTransformer;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\SelfReferencingDummy;
@@ -154,6 +155,29 @@ class JsonStreamWriterTest extends TestCase
                 BooleanToStringValueTransformer::class => new BooleanToStringValueTransformer(),
                 DoubleIntAndCastToStringValueTransformer::class => new DoubleIntAndCastToStringValueTransformer(),
             ],
+        );
+    }
+
+    public function testEncodeObjectWithUnionAndValueTransformer()
+    {
+        $dummy = new DummyWithUnionAndValueTransformer();
+        $dummy->dateTimeOrBool = new \DateTimeImmutable('2024-11-20');
+        // $dummy->bar = 'bar';
+
+        $this->assertWritten(
+            '{"dateTimeOrBool":"2024-11-20"}',
+            $dummy,
+            Type::object(DummyWithUnionAndValueTransformer::class),
+            options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
+        );
+
+        $dummy = new DummyWithUnionAndValueTransformer();
+        $dummy->dateTimeOrBool = false;
+
+        $this->assertWritten(
+            '{"dateTimeOrBool":false}',
+            $dummy,
+            Type::object(DummyWithUnionAndValueTransformer::class),
         );
     }
 

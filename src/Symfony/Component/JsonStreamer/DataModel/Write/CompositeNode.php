@@ -35,12 +35,12 @@ final class CompositeNode implements DataModelNodeInterface
     ];
 
     /**
-     * @var list<DataModelNodeInterface>
+     * @var list<array{nativeType: Type, node: DataModelNodeInterface}>
      */
     private array $nodes;
 
     /**
-     * @param list<DataModelNodeInterface> $nodes
+     * @param list<array{nativeType: Type, node: DataModelNodeInterface}> $nodes
      */
     public function __construct(
         private DataAccessorInterface $accessor,
@@ -56,13 +56,16 @@ final class CompositeNode implements DataModelNodeInterface
             }
         }
 
-        usort($nodes, fn (CollectionNode|ObjectNode|BackedEnumNode|ScalarNode $a, CollectionNode|ObjectNode|BackedEnumNode|ScalarNode $b): int => self::NODE_PRECISION[$b::class] <=> self::NODE_PRECISION[$a::class]);
+        usort($nodes, fn (array $a, array $b): int => self::NODE_PRECISION[$b['node']::class] <=> self::NODE_PRECISION[$a['node']::class]);
         $this->nodes = $nodes;
     }
 
     public function withAccessor(DataAccessorInterface $accessor): self
     {
-        return new self($accessor, array_map(static fn (DataModelNodeInterface $n): DataModelNodeInterface => $n->withAccessor($accessor), $this->nodes));
+        return new self($accessor, array_map(static fn (array $n): array => [
+            'nativeType' => $n['nativeType'],
+            'node' => $n['node']->withAccessor($accessor),
+        ], $this->nodes));
     }
 
     public function getIdentifier(): string
@@ -77,11 +80,11 @@ final class CompositeNode implements DataModelNodeInterface
 
     public function getType(): UnionType
     {
-        return Type::union(...array_map(fn (DataModelNodeInterface $n): Type => $n->getType(), $this->nodes));
+        return Type::union(...array_map(fn (array $n): Type => $n['node']->getType(), $this->nodes));
     }
 
     /**
-     * @return list<DataModelNodeInterface>
+     * @return list<array{nativeType: Type, node: DataModelNodeInterface}>
      */
     public function getNodes(): array
     {

@@ -13,6 +13,7 @@ namespace Symfony\Component\JsonStreamer\Mapping;
 
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
+use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Loads basic properties stream reading/writing metadata for a given $className.
@@ -46,7 +47,12 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
             $name = $streamedName = $reflectionProperty->getName();
             $type = $this->typeResolver->resolve($reflectionProperty);
 
-            $result[$streamedName] = new PropertyMetadata($name, $type);
+            $metadata = [];
+            foreach ($type instanceof UnionType ? $type->getTypes() : [$type] as $t) {
+                $metadata[] = ['native' => $t, 'stream' => $t, 'transformers' => []];
+            }
+
+            $result[$streamedName] = new PropertyMetadata($name, $metadata, $metadata);
         }
 
         return $result;

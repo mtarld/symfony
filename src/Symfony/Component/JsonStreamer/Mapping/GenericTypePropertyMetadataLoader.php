@@ -41,9 +41,12 @@ final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderI
         $result = $this->decorated->load($className, $options, $context);
         $variableTypes = $this->getClassVariableTypes($className, $context['original_type']);
 
-        foreach ($result as &$metadata) {
-            $type = $metadata->getType();
-            $metadata = $metadata->withType($this->replaceVariableTypes($type, $variableTypes));
+        foreach ($result as &$propertyMetadata) {
+            foreach ($propertyMetadata->getNativeToStreamTypeMetadata() as $metadata) {
+                // TODO
+                // $type = $propertyMetadata->getType();
+                // $propertyMetadata = $propertyMetadata->withType($this->replaceVariableTypes($type, $variableTypes));
+            }
         }
 
         return $result;

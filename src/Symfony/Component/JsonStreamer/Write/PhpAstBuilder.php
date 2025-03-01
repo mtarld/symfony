@@ -52,6 +52,7 @@ use Symfony\Component\JsonStreamer\Exception\LogicException;
 use Symfony\Component\JsonStreamer\Exception\NotEncodableValueException;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
 use Symfony\Component\JsonStreamer\Exception\UnexpectedValueException;
+use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\WrappingTypeInterface;
@@ -135,7 +136,7 @@ final class PhpAstBuilder
             foreach ($node->getNodes() as $n) {
                 $stmts = [
                     ...$stmts,
-                    ...$this->buildGeneratorStatementsByIdentifiers($n, $options, $context),
+                    ...$this->buildGeneratorStatementsByIdentifiers($n['node'], $options, $context),
                 ];
             }
 
@@ -234,44 +235,43 @@ final class PhpAstBuilder
         }
 
         if ($dataModelNode instanceof CompositeNode) {
-            $nodeCondition = function (DataModelNodeInterface $node): Expr {
+            $nodeCondition = function (DataModelNodeInterface $node, Type $nativeType): Expr {
                 $accessor = $node->getAccessor()->toPhpExpr();
-                $type = $node->getType();
 
-                if ($type->isIdentifiedBy(TypeIdentifier::NULL, TypeIdentifier::NEVER, TypeIdentifier::VOID)) {
+                if ($nativeType->isIdentifiedBy(TypeIdentifier::NULL, TypeIdentifier::NEVER, TypeIdentifier::VOID)) {
                     return new Identical($this->builder->val(null), $accessor);
                 }
 
-                if ($type->isIdentifiedBy(TypeIdentifier::TRUE)) {
+                if ($nativeType->isIdentifiedBy(TypeIdentifier::TRUE)) {
                     return new Identical($this->builder->val(true), $accessor);
                 }
 
-                if ($type->isIdentifiedBy(TypeIdentifier::FALSE)) {
+                if ($nativeType->isIdentifiedBy(TypeIdentifier::FALSE)) {
                     return new Identical($this->builder->val(false), $accessor);
                 }
 
-                if ($type->isIdentifiedBy(TypeIdentifier::MIXED)) {
+                if ($nativeType->isIdentifiedBy(TypeIdentifier::MIXED)) {
                     return $this->builder->val(true);
                 }
 
-                while ($type instanceof WrappingTypeInterface) {
-                    $type = $type->getWrappedType();
+                while ($nativeType instanceof WrappingTypeInterface) {
+                    $nativeType = $nativeType->getWrappedType();
                 }
 
-                if ($type instanceof ObjectType) {
-                    return new Instanceof_($accessor, new FullyQualified($type->getClassName()));
+                if ($nativeType instanceof ObjectType) {
+                    return new Instanceof_($accessor, new FullyQualified($nativeType->getClassName()));
                 }
 
-                if ($type instanceof BuiltinType) {
-                    return $this->builder->funcCall('\is_'.$type->getTypeIdentifier()->value, [$accessor]);
+                if ($nativeType instanceof BuiltinType) {
+                    return $this->builder->funcCall('\is_'.$nativeType->getTypeIdentifier()->value, [$accessor]);
                 }
 
-                throw new LogicException(\sprintf('Unexpected "%s" type.', $type::class));
+                throw new LogicException(\sprintf('Unexpected "%s" type.', $nativeType::class));
             };
 
-            $stmtsAndConditions = array_map(fn (DataModelNodeInterface $n): array => [
-                'condition' => $nodeCondition($n),
-                'stmts' => $this->buildYieldStatements($n, $options, $context),
+            $stmtsAndConditions = array_map(fn (array $n): array => [
+                'condition' => $nodeCondition($dataModelNode, $n['nativeType']),
+                'stmts' => $this->buildYieldStatements($n['node'], $options, $context),
             ], $dataModelNode->getNodes());
 
             $if = $stmtsAndConditions[0];
@@ -406,7 +406,7 @@ final class PhpAstBuilder
     {
         if ($dataModel instanceof CompositeNode) {
             foreach ($dataModel->getNodes() as $node) {
-                if (!$this->dataModelOnlyNeedsEncode($node, $depth)) {
+                if (!$this->dataModelOnlyNeedsEncode($node['node'], $depth)) {
                     return false;
                 }
             }

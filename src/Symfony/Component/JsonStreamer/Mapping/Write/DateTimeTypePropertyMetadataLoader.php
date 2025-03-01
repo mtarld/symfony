@@ -13,6 +13,7 @@ namespace Symfony\Component\JsonStreamer\Mapping\Write;
 
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\TypeInfo\Type\CompositeTypeInterface;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
@@ -33,13 +34,14 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
     {
         $result = $this->decorated->load($className, $options, $context);
 
-        foreach ($result as &$metadata) {
-            $type = $metadata->getType();
-
-            if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
-                $metadata = $metadata
-                    ->withType(DateTimeToStringValueTransformer::getStreamValueType())
-                    ->withAdditionalNativeToStreamValueTransformer('json_streamer.value_transformer.date_time_to_string');
+        foreach ($result as &$propertyMetadata) {
+            $typeMetadata = $propertyMetadata->getNativeToStreamTypeMetadata();
+            foreach ($typeMetadata as $metadata) {
+                $nativeType = $metadata['native'];
+                if ($nativeType instanceof ObjectType && is_a($nativeType->getClassName(), \DateTimeInterface::class, true)) {
+                    $propertyMetadata = $propertyMetadata
+                        ->withNativeToStreamType($nativeType, DateTimeToStringValueTransformer::getStreamValueType(), 'json_streamer.value_transformer.date_time_to_string');
+                }
             }
         }
 

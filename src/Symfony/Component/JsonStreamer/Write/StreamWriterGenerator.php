@@ -149,31 +149,45 @@ final class StreamWriterGenerator
             $propertiesNodes = [];
 
             foreach ($propertiesMetadata as $streamedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+                $initialPropertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+                $propertyNodes = [];
 
-                foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
-                    if (\is_string($valueTransformer)) {
-                        $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
-                        $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
+                foreach ($propertyMetadata->getNativeToStreamTypeMetadata() as $metadata) {
+                    $propertyAccessor = $initialPropertyAccessor;
 
-                        continue;
-                    }
+                    foreach ($metadata['transformers'] as $valueTransformer) {
+                        if (\is_string($valueTransformer)) {
+                            $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
+                            $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
 
-                    try {
-                        $functionReflection = new \ReflectionFunction($valueTransformer);
-                    } catch (\ReflectionException $e) {
-                        throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-                    }
+                            continue;
+                        }
 
-                    $functionName = !$functionReflection->getClosureCalledClass()
+                        try {
+                            $functionReflection = new \ReflectionFunction($valueTransformer);
+                        } catch (\ReflectionException $e) {
+                            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                        }
+
+                        $functionName = !$functionReflection->getClosureCalledClass()
                         ? $functionReflection->getName()
                         : \sprintf('%s::%s', $functionReflection->getClosureCalledClass()->getName(), $functionReflection->getName());
-                    $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new VariableDataAccessor('options')] : [$propertyAccessor];
+                        $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new VariableDataAccessor('options')] : [$propertyAccessor];
 
-                    $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
+                        $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
+                    }
+
+                    $propertyNodes[] = [
+                        'nativeType' => $metadata['native'],
+                        'node' => $this->createDataModel($metadata['stream'], $propertyAccessor, $options, $context),
+                    ];
                 }
 
-                $propertiesNodes[$streamedName] = $this->createDataModel($propertyMetadata->getType(), $propertyAccessor, $options, $context);
+                if (count($propertyNodes) === 1) {
+                    $propertiesNodes[$streamedName] = $propertyNodes[0]['node'];
+                } else {
+                    $propertiesNodes[$streamedName] = new CompositeNode($initialPropertyAccessor, $propertyNodes);
+                }
             }
 
             return new ObjectNode($accessor, $type, $propertiesNodes);

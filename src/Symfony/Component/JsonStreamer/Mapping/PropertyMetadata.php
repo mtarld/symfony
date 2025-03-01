@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer\Mapping;
 
+use Symfony\Component\JsonStreamer\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -23,15 +24,23 @@ use Symfony\Component\TypeInfo\Type;
 final class PropertyMetadata
 {
     /**
-     * @param list<string|\Closure> $nativeToStreamValueTransformers
-     * @param list<string|\Closure> $streamToNativeValueTransformers
+     * @param list<array{native: Type, stream: Type, transformers: list<string|\Closure>}> $nativeToStreamTypeMetadata
+     * @param list<array{native: Type, stream: Type, transformers: list<string|\Closure>}> $streamToNativeTypeMetadata
      */
     public function __construct(
         private string $name,
-        private Type $type,
-        private array $nativeToStreamValueTransformers = [],
-        private array $streamToNativeValueTransformers = [],
+        private array $nativeToStreamTypeMetadata = [],
+        private array $streamToNativeTypeMetadata = [],
     ) {
+        $nativeTypes = array_column($nativeToStreamTypeMetadata, 'native');
+        if (count(array_unique($nativeTypes)) !== count($nativeTypes)) {
+            throw new InvalidArgumentException('TODO');
+        }
+
+        $streamTypes = array_column($streamToNativeTypeMetadata, 'native');
+        if (count(array_unique($streamTypes)) !== count($streamTypes)) {
+            throw new InvalidArgumentException('TODO');
+        }
     }
 
     public function getName(): string
@@ -41,68 +50,78 @@ final class PropertyMetadata
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
-    }
-
-    public function getType(): Type
-    {
-        return $this->type;
-    }
-
-    public function withType(Type $type): self
-    {
-        return new self($this->name, $type, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
+        return new self($name, $this->nativeToStreamTypeMetadata, $this->streamToNativeTypeMetadata);
     }
 
     /**
-     * @return list<string|\Closure>
+     * @return list<array{native: Type, stream: Type, transformers: list<string|\Closure>}>
      */
-    public function getNativeToStreamValueTransformer(): array
+    public function getNativeToStreamTypeMetadata(): array
     {
-        return $this->nativeToStreamValueTransformers;
+        return $this->nativeToStreamTypeMetadata;
     }
 
     /**
-     * @param list<string|\Closure> $nativeToStreamValueTransformers
+     * @param list<array{native: Type, stream: Type, transformers: list<string|\Closure>}> $metadata
      */
-    public function withNativeToStreamValueTransformers(array $nativeToStreamValueTransformers): self
+    public function withNativeToStreamTypeMetadata(array $metadata): self
     {
-        return new self($this->name, $this->type, $nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
+        return new self($this->name, $metadata, $this->streamToNativeTypeMetadata);
     }
 
-    public function withAdditionalNativeToStreamValueTransformer(string|\Closure $nativeToStreamValueTransformer): self
+    public function withNativeToStreamType(Type $nativeType, Type $streamType, string|\Closure $transformer): self
     {
-        $nativeToStreamValueTransformers = $this->nativeToStreamValueTransformers;
+        $metadata = $this->nativeToStreamTypeMetadata;
 
-        $nativeToStreamValueTransformers[] = $nativeToStreamValueTransformer;
-        $nativeToStreamValueTransformers = array_values(array_unique($nativeToStreamValueTransformers));
+        foreach ($metadata as &$m) {
+            if ($nativeType != $m['native']) {
+                continue;
+            }
 
-        return $this->withNativeToStreamValueTransformers($nativeToStreamValueTransformers);
+            $m['stream'] = $streamType;
+            $m['transformers'][] = $transformer;
+
+            return new self($this->name, $metadata, $this->streamToNativeTypeMetadata);
+        }
+
+        $metadata[] = ['native' => $nativeType, 'stream' => $streamType, 'transformers' => [$transformer]];
+
+        return new self($this->name, $metadata, $this->streamToNativeTypeMetadata);
     }
 
     /**
-     * @return list<string|\Closure>
+     * @return list<array{native: Type, stream: Type, transformers: list<string|\Closure>}>
      */
-    public function getStreamToNativeValueTransformers(): array
+    public function getStreamToNativeTypeMetadata(): array
     {
-        return $this->streamToNativeValueTransformers;
+        return $this->streamToNativeTypeMetadata;
     }
 
     /**
-     * @param list<string|\Closure> $streamToNativeValueTransformers
+     * @param list<array{native: Type, stream: Type, transformers: list<string|\Closure>}> $metadata
      */
-    public function withStreamToNativeValueTransformers(array $streamToNativeValueTransformers): self
+    public function withStreamToNativeTypeMetadata(array $metadata): self
     {
-        return new self($this->name, $this->type, $this->nativeToStreamValueTransformers, $streamToNativeValueTransformers);
+        return new self($this->name, $this->nativeToStreamTypeMetadata, $metadata);
     }
 
-    public function withAdditionalStreamToNativeValueTransformer(string|\Closure $streamToNativeValueTransformer): self
+    public function withStreamToNativeType(Type $streamType, Type $nativeType, string|\Closure $transformer): self
     {
-        $streamToNativeValueTransformers = $this->streamToNativeValueTransformers;
+        $metadata = $this->streamToNativeTypeMetadata;
 
-        $streamToNativeValueTransformers[] = $streamToNativeValueTransformer;
-        $streamToNativeValueTransformers = array_values(array_unique($streamToNativeValueTransformers));
+        foreach ($metadata as &$m) {
+            if ($streamType != $m['stream']) {
+                continue;
+            }
 
-        return $this->withStreamToNativeValueTransformers($streamToNativeValueTransformers);
+            $m['native'] = $nativeType;
+            $m['transformers'][] = $transformer;
+
+            return new self($this->name, $this->nativeToStreamTypeMetadata, $metadata);
+        }
+
+        $metadata[] = ['native' => $nativeType, 'stream' => $streamType, 'transformers' => [$transformer]];
+
+        return new self($this->name, $this->nativeToStreamTypeMetadata, $metadata);
     }
 }
