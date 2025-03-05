@@ -29,10 +29,13 @@ class JsonStreamerTest extends AbstractWebTestCase
 
     public function testWrite()
     {
+        $dummy = new Dummy();
+        $dummy->valueObject = new \DateTimeImmutable('2025-11-20');
+
         /** @var StreamWriterInterface $writer */
         $writer = static::getContainer()->get('json_streamer.stream_writer.alias');
 
-        $this->assertSame('{"@name":"DUMMY","range":"10..20"}', (string) $writer->write(new Dummy(), Type::object(Dummy::class)));
+        $this->assertSame('{"@name":"DUMMY","range":"10..20","valueObject":"2025-11-20T00:00:00+00:00"}', (string) $writer->write($dummy, Type::object(Dummy::class)));
     }
 
     public function testRead()
@@ -43,8 +46,9 @@ class JsonStreamerTest extends AbstractWebTestCase
         $expected = new Dummy();
         $expected->name = 'dummy';
         $expected->range = [0, 1];
+        $expected->valueObject = new \DateTimeImmutable('2025-11-20');
 
-        $this->assertEquals($expected, $reader->read('{"@name": "DUMMY", "range": "0..1"}', Type::object(Dummy::class)));
+        $this->assertEquals($expected, $reader->read('{"@name": "DUMMY", "range": "0..1","valueObject":"2025-11-20T00:00:00+00:00"}', Type::object(Dummy::class)));
     }
 
     public function testWarmupStreamableClasses()

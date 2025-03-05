@@ -14,20 +14,20 @@ namespace Symfony\Component\JsonStreamer\Tests\Mapping\Write;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadata;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonStreamer\Mapping\Write\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonStreamer\Mapping\Write\ValueObjectTypePropertyMetadataLoader;
 use Symfony\Component\TypeInfo\Type;
 
-class DateTimeTypePropertyMetadataLoaderTest extends TestCase
+class ValueObjectTypePropertyMetadataLoaderTest extends TestCase
 {
-    public function testAddDateTimeToStringValueTransformer()
+    public function testAddValueTransformer()
     {
-        $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'dateTime' => new PropertyMetadata('dateTime', Type::object(\DateTimeImmutable::class)),
+        $loader = new ValueObjectTypePropertyMetadataLoader(self::propertyMetadataLoader([
+            'valueObject' => new PropertyMetadata('valueObject', Type::object(\DateTimeImmutable::class)),
             'other' => new PropertyMetadata('other', Type::object(self::class)),
         ]));
 
         $this->assertEquals([
-            'dateTime' => new PropertyMetadata('dateTime', Type::string(), ['json_streamer.value_transformer.date_time_to_string']),
+            'valueObject' => new PropertyMetadata('valueObject', Type::string(), ['json_streamer.value_transformer.value_object_to_scalar']),
             'other' => new PropertyMetadata('other', Type::object(self::class)),
         ], $loader->load(self::class));
     }

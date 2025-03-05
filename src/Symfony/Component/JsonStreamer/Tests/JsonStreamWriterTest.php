@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer\Tests;
 
+use BcMath\Number;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonStreamer\Exception\MaxDepthException;
 use Symfony\Component\JsonStreamer\JsonStreamWriter;
@@ -19,13 +20,15 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNumbers;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueObjectAndUnion;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\SelfReferencingDummy;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\BooleanToStringValueTransformer;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DoubleIntAndCastToStringValueTransformer;
-use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\ValueObjectToScalarValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
 
@@ -169,8 +172,34 @@ class JsonStreamWriterTest extends TestCase
             '{"interface":"2024-11-20","immutable":"2025-11-20"}',
             $dummy,
             Type::object(DummyWithDateTimes::class),
-            options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
+            options: [ValueObjectToScalarValueTransformer::DATE_TIME_FORMAT_KEY => 'Y-m-d'],
         );
+    }
+
+    /**
+     * @requires extension bcmath
+     * @requires extension gmp
+     */
+    public function testWriteObjectWithNumbers()
+    {
+        $dummy = new DummyWithNumbers();
+        $dummy->bcMathNumber = new Number(10);
+        $dummy->gmpNumber = new \GMP('20');
+
+        $this->assertWritten('{"gmpNumber":"20","bcMathNumber":"10"}', $dummy, Type::object(DummyWithNumbers::class));
+    }
+
+    public function testWriteObjectWithValueObjectAndUnion()
+    {
+        $dummy = new DummyWithValueObjectAndUnion();
+        $dummy->valueObjectOrBool = new \DateTimeImmutable('2024-11-20');
+
+        $this->assertWritten('{"valueObjectOrBool":"2024-11-20T00:00:00+00:00"}', $dummy, Type::object(DummyWithValueObjectAndUnion::class));
+
+        $dummy = new DummyWithValueObjectAndUnion();
+        $dummy->valueObjectOrBool = true;
+
+        $this->assertWritten('{"valueObjectOrBool":true}', $dummy, Type::object(DummyWithValueObjectAndUnion::class));
     }
 
     public function testThrowWhenMaxDepthIsReached()
