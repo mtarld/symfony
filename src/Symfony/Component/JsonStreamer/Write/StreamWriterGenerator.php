@@ -173,7 +173,7 @@ final class StreamWriterGenerator
                     $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                 }
 
-                $propertiesNodes[$streamedName] = $this->createDataModel($propertyMetadata->getType(), $propertyAccessor, $options, $context);
+                $propertiesNodes[$streamedName] = $this->createDataModel($propertyMetadata->getStreamValueType(), $propertyAccessor, $options, $context);
             }
 
             return new ObjectNode($accessor, $type, $propertiesNodes);

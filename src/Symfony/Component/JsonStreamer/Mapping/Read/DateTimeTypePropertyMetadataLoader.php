@@ -35,7 +35,7 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
         $result = $this->decorated->load($className, $options, $context);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
+            $type = $metadata->getStreamValueType();
 
             if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {
                 if (\DateTime::class === $type->getClassName()) {
@@ -43,7 +43,7 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
                 }
 
                 $metadata = $metadata
-                    ->withType(StringToDateTimeValueTransformer::getStreamValueType())
+                    ->withStreamValueType(StringToDateTimeValueTransformer::getStreamValueType())
                     ->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.string_to_date_time');
             }
         }

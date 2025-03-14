@@ -28,7 +28,7 @@ final class PropertyMetadata
      */
     public function __construct(
         private string $name,
-        private Type $type,
+        private Type $streamValueType,
         private array $nativeToStreamValueTransformers = [],
         private array $streamToNativeValueTransformers = [],
     ) {
@@ -41,17 +41,17 @@ final class PropertyMetadata
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
+        return new self($name, $this->streamValueType, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
     }
 
-    public function getType(): Type
+    public function getStreamValueType(): Type
     {
-        return $this->type;
+        return $this->streamValueType;
     }
 
-    public function withType(Type $type): self
+    public function withStreamValueType(Type $streamValueType): self
     {
-        return new self($this->name, $type, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
+        return new self($this->name, $streamValueType, $this->nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
     }
 
     /**
@@ -67,7 +67,7 @@ final class PropertyMetadata
      */
     public function withNativeToStreamValueTransformers(array $nativeToStreamValueTransformers): self
     {
-        return new self($this->name, $this->type, $nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
+        return new self($this->name, $this->streamValueType, $nativeToStreamValueTransformers, $this->streamToNativeValueTransformers);
     }
 
     public function withAdditionalNativeToStreamValueTransformer(string|\Closure $nativeToStreamValueTransformer): self
@@ -93,7 +93,7 @@ final class PropertyMetadata
      */
     public function withStreamToNativeValueTransformers(array $streamToNativeValueTransformers): self
     {
-        return new self($this->name, $this->type, $this->nativeToStreamValueTransformers, $streamToNativeValueTransformers);
+        return new self($this->name, $this->streamValueType, $this->nativeToStreamValueTransformers, $streamToNativeValueTransformers);
     }
 
     public function withAdditionalStreamToNativeValueTransformer(string|\Closure $streamToNativeValueTransformer): self
