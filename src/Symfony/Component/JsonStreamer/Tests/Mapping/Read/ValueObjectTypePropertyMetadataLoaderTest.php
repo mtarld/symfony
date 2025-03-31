@@ -15,22 +15,20 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\JsonStreamer\Exception\InvalidArgumentException;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadata;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonStreamer\Mapping\Read\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonStreamer\Mapping\Read\ValueObjectTypePropertyMetadataLoader;
 use Symfony\Component\TypeInfo\Type;
 
-class DateTimeTypePropertyMetadataLoaderTest extends TestCase
+class ValueObjectTypePropertyMetadataLoaderTest extends TestCase
 {
-    public function testAddStringToDateTimeValueTransformer()
+    public function testAddDateTimeValueTransformer()
     {
-        $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
-            'interface' => new PropertyMetadata('interface', Type::object(\DateTimeInterface::class)),
-            'immutable' => new PropertyMetadata('immutable', Type::object(\DateTimeImmutable::class)),
+        $loader = new ValueObjectTypePropertyMetadataLoader(self::propertyMetadataLoader([
+            'dateTime' => new PropertyMetadata('dateTime', Type::object(\DateTimeImmutable::class)),
             'other' => new PropertyMetadata('other', Type::object(self::class)),
         ]));
 
         $this->assertEquals([
-            'interface' => new PropertyMetadata('interface', Type::string(), [], ['json_streamer.value_transformer.string_to_date_time']),
-            'immutable' => new PropertyMetadata('immutable', Type::string(), [], ['json_streamer.value_transformer.string_to_date_time']),
+            'dateTime' => new PropertyMetadata('dateTime', Type::string(), [], ['json_streamer.value_transformer.string_to_date_time']),
             'other' => new PropertyMetadata('other', Type::object(self::class)),
         ], $loader->load(self::class));
     }
@@ -40,7 +38,7 @@ class DateTimeTypePropertyMetadataLoaderTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('The "DateTime" class is not supported. Use "DateTimeImmutable" instead.');
 
-        $loader = new DateTimeTypePropertyMetadataLoader(self::propertyMetadataLoader([
+        $loader = new ValueObjectTypePropertyMetadataLoader(self::propertyMetadataLoader([
             'mutable' => new PropertyMetadata('mutable', Type::object(\DateTime::class)),
         ]));
 

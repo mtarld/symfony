@@ -17,7 +17,7 @@ use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonStreamer\Mapping\Read\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Read\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonStreamer\Mapping\Read\ValueObjectTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Read\Instantiator;
 use Symfony\Component\JsonStreamer\Read\LazyInstantiator;
 use Symfony\Component\JsonStreamer\Read\StreamReaderGenerator;
@@ -90,15 +90,15 @@ final class JsonStreamReader implements StreamReaderInterface
 
         $typeContextFactory = new TypeContextFactory(class_exists(PhpDocParser::class) ? new StringTypeResolver() : null);
 
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(
+        $propertyMetadataLoader = new ValueObjectTypePropertyMetadataLoader(
+            new GenericTypePropertyMetadataLoader(
                 new AttributePropertyMetadataLoader(
                     new PropertyMetadataLoader(TypeResolver::create()),
                     $valueTransformersContainer,
                     TypeResolver::create(),
                 ),
+                $typeContextFactory,
             ),
-            $typeContextFactory,
         );
 
         return new self($valueTransformersContainer, $propertyMetadataLoader, $streamReadersDir, $lazyGhostsDir);
