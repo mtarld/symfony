@@ -42,10 +42,10 @@ final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderI
         $variableTypes = $this->getClassVariableTypes($className, $context['original_type']);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
+            $type = $metadata->getNativeType();
 
             if (isset($variableTypes[(string) $type])) {
-                $metadata = $metadata->withType($this->replaceVariableTypes($type, $variableTypes));
+                $metadata = $metadata->withNativeType($this->replaceVariableTypes($type, $variableTypes));
             }
         }
 

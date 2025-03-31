@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer;
 
+use BcMath\Number;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
@@ -22,7 +23,7 @@ use Symfony\Component\JsonStreamer\Read\Instantiator;
 use Symfony\Component\JsonStreamer\Read\LazyInstantiator;
 use Symfony\Component\JsonStreamer\Read\StreamReaderGenerator;
 use Symfony\Component\JsonStreamer\ValueTransformer\IntStringToBcMathNumberValueTransformer;
-use Symfony\Component\JsonStreamer\ValueTransformer\IntStringToGmpNumberValueTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\ScalarToValueObjectValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\StringToDateTimeValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
@@ -71,9 +72,10 @@ final class JsonStreamReader implements StreamReaderInterface
         $lazyGhostsDir ??= sys_get_temp_dir().'/json_streamer/lazy_ghost';
         $valueTransformers += [
             'json_streamer.value_transformer.string_to_date_time' => new StringToDateTimeValueTransformer(),
-            'json_streamer.value_transformer.int_string_to_bc_math_number' => new IntStringToBcMathNumberValueTransformer(),
-            'json_streamer.value_transformer.int_string_to_gmp_number' => new IntStringToGmpNumberValueTransformer(),
         ];
+        $valueTransformers['json_streamer.value_transformer.scalar_to_value_object'] = new ScalarToValueObjectValueTransformer([
+            \DateTimeImmutable::class => $valueTransformers['json_streamer.value_transformer.string_to_date_time'],
+        ]);
 
         $valueTransformersContainer = new class($valueTransformers) implements ContainerInterface {
             public function __construct(

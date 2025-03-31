@@ -4,5 +4,5 @@ namespace Symfony\Component\JsonStreamer\Tests\Fixtures\Model;
 
 class DummyWithValueObjectAndUnion
 {
-    public \DateTimeInterface|bool $valueObjectOrBool;
+    public \DateTimeInterface|ClassicDummy|bool $valueObjectOrBool;
 }

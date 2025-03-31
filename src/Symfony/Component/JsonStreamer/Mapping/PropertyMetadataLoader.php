@@ -46,7 +46,7 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
             $name = $streamedName = $reflectionProperty->getName();
             $type = $this->typeResolver->resolve($reflectionProperty);
 
-            $result[$streamedName] = new PropertyMetadata($name, $type);
+            $result[$streamedName] = new PropertyMetadata($name, $type, $type);
         }
 
         return $result;

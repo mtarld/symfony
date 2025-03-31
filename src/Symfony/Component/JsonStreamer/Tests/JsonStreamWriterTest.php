@@ -203,9 +203,9 @@ class JsonStreamWriterTest extends TestCase
         );
 
         $dummy = new DummyWithValueObjectAndUnion();
-        $dummy->valueObjectOrBool = true;
+        $dummy->valueObjectOrBool = new Number(12);
 
-        $this->assertWritten('{"valueObjectOrBool":true}', $dummy, Type::object(DummyWithValueObjectAndUnion::class));
+        $this->assertWritten('{"valueObjectOrBool":"12"}', $dummy, Type::object(DummyWithValueObjectAndUnion::class));
     }
 
     /**

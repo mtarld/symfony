@@ -183,6 +183,9 @@ class JsonStreamReaderTest extends TestCase
         }, '{"gmpNumber":"10","bcMathNumber":10}', Type::object(DummyWithNumbers::class));
     }
 
+    /**
+     * @group wip
+     */
     public function testReadObjectWithValueObjectAndUnion()
     {
         $reader = JsonStreamReader::create(streamReadersDir: $this->streamReadersDir, lazyGhostsDir: $this->lazyGhostsDir);
@@ -195,7 +198,7 @@ class JsonStreamReaderTest extends TestCase
         $this->assertRead($reader, function (mixed $read) {
             $this->assertInstanceOf(DummyWithValueObjectAndUnion::class, $read);
             $this->assertFalse($read->valueObjectOrBool);
-        }, '{"valueObjectOrBool":false}', Type::object(DummyWithValueObjectAndUnion::class));
+        }, '{"valueObjectOrBool":"12"}', Type::object(DummyWithValueObjectAndUnion::class));
     }
 
     public function testCreateStreamReaderFile()

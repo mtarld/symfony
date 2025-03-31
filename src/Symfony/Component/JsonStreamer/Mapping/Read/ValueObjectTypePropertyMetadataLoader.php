@@ -11,13 +11,10 @@
 
 namespace Symfony\Component\JsonStreamer\Mapping\Read;
 
-use BcMath\Number;
 use Symfony\Component\JsonStreamer\Exception\InvalidArgumentException;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonStreamer\ValueTransformer\IntStringToBcMathNumberValueTransformer;
-use Symfony\Component\JsonStreamer\ValueTransformer\IntStringToGmpNumberValueTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\ScalarToValueObjectValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\StringToDateTimeValueTransformer;
-use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
@@ -39,37 +36,27 @@ final class ValueObjectTypePropertyMetadataLoader implements PropertyMetadataLoa
         $result = $this->decorated->load($className, $options, $context);
 
         foreach ($result as &$metadata) {
-            $type = $metadata->getType();
-            $newTypeParts = [];
+            $nativeType = $metadata->getNativeType();
 
-            foreach ($type instanceof UnionType ? $type->getTypes() : [$type] as $t) {
-                $newTypePart = $t;
-
-                if ($t->isIdentifiedBy(\DateTimeInterface::class)) {
-                    if ($t->isIdentifiedBy(\DateTime::class)) {
-                        throw new InvalidArgumentException('The "DateTime" class is not supported. Use "DateTimeImmutable" instead.');
-                    }
-
-                    $metadata = $metadata->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.string_to_date_time');
-                    $newTypePart = StringToDateTimeValueTransformer::getStreamValueType();
-                } elseif ($t->isIdentifiedBy(Number::class)) {
-                    $metadata = $metadata->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.int_string_to_bc_math_number');
-                    $newTypePart = IntStringToBcMathNumberValueTransformer::getStreamValueType();
-                } elseif ($t->isIdentifiedBy(\GMP::class)) {
-                    $metadata = $metadata->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.int_string_to_gmp_number');
-                    $newTypePart = IntStringToGmpNumberValueTransformer::getStreamValueType();
-                }
-
-                $newTypeParts = [
-                    ...$newTypeParts,
-                    ...($newTypePart instanceof UnionType ? $newTypePart->getTypes() : [$newTypePart]),
-                ];
+            if ($nativeType->isIdentifiedBy(\DateTime::class)) {
+                throw new InvalidArgumentException('The "DateTime" class is not supported. Use "DateTimeImmutable" instead.');
             }
 
-            $newTypeParts = array_values(array_unique($newTypeParts));
-            $newType = \count($newTypeParts) > 1 ? Type::union(...$newTypeParts) : $newTypeParts[0];
+            if ($nativeType instanceof UnionType && $nativeType->isIdentifiedBy(\DateTimeInterface::class)) {
+                $metadata = $metadata
+                    ->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.scalar_to_value_object')
+                    ->withStreamType(ScalarToValueObjectValueTransformer::getStreamValueType());
 
-            $metadata = $metadata->withType($newType);
+                continue;
+            }
+
+            if ($nativeType->isIdentifiedBy(\DateTimeInterface::class)) {
+                $metadata = $metadata
+                    ->withAdditionalStreamToNativeValueTransformer('json_streamer.value_transformer.string_to_date_time')
+                    ->withStreamType(StringToDateTimeValueTransformer::getStreamValueType());
+
+                continue;
+            }
         }
 
         return $result;

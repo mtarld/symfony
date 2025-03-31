@@ -27,10 +27,10 @@ final class StringToDateTimeValueTransformer implements ValueTransformerInterfac
 {
     public const FORMAT_KEY = 'date_time_format';
 
-    public function transform(mixed $value, array $options = []): mixed
+    public function transform(mixed $value, array $options = []): \DateTimeImmutable
     {
-        if (!\is_string($value)) {
-            return $value;
+        if (!\is_string($value) || '' === trim($value)) {
+            throw new InvalidArgumentException('The JSON value is either not a string, or an empty string, or null; you should pass a string that can be parsed with the passed format or a valid DateTime string.');
         }
 
         $dateTimeFormat = $options[self::FORMAT_KEY] ?? null;
