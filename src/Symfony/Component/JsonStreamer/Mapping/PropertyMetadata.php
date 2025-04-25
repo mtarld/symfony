@@ -31,6 +31,7 @@ final class PropertyMetadata
         private Type $type,
         private array $nativeToStreamValueTransformers = [],
         private array $streamToNativeValueTransformers = [],
+        public mixed $staticValue = null,
     ) {
     }
 

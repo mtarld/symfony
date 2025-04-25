@@ -11,6 +11,11 @@
 
 namespace Symfony\Component\JsonStreamer\Write;
 
+use PhpParser\Node\Expr\ArrayItem;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\BinaryOp\Plus;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Scalar\String_;
 use PhpParser\PhpVersion;
 use PhpParser\PrettyPrinter;
 use PhpParser\PrettyPrinter\Standard;
@@ -18,6 +23,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\JsonStreamer\DataModel\DataAccessorInterface;
 use Symfony\Component\JsonStreamer\DataModel\FunctionDataAccessor;
+use Symfony\Component\JsonStreamer\DataModel\PhpExprDataAccessor;
 use Symfony\Component\JsonStreamer\DataModel\PropertyDataAccessor;
 use Symfony\Component\JsonStreamer\DataModel\ScalarDataAccessor;
 use Symfony\Component\JsonStreamer\DataModel\VariableDataAccessor;
@@ -35,6 +41,7 @@ use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
+use Symfony\Component\TypeInfo\Type\GenericType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
 
@@ -124,6 +131,10 @@ final class StreamWriterGenerator
             return new BackedEnumNode($accessor, $type);
         }
 
+        if ($type instanceof GenericType) {
+            $type = $type->getWrappedType();
+        }
+
         if ($type instanceof ObjectType && !$type instanceof EnumType) {
             $typeString = (string) $type;
             $className = $type->getClassName();
@@ -133,7 +144,7 @@ final class StreamWriterGenerator
             }
 
             $context['generated_classes'][$typeString] = true;
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $options, ['original_type' => $type] + $context);
+            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $options, $context);
 
             try {
                 $classReflection = new \ReflectionClass($className);
@@ -144,28 +155,32 @@ final class StreamWriterGenerator
             $propertiesNodes = [];
 
             foreach ($propertiesMetadata as $streamedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+                if (null !== $propertyMetadata->staticValue) {
+                    $propertyAccessor = new ScalarDataAccessor($propertyMetadata->staticValue);
+                } else {
+                    $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
 
-                foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
-                    if (\is_string($valueTransformer)) {
-                        $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
-                        $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
+                    foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
+                        if (\is_string($valueTransformer)) {
+                            $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
+                            $propertyAccessor = new FunctionDataAccessor('transform', [$accessor, new PhpExprDataAccessor(new Plus(new Variable('options'), new Array_([new ArrayItem($accessor->toPhpExpr(), new String_('_current_object'))])))], $valueTransformerServiceAccessor);
 
-                        continue;
+                            continue;
+                        }
+
+                        try {
+                            $functionReflection = new \ReflectionFunction($valueTransformer);
+                        } catch (\ReflectionException $e) {
+                            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                        }
+
+                        $functionName = !$functionReflection->getClosureCalledClass()
+                            ? $functionReflection->getName()
+                            : \sprintf('%s::%s', $functionReflection->getClosureCalledClass()->getName(), $functionReflection->getName());
+                        $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new PhpExprDataAccessor(new Plus(new Variable('options'), new Array_([new ArrayItem($accessor->toPhpExpr(), new String_('_current_object'))])))] : [$propertyAccessor];
+
+                        $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                     }
-
-                    try {
-                        $functionReflection = new \ReflectionFunction($valueTransformer);
-                    } catch (\ReflectionException $e) {
-                        throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-                    }
-
-                    $functionName = !$functionReflection->getClosureCalledClass()
-                        ? $functionReflection->getName()
-                        : \sprintf('%s::%s', $functionReflection->getClosureCalledClass()->getName(), $functionReflection->getName());
-                    $arguments = $functionReflection->isUserDefined() ? [$propertyAccessor, new VariableDataAccessor('options')] : [$propertyAccessor];
-
-                    $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                 }
 
                 $propertiesNodes[$streamedName] = $this->createDataModel($propertyMetadata->getType(), $propertyAccessor, $options, $context);
