@@ -163,7 +163,7 @@ final class StreamWriterGenerator
                     foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
                         if (\is_string($valueTransformer)) {
                             $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
-                            $propertyAccessor = new FunctionDataAccessor('transform', [$accessor, new PhpExprDataAccessor(new Plus(new Variable('options'), new Array_([new ArrayItem($accessor->toPhpExpr(), new String_('_current_object'))])))], $valueTransformerServiceAccessor);
+                            $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new PhpExprDataAccessor(new Plus(new Variable('options'), new Array_([new ArrayItem($accessor->toPhpExpr(), new String_('_current_object'))])))], $valueTransformerServiceAccessor);
 
                             continue;
                         }
