@@ -29,7 +29,8 @@ use Symfony\Component\JsonStreamer\DataModel\Write\ObjectNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\ScalarNode;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
 use Symfony\Component\JsonStreamer\Exception\UnsupportedException;
-use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\Mapping\ClassMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\Mapping\ConstantMetadata;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
@@ -53,7 +54,7 @@ final class StreamWriterGenerator
     private ?Filesystem $fs = null;
 
     public function __construct(
-        private PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private ClassMetadataLoaderInterface $classMetadataLoader,
         private string $streamWritersDir,
     ) {
     }
@@ -133,7 +134,7 @@ final class StreamWriterGenerator
             }
 
             $context['generated_classes'][$typeString] = true;
-            $propertiesMetadata = $this->propertyMetadataLoader->load($className, $options, ['original_type' => $type] + $context);
+            $classMembersMetadata = $this->classMetadataLoader->load($className, $options, ['original_type' => $type] + $context);
 
             try {
                 $classReflection = new \ReflectionClass($className);
@@ -141,12 +142,19 @@ final class StreamWriterGenerator
                 throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
             }
 
+            $constantsNodes = [];
             $propertiesNodes = [];
 
-            foreach ($propertiesMetadata as $streamedName => $propertyMetadata) {
-                $propertyAccessor = new PropertyDataAccessor($accessor, $propertyMetadata->getName());
+            foreach ($classMembersMetadata as $streamedName => $metadata) {
+                if ($metadata instanceof ConstantMetadata) {
+                    $constantsNodes[$streamedName] = $metadata->getValue();
 
-                foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
+                    continue;
+                }
+
+                $propertyAccessor = new PropertyDataAccessor($accessor, $metadata->getName());
+
+                foreach ($metadata->getNativeToStreamValueTransformer() as $valueTransformer) {
                     if (\is_string($valueTransformer)) {
                         $valueTransformerServiceAccessor = new FunctionDataAccessor('get', [new ScalarDataAccessor($valueTransformer)], new VariableDataAccessor('valueTransformers'));
                         $propertyAccessor = new FunctionDataAccessor('transform', [$propertyAccessor, new VariableDataAccessor('options')], $valueTransformerServiceAccessor);
@@ -168,10 +176,10 @@ final class StreamWriterGenerator
                     $propertyAccessor = new FunctionDataAccessor($functionName, $arguments);
                 }
 
-                $propertiesNodes[$streamedName] = $this->createDataModel($propertyMetadata->getType(), $propertyAccessor, $options, $context);
+                $propertiesNodes[$streamedName] = $this->createDataModel($metadata->getType(), $propertyAccessor, $options, $context);
             }
 
-            return new ObjectNode($accessor, $type, $propertiesNodes);
+            return new ObjectNode($accessor, $type, $propertiesNodes, $constantsNodes);
         }
 
         if ($type instanceof CollectionType) {

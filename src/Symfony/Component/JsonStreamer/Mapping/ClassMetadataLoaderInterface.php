@@ -12,7 +12,7 @@
 namespace Symfony\Component\JsonStreamer\Mapping;
 
 /**
- * Loads properties stream reading/writing metadata for a given $className.
+ * Loads class elements stream reading/writing metadata for a given $className.
  *
  * These metadata can be used by the DataModelBuilder to create
  * an appropriate ObjectNode.
@@ -21,14 +21,14 @@ namespace Symfony\Component\JsonStreamer\Mapping;
  *
  * @experimental
  */
-interface PropertyMetadataLoaderInterface
+interface ClassMetadataLoaderInterface
 {
     /**
      * @param class-string         $className
      * @param array<string, mixed> $options   Implementation-specific options
      * @param array<string, mixed> $context
      *
-     * @return array<string, PropertyMetadata>
+     * @return array<string, PropertyMetadata|ConstantMetadata>
      */
     public function load(string $className, array $options = [], array $context = []): array;
 }

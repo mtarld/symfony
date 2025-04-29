@@ -13,11 +13,11 @@ namespace Symfony\Component\JsonStreamer;
 
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
-use Symfony\Component\JsonStreamer\Mapping\Write\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Write\DateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonStreamer\Mapping\ClassMetadataLoader;
+use Symfony\Component\JsonStreamer\Mapping\ClassMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\Mapping\PropertyGenericTypeLoader;
+use Symfony\Component\JsonStreamer\Mapping\Write\AttributeLoader;
+use Symfony\Component\JsonStreamer\Mapping\Write\PropertyDateTimeTypeLoader;
 use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\JsonStreamer\Write\StreamWriterGenerator;
@@ -39,10 +39,10 @@ final class JsonStreamWriter implements StreamWriterInterface
 
     public function __construct(
         private ContainerInterface $valueTransformers,
-        PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        ClassMetadataLoaderInterface $classMetadataLoader,
         string $streamWritersDir,
     ) {
-        $this->streamWriterGenerator = new StreamWriterGenerator($propertyMetadataLoader, $streamWritersDir);
+        $this->streamWriterGenerator = new StreamWriterGenerator($classMetadataLoader, $streamWritersDir);
     }
 
     public function write(mixed $data, Type $type, array $options = []): \Traversable&\Stringable
@@ -109,10 +109,10 @@ final class JsonStreamWriter implements StreamWriterInterface
 
         $typeContextFactory = new TypeContextFactory(class_exists(PhpDocParser::class) ? new StringTypeResolver() : null);
 
-        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(
-                new AttributePropertyMetadataLoader(
-                    new PropertyMetadataLoader(TypeResolver::create()),
+        $propertyMetadataLoader = new PropertyGenericTypeLoader(
+            new PropertyDateTimeTypeLoader(
+                new AttributeLoader(
+                    new ClassMetadataLoader(TypeResolver::create()),
                     $valueTransformersContainer,
                     TypeResolver::create(),
                 ),

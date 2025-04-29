@@ -12,9 +12,11 @@
 namespace Symfony\Component\JsonStreamer\Tests\Mapping;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonStreamer\Mapping\ConstantMetadata;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadata;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithConstants;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
@@ -28,5 +30,14 @@ class PropertyMetadataLoaderTest extends TestCase
             'id' => new PropertyMetadata('id', Type::int()),
             'name' => new PropertyMetadata('name', Type::string()),
         ], $loader->load(ClassicDummy::class));
+    }
+
+    public function testReadPropertyStaticValue()
+    {
+        $loader = new PropertyMetadataLoader(TypeResolver::create());
+
+        $this->assertEquals([
+            'CONSTANT' => new ConstantMetadata('CONSTANT_VALUE'),
+        ], $loader->load(DummyWithConstants::class));
     }
 }

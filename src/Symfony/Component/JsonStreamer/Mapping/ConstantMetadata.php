@@ -9,25 +9,29 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\JsonStreamer\Attribute;
+namespace Symfony\Component\JsonStreamer\Mapping;
 
 /**
- * Defines the streamed property name.
+ * Holds stream reading/writing metadata about a given constant.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @experimental
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::TARGET_CLASS_CONSTANT)]
-final class StreamedName
+final class ConstantMetadata
 {
     public function __construct(
-        private string $name,
+        private mixed $value,
     ) {
     }
 
-    public function getName(): string
+    public function getValue(): string
     {
-        return $this->name;
+        return $this->value;
+    }
+
+    public function withValue(mixed $value): self
+    {
+        return new self($value);
     }
 }

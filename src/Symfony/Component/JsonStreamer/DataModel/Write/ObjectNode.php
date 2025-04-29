@@ -27,18 +27,20 @@ final class ObjectNode implements DataModelNodeInterface
 {
     /**
      * @param array<string, DataModelNodeInterface> $properties
+     * @param array<string, mixed>                  $constants
      */
     public function __construct(
         private DataAccessorInterface $accessor,
         private ObjectType $type,
         private array $properties,
+        private array $constants,
         private bool $mock = false,
     ) {
     }
 
     public static function createMock(DataAccessorInterface $accessor, ObjectType $type): self
     {
-        return new self($accessor, $type, [], true);
+        return new self($accessor, $type, [], [], true);
     }
 
     public function withAccessor(DataAccessorInterface $accessor): self
@@ -54,7 +56,7 @@ final class ObjectNode implements DataModelNodeInterface
             $properties[$key] = $property->withAccessor($propertyAccessor);
         }
 
-        return new self($accessor, $this->type, $properties, $this->mock);
+        return new self($accessor, $this->type, $properties, $this->constants, $this->mock);
     }
 
     public function getIdentifier(): string
@@ -78,6 +80,14 @@ final class ObjectNode implements DataModelNodeInterface
     public function getProperties(): array
     {
         return $this->properties;
+    }
+
+    /**
+     * @return array<string, DataModelNodeInterface>
+     */
+    public function getConstants(): array
+    {
+        return $this->constants;
     }
 
     public function isMock(): bool

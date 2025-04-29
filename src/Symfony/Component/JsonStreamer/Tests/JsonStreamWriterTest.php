@@ -16,6 +16,7 @@ use Symfony\Component\JsonStreamer\Exception\NotEncodableValueException;
 use Symfony\Component\JsonStreamer\JsonStreamWriter;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithConstants;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithDateTimes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
@@ -124,6 +125,13 @@ class JsonStreamWriterTest extends TestCase
         $dummy->name = 'dummy name';
 
         $this->assertWritten('{"@id":10,"name":"dummy name"}', $dummy, Type::object(DummyWithNameAttributes::class));
+    }
+
+    public function testWriteObjectWithConstants()
+    {
+        $dummy = new DummyWithConstants();
+
+        $this->assertWritten('{"@type":"Collection"}', $dummy, Type::object(DummyWithConstants::class));
     }
 
     public function testWriteObjectWithValueTransformer()

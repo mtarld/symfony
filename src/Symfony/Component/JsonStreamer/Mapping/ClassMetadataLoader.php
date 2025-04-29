@@ -15,13 +15,13 @@ use Symfony\Component\JsonStreamer\Exception\RuntimeException;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
 /**
- * Loads basic properties stream reading/writing metadata for a given $className.
+ * Loads basic class elements stream reading/writing metadata for a given $className.
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  *
  * @internal
  */
-final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class ClassMetadataLoader implements ClassMetadataLoaderInterface
 {
     public function __construct(
         private TypeResolverInterface $typeResolver,
@@ -45,8 +45,23 @@ final class PropertyMetadataLoader implements PropertyMetadataLoaderInterface
 
             $name = $streamedName = $reflectionProperty->getName();
             $type = $this->typeResolver->resolve($reflectionProperty);
+            $staticValue = null;
 
-            $result[$streamedName] = new PropertyMetadata($name, $type);
+            if ($reflectionProperty->isStatic()) {
+                $staticValue = $reflectionProperty->getValue();
+            }
+
+            $result[$streamedName] = new PropertyMetadata($name, $type, [], [], $staticValue);
+        }
+
+        foreach ($classReflection->getReflectionConstants() as $reflectionConstant) {
+            if (!$reflectionConstant->isPublic()) {
+                continue;
+            }
+
+            $streamedName = $reflectionConstant->getName();
+
+            $result[$streamedName] = new ConstantMetadata($reflectionConstant->getValue());
         }
 
         return $result;

@@ -353,10 +353,35 @@ final class PhpAstBuilder
 
             ++$context['depth'];
 
+            foreach ($dataModelNode->getConstants() as $name => $constantValue) {
+                $encodedName = json_encode($name);
+                if (false === $encodedName) {
+                    throw new RuntimeException(\sprintf('Cannot encode "%s".', $name));
+                }
+
+                $encodedName = substr($encodedName, 1, -1);
+
+                $encodedConstantValue = json_encode($constantValue);
+                if (false === $encodedConstantValue) {
+                    throw new RuntimeException(\sprintf('Cannot encode "%s" constant.', $name));
+                }
+
+                $objectStmts = [
+                    ...$objectStmts,
+                    new Expression(new Yield_($this->builder->val($separator))),
+                    new Expression(new Yield_($this->builder->val('"'))),
+                    new Expression(new Yield_($this->builder->val($encodedName))),
+                    new Expression(new Yield_($this->builder->val('":'))),
+                    new Expression(new Yield_($this->builder->val($encodedConstantValue))),
+                ];
+
+                $separator = ',';
+            }
+
             foreach ($dataModelNode->getProperties() as $name => $propertyNode) {
                 $encodedName = json_encode($name);
                 if (false === $encodedName) {
-                    throw new RuntimeException(\sprintf('Cannot encode "%s"', $name));
+                    throw new RuntimeException(\sprintf('Cannot encode "%s".', $name));
                 }
 
                 $encodedName = substr($encodedName, 1, -1);

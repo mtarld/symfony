@@ -12,7 +12,8 @@
 namespace Symfony\Component\JsonStreamer\Mapping\Read;
 
 use Symfony\Component\JsonStreamer\Exception\InvalidArgumentException;
-use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\Mapping\ClassMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\Mapping\PropertyMetadata;
 use Symfony\Component\JsonStreamer\ValueTransformer\StringToDateTimeValueTransformer;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
@@ -23,10 +24,10 @@ use Symfony\Component\TypeInfo\Type\ObjectType;
  *
  * @internal
  */
-final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class PropertyDateTimeTypeLoader implements ClassMetadataLoaderInterface
 {
     public function __construct(
-        private PropertyMetadataLoaderInterface $decorated,
+        private ClassMetadataLoaderInterface $decorated,
     ) {
     }
 
@@ -35,6 +36,10 @@ final class DateTimeTypePropertyMetadataLoader implements PropertyMetadataLoader
         $result = $this->decorated->load($className, $options, $context);
 
         foreach ($result as &$metadata) {
+            if (!$metadata instanceof PropertyMetadata) {
+                continue;
+            }
+
             $type = $metadata->getType();
 
             if ($type instanceof ObjectType && is_a($type->getClassName(), \DateTimeInterface::class, true)) {

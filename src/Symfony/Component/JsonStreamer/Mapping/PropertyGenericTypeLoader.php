@@ -28,10 +28,10 @@ use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
  *
  * @internal
  */
-final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderInterface
+final class PropertyGenericTypeLoader implements ClassMetadataLoaderInterface
 {
     public function __construct(
-        private PropertyMetadataLoaderInterface $decorated,
+        private ClassMetadataLoaderInterface $decorated,
         private TypeContextFactory $typeContextFactory,
     ) {
     }
@@ -42,6 +42,10 @@ final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderI
         $variableTypes = $this->getClassVariableTypes($className, $context['original_type']);
 
         foreach ($result as &$metadata) {
+            if (!$metadata instanceof PropertyMetadata) {
+                continue;
+            }
+
             $type = $metadata->getType();
 
             if (isset($variableTypes[(string) $type])) {
