@@ -15,8 +15,8 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\JsonStreamer\DataModel\Read\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\CollectionNode;
-use Symfony\Component\JsonStreamer\DataModel\Read\CompositeNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\DataModelNodeInterface;
+use Symfony\Component\JsonStreamer\DataModel\Read\NullableNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\ObjectNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\ScalarNode;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
@@ -28,8 +28,8 @@ use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\GenericType;
+use Symfony\Component\TypeInfo\Type\NullableType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Generates and writes stream readers PHP files.
@@ -97,8 +97,8 @@ final class StreamReaderGenerator
     {
         $context['original_type'] ??= $type;
 
-        if ($type instanceof UnionType) {
-            return new CompositeNode(array_map(fn (Type $t): DataModelNodeInterface => $this->createDataModel($t, $options, $context), $type->getTypes()));
+        if ($type instanceof NullableType) {
+            return new NullableNode($this->createDataModel($type->getWrappedType(), $options, $context));
         }
 
         if ($type instanceof BuiltinType) {

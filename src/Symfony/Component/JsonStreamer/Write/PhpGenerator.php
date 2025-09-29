@@ -14,18 +14,14 @@ namespace Symfony\Component\JsonStreamer\Write;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonStreamer\DataModel\Write\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\CollectionNode;
-use Symfony\Component\JsonStreamer\DataModel\Write\CompositeNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\DataModelNodeInterface;
+use Symfony\Component\JsonStreamer\DataModel\Write\NullableNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\ObjectNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\ScalarNode;
 use Symfony\Component\JsonStreamer\Exception\LogicException;
 use Symfony\Component\JsonStreamer\Exception\NotEncodableValueException;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
-use Symfony\Component\JsonStreamer\Exception\UnexpectedValueException;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
-use Symfony\Component\TypeInfo\Type\NullableType;
-use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\Type\WrappingTypeInterface;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
@@ -87,20 +83,12 @@ final class PhpGenerator
             return [];
         }
 
-        if ($node instanceof CollectionNode) {
-            return $this->generateObjectGenerators($node->getItemNode(), $options, $context);
+        if ($node instanceof NullableNode) {
+            return $this->generateObjectGenerators($node->getNode(), $options, $context);
         }
 
-        if ($node instanceof CompositeNode) {
-            $generators = [];
-            foreach ($node->getNodes() as $n) {
-                $generators = [
-                    ...$generators,
-                    ...$this->generateObjectGenerators($n, $options, $context),
-                ];
-            }
-
-            return $generators;
+        if ($node instanceof CollectionNode) {
+            return $this->generateObjectGenerators($node->getItemNode(), $options, $context);
         }
 
         if ($node instanceof ObjectNode) {
@@ -158,6 +146,26 @@ final class PhpGenerator
             return $this->line('throw new '.NotEncodableValueException::class.'(\'Maximum stack depth exceeded\');', $context);
         }
 
+        if ($dataModelNode instanceof NullableNode) {
+            $php = $this->flushYieldBuffer($context)
+                .$this->line("if (null === $accessor) {", $context);
+
+            ++$context['indentation_level'];
+            $php .= $this->yield('"null"', $context);
+            --$context['indentation_level'];
+
+            $php .= $this->line('} else {', $context);
+
+            ++$context['indentation_level'];
+            $php .= $this->generateYields($dataModelNode->getNode(), $options, $context)
+                .$this->flushYieldBuffer($context);
+            --$context['indentation_level'];
+
+            $php .= $this->line('}', $context);
+
+            return $php;
+        }
+
         if ($dataModelNode instanceof ScalarNode) {
             return match (true) {
                 TypeIdentifier::NULL === $dataModelNode->getType()->getTypeIdentifier() => $this->yieldInterpolatedString('null', $context),
@@ -168,24 +176,6 @@ final class PhpGenerator
 
         if ($dataModelNode instanceof BackedEnumNode) {
             return $this->yield($this->encode("{$accessor}->value", $context), $context);
-        }
-
-        if ($dataModelNode instanceof CompositeNode) {
-            $php = $this->flushYieldBuffer($context);
-            foreach ($dataModelNode->getNodes() as $i => $node) {
-                $php .= $this->line((0 === $i ? 'if' : '} elseif').' ('.$this->generateCompositeNodeItemCondition($node).') {', $context);
-
-                ++$context['indentation_level'];
-                $php .= $this->generateYields($node, $options, $context)
-                    .$this->flushYieldBuffer($context);
-                --$context['indentation_level'];
-            }
-
-            return $php
-                .$this->flushYieldBuffer($context)
-                .$this->line('} else {', $context)
-                .$this->line('    throw new \\'.UnexpectedValueException::class."(\\sprintf('Unexpected \"%s\" value.', \get_debug_type($accessor)));", $context)
-                .$this->line('}', $context);
         }
 
         if ($dataModelNode instanceof CollectionNode) {
@@ -259,16 +249,7 @@ final class PhpGenerator
 
                 $encodedName = substr($encodedName, 1, -1);
 
-                if ($propertyNode instanceof CompositeNode && $propertyNode->getType() instanceof NullableType) {
-                    $nonNullableCompositeParts = array_values(array_filter(
-                        $propertyNode->getNodes(),
-                        static fn (DataModelNodeInterface $n): bool => !($n instanceof ScalarNode && $n->getType()->isIdentifiedBy(TypeIdentifier::NULL)),
-                    ));
-
-                    $propertyNode = 1 === \count($nonNullableCompositeParts)
-                        ? $nonNullableCompositeParts[0]
-                        : new CompositeNode($propertyNode->getAccessor(), $nonNullableCompositeParts);
-
+                if ($propertyNode instanceof NullableNode) {
                     $php .= $this->flushYieldBuffer($context)
                         .$this->line('if (null === '.$propertyNode->getAccessor().' && ($options[\'include_null_properties\'] ?? false)) {', $context);
 
@@ -284,17 +265,13 @@ final class PhpGenerator
                     }
 
                     --$context['indentation_level'];
-
-                    $php .= $this->line('}', $context)
-                        .$this->flushYieldBuffer($context)
-                        .$this->line('if (null !== '.$propertyNode->getAccessor().') {', $context);
-
+                    $php .= $this->line('} elseif (null !== '.$propertyNode->getAccessor().') {', $context);
                     ++$context['indentation_level'];
 
                     $php .= $this->yieldInterpolatedString('{$prefix'.$context['depth'].'}', $context, false)
                         .$this->yieldInterpolatedString('"'.$encodedName.'":', $context)
                         .$this->flushYieldBuffer($context)
-                        .$this->generateYields($propertyNode, $options, $context)
+                        .$this->generateYields($propertyNode->getNode(), $options, $context)
                         .$this->flushYieldBuffer($context);
 
                     if (!$prefixIsCommaForSure && $name !== array_key_last($dataModelNode->getProperties())) {
@@ -304,18 +281,22 @@ final class PhpGenerator
                     --$context['indentation_level'];
 
                     $php .= $this->line('}', $context);
-                } else {
-                    $php .= $this->yieldInterpolatedString('{$prefix'.$context['depth'].'}', $context, false)
-                        .$this->yieldInterpolatedString('"'.$encodedName.'":', $context)
-                        .$this->flushYieldBuffer($context)
-                        .$this->generateYields($propertyNode, $options, $context);
-
-                    if (!$prefixIsCommaForSure && $name !== array_key_last($dataModelNode->getProperties())) {
-                        $php .= $this->line('$prefix'.$context['depth'].' = \',\';', $context);
-                    }
 
                     $prefixIsCommaForSure = true;
+
+                    continue;
                 }
+
+                $php .= $this->yieldInterpolatedString('{$prefix'.$context['depth'].'}', $context, false)
+                    .$this->yieldInterpolatedString('"'.$encodedName.'":', $context)
+                    .$this->flushYieldBuffer($context)
+                    .$this->generateYields($propertyNode, $options, $context);
+
+                if (!$prefixIsCommaForSure && $name !== array_key_last($dataModelNode->getProperties())) {
+                    $php .= $this->line('$prefix'.$context['depth'].' = \',\';', $context);
+                }
+
+                $prefixIsCommaForSure = true;
             }
 
             return $php
@@ -367,42 +348,6 @@ final class PhpGenerator
         return $this->yield('"'.$yieldBuffer.'"', $context);
     }
 
-    private function generateCompositeNodeItemCondition(DataModelNodeInterface $node): string
-    {
-        $accessor = $node->getAccessor();
-        $type = $node->getType();
-
-        if ($type->isIdentifiedBy(TypeIdentifier::NULL, TypeIdentifier::NEVER, TypeIdentifier::VOID)) {
-            return "null === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::TRUE)) {
-            return "true === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::FALSE)) {
-            return "false === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::MIXED)) {
-            return 'true';
-        }
-
-        while ($type instanceof WrappingTypeInterface) {
-            $type = $type->getWrappedType();
-        }
-
-        if ($type instanceof ObjectType) {
-            return "$accessor instanceof \\".$type->getClassName();
-        }
-
-        if ($type instanceof BuiltinType) {
-            return '\\is_'.$type->getTypeIdentifier()->value."($accessor)";
-        }
-
-        throw new LogicException(\sprintf('Unexpected "%s" type.', $type::class));
-    }
-
     /**
      * @param array<string, mixed> $context
      */
@@ -416,14 +361,8 @@ final class PhpGenerator
      */
     private function canBeEncodedWithJsonEncode(DataModelNodeInterface $node, int $depth = 0): bool
     {
-        if ($node instanceof CompositeNode) {
-            foreach ($node->getNodes() as $n) {
-                if (!$this->canBeEncodedWithJsonEncode($n, $depth)) {
-                    return false;
-                }
-            }
-
-            return true;
+        if ($node instanceof NullableNode) {
+            return $this->canBeEncodedWithJsonEncode($node->getNode());
         }
 
         if ($node instanceof CollectionNode) {

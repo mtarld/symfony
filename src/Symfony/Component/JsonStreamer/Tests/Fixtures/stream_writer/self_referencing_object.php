@@ -12,8 +12,7 @@ return static function (mixed $data, \Psr\Container\ContainerInterface $valueTra
         yield "{";
         if (null === $data->self && ($options['include_null_properties'] ?? false)) {
             yield "{$prefix1}\"@self\":null";
-        }
-        if (null !== $data->self) {
+        } elseif (null !== $data->self) {
             yield "{$prefix1}\"@self\":";
             yield from $generators['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\SelfReferencingDummy']($data->self, $depth + 1);
         }

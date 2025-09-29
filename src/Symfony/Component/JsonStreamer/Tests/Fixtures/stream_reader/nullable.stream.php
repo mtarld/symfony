@@ -18,13 +18,10 @@ return static function (mixed $stream, \Psr\Container\ContainerInterface $valueT
     };
     $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null'] = static function ($stream, $offset, $length) use ($options, $valueTransformers, $instantiator, &$providers) {
         $data = \Symfony\Component\JsonStreamer\Read\Decoder::decodeStream($stream, $offset, $length);
-        if (\is_array($data)) {
-            return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy']($data);
-        }
         if (null === $data) {
             return null;
         }
-        throw new \Symfony\Component\JsonStreamer\Exception\UnexpectedValueException(\sprintf('Unexpected "%s" value for "Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null".', \get_debug_type($data)));
+        return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy']($data);
     };
     return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null']($stream, 0, null);
 };

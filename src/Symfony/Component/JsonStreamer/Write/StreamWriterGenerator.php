@@ -15,8 +15,8 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\JsonStreamer\DataModel\Write\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\CollectionNode;
-use Symfony\Component\JsonStreamer\DataModel\Write\CompositeNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\DataModelNodeInterface;
+use Symfony\Component\JsonStreamer\DataModel\Write\NullableNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\ObjectNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\ScalarNode;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
@@ -28,6 +28,7 @@ use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\EnumType;
 use Symfony\Component\TypeInfo\Type\GenericType;
+use Symfony\Component\TypeInfo\Type\NullableType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\TypeInfo\Type\UnionType;
 
@@ -97,8 +98,8 @@ final class StreamWriterGenerator
     {
         $context['original_type'] ??= $type;
 
-        if ($type instanceof UnionType) {
-            return new CompositeNode($accessor, array_map(fn (Type $t): DataModelNodeInterface => $this->createDataModel($t, $accessor, $options, $context), $type->getTypes()));
+        if ($type instanceof NullableType) {
+            return new NullableNode($this->createDataModel($type->getWrappedType(), $accessor, $options, $context));
         }
 
         if ($type instanceof BuiltinType) {
@@ -166,11 +167,14 @@ final class StreamWriterGenerator
         if ($type instanceof CollectionType) {
             ++$context['depth'];
 
+            // an int|string key in JSON should become a string according to the JSON specification
+            $keyType = $type->getCollectionKeyType() instanceof UnionType ? Type::string() : $type->getCollectionKeyType();
+
             return new CollectionNode(
                 $accessor,
                 $type,
                 $this->createDataModel($type->getCollectionValueType(), '$value'.$context['depth'], $options, $context),
-                $this->createDataModel($type->getCollectionKeyType(), '$key'.$context['depth'], $options, $context),
+                $this->createDataModel($keyType, '$key'.$context['depth'], $options, $context),
             );
         }
 

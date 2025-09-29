@@ -23,10 +23,8 @@ use Symfony\Component\JsonStreamer\Read\StreamReaderGenerator;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Enum\DummyEnum;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithOtherDummies;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DivideStringAndCastToIntValueTransformer;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\StringToBooleanValueTransformer;
@@ -89,27 +87,32 @@ class StreamReaderGeneratorTest extends TestCase
         yield ['mixed', Type::mixed()];
         yield ['null', Type::null()];
         yield ['backed_enum', Type::enum(DummyBackedEnum::class)];
-        yield ['nullable_backed_enum', Type::nullable(Type::enum(DummyBackedEnum::class))];
 
         yield ['list', Type::list()];
         yield ['object_list', Type::list(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_list', Type::nullable(Type::list(Type::object(ClassicDummy::class)))];
 
         yield ['dict', Type::dict()];
         yield ['object_dict', Type::dict(Type::object(ClassicDummy::class))];
-        yield ['nullable_object_dict', Type::nullable(Type::dict(Type::object(ClassicDummy::class)))];
 
         yield ['iterable', Type::iterable()];
         yield ['object_iterable', Type::iterable(Type::object(ClassicDummy::class))];
 
         yield ['object', Type::object(ClassicDummy::class)];
-        yield ['nullable_object', Type::nullable(Type::object(ClassicDummy::class))];
         yield ['object_in_object', Type::object(DummyWithOtherDummies::class)];
-        yield ['object_with_nullable_properties', Type::object(DummyWithNullableProperties::class)];
         yield ['object_with_value_transformer', Type::object(DummyWithValueTransformerAttributes::class)];
 
-        yield ['union', Type::union(Type::int(), Type::list(Type::enum(DummyBackedEnum::class)), Type::object(DummyWithNameAttributes::class))];
-        yield ['object_with_union', Type::object(DummyWithUnionProperties::class)];
+        yield ['nullable', Type::nullable(Type::object(ClassicDummy::class))];
+        yield ['object_with_nullable', Type::object(DummyWithNullableProperties::class)];
+    }
+
+    public function testDoNotSupportUnionType()
+    {
+        $generator = new StreamReaderGenerator(new PropertyMetadataLoader(TypeResolver::create()), $this->streamReadersDir);
+
+        $this->expectException(UnsupportedException::class);
+        $this->expectExceptionMessage('"int|string" type is not supported.');
+
+        $generator->generate(Type::union(Type::int(), Type::string()), false);
     }
 
     public function testDoNotSupportIntersectionType()

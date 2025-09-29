@@ -25,7 +25,6 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNestedArray;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithPhpDoc;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\SelfReferencingDummy;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\BooleanToStringValueTransformer;
@@ -65,25 +64,6 @@ class JsonStreamWriterTest extends TestCase
         $this->assertWritten('[{"foo":1,"bar":2},{"foo":3}]', [['foo' => 1, 'bar' => 2], ['foo' => 3]], Type::list());
         $this->assertWritten('{"foo":"bar"}', (object) ['foo' => 'bar'], Type::object());
         $this->assertWritten('1', DummyBackedEnum::ONE, Type::enum(DummyBackedEnum::class));
-    }
-
-    public function testWriteUnion()
-    {
-        $this->assertWritten(
-            '[1,true,["foo","bar"]]',
-            [DummyBackedEnum::ONE, true, ['foo', 'bar']],
-            Type::list(Type::union(Type::enum(DummyBackedEnum::class), Type::bool(), Type::list(Type::string()))),
-        );
-
-        $dummy = new DummyWithUnionProperties();
-        $dummy->value = DummyBackedEnum::ONE;
-        $this->assertWritten('{"value":1}', $dummy, Type::object(DummyWithUnionProperties::class));
-
-        $dummy->value = 'foo';
-        $this->assertWritten('{"value":"foo"}', $dummy, Type::object(DummyWithUnionProperties::class));
-
-        $dummy->value = null;
-        $this->assertWritten('{}', $dummy, Type::object(DummyWithUnionProperties::class));
     }
 
     public function testWriteCollection()

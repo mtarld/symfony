@@ -10,13 +10,10 @@ return static function (string|\Stringable $string, \Psr\Container\ContainerInte
         }));
     };
     $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null'] = static function ($data) use ($options, $valueTransformers, $instantiator, &$providers) {
-        if (\is_array($data)) {
-            return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy']($data);
-        }
         if (null === $data) {
             return null;
         }
-        throw new \Symfony\Component\JsonStreamer\Exception\UnexpectedValueException(\sprintf('Unexpected "%s" value for "Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null".', \get_debug_type($data)));
+        return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy']($data);
     };
     return $providers['Symfony\Component\JsonStreamer\Tests\Fixtures\Model\ClassicDummy|null'](\Symfony\Component\JsonStreamer\Read\Decoder::decodeString((string) $string));
 };

@@ -12,7 +12,6 @@
 namespace Symfony\Component\JsonStreamer\DataModel\Read;
 
 use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\Type\UnionType;
 
 /**
  * Represents an object in the data model graph representation.
@@ -33,7 +32,7 @@ final class ObjectNode implements DataModelNodeInterface
     ) {
     }
 
-    public static function createMock(ObjectType|UnionType $type): self
+    public static function createMock(ObjectType $type): self
     {
         return new self($type, [], true);
     }

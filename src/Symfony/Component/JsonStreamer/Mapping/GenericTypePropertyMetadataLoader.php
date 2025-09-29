@@ -14,6 +14,7 @@ namespace Symfony\Component\JsonStreamer\Mapping;
 use Symfony\Component\TypeInfo\Exception\InvalidArgumentException;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\CompositeTypeInterface;
 use Symfony\Component\TypeInfo\Type\GenericType;
 use Symfony\Component\TypeInfo\Type\IntersectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
@@ -57,7 +58,7 @@ final class GenericTypePropertyMetadataLoader implements PropertyMetadataLoaderI
     private function getClassVariableTypes(string $className, Type $type): array
     {
         $findTypeWithClassName = static function (string $className, Type $type) use (&$findTypeWithClassName): ?Type {
-            if ($type instanceof UnionType || $type instanceof IntersectionType) {
+            if ($type instanceof CompositeTypeInterface) {
                 foreach ($type->getTypes() as $t) {
                     if (null !== $classType = $findTypeWithClassName($className, $t)) {
                         return $classType;

@@ -14,17 +14,13 @@ namespace Symfony\Component\JsonStreamer\Read;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonStreamer\DataModel\Read\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\CollectionNode;
-use Symfony\Component\JsonStreamer\DataModel\Read\CompositeNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\DataModelNodeInterface;
+use Symfony\Component\JsonStreamer\DataModel\Read\NullableNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\ObjectNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\ScalarNode;
 use Symfony\Component\JsonStreamer\Exception\LogicException;
-use Symfony\Component\JsonStreamer\Exception\UnexpectedValueException;
-use Symfony\Component\TypeInfo\Type\BackedEnumType;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
-use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\Type\WrappingTypeInterface;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
@@ -99,12 +95,10 @@ final class PhpGenerator
                 .$this->line('};', $context);
         }
 
-        if ($node instanceof CompositeNode) {
+        if ($node instanceof NullableNode) {
             $php = '';
-            foreach ($node->getNodes() as $n) {
-                if (!$this->canBeDecodedWithJsonDecode($n, $decodeFromStream)) {
-                    $php .= $this->generateProviders($n, $decodeFromStream, $context);
-                }
+            if (!$this->canBeDecodedWithJsonDecode($node->getNode(), $decodeFromStream)) {
+                $php .= $this->generateProviders($node->getNode(), $decodeFromStream, $context);
             }
 
             $arguments = $decodeFromStream ? '$stream, $offset, $length' : '$data';
@@ -115,18 +109,18 @@ final class PhpGenerator
 
             $php .= $decodeFromStream ? $this->line('$data = \\'.Decoder::class.'::decodeStream($stream, $offset, $length);', $context) : '';
 
-            foreach ($node->getNodes() as $n) {
-                $value = $this->canBeDecodedWithJsonDecode($n, $decodeFromStream) ? $this->generateValueFormat($n, '$data') : '$providers[\''.$n->getIdentifier().'\']($data)';
-                $php .= $this->line('if ('.$this->generateCompositeNodeItemCondition($n, '$data').') {', $context)
-                    .$this->line("    return $value;", $context)
-                    .$this->line('}', $context);
-            }
+            $value = $this->canBeDecodedWithJsonDecode($node->getNode(), $decodeFromStream) ? $this->generateValueFormat($node->getNode(), '$data') : '$providers[\''.$node->getNode()->getIdentifier().'\']($data)';
 
-            $php .= $this->line('throw new \\'.UnexpectedValueException::class.'(\\sprintf(\'Unexpected "%s" value for "'.$node->getIdentifier().'".\', \\get_debug_type($data)));', $context);
+            $php .= $this->line('if (null === $data) {', $context)
+                .$this->line('    return null;', $context)
+                .$this->line('}', $context)
+                .$this->line("return $value;", $context);
 
             --$context['indentation_level'];
 
-            return $php.$this->line('};', $context);
+            $php .= $this->line('};', $context);
+
+            return $php;
         }
 
         if ($node instanceof CollectionNode) {
@@ -254,49 +248,6 @@ final class PhpGenerator
         return $accessor;
     }
 
-    private function generateCompositeNodeItemCondition(DataModelNodeInterface $node, string $accessor): string
-    {
-        $type = $node->getType();
-
-        if ($type->isIdentifiedBy(TypeIdentifier::NULL)) {
-            return "null === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::TRUE)) {
-            return "true === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::FALSE)) {
-            return "false === $accessor";
-        }
-
-        if ($type->isIdentifiedBy(TypeIdentifier::MIXED)) {
-            return 'true';
-        }
-
-        if ($type instanceof CollectionType) {
-            return $type->isList() ? "\\is_array($accessor) && \\array_is_list($accessor)" : "\\is_array($accessor)";
-        }
-
-        while ($type instanceof WrappingTypeInterface) {
-            $type = $type->getWrappedType();
-        }
-
-        if ($type instanceof BackedEnumType) {
-            return '\\is_'.$type->getBackingType()->getTypeIdentifier()->value."($accessor)";
-        }
-
-        if ($type instanceof ObjectType) {
-            return "\\is_array($accessor)";
-        }
-
-        if ($type instanceof BuiltinType) {
-            return '\\is_'.$type->getTypeIdentifier()->value."($accessor)";
-        }
-
-        throw new LogicException(\sprintf('Unexpected "%s" type.', $type::class));
-    }
-
     /**
      * @param array<string, mixed> $context
      */
@@ -310,14 +261,8 @@ final class PhpGenerator
      */
     private function canBeDecodedWithJsonDecode(DataModelNodeInterface $node, bool $decodeFromStream): bool
     {
-        if ($node instanceof CompositeNode) {
-            foreach ($node->getNodes() as $n) {
-                if (!$this->canBeDecodedWithJsonDecode($n, $decodeFromStream)) {
-                    return false;
-                }
-            }
-
-            return true;
+        if ($node instanceof NullableNode) {
+            return $this->canBeDecodedWithJsonDecode($node->getNode(), $decodeFromStream);
         }
 
         if ($node instanceof CollectionNode) {
