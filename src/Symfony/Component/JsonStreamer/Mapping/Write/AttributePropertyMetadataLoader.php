@@ -11,12 +11,12 @@
 
 namespace Symfony\Component\JsonStreamer\Mapping\Write;
 
-use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonStreamer\Attribute\StreamedName;
 use Symfony\Component\JsonStreamer\Attribute\ValueTransformer;
 use Symfony\Component\JsonStreamer\Exception\InvalidArgumentException;
 use Symfony\Component\JsonStreamer\Exception\RuntimeException;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
+use Symfony\Component\JsonStreamer\ValueTransformer\ValueObjectTransformerInterface;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
 
@@ -29,9 +29,12 @@ use Symfony\Component\TypeInfo\TypeResolver\TypeResolverInterface;
  */
 final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInterface
 {
+    /**
+     * @param array<string, ValueTransformerInterface> $valueTransformers
+     */
     public function __construct(
         private PropertyMetadataLoaderInterface $decorated,
-        private ContainerInterface $valueTransformers,
+        private array $valueTransformers,
         private TypeResolverInterface $typeResolver,
     ) {
     }
@@ -103,13 +106,17 @@ final class AttributePropertyMetadataLoader implements PropertyMetadataLoaderInt
 
     private function getAndValidateValueTransformerService(string $valueTransformerId): ValueTransformerInterface
     {
-        if (!$this->valueTransformers->has($valueTransformerId)) {
+        $valueTransformer = $this->valueTransformers[$valueTransformerId] ?? null;
+        if (!$valueTransformer) {
             throw new InvalidArgumentException(\sprintf('You have requested a non-existent value transformer service "%s". Did you implement "%s"?', $valueTransformerId, ValueTransformerInterface::class));
         }
 
-        $valueTransformer = $this->valueTransformers->get($valueTransformerId);
         if (!$valueTransformer instanceof ValueTransformerInterface) {
             throw new InvalidArgumentException(\sprintf('The "%s" value transformer service does not implement "%s".', $valueTransformerId, ValueTransformerInterface::class));
+        }
+
+        if ($valueTransformer instanceof ValueObjectTransformerInterface) {
+            // TODO that is done automatically
         }
 
         return $valueTransformer;

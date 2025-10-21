@@ -21,7 +21,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  *
  * @author Mathias Arlaud <mathias.arlaud@gmail.com>
  */
-final class StringToDateTimeValueTransformer implements ValueTransformerInterface
+final class StringToDateTimeValueObjectTransformer implements ValueObjectTransformerInterface
 {
     public const FORMAT_KEY = 'date_time_format';
 

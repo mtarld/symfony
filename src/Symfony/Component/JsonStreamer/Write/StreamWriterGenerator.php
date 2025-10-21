@@ -43,8 +43,12 @@ final class StreamWriterGenerator
     private ?PhpGenerator $phpGenerator = null;
     private ?Filesystem $fs = null;
 
+    /**
+     * @param array<string, ValueTransformerInterface> $valueTransformers
+     */
     public function __construct(
         private PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private array $valueTransformers,
         private string $streamWritersDir,
     ) {
     }
@@ -61,7 +65,7 @@ final class StreamWriterGenerator
             return $path;
         }
 
-        $this->phpGenerator ??= new PhpGenerator();
+        $this->phpGenerator ??= new PhpGenerator($this->valueTransformers);
         $this->fs ??= new Filesystem();
 
         $dataModel = $this->createDataModel($type, '$data', $options, ['depth' => 0]);
@@ -137,7 +141,7 @@ final class StreamWriterGenerator
 
                 foreach ($propertyMetadata->getNativeToStreamValueTransformer() as $valueTransformer) {
                     if (\is_string($valueTransformer)) {
-                        $valueTransformerServiceAccessor = "\$valueTransformers->get('$valueTransformer')";
+                        $valueTransformerServiceAccessor = "\$valueTransformers['$valueTransformer']";
                         $propertyAccessor = "{$valueTransformerServiceAccessor}->transform($propertyAccessor, ['_current_object' => $accessor] + \$options)";
 
                         continue;

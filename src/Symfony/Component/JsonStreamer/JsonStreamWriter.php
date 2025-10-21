@@ -17,8 +17,8 @@ use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonStreamer\Mapping\Write\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Write\DateTimeTypePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueObjectTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\ValueObjectTransformerInterface;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\JsonStreamer\Write\StreamWriterGenerator;
 use Symfony\Component\TypeInfo\Type;
@@ -38,12 +38,25 @@ final class JsonStreamWriter implements StreamWriterInterface
 {
     private StreamWriterGenerator $streamWriterGenerator;
 
+    /**
+     * @param ContainerInterface|array<string, ValueTransformerInterface> $valueTransformers
+     */
     public function __construct(
-        private ContainerInterface $valueTransformers,
+        private ContainerInterface|array $valueTransformers,
         PropertyMetadataLoaderInterface $propertyMetadataLoader,
         string $streamWritersDir,
     ) {
-        $this->streamWriterGenerator = new StreamWriterGenerator($propertyMetadataLoader, $streamWritersDir);
+        if ($valueTransformers instanceof ContainerInterface) {
+            // deprecate if ContainerInterface
+        } else {
+            foreach ($valueTransformers as $k => $v) {
+                if ($v instanceof ValueObjectTransformerInterface && !class_exists($k)) {
+                    // throw need class-string
+                }
+            }
+        }
+
+        $this->streamWriterGenerator = new StreamWriterGenerator($propertyMetadataLoader, $this->valueTransformers, $streamWritersDir);
     }
 
     public function write(mixed $data, Type $type, array $options = []): \Traversable&\Stringable
@@ -88,39 +101,20 @@ final class JsonStreamWriter implements StreamWriterInterface
     {
         $streamWritersDir ??= sys_get_temp_dir().'/json_streamer/write';
         $valueTransformers += [
-            'json_streamer.value_transformer.date_time_to_string' => new DateTimeToStringValueTransformer(),
+            \DateTimeInterface::class => new DateTimeToStringValueObjectTransformer(),
         ];
-
-        $valueTransformersContainer = new class($valueTransformers) implements ContainerInterface {
-            public function __construct(
-                private array $valueTransformers,
-            ) {
-            }
-
-            public function has(string $id): bool
-            {
-                return isset($this->valueTransformers[$id]);
-            }
-
-            public function get(string $id): ValueTransformerInterface
-            {
-                return $this->valueTransformers[$id];
-            }
-        };
 
         $typeContextFactory = new TypeContextFactory(class_exists(PhpDocParser::class) ? new StringTypeResolver() : null);
 
         $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(
-                new AttributePropertyMetadataLoader(
-                    new PropertyMetadataLoader(TypeResolver::create()),
-                    $valueTransformersContainer,
-                    TypeResolver::create(),
-                ),
+            new AttributePropertyMetadataLoader(
+                new PropertyMetadataLoader(TypeResolver::create()),
+                $valueTransformers,
+                TypeResolver::create(),
             ),
             $typeContextFactory,
         );
 
-        return new self($valueTransformersContainer, $propertyMetadataLoader, $streamWritersDir);
+        return new self($valueTransformers, $propertyMetadataLoader, $streamWritersDir);
     }
 }

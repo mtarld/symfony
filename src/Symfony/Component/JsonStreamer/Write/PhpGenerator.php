@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\JsonStreamer\Write;
 
-use Psr\Container\ContainerInterface;
 use Symfony\Component\JsonStreamer\DataModel\Write\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\CollectionNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\CompositeNode;
@@ -40,6 +39,14 @@ final class PhpGenerator
     private string $yieldBuffer = '';
 
     /**
+     * @param array<string, ValueTransformerInterface> $valueTransformers
+     */
+    public function __construct(
+        private array $valueTransformers,
+    ) {
+    }
+
+    /**
      * @param array<string, mixed> $options
      * @param array<string, mixed> $context
      */
@@ -65,7 +72,7 @@ final class PhpGenerator
             .$this->line('/**', $context)
             .$this->line(' * @param '.$dataModel->getType().' $data', $context)
             .$this->line(' */', $context)
-            .$this->line('return static function (mixed $data, \\'.ContainerInterface::class.' $valueTransformers, array $options): \\Traversable {', $context)
+            .$this->line('return static function (mixed $data, array $valueTransformers, array $options): \\Traversable {', $context)
             .implode('', $generators)
             .$this->line('    try {', $context)
             .$yields
@@ -238,6 +245,14 @@ final class PhpGenerator
         }
 
         if ($dataModelNode instanceof ObjectNode) {
+            foreach ($this->valueTransformers as $k => $_) {
+                if ($dataModelNode->getType()->isIdentifiedBy($k)) {
+                    $rawValue = "\$valueTransformers['$k']->transform({$dataModelNode->getAccessor()}, \$options)";
+
+                    return $this->yield($this->encode($rawValue, $context), $context);
+                }
+            }
+
             if (isset($context['generated_generators'][$dataModelNode->getIdentifier()]) || $dataModelNode->isMock()) {
                 $depthArgument = ($context['generating_generator'] ?? false) ? '$depth + 1' : (string) $context['depth'];
 
@@ -444,5 +459,19 @@ final class PhpGenerator
         }
 
         return true;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function generateValueObjectYield(DataModelNodeInterface $dataModelNode, array $context): string
+    {
+        if ($dataModelNode->getType()->isIdentifiedBy(\DateTimeInterface::class)) {
+            $rawValue = "\$valueTransformers->get('json_streamer.value_transformer.date_time_to_string')->transform({$dataModelNode->getAccessor()}, \$options)";
+
+            return $this->yield($this->encode($rawValue, $context), $context);
+        }
+
+        throw new LogicException(\sprintf('Unhandled "%s" value object.', $dataModelNode->getType()));
     }
 }

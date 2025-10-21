@@ -26,11 +26,12 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNestedArray;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueObjectAndUnion;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\SelfReferencingDummy;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\BooleanToStringValueTransformer;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DoubleIntAndCastToStringValueTransformer;
-use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
+use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueObjectTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
 
@@ -228,6 +229,28 @@ class JsonStreamWriterTest extends TestCase
         );
     }
 
+    public function testWriteObjectWithValueObjectAndUnion()
+    {
+        $dummy = new DummyWithValueObjectAndUnion();
+        $dummy->dateTimeOrInt = new \DateTimeImmutable('2024-11-20');
+
+        $this->assertWritten(
+            '{"dateTimeOrInt":"2024-11-20"}',
+            $dummy,
+            Type::object(DummyWithValueObjectAndUnion::class),
+            options: [DateTimeToStringValueObjectTransformer::FORMAT_KEY => 'Y-m-d'],
+        );
+
+        $dummy = new DummyWithValueObjectAndUnion();
+        $dummy->dateTimeOrInt = 10;
+
+        $this->assertWritten(
+            '{"dateTimeOrInt":10}',
+            $dummy,
+            Type::object(DummyWithValueObjectAndUnion::class),
+        );
+    }
+
     public function testWriteObjectWithPhpDoc()
     {
         $dummy = new DummyWithPhpDoc();
@@ -264,7 +287,7 @@ class JsonStreamWriterTest extends TestCase
             '{"interface":"2024-11-20","immutable":"2025-11-20"}',
             $dummy,
             Type::object(DummyWithDateTimes::class),
-            options: [DateTimeToStringValueTransformer::FORMAT_KEY => 'Y-m-d'],
+            options: [DateTimeToStringValueObjectTransformer::FORMAT_KEY => 'Y-m-d'],
         );
     }
 
