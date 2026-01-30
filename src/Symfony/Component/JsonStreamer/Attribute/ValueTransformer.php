@@ -12,7 +12,7 @@
 namespace Symfony\Component\JsonStreamer\Attribute;
 
 use Symfony\Component\JsonStreamer\Exception\LogicException;
-use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\ValueTransformerInterface;
 
 /**
  * Defines a callable or a {@see ValueTransformerInterface} service id

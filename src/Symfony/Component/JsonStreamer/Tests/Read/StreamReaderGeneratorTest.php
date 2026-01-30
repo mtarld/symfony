@@ -13,12 +13,12 @@ namespace Symfony\Component\JsonStreamer\Tests\Read;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\JsonStreamer\Exception\LogicException;
 use Symfony\Component\JsonStreamer\Exception\UnsupportedException;
 use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoaderInterface;
 use Symfony\Component\JsonStreamer\Mapping\Read\AttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Read\DateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Read\StreamReaderGenerator;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Enum\DummyBackedEnum;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Enum\DummyEnum;
@@ -29,10 +29,13 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullablePropert
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithOtherDummies;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithSyntheticProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithUnionProperties;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueObjectAndUnion;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DivideStringAndCastToIntValueTransformer;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\StringToBooleanValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\DivideStringAndCastToIntValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\StringToBooleanValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\UnsupportedStreamValueTypeObjectTransformer;
 use Symfony\Component\JsonStreamer\Tests\ServiceContainer;
+use Symfony\Component\JsonStreamer\Transformer\DateTimeValueObjectTransformer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeContext\TypeContextFactory;
 use Symfony\Component\TypeInfo\TypeResolver\StringTypeResolver;
@@ -57,19 +60,21 @@ class StreamReaderGeneratorTest extends TestCase
     #[DataProvider('generatedStreamReaderDataProvider')]
     public function testGeneratedStreamReader(string $fixture, Type $type, ?PropertyMetadataLoaderInterface $propertyMetadataLoader = null)
     {
-        $propertyMetadataLoader ??= new GenericTypePropertyMetadataLoader(
-            new DateTimeTypePropertyMetadataLoader(new AttributePropertyMetadataLoader(
+        $propertyMetadataLoader = new GenericTypePropertyMetadataLoader(
+            new AttributePropertyMetadataLoader(
                 new PropertyMetadataLoader(TypeResolver::create()),
                 new ServiceContainer([
                     DivideStringAndCastToIntValueTransformer::class => new DivideStringAndCastToIntValueTransformer(),
                     StringToBooleanValueTransformer::class => new StringToBooleanValueTransformer(),
                 ]),
                 TypeResolver::create(),
-            )),
+            ),
             new TypeContextFactory(new StringTypeResolver()),
         );
 
-        $generator = new StreamReaderGenerator($propertyMetadataLoader, $this->streamReadersDir);
+        $generator = new StreamReaderGenerator($propertyMetadataLoader, new ServiceContainer([
+            \DateTimeInterface::class => new DateTimeValueObjectTransformer(),
+        ]), $this->streamReadersDir);
 
         if ($_ENV['TEST_GENERATE_FIXTURES'] ?? false) {
             file_put_contents(
@@ -129,11 +134,12 @@ class StreamReaderGeneratorTest extends TestCase
 
         yield ['union', Type::union(Type::int(), Type::list(Type::enum(DummyBackedEnum::class)), Type::object(DummyWithNameAttributes::class))];
         yield ['object_with_union', Type::object(DummyWithUnionProperties::class)];
+        yield ['object_with_value_object_and_union', Type::object(DummyWithValueObjectAndUnion::class)];
     }
 
     public function testDoNotSupportIntersectionType()
     {
-        $generator = new StreamReaderGenerator(new PropertyMetadataLoader(TypeResolver::create()), $this->streamReadersDir);
+        $generator = new StreamReaderGenerator(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer(), $this->streamReadersDir);
 
         $this->expectException(UnsupportedException::class);
         $this->expectExceptionMessage('"Stringable&Traversable" type is not supported.');
@@ -143,12 +149,26 @@ class StreamReaderGeneratorTest extends TestCase
 
     public function testDoNotSupportEnumType()
     {
-        $generator = new StreamReaderGenerator(new PropertyMetadataLoader(TypeResolver::create()), $this->streamReadersDir);
+        $generator = new StreamReaderGenerator(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer(), $this->streamReadersDir);
 
         $this->expectException(UnsupportedException::class);
         $this->expectExceptionMessage(\sprintf('"%s" type is not supported.', DummyEnum::class));
 
         $generator->generate(Type::enum(DummyEnum::class), false);
+    }
+
+    public function testDoNotSupportNonScalarValueObjectValueType()
+    {
+        $generator = new StreamReaderGenerator(
+            new PropertyMetadataLoader(TypeResolver::create()),
+            new ServiceContainer([DummyWithValueObjectAndUnion::class => new UnsupportedStreamValueTypeObjectTransformer()]),
+            $this->streamReadersDir,
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage(\sprintf('Expected "%s" stream value type to be one of "int", "float", "bool", "true", "false", "string", "null", but got "mixed".', UnsupportedStreamValueTypeObjectTransformer::class));
+
+        $generator->generate(Type::union(Type::object(DummyWithValueObjectAndUnion::class), Type::int()), false);
     }
 
     public function testCallPropertyMetadataLoaderWithProperContext()
@@ -164,7 +184,7 @@ class StreamReaderGeneratorTest extends TestCase
             ])
             ->willReturn([]);
 
-        $generator = new StreamReaderGenerator($propertyMetadataLoader, $this->streamReadersDir);
+        $generator = new StreamReaderGenerator($propertyMetadataLoader, new ServiceContainer(), $this->streamReadersDir);
         $generator->generate($type, false);
     }
 }

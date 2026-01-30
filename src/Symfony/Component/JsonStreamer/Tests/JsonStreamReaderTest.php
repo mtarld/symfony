@@ -23,9 +23,10 @@ use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNullableProperties;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithPhpDoc;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithSyntheticProperties;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueObjectAndUnion;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DivideStringAndCastToIntValueTransformer;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\StringToBooleanValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\DivideStringAndCastToIntValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\StringToBooleanValueTransformer;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -120,13 +121,10 @@ class JsonStreamReaderTest extends TestCase
 
     public function testReadObjectWithValueTransformer()
     {
-        $reader = JsonStreamReader::create(
-            [
-                StringToBooleanValueTransformer::class => new StringToBooleanValueTransformer(),
-                DivideStringAndCastToIntValueTransformer::class => new DivideStringAndCastToIntValueTransformer(),
-            ],
-            $this->streamReadersDir,
-        );
+        $reader = JsonStreamReader::create([
+            StringToBooleanValueTransformer::class => new StringToBooleanValueTransformer(),
+            DivideStringAndCastToIntValueTransformer::class => new DivideStringAndCastToIntValueTransformer(),
+        ], $this->streamReadersDir);
 
         $this->assertRead($reader, function (mixed $read) {
             $this->assertInstanceOf(DummyWithValueTransformerAttributes::class, $read);
@@ -135,6 +133,21 @@ class JsonStreamReaderTest extends TestCase
             $this->assertSame('LOWERCASE NAME', $read->name);
             $this->assertSame([0, 1], $read->range);
         }, '{"id": "20", "active": "true", "name": "lowercase name", "range": "0..1"}', Type::object(DummyWithValueTransformerAttributes::class), ['scale' => 1]);
+    }
+
+    public function testReadObjectWithValueObjectAndUnion()
+    {
+        $reader = JsonStreamReader::create([], $this->streamReadersDir);
+
+        $this->assertRead($reader, function (mixed $read) {
+            $this->assertInstanceOf(DummyWithValueObjectAndUnion::class, $read);
+            $this->assertEquals(new \DateTimeImmutable('2024-11-20'), $read->dateTimeOrInt);
+        }, '{"dateTimeOrInt": "2024-11-20"}', Type::object(DummyWithValueObjectAndUnion::class));
+
+        $this->assertRead($reader, function (mixed $read) {
+            $this->assertInstanceOf(DummyWithValueObjectAndUnion::class, $read);
+            $this->assertSame(100, $read->dateTimeOrInt);
+        }, '{"dateTimeOrInt": 100}', Type::object(DummyWithValueObjectAndUnion::class));
     }
 
     public function testReadObjectWithPhpDoc()

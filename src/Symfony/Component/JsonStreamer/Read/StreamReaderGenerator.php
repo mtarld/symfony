@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer\Read;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Config\ConfigCacheFactoryInterface;
 use Symfony\Component\JsonStreamer\DataModel\Read\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Read\CollectionNode;
@@ -45,6 +46,7 @@ final class StreamReaderGenerator
 
     public function __construct(
         private PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private ContainerInterface $transformers,
         private string $streamReadersDir,
         ?ConfigCacheFactoryInterface $cacheFactory = null,
     ) {
@@ -60,7 +62,7 @@ final class StreamReaderGenerator
     {
         $path = \sprintf('%s%s%s.json%s.php', $this->streamReadersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type), $decodeFromStream ? '.stream' : '');
         $generateContent = function () use ($type, $decodeFromStream, $options): string {
-            $this->phpGenerator ??= new PhpGenerator();
+            $this->phpGenerator ??= new PhpGenerator($this->transformers);
 
             return $this->phpGenerator->generate($this->createDataModel($type, $options), $decodeFromStream, $options);
         };
@@ -118,7 +120,7 @@ final class StreamReaderGenerator
                     'accessor' => static function (string $accessor) use ($propertyMetadata): string {
                         foreach ($propertyMetadata->getValueTransformers() as $valueTransformer) {
                             if (\is_string($valueTransformer)) {
-                                $accessor = "\$valueTransformers->get('$valueTransformer')->transform($accessor, \$options)";
+                                $accessor = "\$transformers->get('$valueTransformer')->transform($accessor, \$options)";
 
                                 continue;
                             }

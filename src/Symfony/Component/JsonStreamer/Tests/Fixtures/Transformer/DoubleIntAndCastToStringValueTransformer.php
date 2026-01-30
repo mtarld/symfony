@@ -1,8 +1,8 @@
 <?php
 
-namespace Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer;
+namespace Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer;
 
-use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
 
 final class DoubleIntAndCastToStringValueTransformer implements ValueTransformerInterface

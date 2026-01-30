@@ -17,9 +17,8 @@ use Symfony\Component\JsonStreamer\JsonStreamWriter;
 use Symfony\Component\JsonStreamer\Mapping\GenericTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\Read\AttributePropertyMetadataLoader as ReadAttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Read\DateTimeTypePropertyMetadataLoader as ReadDateTimeTypePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\Write\AttributePropertyMetadataLoader as WriteAttributePropertyMetadataLoader;
-use Symfony\Component\JsonStreamer\Mapping\Write\DateTimeTypePropertyMetadataLoader as WriteDateTimeTypePropertyMetadataLoader;
+use Symfony\Component\JsonStreamer\Transformer\DateTimeValueObjectTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\DateTimeToStringValueTransformer;
 use Symfony\Component\JsonStreamer\ValueTransformer\StringToDateTimeValueTransformer;
 
@@ -28,7 +27,7 @@ return static function (ContainerConfigurator $container) {
         // stream reader/writer
         ->set('json_streamer.stream_writer', JsonStreamWriter::class)
             ->args([
-                tagged_locator('json_streamer.value_transformer'),
+                abstract_arg('value transformers'),
                 service('json_streamer.write.property_metadata_loader'),
                 param('.json_streamer.stream_writers_dir'),
                 service('config_cache_factory')->ignoreOnInvalid(),
@@ -36,7 +35,7 @@ return static function (ContainerConfigurator $container) {
             ])
         ->set('json_streamer.stream_reader', JsonStreamReader::class)
             ->args([
-                tagged_locator('json_streamer.value_transformer'),
+                abstract_arg('value transformers'),
                 service('json_streamer.read.property_metadata_loader'),
                 param('.json_streamer.stream_readers_dir'),
                 service('config_cache_factory')->ignoreOnInvalid(),
@@ -56,11 +55,6 @@ return static function (ContainerConfigurator $container) {
                 service('.inner'),
                 service('type_info.type_context_factory'),
             ])
-        ->set('.json_streamer.write.property_metadata_loader.date_time', WriteDateTimeTypePropertyMetadataLoader::class)
-            ->decorate('json_streamer.write.property_metadata_loader')
-            ->args([
-                service('.inner'),
-            ])
         ->set('.json_streamer.write.property_metadata_loader.attribute', WriteAttributePropertyMetadataLoader::class)
             ->decorate('json_streamer.write.property_metadata_loader')
             ->args([
@@ -79,11 +73,6 @@ return static function (ContainerConfigurator $container) {
                 service('.inner'),
                 service('type_info.type_context_factory'),
             ])
-        ->set('.json_streamer.read.property_metadata_loader.date_time', ReadDateTimeTypePropertyMetadataLoader::class)
-            ->decorate('json_streamer.read.property_metadata_loader')
-            ->args([
-                service('.inner'),
-            ])
         ->set('.json_streamer.read.property_metadata_loader.attribute', ReadAttributePropertyMetadataLoader::class)
             ->decorate('json_streamer.read.property_metadata_loader')
             ->args([
@@ -92,17 +81,23 @@ return static function (ContainerConfigurator $container) {
                 service('type_info.resolver'),
             ])
 
-        // value transformers
+        // transformers
         ->set('json_streamer.value_transformer.date_time_to_string', DateTimeToStringValueTransformer::class)
             ->tag('json_streamer.value_transformer')
+            ->deprecate('symfony/json-streamer', '8.1', 'The "%service_id%" is deprecated. Date times will be transformed thanks to "%s" instead.', DateTimeValueObjectTransformer::class)
 
         ->set('json_streamer.value_transformer.string_to_date_time', StringToDateTimeValueTransformer::class)
             ->tag('json_streamer.value_transformer')
+            ->deprecate('symfony/json-streamer', '8.1', 'The "%service_id%" is deprecated. Date times will be transformed thanks to "%s" instead.', DateTimeValueObjectTransformer::class)
+
+        ->set('.json_streamer.value_object_transformer.date_time', DateTimeValueObjectTransformer::class)
+            ->tag('json_streamer.value_object_transformer')
 
         // cache
         ->set('.json_streamer.cache_warmer.streamer', StreamerCacheWarmer::class)
             ->args([
                 abstract_arg('streamable'),
+                abstract_arg('value transformers'),
                 service('json_streamer.write.property_metadata_loader'),
                 service('json_streamer.read.property_metadata_loader'),
                 param('.json_streamer.stream_writers_dir'),

@@ -109,7 +109,8 @@ use Symfony\Component\JsonStreamer\JsonStreamWriter;
 use Symfony\Component\JsonStreamer\Mapping\PropertyMetadata;
 use Symfony\Component\JsonStreamer\StreamReaderInterface;
 use Symfony\Component\JsonStreamer\StreamWriterInterface;
-use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\ValueObjectTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\ValueTransformerInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Lock\PersistingStoreInterface;
@@ -2161,6 +2162,9 @@ class FrameworkExtension extends Extension
 
         $container->registerForAutoconfiguration(ValueTransformerInterface::class)
             ->addTag('json_streamer.value_transformer');
+
+        $container->registerForAutoconfiguration(ValueObjectTransformerInterface::class)
+            ->addTag('json_streamer.value_object_transformer');
 
         $loader->load('json_streamer.php');
 

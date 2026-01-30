@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer\CacheWarmer;
 
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Config\ConfigCacheFactoryInterface;
@@ -38,6 +39,7 @@ final class StreamerCacheWarmer implements CacheWarmerInterface
      */
     public function __construct(
         private iterable $streamable,
+        ContainerInterface $transformers,
         PropertyMetadataLoaderInterface $streamWriterPropertyMetadataLoader,
         PropertyMetadataLoaderInterface $streamReaderPropertyMetadataLoader,
         string $streamWritersDir,
@@ -45,8 +47,8 @@ final class StreamerCacheWarmer implements CacheWarmerInterface
         private LoggerInterface $logger = new NullLogger(),
         ?ConfigCacheFactoryInterface $configCacheFactory = null,
     ) {
-        $this->streamWriterGenerator = new StreamWriterGenerator($streamWriterPropertyMetadataLoader, $streamWritersDir, $configCacheFactory);
-        $this->streamReaderGenerator = new StreamReaderGenerator($streamReaderPropertyMetadataLoader, $streamReadersDir, $configCacheFactory);
+        $this->streamWriterGenerator = new StreamWriterGenerator($streamWriterPropertyMetadataLoader, $transformers, $streamWritersDir, $configCacheFactory);
+        $this->streamReaderGenerator = new StreamReaderGenerator($streamReaderPropertyMetadataLoader, $transformers, $streamReadersDir, $configCacheFactory);
     }
 
     public function warmUp(string $cacheDir, ?string $buildDir = null): array

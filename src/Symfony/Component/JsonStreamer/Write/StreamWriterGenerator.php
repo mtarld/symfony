@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\JsonStreamer\Write;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Config\ConfigCacheFactoryInterface;
 use Symfony\Component\JsonStreamer\DataModel\Write\BackedEnumNode;
 use Symfony\Component\JsonStreamer\DataModel\Write\CollectionNode;
@@ -45,6 +46,7 @@ final class StreamWriterGenerator
 
     public function __construct(
         private PropertyMetadataLoaderInterface $propertyMetadataLoader,
+        private ContainerInterface $transformers,
         private string $streamWritersDir,
         ?ConfigCacheFactoryInterface $cacheFactory = null,
     ) {
@@ -60,7 +62,7 @@ final class StreamWriterGenerator
     {
         $path = \sprintf('%s%s%s.json.php', $this->streamWritersDir, \DIRECTORY_SEPARATOR, hash('xxh128', (string) $type));
         $generateContent = function () use ($type, $options): string {
-            $this->phpGenerator ??= new PhpGenerator();
+            $this->phpGenerator ??= new PhpGenerator($this->transformers);
 
             return $this->phpGenerator->generate($this->createDataModel($type, '$data', $options), $options);
         };
@@ -119,7 +121,8 @@ final class StreamWriterGenerator
 
                 foreach ($propertyMetadata->getValueTransformers() as $valueTransformer) {
                     if (\is_string($valueTransformer)) {
-                        $valueTransformerServiceAccessor = "\$valueTransformers->get('$valueTransformer')";
+                        $valueTransformerServiceAccessor = "\$transformers->get('$valueTransformer')";
+
                         $propertyAccessor = "{$valueTransformerServiceAccessor}->transform($propertyAccessor, ['_current_object' => $accessor] + \$options)";
 
                         continue;

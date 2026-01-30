@@ -12,10 +12,12 @@
 namespace Symfony\Bundle\FrameworkBundle\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Tests\Functional\app\JsonStreamer\Dto\Dummy;
+use Symfony\Bundle\FrameworkBundle\Tests\Functional\app\JsonStreamer\Dto\Height;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\JsonStreamer\StreamerDumper;
 use Symfony\Component\JsonStreamer\StreamReaderInterface;
 use Symfony\Component\JsonStreamer\StreamWriterInterface;
+use Symfony\Component\JsonStreamer\Transformer\DateTimeValueObjectTransformer;
 use Symfony\Component\TypeInfo\Type;
 
 /**
@@ -33,7 +35,12 @@ class JsonStreamerTest extends AbstractWebTestCase
         /** @var StreamWriterInterface $writer */
         $writer = static::getContainer()->get('json_streamer.stream_writer.alias');
 
-        $this->assertSame('{"@name":"DUMMY","range":"10..20"}', (string) $writer->write(new Dummy(), Type::object(Dummy::class)));
+        $dummy = new Dummy();
+        $dummy->height = new Height(10, 'meters');
+
+        $this->assertSame('{"@name":"DUMMY","range":"10..20","height":"10 meters"}', (string) $writer->write($dummy, Type::object(Dummy::class), [
+            DateTimeValueObjectTransformer::FORMAT_KEY => 'Y-m-d',
+        ]));
     }
 
     public function testRead()
@@ -44,8 +51,9 @@ class JsonStreamerTest extends AbstractWebTestCase
         $expected = new Dummy();
         $expected->name = 'dummy';
         $expected->range = [0, 1];
+        $expected->height = new Height(10, 'meters');
 
-        $this->assertEquals($expected, $reader->read('{"@name": "DUMMY", "range": "0..1"}', Type::object(Dummy::class)));
+        $this->assertEquals($expected, $reader->read('{"@name": "DUMMY", "range": "0..1", "height": "10 meters"}', Type::object(Dummy::class)));
     }
 
     public function testWarmupStreamableClasses()

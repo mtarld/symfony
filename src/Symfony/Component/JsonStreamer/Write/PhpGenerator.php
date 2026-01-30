@@ -39,6 +39,11 @@ final class PhpGenerator
 {
     private string $yieldBuffer = '';
 
+    public function __construct(
+        private ContainerInterface $transformers,
+    ) {
+    }
+
     /**
      * @param array<string, mixed> $options
      * @param array<string, mixed> $context
@@ -65,7 +70,7 @@ final class PhpGenerator
             .$this->line('/**', $context)
             .$this->line(' * @param '.$dataModel->getType().' $data', $context)
             .$this->line(' */', $context)
-            .$this->line('return static function (mixed $data, \\'.ContainerInterface::class.' $valueTransformers, array $options): \\Traversable {', $context)
+            .$this->line('return static function (mixed $data, \\'.ContainerInterface::class.' $transformers, array $options): \\Traversable {', $context)
             .implode('', $generators)
             .$this->line('    try {', $context)
             .$yields
@@ -118,7 +123,7 @@ final class PhpGenerator
             --$context['indentation_level'];
 
             $generators = [
-                $node->getIdentifier() => $this->line('$generators[\''.$node->getIdentifier().'\'] = static function ($data, $depth) use ($valueTransformers, $options, &$generators) {', $context)
+                $node->getIdentifier() => $this->line('$generators[\''.$node->getIdentifier().'\'] = static function ($data, $depth) use ($transformers, $options, &$generators) {', $context)
                     .$this->line('    if ($depth >= 512) {', $context)
                     .$this->line('        throw new \\'.NotEncodableValueException::class.'(\'Maximum stack depth exceeded\');', $context)
                     .$this->line('    }', $context)
@@ -238,6 +243,12 @@ final class PhpGenerator
         }
 
         if ($dataModelNode instanceof ObjectNode) {
+            if ($valueObjectTransformerId = $this->getValueObjectTransformerId($dataModelNode->getType()->getClassName())) {
+                $rawValue = "\$transformers->get('$valueObjectTransformerId')->transform({$dataModelNode->getAccessor()}, \$options)";
+
+                return $this->yield($this->encode($rawValue, $context), $context);
+            }
+
             if (isset($context['generated_generators'][$dataModelNode->getIdentifier()]) || $dataModelNode->isMock()) {
                 $depthArgument = ($context['generating_generator'] ?? false) ? '$depth + 1' : (string) $context['depth'];
 
@@ -445,5 +456,28 @@ final class PhpGenerator
         }
 
         return true;
+    }
+
+    /**
+     * @param class-string $className
+     */
+    private function getValueObjectTransformerId(string $className): ?string
+    {
+        if ($this->transformers->has($className)) {
+            return $className;
+        }
+
+        $reflection = new \ReflectionClass($className);
+        if (($parent = $reflection->getParentClass()) && $id = $this->getValueObjectTransformerId($parent->getName())) {
+            return $id;
+        }
+
+        foreach ($reflection->getInterfaceNames() as $interface) {
+            if ($id = $this->getValueObjectTransformerId($interface)) {
+                return $id;
+            }
+        }
+
+        return null;
     }
 }

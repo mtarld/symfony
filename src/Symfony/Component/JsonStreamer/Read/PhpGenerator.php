@@ -36,6 +36,11 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  */
 final class PhpGenerator
 {
+    public function __construct(
+        private ContainerInterface $transformers,
+    ) {
+    }
+
     /**
      * @param array<string, mixed> $options
      * @param array<string, mixed> $context
@@ -54,7 +59,7 @@ final class PhpGenerator
                 .$this->line('/**', $context)
                 .$this->line(' * @return '.$dataModel->getType(), $context)
                 .$this->line(' */', $context)
-                .$this->line('return static function (mixed $stream, \\'.ContainerInterface::class.' $valueTransformers, \\'.LazyInstantiator::class.' $instantiator, array $options): mixed {', $context)
+                .$this->line('return static function (mixed $stream, \\'.ContainerInterface::class.' $transformers, \\'.LazyInstantiator::class.' $instantiator, array $options): mixed {', $context)
                 .$providers
                 .($this->canBeDecodedWithJsonDecode($dataModel, $decodeFromStream)
                     ? $this->line('    return \\'.Decoder::class.'::decodeStream($stream, 0, null);', $context)
@@ -67,7 +72,7 @@ final class PhpGenerator
             .$this->line('/**', $context)
             .$this->line(' * @return '.$dataModel->getType(), $context)
             .$this->line(' */', $context)
-            .$this->line('return static function (string|\\Stringable $string, \\'.ContainerInterface::class.' $valueTransformers, \\'.Instantiator::class.' $instantiator, array $options): mixed {', $context)
+            .$this->line('return static function (string|\\Stringable $string, \\'.ContainerInterface::class.' $transformers, \\'.Instantiator::class.' $instantiator, array $options): mixed {', $context)
             .$providers
             .($this->canBeDecodedWithJsonDecode($dataModel, $decodeFromStream)
                 ? $this->line('    return \\'.Decoder::class.'::decodeString((string) $string);', $context)
@@ -109,14 +114,14 @@ final class PhpGenerator
 
             $arguments = $decodeFromStream ? '$stream, $offset, $length' : '$data';
 
-            $php .= $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$valueTransformers, \$instantiator, &\$providers) {", $context);
+            $php .= $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$transformers, \$instantiator, &\$providers) {", $context);
 
             ++$context['indentation_level'];
 
             $php .= $decodeFromStream ? $this->line('$data = \\'.Decoder::class.'::decodeStream($stream, $offset, $length);', $context) : '';
 
             foreach ($node->getNodes() as $n) {
-                $value = $this->canBeDecodedWithJsonDecode($n, $decodeFromStream) ? $this->generateValueFormat($n, '$data') : '$providers['.$this->quote($n->getIdentifier()).']($data)';
+                $value = $this->canBeDecodedWithJsonDecode($n, $decodeFromStream) ? $this->generateValueFormat($n, '$data') : '$providers['.$this->quote($n->getIdentifier())."]($arguments)";
                 $php .= $this->line('if ('.$this->generateCompositeNodeItemCondition($n, '$data').') {', $context)
                     .$this->line("    return $value;", $context)
                     .$this->line('}', $context);
@@ -132,7 +137,7 @@ final class PhpGenerator
         if ($node instanceof CollectionNode) {
             $arguments = $decodeFromStream ? '$stream, $offset, $length' : '$data';
 
-            $php = $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$valueTransformers, \$instantiator, &\$providers) {", $context);
+            $php = $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$transformers, \$instantiator, &\$providers) {", $context);
 
             ++$context['indentation_level'];
 
@@ -140,7 +145,7 @@ final class PhpGenerator
 
             $arguments = $decodeFromStream ? '$stream, $data' : '$data';
             $php .= ($decodeFromStream ? $this->line('$data = \\'.Splitter::class.'::'.($collectionKeyType instanceof BuiltinType && TypeIdentifier::INT === $collectionKeyType->getTypeIdentifier() ? 'splitList' : 'splitDict').'($stream, $offset, $length);', $context) : '')
-                .$this->line("\$iterable = static function ($arguments) use (\$options, \$valueTransformers, \$instantiator, &\$providers) {", $context)
+                .$this->line("\$iterable = static function ($arguments) use (\$options, \$transformers, \$instantiator, &\$providers) {", $context)
                 .$this->line('    foreach ($data as $k => $v) {', $context);
 
             if ($decodeFromStream) {
@@ -175,14 +180,23 @@ final class PhpGenerator
 
             $arguments = $decodeFromStream ? '$stream, $offset, $length' : '$data';
 
-            $php = $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$valueTransformers, \$instantiator, &\$providers) {", $context);
+            $php = $this->line('$providers['.$this->quote($node->getIdentifier())."] = static function ($arguments) use (\$options, \$transformers, \$instantiator, &\$providers) {", $context);
 
             ++$context['indentation_level'];
+
+            if ($valueObjectTransformerId = $this->getValueObjectTransformerId($node->getType()->getClassName())) {
+                $data = $decodeFromStream ? '\\'.Decoder::class.'::decodeStream($stream, $offset, $length)' : '$data';
+                $php .= $this->line("return \$transformers->get('$valueObjectTransformerId')->reverseTransform($data, \$options);", $context);
+
+                --$context['indentation_level'];
+
+                return $php.$this->line('};', $context);
+            }
 
             $php .= $decodeFromStream ? $this->line('$data = \\'.Splitter::class.'::splitDict($stream, $offset, $length);', $context) : '';
 
             if ($decodeFromStream) {
-                $php .= $this->line('return $instantiator->instantiate(\\'.$node->getType()->getClassName().'::class, static function ($object) use ($stream, $data, $options, $valueTransformers, $instantiator, &$providers) {', $context)
+                $php .= $this->line('return $instantiator->instantiate(\\'.$node->getType()->getClassName().'::class, static function ($object) use ($stream, $data, $options, $transformers, $instantiator, &$providers) {', $context)
                     .$this->line('    foreach ($data as $k => $v) {', $context)
                     .$this->line('        match ($k) {', $context);
 
@@ -286,6 +300,22 @@ final class PhpGenerator
             return '\\is_'.$type->getBackingType()->getTypeIdentifier()->value."($accessor)";
         }
 
+        if ($node instanceof ObjectNode && $valueObjectTransformerId = $this->getValueObjectTransformerId($node->getType()->getClassName())) {
+            $valueObjectTransformer = $this->transformers->get($valueObjectTransformerId);
+            $typeIdentifier = $valueObjectTransformer::getStreamValueType()->getTypeIdentifier();
+
+            return match ($typeIdentifier) {
+                TypeIdentifier::INT => "\\is_int($accessor)",
+                TypeIdentifier::FLOAT => "\\is_float($accessor)",
+                TypeIdentifier::BOOL => "\\is_bool($accessor)",
+                TypeIdentifier::TRUE => "true === $accessor",
+                TypeIdentifier::FALSE => "false === $accessor",
+                TypeIdentifier::STRING => "\\is_string($accessor)",
+                TypeIdentifier::NULL => "null === $accessor",
+                default => throw new LogicException(\sprintf('Expected "%s" stream value type to be one of "%s", but got "%s".', $valueObjectTransformer::class, implode('", "', ['int', 'float', 'bool', 'true', 'false', 'string', 'null']), $typeIdentifier->value)),
+            };
+        }
+
         if ($type instanceof ObjectType) {
             return "\\is_array($accessor)";
         }
@@ -346,5 +376,28 @@ final class PhpGenerator
         }
 
         return true;
+    }
+
+    /**
+     * @param class-string $className
+     */
+    private function getValueObjectTransformerId(string $className): ?string
+    {
+        if ($this->transformers->has($className)) {
+            return $className;
+        }
+
+        $reflection = new \ReflectionClass($className);
+        if (($parent = $reflection->getParentClass()) && $id = $this->getValueObjectTransformerId($parent->getName())) {
+            return $id;
+        }
+
+        foreach ($reflection->getInterfaceNames() as $interface) {
+            if ($id = $this->getValueObjectTransformerId($interface)) {
+                return $id;
+            }
+        }
+
+        return null;
     }
 }

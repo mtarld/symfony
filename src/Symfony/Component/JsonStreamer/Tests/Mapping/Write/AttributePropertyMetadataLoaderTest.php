@@ -18,10 +18,12 @@ use Symfony\Component\JsonStreamer\Mapping\PropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Mapping\Write\AttributePropertyMetadataLoader;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithNameAttributes;
 use Symfony\Component\JsonStreamer\Tests\Fixtures\Model\DummyWithValueTransformerAttributes;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\BooleanToStringValueTransformer;
-use Symfony\Component\JsonStreamer\Tests\Fixtures\ValueTransformer\DoubleIntAndCastToStringValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\BooleanToStringValueTransformer;
+use Symfony\Component\JsonStreamer\Tests\Fixtures\Transformer\DoubleIntAndCastToStringValueTransformer;
 use Symfony\Component\JsonStreamer\Tests\ServiceContainer;
-use Symfony\Component\JsonStreamer\ValueTransformer\ValueTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\DateTimeValueObjectTransformer;
+use Symfony\Component\JsonStreamer\Transformer\ValueObjectTransformerInterface;
+use Symfony\Component\JsonStreamer\Transformer\ValueTransformerInterface;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 
@@ -55,6 +57,19 @@ class AttributePropertyMetadataLoaderTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(\sprintf('You have requested a non-existent value transformer service "%s". Did you implement "%s"?', DoubleIntAndCastToStringValueTransformer::class, ValueTransformerInterface::class));
+
+        $loader->load(DummyWithValueTransformerAttributes::class);
+    }
+
+    public function testThrowWhenValueObjectTransformer()
+    {
+        $loader = new AttributePropertyMetadataLoader(new PropertyMetadataLoader(TypeResolver::create()), new ServiceContainer([
+            DoubleIntAndCastToStringValueTransformer::class => new DateTimeValueObjectTransformer(),
+            BooleanToStringValueTransformer::class => new BooleanToStringValueTransformer(),
+        ]), TypeResolver::create());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(\sprintf('"%s" is a "%s" and must not be specified as a value transformer.', DoubleIntAndCastToStringValueTransformer::class, ValueObjectTransformerInterface::class));
 
         $loader->load(DummyWithValueTransformerAttributes::class);
     }
