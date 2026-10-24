@@ -153,9 +153,9 @@ final class PhpGenerator
 
             $collectionKeyType = $node->getType()->getCollectionKeyType();
 
-            $splitMethod = match (true) {
-                $collectionKeyType instanceof BuiltinType && TypeIdentifier::INT === $collectionKeyType->getTypeIdentifier() => 'splitList',
-                $collectionKeyType instanceof BuiltinType && TypeIdentifier::STRING === $collectionKeyType->getTypeIdentifier() => 'splitDict',
+            $splitMethod = match (self::getCollectionKeyTypeIdentifier($collectionKeyType)) {
+                TypeIdentifier::INT => 'splitList',
+                TypeIdentifier::STRING => 'splitDict',
                 default => 'splitCollection',
             };
 

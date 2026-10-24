@@ -12,6 +12,7 @@
 namespace Symfony\Component\JsonStreamer\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Container;
@@ -652,6 +653,23 @@ class JsonStreamReaderTest extends TestCase
         $this->assertRead($reader, function (DummyWithIterable $read) {
             $this->assertEquals(2, iterator_count($read->dummies));
         }, $json, Type::object(DummyWithIterable::class));
+    }
+
+    #[RequiresMethod(Type::class, 'literal')]
+    public function testReadRefinedTypesAsTheirBaseType()
+    {
+        $reader = JsonStreamReader::create([], $this->streamReadersDir);
+
+        foreach ([
+            ['"draft"', Type::literal('draft'), Type::string()],
+            ['"b"', Type::union(Type::literal('a'), Type::literal('b')), Type::string()],
+            ['["a\\"b$c*/"]', Type::list(Type::literal('a"b$c*/')), Type::list(Type::string())],
+            ['null', Type::nullable(Type::intRange(1, null)), Type::nullable(Type::int())],
+            ['[true, false]', Type::array(Type::bool(), Type::intRange(0, null)), Type::array(Type::bool(), Type::int())],
+        ] as [$json, $type, $baseType]) {
+            $expected = $reader->read($json, $baseType);
+            $this->assertRead($reader, fn (mixed $read) => $this->assertSame($expected, $read), $json, $type);
+        }
     }
 
     private function assertRead(JsonStreamReader $reader, mixed $readOrAssert, string $json, Type $type, array $options = []): void
